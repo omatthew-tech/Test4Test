@@ -1,0 +1,20 @@
+Cloudflare Pages launch setup for test4test.io
+
+1. Create a Cloudflare Pages project connected to this repo.
+2. Build command:
+   npm run build
+3. Build output directory:
+   dist
+4. Environment variables:
+   VITE_SUPABASE_URL=https://lteimepkxuiupbcsbcpz.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_RY76rQPiXawpHIqtmOv5zg_RJV_JsIC
+5. Deploy the site.
+6. Add the custom domain:
+   test4test.io
+7. In Supabase Auth URL configuration, set:
+   Site URL = https://test4test.io
+
+Notes:
+- Do not put the Supabase secret key in Cloudflare Pages browser env vars.
+- Keep OPENAI_API_KEY only in Supabase Edge Function secrets.
+- SPA routing fallback is already included via public/_redirects.

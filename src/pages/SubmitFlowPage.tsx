@@ -1,0 +1,818 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Plus, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { AppShell, Surface } from "../components/Layout";
+import { VerificationFlowShell } from "../components/VerificationFlowShell";
+import { StepIndicator } from "../components/StepIndicator";
+import { useAppState } from "../context/AppStateContext";
+import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
+import { defaultAccessMethod, productTypeLabel } from "../lib/format";
+import {
+  buildGeneralQuestions,
+  buildRandomGeneralQuestions,
+  defaultCustomQuestions,
+  questionModeLabel,
+  questionTypeLabel,
+  syncGeneralQuestionsProductName,
+  validateAccessUrl,
+} from "../lib/questions";
+import { Question, SubmissionDraft } from "../types";
+
+const steps = [
+  "App name",
+  "App type",
+  "Link to app",
+  "Questions",
+  "Review",
+];
+
+type AiQuestionStatus = "idle" | "loading" | "ready" | "error";
+
+function createBlankQuestion(index: number, type: Question["type"]): Question {
+  return {
+    id: `custom-${Date.now()}-${index}`,
+    title: "",
+    type,
+    required: true,
+    sortOrder: index + 1,
+    options: type === "multiple" ? ["Option 1", "Option 2"] : undefined,
+  };
+}
+
+export function SubmitFlowPage() {
+  const [searchParams] = useSearchParams();
+  const initialProductName = searchParams.get("productName") ?? "";
+  const resumeVerifyEmail = searchParams.get("phase") === "verify-email";
+  const initialEmail = searchParams.get("email") ?? "";
+  const initialSubmissionId = searchParams.get("submissionId");
+  const navigate = useNavigate();
+  const { currentUser, createSubmission, requestOtp } = useAppState();
+  const [currentStep, setCurrentStep] = useState(resumeVerifyEmail ? steps.length : 0);
+  const [submissionId, setSubmissionId] = useState<string | null>(initialSubmissionId);
+  const [email, setEmail] = useState(initialEmail);
+  const [error, setError] = useState("");
+  const [pendingScrollQuestionId, setPendingScrollQuestionId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [draft, setDraft] = useState<SubmissionDraft>({
+    productName: initialProductName,
+    productType: "website",
+    description: "",
+    targetAudience: "",
+    instructions: "",
+    accessUrl: "",
+    accessMethod: defaultAccessMethod("website"),
+    questionMode: "general",
+  });
+  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(() =>
+    buildGeneralQuestions(initialProductName || "Your product"),
+  );
+  const [customQuestions, setCustomQuestions] = useState<Question[]>(() =>
+    defaultCustomQuestions(initialProductName || "Your product"),
+  );
+  const [aiQuestions, setAiQuestions] = useState<Question[]>([]);
+  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>("idle");
+  const [aiQuestionError, setAiQuestionError] = useState("");
+  const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGeneralQuestions((current) =>
+      syncGeneralQuestionsProductName(current, draft.productName || "Your product"),
+    );
+  }, [draft.productName]);
+
+  useEffect(() => {
+    if (!pendingScrollQuestionId) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const nextQuestionCard = questionCardRefs.current[pendingScrollQuestionId];
+
+      if (!nextQuestionCard) {
+        return;
+      }
+
+      nextQuestionCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      const focusTarget = nextQuestionCard.querySelector<HTMLInputElement>(
+        ".question-card__prompt-input, .option-input-row__input",
+      );
+      focusTarget?.focus({ preventScroll: true });
+      setPendingScrollQuestionId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pendingScrollQuestionId, customQuestions]);
+
+  const accessValidation = useMemo(
+    () => validateAccessUrl(draft.accessUrl, draft.productType),
+    [draft.accessUrl, draft.productType],
+  );
+  const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
+  const hasCurrentAiQuestions =
+    aiQuestionSourceKey === aiQuestionDraftKey && aiQuestions.length > 0;
+  const hasReachedCustomQuestionLimit = customQuestions.length >= 10;
+
+  const displayedQuestions = useMemo(() => {
+    if (draft.questionMode === "general") {
+      return generalQuestions;
+    }
+
+    if (draft.questionMode === "custom") {
+      return customQuestions;
+    }
+
+    return hasCurrentAiQuestions ? aiQuestions : [];
+  }, [
+    aiQuestions,
+    customQuestions,
+    draft.questionMode,
+    generalQuestions,
+    hasCurrentAiQuestions,
+  ]);
+
+  useEffect(() => {
+    if (draft.questionMode !== "ai") {
+      return;
+    }
+
+    if (aiQuestionStatus === "ready" && !hasCurrentAiQuestions) {
+      setAiQuestionStatus("idle");
+    }
+  }, [aiQuestionStatus, draft.questionMode, hasCurrentAiQuestions]);
+
+  const refreshQuestions = () => {
+    setError("");
+    setGeneralQuestions(buildRandomGeneralQuestions(draft.productName || "Your product"));
+  };
+
+  const generateQuestionSet = async () => {
+    setError("");
+    setAiQuestionError("");
+    setAiQuestionStatus("loading");
+
+    try {
+      const requestKey = aiQuestionDraftKey;
+      const generatedQuestions = await generateAiQuestions({
+        ...draft,
+        productName: draft.productName || "Your product",
+      });
+
+      setAiQuestions(generatedQuestions);
+      setAiQuestionSourceKey(requestKey);
+      setAiQuestionStatus("ready");
+    } catch (generationError) {
+      setAiQuestionStatus("error");
+      setAiQuestionError(
+        generationError instanceof Error
+          ? generationError.message
+          : "AI question generation failed. Please try again.",
+      );
+    }
+  };
+
+  const updateQuestion = (index: number, next: Partial<Question>) => {
+    setCustomQuestions((current) =>
+      current.map((question, questionIndex) =>
+        questionIndex === index ? { ...question, ...next } : question,
+      ),
+    );
+  };
+
+  const addQuestion = (type: Question["type"]) => {
+    if (customQuestions.length >= 10) {
+      setError("You can add up to 10 questions total.");
+      return;
+    }
+
+    const nextQuestion = createBlankQuestion(customQuestions.length, type);
+
+    setError("");
+    setPendingScrollQuestionId(nextQuestion.id);
+    setCustomQuestions((current) => {
+      if (current.length >= 10) {
+        return current;
+      }
+
+      return [...current, nextQuestion].map((question, index) => ({
+        ...question,
+        sortOrder: index + 1,
+      }));
+    });
+  };
+
+  const removeQuestion = (index: number) => {
+    setError("");
+    setCustomQuestions((current) =>
+      current
+        .filter((_, questionIndex) => questionIndex !== index)
+        .map((question, questionIndex) => ({ ...question, sortOrder: questionIndex + 1 })),
+    );
+  };
+
+  const duplicateQuestion = (index: number) => {
+    if (customQuestions.length >= 10) {
+      setError("You can add up to 10 questions total.");
+      return;
+    }
+
+    const sourceQuestion = customQuestions[index];
+
+    if (!sourceQuestion) {
+      return;
+    }
+
+    const duplicate: Question = {
+      ...sourceQuestion,
+      id: `custom-${Date.now()}-${index}-duplicate`,
+      options: sourceQuestion.options ? [...sourceQuestion.options] : undefined,
+    };
+
+    setError("");
+    setPendingScrollQuestionId(duplicate.id);
+    setCustomQuestions((current) => {
+      if (current.length >= 10) {
+        return current;
+      }
+
+      return [...current.slice(0, index + 1), duplicate, ...current.slice(index + 1)].map(
+        (question, questionIndex) => ({ ...question, sortOrder: questionIndex + 1 }),
+      );
+    });
+  };
+
+  const setMode = (mode: SubmissionDraft["questionMode"]) => {
+    setError("");
+    setPendingScrollQuestionId(null);
+    setAiQuestionError("");
+    setDraft((current) => ({ ...current, questionMode: mode }));
+  };
+
+  const jumpToStep = (step: number) => {
+    setError("");
+    setPendingScrollQuestionId(null);
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const validateCurrentStep = () => {
+    if (currentStep === 0 && !draft.productName.trim()) {
+      return "Add an app name to continue.";
+    }
+
+    if (currentStep === 2) {
+      if (!draft.accessUrl.trim()) {
+        return "Add a public app link for testers.";
+      }
+
+      if (!accessValidation.valid) {
+        return accessValidation.message;
+      }
+    }
+
+    if (currentStep === 3 && draft.questionMode === "ai") {
+      if (aiQuestionStatus === "loading") {
+        return "Wait for AI questions to finish generating.";
+      }
+
+      if (!hasCurrentAiQuestions) {
+        return aiQuestionSourceKey && aiQuestionSourceKey !== aiQuestionDraftKey
+          ? "Your app details changed. Generate Questions again to continue."
+          : "Generate Questions to continue.";
+      }
+    }
+
+    if (currentStep === 3 && draft.questionMode === "custom") {
+      if (customQuestions.length < 5 || customQuestions.length > 10) {
+        return "Custom mode needs between 5 and 10 questions for MVP.";
+      }
+
+      if (
+        customQuestions.some(
+          (question) =>
+            !question.title.trim() ||
+            (question.type === "multiple" && (question.options?.filter(Boolean).length ?? 0) < 2),
+        )
+      ) {
+        return "Each custom question needs a title, and multiple-choice questions need at least two options.";
+      }
+    }
+
+    return "";
+  };
+
+  const goNext = async () => {
+    const nextError = validateCurrentStep();
+    if (nextError) {
+      setError(nextError);
+      return;
+    }
+
+    setError("");
+
+    if (currentStep === 4) {
+      setIsSubmitting(true);
+
+      try {
+        const createdId = await createSubmission(draft, displayedQuestions);
+        setSubmissionId(createdId);
+        setCurrentStep(steps.length);
+      } catch (submissionError) {
+        setError(
+          submissionError instanceof Error
+            ? submissionError.message
+            : "The submission could not be saved.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+  };
+
+  const sendOtp = async () => {
+    if (!email.trim() || !submissionId) {
+      setError("Add an email so we can send the one-time code.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await requestOtp(email.trim(), submissionId);
+      navigate(
+        "/verify?email=" + encodeURIComponent(email.trim()) + "&submissionId=" + encodeURIComponent(submissionId),
+      );
+    } catch (otpError) {
+      setError(
+        otpError instanceof Error
+          ? otpError.message
+          : "We could not send a verification code.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AppShell title={currentStep < steps.length ? "Submit your product" : undefined} eyebrowLabel={null}>
+      <div className="page-stack">
+        {currentStep < steps.length ? (
+          <div className="wizard-layout">
+            <aside className="wizard-rail">
+              <Surface className="wizard-rail__surface">
+                <StepIndicator steps={steps} currentStep={currentStep} />
+                <div className="wizard-preview">
+                  <span className="eyebrow">Live preview</span>
+                  <h3>{draft.productName || "Untitled app"}</h3>
+                  {draft.description.trim() ? <p>{draft.description}</p> : null}
+
+                  <div className="wizard-preview__stack">
+                    <div className="wizard-preview__item">
+                      <small>App link</small>
+                      {draft.accessUrl ? (
+                        <a href={draft.accessUrl} target="_blank" rel="noreferrer" className="wizard-preview__link">
+                          {draft.accessUrl}
+                        </a>
+                      ) : (
+                        <strong>Add your live app link</strong>
+                      )}
+                    </div>
+                    <div className="wizard-preview__item">
+                      <small>App type</small>
+                      <strong>{productTypeLabel(draft.productType)}</strong>
+                    </div>
+                    <div className="wizard-preview__item">
+                      <small>Question setup</small>
+                      <strong>{questionModeLabel(draft.questionMode)}</strong>
+                    </div>
+                  </div>
+                </div>
+              </Surface>
+            </aside>
+
+            <div className="wizard-stage">
+              <Surface className="wizard-stage__surface">
+                {currentStep === 0 ? (
+                  <div className="form-stack">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 1</span>
+                      <h2>What&apos;s the name of your app?</h2>
+                    </div>
+                    <label className="field">
+                      <span>App name</span>
+                      <input
+                        value={draft.productName}
+                        onChange={(event) =>
+                          setDraft((current) => ({ ...current, productName: event.target.value }))
+                        }
+                        placeholder="Palette Pilot"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>(optional) Short app description for testers to see</span>
+                      <textarea
+                        rows={4}
+                        value={draft.description}
+                        onChange={(event) =>
+                          setDraft((current) => ({ ...current, description: event.target.value }))
+                        }
+                        placeholder="Write something interesting to catch tester's attention i.e. Palette Pilot helps teams shape ideas faster."
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                {currentStep === 1 ? (
+                  <div className="form-stack">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 2</span>
+                      <h2>What kind of app is it?</h2>
+                    </div>
+                    <div className="choice-grid">
+                      {[
+                        { value: "website", title: "Website / Web app" },
+                        { value: "ios", title: "IOS app" },
+                        { value: "android", title: "Android app" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`choice-card${draft.productType === option.value ? " choice-card--active" : ""}`}
+                          onClick={() =>
+                            setDraft((current) => ({
+                              ...current,
+                              productType: option.value as SubmissionDraft["productType"],
+                              accessMethod: defaultAccessMethod(
+                                option.value as SubmissionDraft["productType"],
+                              ),
+                            }))
+                          }
+                        >
+                          <strong>{option.title}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {currentStep === 2 ? (
+                  <div className="form-stack">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 3</span>
+                      <h2>What&apos;s the link to your app?</h2>
+                    </div>
+                    <label className="field">
+                      <span>Link to app</span>
+                      <input
+                        value={draft.accessUrl}
+                        onChange={(event) =>
+                          setDraft((current) => ({ ...current, accessUrl: event.target.value }))
+                        }
+                        placeholder="https://your-app.example"
+                      />
+                      <small
+                        className={`helper-text ${accessValidation.valid ? "helper-text--success" : "helper-text--warning"}`}
+                      >
+                        {accessValidation.message}
+                      </small>
+                    </label>
+                    <label className="field">
+                      <span>(optional) Tester Instructions</span>
+                      <textarea
+                        rows={4}
+                        value={draft.instructions}
+                        onChange={(event) =>
+                          setDraft((current) => ({ ...current, instructions: event.target.value }))
+                        }
+                        placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                {currentStep === 3 ? (
+                  <div className="form-stack form-stack--question-studio">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 4</span>
+                      <h2>Set up your questions</h2>
+                      <p>Pick a question style, then review the exact prompts testers will answer.</p>
+                    </div>
+                    <div className="question-studio">
+                      <div className="question-studio__header">
+                        <div className="question-mode-strip">
+                          {[
+                            { value: "general", title: "General questions" },
+                            { value: "ai", title: "AI-generated questions" },
+                            { value: "custom", title: "Custom questions" },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              className={`question-mode-button${draft.questionMode === option.value ? " question-mode-button--active" : ""}`}
+                              onClick={() => setMode(option.value as SubmissionDraft["questionMode"])}
+                            >
+                              <span>{option.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {draft.questionMode === "custom" ? (
+                        <div className="question-studio__note">
+                          <span>{questionModeLabel(draft.questionMode)} questions</span>
+                          <small>Edit your questions and answers below</small>
+                        </div>
+                      ) : null}
+
+                      {draft.questionMode === "general" ? (
+                        <div className="question-studio__note">
+                          <span>{questionModeLabel(draft.questionMode)} questions</span>
+                          <button
+                            type="button"
+                            className="button button--secondary button--small"
+                            onClick={refreshQuestions}
+                          >
+                            <RefreshCcw size={16} />
+                            Refresh questions
+                          </button>
+                        </div>
+                      ) : null}
+
+
+                      {aiQuestionError ? <div className="callout callout--warning">{aiQuestionError}</div> : null}
+
+                      {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (
+                        <div className="question-studio__empty">
+                          <h4>Generate 5 tailored questions</h4>
+                          <p>
+                            We&apos;ll use your app name, type, description, link, and tester instructions
+                            to draft a focused question set.
+                          </p>
+                          <button
+                            type="button"
+                            className="button button--primary"
+                            onClick={generateQuestionSet}
+                            disabled={aiQuestionStatus === "loading"}
+                          >
+                            <Sparkles size={16} />
+                            {aiQuestionStatus === "loading" ? "Generating..." : "Generate Questions"}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="question-list question-list--studio">
+                          {displayedQuestions.map((question, index) => (
+                            <article
+                              key={question.id}
+                              ref={(element) => {
+                                questionCardRefs.current[question.id] = element;
+                              }}
+                              className="question-card question-card--studio"
+                            >
+                              {draft.questionMode === "custom" ? (
+                                <div className="question-card__meta question-card__meta--editor">
+                                  <button
+                                    type="button"
+                                    className="icon-button"
+                                    onClick={() => removeQuestion(index)}
+                                    aria-label="Remove question"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              ) : null}
+                              <div className="question-card__body">
+                                {draft.questionMode === "custom" ? (
+                                  <input
+                                    className="question-card__prompt-input"
+                                    value={question.title}
+                                    onChange={(event) => updateQuestion(index, { title: event.target.value })}
+                                    placeholder="Type your question here"
+                                  />
+                                ) : (
+                                  <h4>{question.title}</h4>
+                                )}
+                                {question.type === "multiple" ? (
+                                  draft.questionMode === "custom" ? (
+                                    <div className="option-list option-list--editor">
+                                      {(question.options ?? []).map((option, optionIndex) => (
+                                        <div key={`${question.id}-${optionIndex}`} className="option-input-row">
+                                          <span className="option-input-row__icon" aria-hidden="true" />
+                                          <input
+                                            className="option-input-row__input"
+                                            value={option}
+                                            onChange={(event) => {
+                                              const nextOptions = [...(question.options ?? [])];
+                                              nextOptions[optionIndex] = event.target.value;
+                                              updateQuestion(index, { options: nextOptions });
+                                            }}
+                                            placeholder={`Option ${optionIndex + 1}`}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="option-grid">
+                                      {(question.options ?? []).map((option) => (
+                                        <span key={`${question.id}-${option}`} className="option-pill">
+                                          {option}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )
+                                ) : (
+                                  <div className="question-card__response-preview">
+                                    <span>{draft.questionMode === "custom" ? "Written answer" : "Open response"}</span>
+                                    <p>Testers will leave written feedback here.</p>
+                                  </div>
+                                )}
+                              </div>
+                              {draft.questionMode === "custom" && question.type === "multiple" ? (
+                                <div className="question-card__custom-actions">
+                                  {(question.options?.length ?? 0) < 6 ? (
+                                    <button
+                                      type="button"
+                                      className="button button--ghost"
+                                      onClick={() =>
+                                        updateQuestion(index, {
+                                          options: [
+                                            ...(question.options ?? []),
+                                            `Option ${(question.options?.length ?? 0) + 1}`,
+                                          ],
+                                        })
+                                      }
+                                    >
+                                      <Plus size={16} />
+                                      Add option
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    className="button button--secondary question-card__duplicate-button"
+                                    onClick={() => duplicateQuestion(index)}
+                                    disabled={hasReachedCustomQuestionLimit}
+                                  >
+                                    Duplicate
+                                  </button>
+                                </div>
+                              ) : null}
+                            </article>
+                          ))}
+                        </div>
+                      )}
+
+                      {draft.questionMode === "custom" ? (
+                        <div className="question-studio__footer">
+                          <div className="inline-actions inline-actions--compact">
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              onClick={() => addQuestion("multiple")}
+                              disabled={hasReachedCustomQuestionLimit}
+                            >
+                              <Plus size={16} />
+                              Add multiple choice
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--secondary"
+                              onClick={() => addQuestion("paragraph")}
+                              disabled={hasReachedCustomQuestionLimit}
+                            >
+                              <Plus size={16} />
+                              Add paragraph question
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+
+                {currentStep === 4 ? (
+                  <div className="form-stack">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 5</span>
+                      <h2>Review before publishing</h2>
+                    </div>
+                    <div className="review-grid review-grid--single">
+                      <div className="review-card review-card--highlight">
+                        <span className="eyebrow">Submission</span>
+                        <div className="review-edit-list">
+                          <button
+                            type="button"
+                            className="review-edit-row review-edit-row--title"
+                            onClick={() => jumpToStep(0)}
+                          >
+                            <span className="review-edit-row__copy">
+                              <span className="review-edit-row__label">App name</span>
+                              <strong>{draft.productName}</strong>
+                            </span>
+                            <ArrowRight size={16} />
+                          </button>
+                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(1)}>
+                            <span className="review-edit-row__copy">
+                              <span className="review-edit-row__label">Type</span>
+                              <strong>{productTypeLabel(draft.productType)}</strong>
+                            </span>
+                            <ArrowRight size={16} />
+                          </button>
+                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                            <span className="review-edit-row__copy">
+                              <span className="review-edit-row__label">Link</span>
+                              <strong>{draft.accessUrl}</strong>
+                            </span>
+                            <ArrowRight size={16} />
+                          </button>
+                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(3)}>
+                            <span className="review-edit-row__copy">
+                              <span className="review-edit-row__label">Question type</span>
+                              <strong>{questionTypeLabel(draft.questionMode)}</strong>
+                            </span>
+                            <ArrowRight size={16} />
+                          </button>
+                          {draft.instructions.trim() ? (
+                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                              <span className="review-edit-row__copy">
+                                <span className="review-edit-row__label">Tester instructions</span>
+                                <strong>{draft.instructions}</strong>
+                              </span>
+                              <ArrowRight size={16} />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {error ? <div className="callout callout--warning">{error}</div> : null}
+
+                <div className="wizard-actions">
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
+                    disabled={currentStep === 0 || isSubmitting}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void goNext()}
+                    disabled={isSubmitting || (draft.questionMode === "ai" && !hasCurrentAiQuestions)}
+                  >
+                    {currentStep === 4 ? "Submit my app" : "Continue"}
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </Surface>
+            </div>
+          </div>
+        ) : (
+          <VerificationFlowShell title="Your app has been submitted">
+            <span className="eyebrow">Submitted</span>
+            <h2>{currentUser ? "Your app has been submitted." : "Verify your email"}</h2>
+            <p>
+              Congrats on submitting another app! Go earn credits or view your tests to see how they&apos;re doing
+            </p>
+            {!currentUser ? (
+              <div className="form-stack form-stack--narrow form-stack--verification">
+                <label className="field">
+                  <span>Email address</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </label>
+                <button type="button" className="button button--primary" onClick={sendOtp}>
+                  <Sparkles size={16} />
+                  Send one-time code
+                </button>
+              </div>
+            ) : (
+              <div className="inline-actions">
+                <button type="button" className="button button--primary" onClick={() => navigate("/earn")}>
+                  Go to Earn
+                </button>
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => navigate("/my-tests")}
+                >
+                  View My Tests
+                </button>
+              </div>
+            )}
+          </VerificationFlowShell>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+

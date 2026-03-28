@@ -1,0 +1,25 @@
+1. In Supabase, open SQL Editor and paste:
+   C:ProjectsLIKE4LIKEsupabasesql-to-paste-into-supabase.txt
+
+2. In Authentication -> Providers -> Email:
+   - Enable email login / OTP
+   - Keep user signups enabled
+
+3. In Authentication -> URL Configuration:
+   - Site URL: https://test4test.io
+
+4. In Edge Functions secrets, add:
+   OPENAI_API_KEY=your_openai_api_key
+   OPENAI_MODEL=gpt-5-mini
+
+5. Deploy the Edge Function:
+   supabase/functions/generate-ai-questions/index.ts
+
+6. Your local frontend env is already wired in:
+   C:ProjectsLIKE4LIKE.env.local
+
+7. Cloudflare Pages deploy notes are in:
+   C:ProjectsLIKE4LIKEcloudflare-pages-setup.txt
+
+8. Do NOT put the Supabase secret key in the frontend.
+   The browser should only use the publishable key.

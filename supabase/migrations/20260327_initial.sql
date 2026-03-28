@@ -1,0 +1,555 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text not null unique,
+  display_name text not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.submissions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  product_name text not null,
+  product_type text not null check (product_type in ('website', 'ios', 'android')),
+  description text not null default '',
+  target_audience text not null default '',
+  instructions text not null default '',
+  access_url text not null,
+  access_method text not null default '',
+  status text not null default 'live' check (status in ('pending_verification', 'live', 'paused', 'flagged')),
+  question_mode text not null check (question_mode in ('general', 'ai', 'custom')),
+  is_open_for_more_tests boolean not null default true,
+  estimated_minutes integer not null default 5,
+  response_count integer not null default 0,
+  last_response_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.question_set_versions (
+  id uuid primary key default gen_random_uuid(),
+  submission_id uuid not null references public.submissions (id) on delete cascade,
+  version_number integer not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  is_active boolean not null default true,
+  mode text not null check (mode in ('general', 'ai', 'custom')),
+  questions jsonb not null,
+  unique (submission_id, version_number)
+);
+
+create table if not exists public.test_responses (
+  id uuid primary key default gen_random_uuid(),
+  submission_id uuid not null references public.submissions (id) on delete cascade,
+  tester_user_id uuid not null references public.profiles (id) on delete cascade,
+  question_set_version_id uuid not null references public.question_set_versions (id) on delete cascade,
+  anonymous_label text not null,
+  status text not null check (status in ('approved', 'flagged', 'rejected')),
+  quality_score integer not null,
+  credit_awarded boolean not null default false,
+  submitted_at timestamptz not null default timezone('utc', now()),
+  duration_seconds integer not null,
+  answers jsonb not null,
+  internal_flags text[] not null default '{}',
+  unique (submission_id, tester_user_id)
+);
+
+create table if not exists public.feedback_ratings (
+  id uuid primary key default gen_random_uuid(),
+  test_response_id uuid not null references public.test_responses (id) on delete cascade,
+  rated_by_user_id uuid not null references public.profiles (id) on delete cascade,
+  rating_value text not null check (rating_value in ('smiley', 'neutral', 'frowny')),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (test_response_id, rated_by_user_id)
+);
+
+create table if not exists public.credit_transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  type text not null check (type in ('starter_credit', 'earned_test', 'adjustment', 'revocation')),
+  amount integer not null,
+  reason text not null,
+  related_test_response_id uuid references public.test_responses (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.profiles enable row level security;
+alter table public.submissions enable row level security;
+alter table public.question_set_versions enable row level security;
+alter table public.test_responses enable row level security;
+alter table public.feedback_ratings enable row level security;
+alter table public.credit_transactions enable row level security;
+
+drop policy if exists "profiles_select_own" on public.profiles;
+create policy "profiles_select_own"
+  on public.profiles for select
+  using (auth.uid() = id);
+
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_update_own"
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+drop policy if exists "submissions_select_live_or_own" on public.submissions;
+create policy "submissions_select_live_or_own"
+  on public.submissions for select
+  using (status = 'live' or auth.uid() = user_id);
+
+drop policy if exists "submissions_insert_own" on public.submissions;
+create policy "submissions_insert_own"
+  on public.submissions for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "submissions_update_own" on public.submissions;
+create policy "submissions_update_own"
+  on public.submissions for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "question_sets_select_live_or_own" on public.question_set_versions;
+create policy "question_sets_select_live_or_own"
+  on public.question_set_versions for select
+  using (
+    exists (
+      select 1
+      from public.submissions submissions
+      where submissions.id = question_set_versions.submission_id
+        and (submissions.status = 'live' or submissions.user_id = auth.uid())
+    )
+  );
+
+drop policy if exists "question_sets_insert_own" on public.question_set_versions;
+create policy "question_sets_insert_own"
+  on public.question_set_versions for insert
+  with check (
+    exists (
+      select 1
+      from public.submissions submissions
+      where submissions.id = question_set_versions.submission_id
+        and submissions.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "question_sets_update_own" on public.question_set_versions;
+create policy "question_sets_update_own"
+  on public.question_set_versions for update
+  using (
+    exists (
+      select 1
+      from public.submissions submissions
+      where submissions.id = question_set_versions.submission_id
+        and submissions.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.submissions submissions
+      where submissions.id = question_set_versions.submission_id
+        and submissions.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "responses_select_related" on public.test_responses;
+create policy "responses_select_related"
+  on public.test_responses for select
+  using (
+    tester_user_id = auth.uid()
+    or exists (
+      select 1
+      from public.submissions submissions
+      where submissions.id = test_responses.submission_id
+        and submissions.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "feedback_ratings_select_related" on public.feedback_ratings;
+create policy "feedback_ratings_select_related"
+  on public.feedback_ratings for select
+  using (
+    rated_by_user_id = auth.uid()
+    or exists (
+      select 1
+      from public.test_responses responses
+      join public.submissions submissions on submissions.id = responses.submission_id
+      where responses.id = feedback_ratings.test_response_id
+        and submissions.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "feedback_ratings_upsert_owner" on public.feedback_ratings;
+create policy "feedback_ratings_upsert_owner"
+  on public.feedback_ratings for insert
+  with check (
+    rated_by_user_id = auth.uid()
+    and exists (
+      select 1
+      from public.test_responses responses
+      join public.submissions submissions on submissions.id = responses.submission_id
+      where responses.id = feedback_ratings.test_response_id
+        and submissions.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "feedback_ratings_update_owner" on public.feedback_ratings;
+create policy "feedback_ratings_update_owner"
+  on public.feedback_ratings for update
+  using (rated_by_user_id = auth.uid())
+  with check (rated_by_user_id = auth.uid());
+
+drop policy if exists "credit_transactions_select_own" on public.credit_transactions;
+create policy "credit_transactions_select_own"
+  on public.credit_transactions for select
+  using (user_id = auth.uid());
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_display_name text;
+begin
+  next_display_name := coalesce(
+    nullif(new.raw_user_meta_data ->> 'display_name', ''),
+    nullif(new.raw_user_meta_data ->> 'full_name', ''),
+    split_part(new.email, '@', 1)
+  );
+
+  insert into public.profiles (id, email, display_name)
+  values (new.id, new.email, next_display_name)
+  on conflict (id) do update
+    set email = excluded.email,
+        display_name = excluded.display_name;
+
+  insert into public.credit_transactions (user_id, type, amount, reason)
+  select new.id, 'starter_credit', 1, 'Starter credit after first email verification'
+  where not exists (
+    select 1
+    from public.credit_transactions transactions
+    where transactions.user_id = new.id
+      and transactions.type = 'starter_credit'
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+create or replace function public.create_submission_with_questions(
+  p_product_name text,
+  p_product_type text,
+  p_description text,
+  p_target_audience text,
+  p_instructions text,
+  p_access_url text,
+  p_access_method text,
+  p_question_mode text,
+  p_questions jsonb,
+  p_estimated_minutes integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_submission_id uuid;
+begin
+  if v_user_id is null then
+    raise exception 'You must be signed in to create a submission.';
+  end if;
+
+  insert into public.submissions (
+    user_id,
+    product_name,
+    product_type,
+    description,
+    target_audience,
+    instructions,
+    access_url,
+    access_method,
+    status,
+    question_mode,
+    is_open_for_more_tests,
+    estimated_minutes
+  ) values (
+    v_user_id,
+    trim(p_product_name),
+    p_product_type,
+    coalesce(p_description, ''),
+    coalesce(p_target_audience, ''),
+    coalesce(p_instructions, ''),
+    trim(p_access_url),
+    coalesce(p_access_method, ''),
+    'live',
+    p_question_mode,
+    true,
+    greatest(coalesce(p_estimated_minutes, 5), 1)
+  )
+  returning id into v_submission_id;
+
+  insert into public.question_set_versions (
+    submission_id,
+    version_number,
+    is_active,
+    mode,
+    questions
+  ) values (
+    v_submission_id,
+    1,
+    true,
+    p_question_mode,
+    p_questions
+  );
+
+  return v_submission_id;
+end;
+$$;
+
+create or replace function public.update_question_set(
+  p_submission_id uuid,
+  p_mode text,
+  p_questions jsonb,
+  p_estimated_minutes integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_next_version integer;
+  v_question_set_id uuid;
+begin
+  if v_user_id is null then
+    raise exception 'You must be signed in to update questions.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.submissions submissions
+    where submissions.id = p_submission_id
+      and submissions.user_id = v_user_id
+  ) then
+    raise exception 'You do not have access to update this submission.';
+  end if;
+
+  update public.question_set_versions
+  set is_active = false
+  where submission_id = p_submission_id
+    and is_active = true;
+
+  select coalesce(max(version_number), 0) + 1
+  into v_next_version
+  from public.question_set_versions
+  where submission_id = p_submission_id;
+
+  insert into public.question_set_versions (
+    submission_id,
+    version_number,
+    is_active,
+    mode,
+    questions
+  ) values (
+    p_submission_id,
+    v_next_version,
+    true,
+    p_mode,
+    p_questions
+  ) returning id into v_question_set_id;
+
+  update public.submissions
+  set question_mode = p_mode,
+      estimated_minutes = greatest(coalesce(p_estimated_minutes, estimated_minutes), 1)
+  where id = p_submission_id;
+
+  return v_question_set_id;
+end;
+$$;
+
+create or replace function public.submit_test_response(
+  p_submission_id uuid,
+  p_answers jsonb,
+  p_duration_seconds integer
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_submission public.submissions%rowtype;
+  v_question_set public.question_set_versions%rowtype;
+  v_response_id uuid;
+  v_paragraph_count integer := 0;
+  v_distinct_paragraph_count integer := 0;
+  v_avg_paragraph_length numeric := 120;
+  v_duplicate_penalty integer := 0;
+  v_min_length_penalty integer := 0;
+  v_duration_penalty integer := 0;
+  v_quality_score integer := 0;
+  v_flags text[] := '{}';
+  v_credit_awarded boolean := false;
+  v_status text := 'approved';
+  v_message text;
+  v_anonymous_label text;
+begin
+  if v_user_id is null then
+    raise exception 'Verify your email before completing tests.';
+  end if;
+
+  select *
+  into v_submission
+  from public.submissions submissions
+  where submissions.id = p_submission_id
+    and submissions.status = 'live';
+
+  if not found then
+    raise exception 'That test could not be loaded.';
+  end if;
+
+  if v_submission.user_id = v_user_id then
+    raise exception 'You cannot test your own submission.';
+  end if;
+
+  if exists (
+    select 1
+    from public.test_responses responses
+    where responses.submission_id = p_submission_id
+      and responses.tester_user_id = v_user_id
+  ) then
+    raise exception 'You have already completed this test.';
+  end if;
+
+  select *
+  into v_question_set
+  from public.question_set_versions versions
+  where versions.submission_id = p_submission_id
+    and versions.is_active = true
+  limit 1;
+
+  if not found then
+    raise exception 'That question set is unavailable.';
+  end if;
+
+  select
+    count(*),
+    count(distinct lower(trim(coalesce(item ->> 'textAnswer', '')))) filter (where trim(coalesce(item ->> 'textAnswer', '')) <> ''),
+    coalesce(avg(length(trim(coalesce(item ->> 'textAnswer', '')))) filter (where trim(coalesce(item ->> 'textAnswer', '')) <> ''), 120)
+  into v_paragraph_count, v_distinct_paragraph_count, v_avg_paragraph_length
+  from jsonb_array_elements(p_answers) item
+  where item ->> 'type' = 'paragraph';
+
+  if exists (
+    select 1
+    from jsonb_array_elements(p_answers) item
+    where item ->> 'type' = 'paragraph'
+      and length(trim(coalesce(item ->> 'textAnswer', ''))) < 40
+  ) then
+    v_min_length_penalty := 18;
+    v_flags := array_append(v_flags, 'Open-text responses are too short');
+  end if;
+
+  if v_paragraph_count > 0 and v_distinct_paragraph_count <> v_paragraph_count then
+    v_duplicate_penalty := 22;
+    v_flags := array_append(v_flags, 'Duplicate text detected');
+  end if;
+
+  if coalesce(p_duration_seconds, 0) < 150 then
+    v_duration_penalty := 14;
+    v_flags := array_append(v_flags, 'Finished unusually quickly');
+  end if;
+
+  v_quality_score := greatest(
+    12,
+    least(
+      99,
+      floor(48 + (v_avg_paragraph_length / 2.3) - v_duplicate_penalty - v_min_length_penalty - v_duration_penalty)
+    )
+  );
+
+  v_credit_awarded := v_quality_score >= 55;
+  v_status := case when v_credit_awarded then 'approved' else 'flagged' end;
+  v_anonymous_label := format(
+    'Tester %s',
+    (select count(*) + 1 from public.test_responses responses where responses.submission_id = p_submission_id)
+  );
+
+  insert into public.test_responses (
+    submission_id,
+    tester_user_id,
+    question_set_version_id,
+    anonymous_label,
+    status,
+    quality_score,
+    credit_awarded,
+    duration_seconds,
+    answers,
+    internal_flags
+  ) values (
+    p_submission_id,
+    v_user_id,
+    v_question_set.id,
+    v_anonymous_label,
+    v_status,
+    v_quality_score,
+    v_credit_awarded,
+    coalesce(p_duration_seconds, 0),
+    p_answers,
+    v_flags
+  ) returning id into v_response_id;
+
+  update public.submissions
+  set response_count = response_count + 1,
+      last_response_at = timezone('utc', now())
+  where id = p_submission_id;
+
+  if v_credit_awarded then
+    insert into public.credit_transactions (
+      user_id,
+      type,
+      amount,
+      reason,
+      related_test_response_id
+    ) values (
+      v_user_id,
+      'earned_test',
+      1,
+      'Completed a usability test',
+      v_response_id
+    );
+
+    v_message := 'Test submitted and credit awarded.';
+  else
+    v_message := 'Your submission was flagged for review. Please rewrite your responses to submit.';
+  end if;
+
+  return jsonb_build_object(
+    'responseId', v_response_id,
+    'ok', v_credit_awarded,
+    'message', v_message,
+    'status', v_status,
+    'qualityScore', v_quality_score,
+    'creditAwarded', v_credit_awarded
+  );
+end;
+$$;
+
+grant execute on function public.create_submission_with_questions(text, text, text, text, text, text, text, text, jsonb, integer) to authenticated;
+grant execute on function public.update_question_set(uuid, text, jsonb, integer) to authenticated;
+grant execute on function public.submit_test_response(uuid, jsonb, integer) to authenticated;
