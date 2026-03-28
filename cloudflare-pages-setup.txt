@@ -17,4 +17,5 @@ Cloudflare Pages launch setup for test4test.io
 Notes:
 - Do not put the Supabase secret key in Cloudflare Pages browser env vars.
 - Keep OPENAI_API_KEY only in Supabase Edge Function secrets.
-- SPA routing fallback is already included via public/_redirects.
+- SPA routing is handled by wrangler.jsonc via assets.not_found_handling = single-page-application.
+- Do not add a public/_redirects rule for /index.html on Cloudflare; it causes a redirect loop with Wrangler SPA handling.
