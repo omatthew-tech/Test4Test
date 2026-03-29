@@ -1,0 +1,105 @@
+Supabase Edge Function setup for Test4Test
+=======================================
+
+Project ref:
+lteimepkxuiupbcsbcpz
+
+Function name:
+generate-ai-questions
+
+What you need before starting
+-----------------------------
+1. A Supabase personal access token from:
+   https://supabase.com/dashboard/account/tokens
+   Important: this is NOT your publishable key and NOT your secret key.
+
+2. Your OpenAI API key.
+
+3. Optional: your Supabase database password.
+   If Supabase asks for it during `supabase link`, you can either paste it or just press Enter to skip.
+
+Run these commands from:
+C:\Projects\LIKE4LIKE
+
+Step 1: Open PowerShell in the project
+--------------------------------------
+cd C:\Projects\LIKE4LIKE
+
+Step 2: Log in to the Supabase CLI
+----------------------------------
+npx supabase login
+
+If prompted, paste your personal access token.
+
+Step 3: Initialize Supabase in this repo (only once)
+----------------------------------------------------
+npx supabase init
+
+If a `supabase/config.toml` file already exists later, you do not need to run this again.
+
+Step 4: Link this repo to your Supabase project
+-----------------------------------------------
+npx supabase link --project-ref lteimepkxuiupbcsbcpz
+
+If it asks for your database password, you can:
+- paste it, or
+- press Enter to skip
+
+Step 5: Set Edge Function secrets
+---------------------------------
+npx supabase secrets set OPENAI_API_KEY=your_openai_api_key OPENAI_MODEL=gpt-5-mini --project-ref lteimepkxuiupbcsbcpz
+
+Replace `your_openai_api_key` with your real OpenAI API key.
+
+Step 6: Deploy the function
+---------------------------
+npx supabase functions deploy generate-ai-questions --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
+
+Step 7: Verify it is live
+-------------------------
+Your function URL will be:
+https://lteimepkxuiupbcsbcpz.supabase.co/functions/v1/generate-ai-questions
+
+Step 8: Test from your app
+--------------------------
+1. Make sure your frontend is using:
+   VITE_SUPABASE_URL=https://lteimepkxuiupbcsbcpz.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=your publishable key
+2. Open the app
+3. Go to Submit -> AI-generated questions
+4. Click Generate Questions
+
+If you still get "Failed to send a request to the Edge Function"
+----------------------------------------------------------------
+Check these in order:
+1. The function was actually deployed with the exact name `generate-ai-questions` and with `--no-verify-jwt`
+2. The secrets were set successfully
+3. The frontend env points to the same project ref `lteimepkxuiupbcsbcpz`
+4. In Supabase Dashboard -> Edge Functions -> generate-ai-questions -> Logs, look for the real error
+
+Useful docs
+-----------
+Deploy functions:
+https://supabase.com/docs/guides/functions/deploy
+
+Function secrets:
+https://supabase.com/docs/guides/functions/secrets
+
+CLI login:
+https://supabase.com/docs/reference/cli/introduction
+
+
+Delete account function setup
+-----------------------------
+This function is authenticated and should stay protected by JWT verification.
+
+Set the Supabase server secret for the delete-account function:
+
+npx supabase secrets set SUPABASE_SECRET_KEY=your_supabase_secret_key --project-ref lteimepkxuiupbcsbcpz
+
+Then deploy the function:
+
+npx supabase functions deploy delete-account --project-ref lteimepkxuiupbcsbcpz
+
+If you prefer, you can use SUPABASE_SERVICE_ROLE_KEY instead of SUPABASE_SECRET_KEY.
+For your current project, your `sb_secret_...` key is the simplest option.

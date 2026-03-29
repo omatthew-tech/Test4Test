@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Plus, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Minus, Plus, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { StepIndicator } from "../components/StepIndicator";
 import { useAppState } from "../context/AppStateContext";
 import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
-import { defaultAccessMethod, productTypeLabel } from "../lib/format";
+import { defaultAccessMethod, displayAccessUrl, normalizeAccessUrl, productTypeLabel } from "../lib/format";
 import {
   buildGeneralQuestions,
   buildRandomGeneralQuestions,
@@ -373,8 +373,8 @@ export function SubmitFlowPage() {
                     <div className="wizard-preview__item">
                       <small>App link</small>
                       {draft.accessUrl ? (
-                        <a href={draft.accessUrl} target="_blank" rel="noreferrer" className="wizard-preview__link">
-                          {draft.accessUrl}
+                        <a href={normalizeAccessUrl(draft.accessUrl)} target="_blank" rel="noreferrer" className="wizard-preview__link">
+                          {displayAccessUrl(draft.accessUrl)}
                         </a>
                       ) : (
                         <strong>Add your live app link</strong>
@@ -471,7 +471,7 @@ export function SubmitFlowPage() {
                         onChange={(event) =>
                           setDraft((current) => ({ ...current, accessUrl: event.target.value }))
                         }
-                        placeholder="https://your-app.example"
+                        placeholder="test4test.io"
                       />
                       <small
                         className={`helper-text ${accessValidation.valid ? "helper-text--success" : "helper-text--warning"}`}
@@ -557,7 +557,11 @@ export function SubmitFlowPage() {
                             onClick={generateQuestionSet}
                             disabled={aiQuestionStatus === "loading"}
                           >
-                            <Sparkles size={16} />
+                            {aiQuestionStatus === "loading" ? (
+                              <span className="button__spinner" aria-hidden="true" />
+                            ) : (
+                              <Sparkles size={16} />
+                            )}
                             {aiQuestionStatus === "loading" ? "Generating..." : "Generate Questions"}
                           </button>
                         </div>
@@ -572,25 +576,29 @@ export function SubmitFlowPage() {
                               className="question-card question-card--studio"
                             >
                               {draft.questionMode === "custom" ? (
-                                <div className="question-card__meta question-card__meta--editor">
-                                  <button
-                                    type="button"
-                                    className="icon-button"
-                                    onClick={() => removeQuestion(index)}
-                                    aria-label="Remove question"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
+                                <div className="question-card__topbar">
+                                  <div className="question-card__meta question-card__meta--editor">
+                                    <button
+                                      type="button"
+                                      className="icon-button"
+                                      onClick={() => removeQuestion(index)}
+                                      aria-label="Remove question"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
                                 </div>
                               ) : null}
                               <div className="question-card__body">
                                 {draft.questionMode === "custom" ? (
-                                  <input
-                                    className="question-card__prompt-input"
-                                    value={question.title}
-                                    onChange={(event) => updateQuestion(index, { title: event.target.value })}
-                                    placeholder="Type your question here"
-                                  />
+                                  <div className="question-card__prompt-row">
+                                    <input
+                                      className="question-card__prompt-input"
+                                      value={question.title}
+                                      onChange={(event) => updateQuestion(index, { title: event.target.value })}
+                                      placeholder="Type your question here"
+                                    />
+                                  </div>
                                 ) : (
                                   <h4>{question.title}</h4>
                                 )}
@@ -610,6 +618,18 @@ export function SubmitFlowPage() {
                                             }}
                                             placeholder={`Option ${optionIndex + 1}`}
                                           />
+                                          <button
+                                            type="button"
+                                            className="icon-button option-input-row__remove"
+                                            onClick={() => {
+                                              const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
+                                              updateQuestion(index, { options: nextOptions });
+                                            }}
+                                            aria-label={`Remove option ${optionIndex + 1}`}
+                                            disabled={(question.options?.length ?? 0) <= 2}
+                                          >
+                                            <Minus size={14} />
+                                          </button>
                                         </div>
                                       ))}
                                     </div>
@@ -722,7 +742,7 @@ export function SubmitFlowPage() {
                           <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Link</span>
-                              <strong>{draft.accessUrl}</strong>
+                              <strong>{displayAccessUrl(draft.accessUrl)}</strong>
                             </span>
                             <ArrowRight size={16} />
                           </button>
@@ -815,4 +835,5 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
 

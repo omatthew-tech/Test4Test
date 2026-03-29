@@ -13,7 +13,7 @@ import { useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { ReactionFaces } from "../components/ReactionFaces";
 import { useAppState } from "../context/AppStateContext";
-import { formatDateTime } from "../lib/format";
+import { formatDateTime, normalizeAccessUrl } from "../lib/format";
 import {
   buildAiQuestions,
   buildGeneralQuestions,
@@ -112,7 +112,7 @@ export function SubmissionDetailPage() {
               <h1>{submission.productName}</h1>
               <p>{submission.description || "All of your tester feedback will appear here as responses come in."}</p>
             </div>
-            <a href={submission.accessUrl} target="_blank" rel="noreferrer" className="button button--secondary">
+            <a href={normalizeAccessUrl(submission.accessUrl)} target="_blank" rel="noreferrer" className="button button--secondary">
               Open live product
               <ExternalLink size={16} />
             </a>

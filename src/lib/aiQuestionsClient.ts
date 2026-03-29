@@ -1,4 +1,5 @@
 import { Question, SubmissionDraft } from "../types";
+import { displayAccessUrl, normalizeAccessUrl } from "./format";
 import { hasSupabaseConfig, requireSupabase } from "./supabase";
 
 const AI_FUNCTION_NAME = "generate-ai-questions";
@@ -87,7 +88,7 @@ export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
     productType: draft.productType,
     description: normalizeText(draft.description),
     instructions: normalizeText(draft.instructions),
-    accessUrl: normalizeText(draft.accessUrl),
+    accessUrl: normalizeText(displayAccessUrl(draft.accessUrl)),
   });
 }
 
@@ -112,7 +113,7 @@ export async function generateAiQuestions(draft: SubmissionDraft) {
       productType: draft.productType,
       description: draft.description,
       instructions: draft.instructions,
-      accessUrl: draft.accessUrl,
+      accessUrl: normalizeAccessUrl(draft.accessUrl),
     },
   });
 

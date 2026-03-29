@@ -1,6 +1,6 @@
 import { GENERAL_QUESTION_BANK } from "../data/generalQuestionBank";
 import { Question, QuestionMode, ProductType, SubmissionDraft } from "../types";
-import { isNativeAppType } from "./format";
+import { isNativeAppType, normalizeAccessUrl } from "./format";
 
 const easeScale = [
   "Very hard",
@@ -58,8 +58,8 @@ function normalizeProductName(productName: string) {
 function personalizeGeneralPrompt(prompt: string, productName: string) {
   const name = normalizeProductName(productName);
   const normalizedPrompt = prompt
-    .replace(/this product[�']s/gi, `${name}'s`)
-    .replace(/the product[�']s/gi, `${name}'s`)
+    .replace(/this product[ï¿½']s/gi, `${name}'s`)
+    .replace(/the product[ï¿½']s/gi, `${name}'s`)
     .replace(/this product/gi, name)
     .replace(/the product/gi, name);
 
@@ -275,15 +275,33 @@ export function estimateMinutes(questions: Question[]) {
 }
 
 export function validateAccessUrl(url: string, productType: ProductType) {
+  const rawValue = url.trim();
+
+  if (!rawValue) {
+    return {
+      valid: false,
+      message: "Enter a public domain like test4test.io or a full public URL.",
+    };
+  }
+
+  const normalizedUrl = normalizeAccessUrl(rawValue);
+
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(normalizedUrl);
     const hostname = parsed.hostname.toLowerCase();
     const disallowedHosts = ["localhost", "127.0.0.1"];
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
       return {
         valid: false,
-        message: "Use a live http or https link so testers can access it.",
+        message: "Use a live public domain or http/https URL so testers can access it.",
+      };
+    }
+
+    if (!hostname.includes(".")) {
+      return {
+        valid: false,
+        message: "Enter a public domain like test4test.io or a full public URL.",
       };
     }
 
@@ -294,7 +312,7 @@ export function validateAccessUrl(url: string, productType: ProductType) {
       };
     }
 
-    if (url.toLowerCase().includes("private")) {
+    if (normalizedUrl.toLowerCase().includes("private")) {
       return {
         valid: false,
         message: "This link looks private. Please provide a public tester-accessible link.",
@@ -303,7 +321,7 @@ export function validateAccessUrl(url: string, productType: ProductType) {
 
     if (
       isNativeAppType(productType) &&
-      !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(url)
+      !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(normalizedUrl)
     ) {
       return {
         valid: true,
@@ -313,12 +331,15 @@ export function validateAccessUrl(url: string, productType: ProductType) {
 
     return {
       valid: true,
-      message: "Link looks public and usable for launch.",
+      message:
+        rawValue === normalizedUrl
+          ? "Link looks public and usable for launch."
+          : `Looks good. We'll open this as ${normalizedUrl}.`,
     };
   } catch {
     return {
       valid: false,
-      message: "Enter a valid public URL to publish the submission.",
+      message: "Enter a public domain like test4test.io or a full public URL.",
     };
   }
 }

@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
+import { displayAccessUrl, normalizeAccessUrl } from "../lib/format";
 import { getActiveQuestionSet } from "../lib/selectors";
 import { Question, TestAnswer } from "../types";
 
@@ -100,8 +101,8 @@ export function TestSessionPage() {
           <div className="test-session__intro-card">
             <div className="test-session__resource">
               <span className="test-session__label">App link</span>
-              <a href={submission.accessUrl} target="_blank" rel="noreferrer" className="test-session__link">
-                <span>{submission.accessUrl}</span>
+              <a href={normalizeAccessUrl(submission.accessUrl)} target="_blank" rel="noreferrer" className="test-session__link">
+                <span>{displayAccessUrl(submission.accessUrl)}</span>
                 <ExternalLink size={15} />
               </a>
             </div>

@@ -1,17 +1,36 @@
-import { ArrowRight, Coins, LogOut, UserRound } from "lucide-react";
-import { Link } from "react-router-dom";
+﻿import { useState } from "react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  LogOut,
+  Mail,
+  PencilLine,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { formatDateTime } from "../lib/format";
 import { getCreditBalance, getMySubmissions } from "../lib/selectors";
 
 export function ProfilePage() {
-  const { state, currentUser, signOut } = useAppState();
+  const navigate = useNavigate();
+  const { state, currentUser, signOut, changeEmail, deleteAccount } = useAppState();
   const credits = getCreditBalance(state, currentUser?.id ?? null);
   const mySubmissions = getMySubmissions(state);
   const myLedger = state.creditTransactions.filter(
     (transaction) => transaction.userId === currentUser?.id,
   );
+
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [nextEmail, setNextEmail] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!currentUser) {
     return (
@@ -36,82 +55,256 @@ export function ProfilePage() {
     );
   }
 
+  const startEmailEdit = () => {
+    setNextEmail(currentUser.email);
+    setEmailMessage("");
+    setIsEditingEmail(true);
+  };
+
+  const handleChangeEmail = async () => {
+    setIsSavingEmail(true);
+    const result = await changeEmail(nextEmail);
+    setEmailMessage(result.message);
+    setIsSavingEmail(false);
+
+    if (result.ok) {
+      setIsEditingEmail(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    await signOut();
+    navigate("/");
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    const result = await deleteAccount();
+    setDeleteMessage(result.message);
+    setIsDeletingAccount(false);
+
+    if (result.ok) {
+      setShowDeleteConfirm(false);
+      navigate("/");
+    }
+  };
+
   return (
     <AppShell title="Profile" eyebrowLabel={null}>
-      <div className="page-stack">
-        <div className="stats-grid">
-          <Surface className="stat-panel">
-            <small>Signed in as</small>
-            <strong>{currentUser.displayName}</strong>
-            <span>{currentUser.email}</span>
-          </Surface>
-          <Surface className="stat-panel">
-            <small>Credit balance</small>
-            <strong>{credits}</strong>
-            <span>Earn more by testing live apps from other founders.</span>
-          </Surface>
-          <Surface className="stat-panel">
-            <small>Your submissions</small>
-            <strong>{mySubmissions.length}</strong>
-            <span>Keep them live to collect more feedback over time.</span>
-          </Surface>
-        </div>
+      <div className="page-stack profile-page profile-page--settings">
+        <Surface className="profile-hero-card">
+          <div className="profile-hero-card__copy">
+            <span className="eyebrow">Account</span>
+            <h1>{currentUser.displayName}</h1>
+            <p>Manage your sign-in email, review your credits, and keep your account secure.</p>
+          </div>
+          <div className="profile-hero-card__stats">
+            <div className="profile-hero-stat">
+              <small>Credits</small>
+              <strong>{credits}</strong>
+            </div>
+            <div className="profile-hero-stat">
+              <small>Your apps</small>
+              <strong>{mySubmissions.length}</strong>
+            </div>
+          </div>
+        </Surface>
 
-        <div className="detail-grid">
-          <Surface>
-            <div className="section-heading section-heading--split">
+        <div className="profile-settings-grid">
+          <Surface className="profile-panel profile-panel--account">
+            <div className="section-heading section-heading--split profile-section-heading">
               <div>
-                <span className="eyebrow">Credits</span>
-                <h2>Transaction history</h2>
+                <span className="eyebrow">Sign-in</span>
+                <h2>Account settings</h2>
               </div>
-              <button type="button" className="button button--secondary" onClick={() => void signOut()}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => void handleSignOut()}
+                disabled={isSigningOut}
+              >
                 <LogOut size={16} />
-                Sign out
+                {isSigningOut ? "Signing out..." : "Sign out"}
               </button>
             </div>
-            <div className="list-stack">
-              {myLedger.length > 0 ? (
-                myLedger.map((transaction) => (
-                  <article key={transaction.id} className="list-row">
-                    <div>
-                      <strong>{transaction.reason}</strong>
-                      <p>{formatDateTime(transaction.createdAt)}</p>
-                    </div>
-                    <span className={`pill ${transaction.amount > 0 ? "pill--accent" : ""}`}>
-                      {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount} credits
-                    </span>
-                  </article>
-                ))
-              ) : (
-                <p className="helper-text">Your credit history will appear here after you verify and complete tests.</p>
-              )}
+
+            <div className="profile-email-card">
+              <div className="profile-email-card__icon">
+                <Mail size={18} />
+              </div>
+              <div className="profile-email-card__content">
+                <small>Current email</small>
+                <strong>{currentUser.email}</strong>
+                <p>We’ll send sign-in codes, confirmations, and account updates here.</p>
+              </div>
             </div>
+
+            {isEditingEmail ? (
+              <div className="profile-inline-form">
+                <label className="field">
+                  <span>New email address</span>
+                  <input
+                    type="email"
+                    value={nextEmail}
+                    onChange={(event) => setNextEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                </label>
+                <div className="inline-actions profile-inline-actions">
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void handleChangeEmail()}
+                    disabled={isSavingEmail || !nextEmail.trim()}
+                  >
+                    {isSavingEmail ? "Saving..." : "Send change email link"}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--ghost"
+                    onClick={() => {
+                      setIsEditingEmail(false);
+                      setEmailMessage("");
+                    }}
+                    disabled={isSavingEmail}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="button button--secondary profile-action-button" onClick={startEmailEdit}>
+                <PencilLine size={16} />
+                Change email
+              </button>
+            )}
+
+            {emailMessage ? <div className="callout callout--soft">{emailMessage}</div> : null}
           </Surface>
 
-          <Surface>
-            <div className="section-heading">
-              <span className="eyebrow">Quick links</span>
-              <h2>Keep the loop moving</h2>
+          <Surface className="profile-panel profile-panel--links">
+            <div className="section-heading profile-section-heading">
+              <div>
+                <span className="eyebrow">Shortcuts</span>
+                <h2>Keep things moving</h2>
+              </div>
             </div>
             <div className="list-stack">
-              <Link to="/earn" className="list-row list-row--link">
+              <Link to="/earn" className="list-row list-row--link profile-link-row">
                 <div>
-                  <strong>Earn more credits</strong>
+                  <strong>Earn credits</strong>
                   <p>Review another live app and add to your balance.</p>
                 </div>
-                <Coins size={18} />
+                <ArrowRight size={18} />
               </Link>
-              <Link to="/my-tests" className="list-row list-row--link">
+              <Link to="/my-tests" className="list-row list-row--link profile-link-row">
                 <div>
                   <strong>View your tests</strong>
-                  <p>Check incoming feedback and question performance.</p>
+                  <p>Check your apps, feedback, and live response summaries.</p>
                 </div>
                 <ArrowRight size={18} />
               </Link>
             </div>
           </Surface>
+
+          <Surface className="profile-panel profile-panel--danger">
+            <div className="section-heading profile-section-heading">
+              <div>
+                <span className="eyebrow">Danger zone</span>
+                <h2>Delete account</h2>
+              </div>
+            </div>
+            <p className="profile-danger-copy">
+              Deleting your account permanently removes your apps, responses, ratings, and credits.
+            </p>
+            <button
+              type="button"
+              className="button button--secondary profile-delete-button"
+              onClick={() => {
+                setDeleteMessage("");
+                setShowDeleteConfirm(true);
+              }}
+            >
+              <Trash2 size={16} />
+              Delete account
+            </button>
+            {deleteMessage ? <div className="callout callout--warning">{deleteMessage}</div> : null}
+          </Surface>
         </div>
+
+        <Surface className="profile-panel profile-panel--ledger">
+          <div className="section-heading profile-section-heading">
+            <div>
+              <span className="eyebrow">Credits</span>
+              <h2>Transaction history</h2>
+            </div>
+          </div>
+          <div className="list-stack">
+            {myLedger.length > 0 ? (
+              myLedger.map((transaction) => (
+                <article key={transaction.id} className="list-row">
+                  <div>
+                    <strong>{transaction.reason}</strong>
+                    <p>{formatDateTime(transaction.createdAt)}</p>
+                  </div>
+                  <span className={`pill ${transaction.amount > 0 ? "pill--accent" : ""}`}>
+                    {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount} credits
+                  </span>
+                </article>
+              ))
+            ) : (
+              <p className="helper-text">Your credit history will appear here after you complete live tests.</p>
+            )}
+          </div>
+        </Surface>
+
+        {showDeleteConfirm ? (
+          <div className="account-modal-backdrop" role="presentation" onClick={() => setShowDeleteConfirm(false)}>
+            <div
+              className="account-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Confirm account deletion"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="account-modal__header">
+                <div className="account-modal__badge">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2>Delete your account?</h2>
+                  <p>
+                    This permanently removes your Test4Test account, your apps, your feedback, and your credits.
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="inline-actions profile-inline-actions profile-inline-actions--danger">
+                <button
+                  type="button"
+                  className="button button--ghost"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeletingAccount}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="button button--primary profile-delete-confirm"
+                  onClick={() => void handleDeleteAccount()}
+                  disabled={isDeletingAccount}
+                >
+                  <Trash2 size={16} />
+                  {isDeletingAccount ? "Deleting account..." : "Yes, delete my account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </AppShell>
   );
 }
+

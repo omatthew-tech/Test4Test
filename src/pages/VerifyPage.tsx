@@ -40,7 +40,7 @@ export function VerifyPage() {
     setIsSubmitting(false);
 
     if (result.ok) {
-      navigate(result.submissionId ? `/my-tests/${result.submissionId}` : "/my-tests");
+      navigate("/earn");
     }
   };
 
@@ -92,3 +92,4 @@ export function VerifyPage() {
     </AppShell>
   );
 }
+

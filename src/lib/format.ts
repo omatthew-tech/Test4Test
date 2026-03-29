@@ -29,6 +29,40 @@ export function minutesLabel(value: number) {
   return `${value} min`;
 }
 
+export function normalizeAccessUrl(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
+  }
+
+  return `https://${trimmed}`;
+}
+
+export function displayAccessUrl(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(normalizeAccessUrl(trimmed));
+    const pathname = parsed.pathname === "/" ? "" : parsed.pathname;
+    return `${parsed.hostname}${pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return trimmed;
+  }
+}
+
 export function productTypeLabel(value: ProductType) {
   switch (value) {
     case "ios":

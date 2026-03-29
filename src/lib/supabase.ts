@@ -1,7 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
-const supabasePublishableKey =
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
+export const supabasePublishableKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ??
   import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ??
   "";
@@ -27,3 +27,5 @@ export function requireSupabase() {
 
   return supabase;
 }
+
+

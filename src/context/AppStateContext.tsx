@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
-import { productTypeBadge } from "../lib/format";
+import { normalizeAccessUrl, productTypeBadge } from "../lib/format";
 import {
   clearPendingSubmission,
   clearStoredOtpChallenge,
@@ -21,7 +21,7 @@ import {
 } from "../lib/pendingSubmission";
 import { estimateMinutes } from "../lib/questions";
 import { getCurrentUser } from "../lib/selectors";
-import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
+import { hasSupabaseConfig, requireSupabase, supabasePublishableKey, supabaseUrl } from "../lib/supabase";
 import {
   AppState,
   CreditTransaction,
@@ -147,6 +147,8 @@ interface AppStateContextValue {
     notes: string,
   ) => Promise<void>;
   resetDemo: () => Promise<void>;
+  changeEmail: (nextEmail: string) => Promise<{ ok: boolean; message: string }>;
+  deleteAccount: () => Promise<{ ok: boolean; message: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -482,7 +484,7 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
     p_description: draft.description,
     p_target_audience: draft.targetAudience,
     p_instructions: draft.instructions,
-    p_access_url: draft.accessUrl,
+    p_access_url: normalizeAccessUrl(draft.accessUrl),
     p_access_method: draft.accessMethod,
     p_question_mode: draft.questionMode,
     p_questions: questions,
@@ -774,6 +776,100 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       async resetDemo() {
         return;
       },
+      async changeEmail(nextEmail: string) {
+        if (!currentUser) {
+          return { ok: false, message: "Sign in to change your email." };
+        }
+
+        const normalizedEmail = nextEmail.trim().toLowerCase();
+
+        if (!normalizedEmail) {
+          return { ok: false, message: "Enter the new email you want to use." };
+        }
+
+        if (normalizedEmail === currentUser.email.toLowerCase()) {
+          return { ok: false, message: "That is already your current email." };
+        }
+
+        const supabase = requireSupabase();
+        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/profile` : undefined;
+        const { error } = await supabase.auth.updateUser(
+          { email: normalizedEmail },
+          { emailRedirectTo: redirectTo },
+        );
+
+        if (error) {
+          return { ok: false, message: error.message };
+        }
+
+        return {
+          ok: true,
+          message:
+            "Check your inboxes to confirm the new email address. Your sign-in email stays the same until you finish confirmation.",
+        };
+      },
+      async deleteAccount() {
+        if (!currentUser) {
+          return { ok: false, message: "Sign in to delete your account." };
+        }
+
+        if (!supabaseUrl || !supabasePublishableKey) {
+          return { ok: false, message: "Missing Supabase configuration." };
+        }
+
+        const supabase = requireSupabase();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session?.access_token) {
+          return { ok: false, message: sessionError?.message ?? "We could not verify your session." };
+        }
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: supabasePublishableKey,
+          },
+          body: JSON.stringify({}),
+        });
+
+        let payload: { error?: string; message?: string } | null = null;
+
+        try {
+          payload = (await response.json()) as { error?: string; message?: string };
+        } catch {
+          payload = null;
+        }
+
+        if (!response.ok) {
+          return {
+            ok: false,
+            message: payload?.error ?? payload?.message ?? "We could not delete your account right now.",
+          };
+        }
+
+        clearStoredOtpChallenge();
+
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // Ignore local sign-out errors after the user has already been deleted server-side.
+        }
+
+        setState({
+          ...emptyState,
+          otpChallenge: null,
+        });
+
+        return {
+          ok: true,
+          message: payload?.message ?? "Your account has been deleted.",
+        };
+      },
       async signOut() {
         if (!hasSupabaseConfig) {
           return;
@@ -801,3 +897,7 @@ export function useAppState() {
 
   return context;
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
@@ -28,7 +28,7 @@ export function AppShell({
   const credits = getCreditBalance(state, currentUser?.id ?? null);
   const [hasBrandLogo, setHasBrandLogo] = useState(false);
   const showMemberNav = Boolean(currentUser);
-  const profileHref = currentUser ? "/profile" : "/submit";
+  const profileHref = currentUser ? "/profile" : "/sign-in";
 
   useEffect(() => {
     const image = new Image();
@@ -107,3 +107,4 @@ export function Surface({
 }) {
   return <section className={`surface ${className}`.trim()}>{children}</section>;
 }
+

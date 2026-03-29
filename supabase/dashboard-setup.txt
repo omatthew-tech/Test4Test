@@ -23,3 +23,9 @@
 
 8. Do NOT put the Supabase secret key in the frontend.
    The browser should only use the publishable key.
+
+9. For account deletion, add this secret in Supabase Edge Functions:
+   SUPABASE_SECRET_KEY=your sb_secret key
+
+10. Deploy this function too:
+   supabase/functions/delete-account/index.ts
