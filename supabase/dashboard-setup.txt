@@ -1,5 +1,5 @@
 1. In Supabase, open SQL Editor and paste:
-   C:ProjectsLIKE4LIKEsupabasesql-to-paste-into-supabase.txt
+   C:\Projects\LIKE4LIKE\supabase\sql-to-paste-into-supabase.txt
 
 2. In Authentication -> Providers -> Email:
    - Enable email login / OTP
@@ -8,18 +8,18 @@
 3. In Authentication -> URL Configuration:
    - Site URL: https://test4test.io
 
-4. In Edge Functions secrets, add:
+4. In Edge Functions secrets, add for AI questions:
    OPENAI_API_KEY=your_openai_api_key
    OPENAI_MODEL=gpt-5-mini
 
-5. Deploy the Edge Function:
+5. Deploy the AI Edge Function:
    supabase/functions/generate-ai-questions/index.ts
 
 6. Your local frontend env is already wired in:
-   C:ProjectsLIKE4LIKE.env.local
+   C:\Projects\LIKE4LIKE\.env.local
 
 7. Cloudflare Pages deploy notes are in:
-   C:ProjectsLIKE4LIKEcloudflare-pages-setup.txt
+   C:\Projects\LIKE4LIKE\cloudflare-pages-setup.txt
 
 8. Do NOT put the Supabase secret key in the frontend.
    The browser should only use the publishable key.
@@ -28,4 +28,12 @@
    SUPABASE_SECRET_KEY=your sb_secret key
 
 10. Deploy this function too:
-   supabase/functions/delete-account/index.ts
+    supabase/functions/delete-account/index.ts
+
+11. For test result notification emails, also run:
+    - C:\Projects\LIKE4LIKE\supabase\test-results-email-update.txt
+    - set SUPABASE_SECRET_KEY, SMTP2GO_API_KEY, SMTP2GO_SENDER, APP_BASE_URL secrets
+    - deploy supabase/functions/send-test-results-notification/index.ts
+
+12. Detailed notification setup is in:
+    C:\Projects\LIKE4LIKE\supabase\send-test-results-notification-setup.txt

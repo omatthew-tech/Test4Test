@@ -1,0 +1,22 @@
+Delete account setup for Test4Test
+================================
+
+1. In Supabase SQL Editor, paste the contents of:
+   C:\Projects\LIKE4LIKE\supabase\delete-account-sql.txt
+
+2. In PowerShell from C:\Projects\LIKE4LIKE, set the delete-account function secret:
+   npx supabase secrets set SUPABASE_SECRET_KEY=your_supabase_secret_key --project-ref lteimepkxuiupbcsbcpz
+
+3. Deploy the delete-account function:
+   npx supabase functions deploy delete-account --project-ref lteimepkxuiupbcsbcpz
+
+4. Test in the app:
+   - Open Profile
+   - Click Delete account
+   - Confirm deletion
+
+Notes
+-----
+- The frontend should only use your publishable key.
+- The delete-account function must use your Supabase secret/service-role key only on the server side.
+- If you pasted your secret key into chat or anywhere public, rotate it afterward.

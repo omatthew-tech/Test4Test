@@ -183,7 +183,7 @@ textarea {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   padding: 18px 24px;
   border-bottom: 1px solid rgba(216, 208, 200, 0.8);
@@ -292,7 +292,7 @@ textarea {
 .page-header {
   display: flex;
   align-items: end;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -386,7 +386,7 @@ textarea {
 .section-heading--split {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -585,7 +585,7 @@ textarea {
 .chart-card__header {
   display: flex;
   align-items: start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -853,7 +853,7 @@ textarea {
 }
 
 .toolbar {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .toolbar__group {
@@ -890,7 +890,7 @@ textarea {
   background: linear-gradient(180deg, rgba(255, 244, 234, 0.9), rgba(255, 254, 252, 0.96));
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 24px;
 }
 
@@ -904,7 +904,7 @@ textarea {
 .list-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
 }
 
@@ -951,7 +951,7 @@ textarea {
 
   .topbar__meta {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }
 
@@ -987,7 +987,7 @@ textarea {
 
   .topnav {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 
   .topnav__link {
@@ -1346,7 +1346,7 @@ body::after {
   min-height: 128px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .response-browser__list {
@@ -1808,7 +1808,7 @@ body {
   .topnav {
     order: 3;
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
     overflow-x: auto;
     padding-bottom: 4px;
   }
@@ -1853,7 +1853,7 @@ body {
 
   .topbar__actions {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
     flex-wrap: wrap;
   }
 
@@ -1957,7 +1957,7 @@ body {
 }
 
 .topbar--guest {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 @media (max-width: 760px) {
@@ -2128,7 +2128,7 @@ body {
 .simple-start-card__topline {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -2465,7 +2465,7 @@ body {
 .question-studio__footer {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   padding: 18px 20px;
   border-radius: 22px;
@@ -2484,7 +2484,7 @@ body {
   }
 
   .question-mode-button {
-    justify-content: flex-start;
+    justify-content: space-between;
     text-align: left;
   }
 
@@ -2519,7 +2519,7 @@ body {
 .question-studio__header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 14px;
 }
 
@@ -2559,7 +2559,7 @@ body {
 .question-studio__note {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   padding: 2px 2px 6px;
 }
@@ -2640,7 +2640,7 @@ body {
   }
 
   .question-mode-button {
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }
 /* Simple form-style wizard */
@@ -2795,7 +2795,7 @@ body {
 
 .question-mode-button {
   min-height: 52px;
-  justify-content: flex-start;
+  justify-content: space-between;
   text-align: left;
   border-radius: 10px;
   border: 1px solid #dadce0;
@@ -2809,7 +2809,7 @@ body {
 
 .question-studio__note {
   align-items: baseline;
-  justify-content: flex-start;
+  justify-content: space-between;
   padding: 0;
 }
 
@@ -2926,7 +2926,7 @@ body {
 .question-studio__header {
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .question-mode-strip {
@@ -2940,7 +2940,7 @@ body {
 
 .question-card__meta {
   min-height: 0;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .question-card__lead,
@@ -2965,7 +2965,7 @@ body {
   }
 
   .question-mode-button {
-    justify-content: flex-start;
+    justify-content: space-between;
     text-align: left;
   }
 }
@@ -3079,7 +3079,7 @@ body {
 /* Question studio action placement */
 .question-studio__actions {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   margin-top: -4px;
 }
 
@@ -3151,7 +3151,7 @@ body {
 }
 
 .question-card--studio .button--ghost {
-  justify-content: flex-start;
+  justify-content: space-between;
   min-height: 44px;
   border-style: dashed;
 }
@@ -3268,7 +3268,7 @@ body {
 
 .question-card__custom-actions .button--ghost {
   width: 100%;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 
@@ -3307,7 +3307,7 @@ body {
   color: #202124;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   text-align: left;
   transition: border-color 150ms ease, background-color 150ms ease;
@@ -3446,7 +3446,7 @@ body {
 }
 
 .verify-actions {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .verify-actions .button {
@@ -3598,7 +3598,7 @@ body {
   min-width: 172px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: flex-end;
   gap: 20px;
 }
@@ -4031,7 +4031,7 @@ body {
 .submission-card__topline {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -4277,7 +4277,7 @@ body {
 .my-test-row__header {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 20px;
 }
 
@@ -4355,7 +4355,7 @@ body {
   margin-top: 22px;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
 }
 
@@ -4364,6 +4364,7 @@ body {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
 .my-test-row__metric {
@@ -4393,6 +4394,8 @@ body {
 
 .my-test-row .button {
   min-width: 156px;
+  margin-left: auto;
+  align-self: flex-end;
 }
 
 @media (max-width: 760px) {
@@ -4412,6 +4415,8 @@ body {
 
   .my-test-row .button {
     width: 100%;
+    margin-left: 0;
+    align-self: stretch;
   }
 }
 
@@ -4430,7 +4435,7 @@ body {
 .results-header-card__title-row {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 20px;
 }
 
@@ -4493,7 +4498,7 @@ body {
 .results-section__header {
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
   margin-bottom: 22px;
 }
@@ -4618,7 +4623,7 @@ body {
 .results-modal__header {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
 }
 
@@ -4775,7 +4780,7 @@ body {
 .results-individual-shell__header {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
 }
 
@@ -4814,7 +4819,7 @@ body {
 .results-individual-shell__actions {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -4870,13 +4875,13 @@ body {
 
   .results-individual-nav {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }
 
 /* AI question generation */
 .question-studio__note--ai {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .question-studio__empty {
@@ -4910,7 +4915,7 @@ body {
 
 @media (max-width: 960px) {
   .question-studio__note--ai {
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }
 
@@ -5064,11 +5069,11 @@ body {
 }
 
 .profile-inline-actions {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .profile-inline-actions--danger {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .profile-action-button,
@@ -5225,13 +5230,13 @@ body {
 }
 
 .sign-in-panel__actions {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .sign-in-panel__footer {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
   margin-top: 4px;
   padding-top: 18px;

@@ -20,6 +20,7 @@ import {
   storeOtpChallenge,
 } from "../lib/pendingSubmission";
 import { estimateMinutes } from "../lib/questions";
+import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { getCurrentUser } from "../lib/selectors";
 import { hasSupabaseConfig, requireSupabase, supabasePublishableKey, supabaseUrl } from "../lib/supabase";
 import {
@@ -723,9 +724,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: error.message };
         }
 
+        const result = (data ?? {}) as SubmissionRpcResult;
         await refreshState();
 
-        const result = (data ?? {}) as SubmissionRpcResult;
+        if (result.responseId) {
+          void notifySubmissionOwnerAboutNewResult(result.responseId);
+        }
+
         return {
           ok: Boolean(result.ok),
           message: result.message ?? "Test submitted.",
@@ -827,15 +832,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: sessionError?.message ?? "We could not verify your session." };
         }
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: supabasePublishableKey,
-          },
-          body: JSON.stringify({}),
-        });
+        let response: Response;
+
+        try {
+          response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: supabasePublishableKey,
+            },
+            body: JSON.stringify({}),
+          });
+        } catch {
+          return {
+            ok: false,
+            message:
+              "Delete account is not configured yet. Deploy the Supabase delete-account function and add the required server secrets.",
+          };
+        }
 
         let payload: { error?: string; message?: string } | null = null;
 
@@ -846,9 +861,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         if (!response.ok) {
+          let message = payload?.error ?? payload?.message ?? "";
+
+          if (!message) {
+            if (response.status === 401) {
+              message = "Please sign in again before deleting your account.";
+            } else if (response.status === 404) {
+              message = "Delete account is not configured yet. Deploy the Supabase delete-account function first.";
+            } else {
+              message = "We could not delete your account right now.";
+            }
+          }
+
           return {
             ok: false,
-            message: payload?.error ?? payload?.message ?? "We could not delete your account right now.",
+            message,
           };
         }
 
@@ -867,7 +894,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         return {
           ok: true,
-          message: payload?.message ?? "Your account has been deleted.",
+          message: payload?.message ?? "Your account and associated data have been deleted.",
         };
       },
       async signOut() {

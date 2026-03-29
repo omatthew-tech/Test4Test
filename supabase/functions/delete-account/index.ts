@@ -1,4 +1,4 @@
-﻿import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +65,16 @@ Deno.serve(async (request) => {
     return json({ error: deleteError.message }, 500);
   }
 
-  return json({ ok: true, message: "Your account has been deleted." });
-});
+  const { error: cleanupError } = await admin.rpc("delete_account_data_for_user", {
+    target_user_id: user.id,
+  });
 
+  if (cleanupError) {
+    console.error("delete_account_data_for_user failed", cleanupError);
+  }
+
+  return json({
+    ok: true,
+    message: "Your account and associated data have been deleted.",
+  });
+});

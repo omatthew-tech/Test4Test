@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,17 +11,10 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { formatDateTime } from "../lib/format";
-import { getCreditBalance, getMySubmissions } from "../lib/selectors";
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { state, currentUser, signOut, changeEmail, deleteAccount } = useAppState();
-  const credits = getCreditBalance(state, currentUser?.id ?? null);
-  const mySubmissions = getMySubmissions(state);
-  const myLedger = state.creditTransactions.filter(
-    (transaction) => transaction.userId === currentUser?.id,
-  );
+  const { currentUser, signOut, changeEmail, deleteAccount } = useAppState();
 
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nextEmail, setNextEmail] = useState("");
@@ -80,38 +73,32 @@ export function ProfilePage() {
 
   const handleDeleteAccount = async () => {
     setIsDeletingAccount(true);
-    const result = await deleteAccount();
-    setDeleteMessage(result.message);
-    setIsDeletingAccount(false);
 
-    if (result.ok) {
-      setShowDeleteConfirm(false);
-      navigate("/");
+    try {
+      const result = await deleteAccount();
+      setDeleteMessage(result.message);
+
+      if (result.ok) {
+        setShowDeleteConfirm(false);
+        navigate("/");
+      }
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
   return (
     <AppShell title="Profile" eyebrowLabel={null}>
       <div className="page-stack profile-page profile-page--settings">
-        <Surface className="profile-hero-card">
+        <Surface className="profile-hero-card profile-hero-card--simple">
           <div className="profile-hero-card__copy">
             <span className="eyebrow">Account</span>
             <h1>{currentUser.displayName}</h1>
-            <p>Manage your sign-in email, review your credits, and keep your account secure.</p>
-          </div>
-          <div className="profile-hero-card__stats">
-            <div className="profile-hero-stat">
-              <small>Credits</small>
-              <strong>{credits}</strong>
-            </div>
-            <div className="profile-hero-stat">
-              <small>Your apps</small>
-              <strong>{mySubmissions.length}</strong>
-            </div>
+            <p>Manage your sign-in email, stay secure, and control your Test4Test account.</p>
           </div>
         </Surface>
 
-        <div className="profile-settings-grid">
+        <div className="profile-settings-grid profile-settings-grid--simple">
           <Surface className="profile-panel profile-panel--account">
             <div className="section-heading section-heading--split profile-section-heading">
               <div>
@@ -136,7 +123,7 @@ export function ProfilePage() {
               <div className="profile-email-card__content">
                 <small>Current email</small>
                 <strong>{currentUser.email}</strong>
-                <p>We’ll send sign-in codes, confirmations, and account updates here.</p>
+                <p>Weâ€™ll send sign-in codes, confirmations, and account updates here.</p>
               </div>
             </div>
 
@@ -184,31 +171,6 @@ export function ProfilePage() {
             {emailMessage ? <div className="callout callout--soft">{emailMessage}</div> : null}
           </Surface>
 
-          <Surface className="profile-panel profile-panel--links">
-            <div className="section-heading profile-section-heading">
-              <div>
-                <span className="eyebrow">Shortcuts</span>
-                <h2>Keep things moving</h2>
-              </div>
-            </div>
-            <div className="list-stack">
-              <Link to="/earn" className="list-row list-row--link profile-link-row">
-                <div>
-                  <strong>Earn credits</strong>
-                  <p>Review another live app and add to your balance.</p>
-                </div>
-                <ArrowRight size={18} />
-              </Link>
-              <Link to="/my-tests" className="list-row list-row--link profile-link-row">
-                <div>
-                  <strong>View your tests</strong>
-                  <p>Check your apps, feedback, and live response summaries.</p>
-                </div>
-                <ArrowRight size={18} />
-              </Link>
-            </div>
-          </Surface>
-
           <Surface className="profile-panel profile-panel--danger">
             <div className="section-heading profile-section-heading">
               <div>
@@ -230,35 +192,8 @@ export function ProfilePage() {
               <Trash2 size={16} />
               Delete account
             </button>
-            {deleteMessage ? <div className="callout callout--warning">{deleteMessage}</div> : null}
-          </Surface>
+            </Surface>
         </div>
-
-        <Surface className="profile-panel profile-panel--ledger">
-          <div className="section-heading profile-section-heading">
-            <div>
-              <span className="eyebrow">Credits</span>
-              <h2>Transaction history</h2>
-            </div>
-          </div>
-          <div className="list-stack">
-            {myLedger.length > 0 ? (
-              myLedger.map((transaction) => (
-                <article key={transaction.id} className="list-row">
-                  <div>
-                    <strong>{transaction.reason}</strong>
-                    <p>{formatDateTime(transaction.createdAt)}</p>
-                  </div>
-                  <span className={`pill ${transaction.amount > 0 ? "pill--accent" : ""}`}>
-                    {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount} credits
-                  </span>
-                </article>
-              ))
-            ) : (
-              <p className="helper-text">Your credit history will appear here after you complete live tests.</p>
-            )}
-          </div>
-        </Surface>
 
         {showDeleteConfirm ? (
           <div className="account-modal-backdrop" role="presentation" onClick={() => setShowDeleteConfirm(false)}>
@@ -300,6 +235,7 @@ export function ProfilePage() {
                   {isDeletingAccount ? "Deleting account..." : "Yes, delete my account"}
                 </button>
               </div>
+              {deleteMessage ? <div className="callout callout--warning">{deleteMessage}</div> : null}
             </div>
           </div>
         ) : null}
@@ -307,4 +243,3 @@ export function ProfilePage() {
     </AppShell>
   );
 }
-
