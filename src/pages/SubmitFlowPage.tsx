@@ -586,7 +586,7 @@ export function SubmitFlowPage() {
                   <div className="form-stack">
                     <div className="section-heading">
                       <span className="eyebrow">Step 3</span>
-                      <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What&apos;s the link to your app?"}</h2>
+                      <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
                       {selectedProductTypes.length > 1 ? (
                         <p>Add one public link for each selected platform.</p>
                       ) : null}
