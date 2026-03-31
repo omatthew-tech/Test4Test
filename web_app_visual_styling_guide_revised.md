@@ -152,7 +152,7 @@ The type system should feel modern and calm with a little softness in the headli
 - nothing should look overly geometric or too editorial
 
 ### Type scale
-Use the 8px-based Fibonacci rhythm as the starting point, with practical exceptions where needed.
+Use the visual rhythm of the system as the starting point, with practical exceptions where needed.
 
 **Display / hero:** `64px`  
 **Page title / H1:** `40px`  
@@ -183,51 +183,53 @@ Use the 8px-based Fibonacci rhythm as the starting point, with practical excepti
 ---
 
 ## 4. Spacing and sizing system
-Use an 8px-based Fibonacci-derived scale as the core rhythm of the product.
+Use a simplified Fibonacci spacing scale as the main rhythm of the product. Keep the number of official values small so the system stays easy to apply.
 
-### Primary scale
+### Core spacing scale
 - `8px`
-- `16px`
-- `24px`
-- `40px`
-- `64px`
-- `104px`
+- `13px`
+- `21px`
+- `34px`
+- `55px`
+- `89px`
 
 This should drive most spacing, padding, section rhythm, gap values, and major sizing decisions.
 
-### Practical exceptions
-Small utility values are allowed when needed for sharp UI fit and alignment, especially:
-- `4px`
-- `12px`
-- `20px`
-- `32px`
-- `48px`
+### Usage guidance
+- `8px`: tight gaps, icon-to-label spacing, small internal alignment
+- `13px`: compact control groups, dense UI clusters
+- `21px`: default vertical rhythm inside forms, cards, and content blocks
+- `34px`: card padding, medium group spacing, larger component gaps
+- `55px`: standard section spacing
+- `89px`: hero spacing and major layout separation
+
+### Support values
+Use these only when truly needed:
+- `4px` for micro-adjustments
+- `16px` for common control sizing or where an even value is important for implementation
 
 These are support values, not the core rhythm.
 
 ### Spacing rules
-- default internal component spacing should usually land on `8`, `16`, or `24`
-- card and panel padding should usually be `24` or `40`
-- large section spacing should usually be `64` or `104`
-- icon-to-label spacing should usually be `8`
-- form field stacks should usually be `16` or `24`
-- avoid arbitrary values unless a specific component truly needs them
+- default to `21px` or `34px` for most component and content spacing
+- use `55px` for most section spacing
+- reserve `89px` for hero layouts or major page breaks
+- icon-to-label spacing should usually be `8px`
+- avoid introducing one-off values unless a component truly requires it
+- do not mix more than 3 spacing steps inside a single component
 
 ### Suggested tokens
 ```css
 :root {
   --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 40px;
-  --space-5: 64px;
-  --space-6: 104px;
+  --space-2: 13px;
+  --space-3: 21px;
+  --space-4: 34px;
+  --space-5: 55px;
+  --space-6: 89px;
 
   --space-xs: 4px;
-  --space-sm: 12px;
-  --space-md: 20px;
-  --space-lg: 32px;
-  --space-xl: 48px;
+  --space-even: 16px;
 }
 ```
 
@@ -247,9 +249,9 @@ The product should feel roomy but not wasteful. Layout should support quick scan
 - dashboards should breathe; avoid overfilling rows with too many cards
 
 ### Section rhythm
-- top-level sections: `64px` to `104px` vertical padding
-- card groups: `24px` gaps
-- dense UI groups: `16px` gaps
+- top-level sections: `55px` to `89px` vertical padding
+- card groups: `21px` gaps
+- dense UI groups: `13px` gaps
 
 ### Alignment rules
 - align cards, controls, and copy blocks on the same grid whenever possible
@@ -465,7 +467,7 @@ These should stay consistent across the whole app.
 2. Orange is the anchor color.
 3. Raspberry is an accent, not a second primary.
 4. Surfaces should stay light, warm, and quiet.
-5. Use the 8px Fibonacci-based spacing system as the main layout rhythm.
+5. Use the simplified Fibonacci spacing system of `8, 13, 21, 34, 55, 89` as the main layout rhythm.
 6. Prefer a small set of reusable values over custom one-off styling.
 7. Rounded corners should feel soft, but never toy-like.
 8. Decorative styling should never interfere with comprehension.
@@ -473,5 +475,4 @@ These should stay consistent across the whole app.
 ---
 
 ## 15. Short implementation brief
-Build a visual system that feels warm, minimal, and recognizable. Use soft neutrals for most surfaces, creamsicle orange for primary action and focus, raspberry only in small accent moments, Sora for headlines, Inter for UI and body text, warm dividers instead of sharp gray lines, light shadows, `16px–24px` radii for most controls and cards, and an 8px-based Fibonacci spacing rhythm of `8, 16, 24, 40, 64, 104` for most layout decisions. The result should feel polished and specific to this brand without looking overly cute, templated, or synthetic.
-
+Build a visual system that feels warm, minimal, and recognizable. Use soft neutrals for most surfaces, creamsicle orange for primary action and focus, raspberry only in small accent moments, Sora for headlines, Inter for UI and body text, warm dividers instead of sharp gray lines, light shadows, `16px–24px` radii for most controls and cards, and a simplified Fibonacci spacing rhythm of `8, 13, 21, 34, 55, 89` for most layout decisions. The result should feel polished and specific to this brand without looking overly cute, templated, or synthetic.

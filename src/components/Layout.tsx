@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
@@ -16,12 +16,14 @@ export function AppShell({
   description,
   actions,
   eyebrowLabel,
+  variant = "default",
   children,
 }: {
   title?: string;
   description?: string;
   actions?: React.ReactNode;
   eyebrowLabel?: string | null;
+  variant?: "default" | "marketing";
   children: React.ReactNode;
 }) {
   const { state, currentUser } = useAppState();
@@ -29,6 +31,10 @@ export function AppShell({
   const [hasBrandLogo, setHasBrandLogo] = useState(false);
   const showMemberNav = Boolean(currentUser);
   const profileHref = currentUser ? "/profile" : "/sign-in";
+  const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
+  const siteHeaderClassName = `site-header${variant === "marketing" ? " site-header--marketing" : ""}`;
+  const topbarClassName = `topbar${showMemberNav ? "" : " topbar--guest"}${variant === "marketing" ? " topbar--marketing" : ""}`;
+  const pageShellClassName = `page-shell${variant === "marketing" ? " page-shell--marketing" : ""}`;
 
   useEffect(() => {
     const image = new Image();
@@ -38,16 +44,17 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="app-shell">
-      <div className="site-header">
-        <header className={`topbar${showMemberNav ? "" : " topbar--guest"}`}>
+    <div className={shellClassName}>
+      <div className={siteHeaderClassName}>
+        <header className={topbarClassName}>
           <NavLink to="/" className="brandmark" aria-label="Test4Test home">
             {hasBrandLogo ? (
-              <img src={brandLogoPath} alt="Test4Test" className="brandmark__image" />
+              <>
+                <img src={brandLogoPath} alt="" className="brandmark__image" />
+                <span className="brandmark__wordmark">Test4Test</span>
+              </>
             ) : (
-              <span className="brandmark__text">
-                <strong>Test4Test</strong>
-              </span>
+              <span className="brandmark__wordmark">Test4Test</span>
             )}
           </NavLink>
 
@@ -81,7 +88,7 @@ export function AppShell({
         </header>
       </div>
 
-      <main className="page-shell">
+      <main className={pageShellClassName}>
         {title || description || actions ? (
           <section className="page-header">
             <div>
@@ -107,4 +114,3 @@ export function Surface({
 }) {
   return <section className={`surface ${className}`.trim()}>{children}</section>;
 }
-
