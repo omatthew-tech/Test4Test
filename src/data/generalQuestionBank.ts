@@ -482,7 +482,7 @@ const GENERAL_PARAGRAPH_QUESTION_PROMPTS = `
   .split("\n")
   .map((line) => line.replace(/^\d+\.\s*/, "").trim());
 
-export const GENERAL_DEFAULT_TEMPLATE_IDS = ["q033", "q080"] as const;
+export const GENERAL_DEFAULT_TEMPLATE_IDS = ["q033"] as const;
 export const GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS = ["gp001", "gp087"] as const;
 
 export const GENERAL_PARAGRAPH_QUESTION_BANK: readonly GeneralParagraphQuestionTemplate[] =

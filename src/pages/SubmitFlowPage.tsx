@@ -46,9 +46,13 @@ const productTypeOptions: Array<{
 
 type AiQuestionStatus = "idle" | "loading" | "ready" | "error";
 
-function createBlankQuestion(index: number, type: Question["type"]): Question {
+function createBlankQuestion(
+  index: number,
+  type: Question["type"],
+  prefix = "custom",
+): Question {
   return {
-    id: `custom-${Date.now()}-${index}`,
+    id: `${prefix}-${Date.now()}-${index}`,
     title: "",
     type,
     required: true,
@@ -137,7 +141,20 @@ export function SubmitFlowPage() {
   const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
   const hasCurrentAiQuestions =
     aiQuestionSourceKey === aiQuestionDraftKey && aiQuestions.length > 0;
-  const hasReachedCustomQuestionLimit = customQuestions.length >= 10;
+  const editableQuestions = useMemo(() => {
+    if (draft.questionMode === "general") {
+      return generalQuestions;
+    }
+
+    if (draft.questionMode === "custom") {
+      return customQuestions;
+    }
+
+    return [];
+  }, [customQuestions, draft.questionMode, generalQuestions]);
+  const isEditableQuestionMode =
+    draft.questionMode === "general" || draft.questionMode === "custom";
+  const hasReachedEditableQuestionLimit = editableQuestions.length >= 10;
 
   const displayedQuestions = useMemo(() => {
     if (draft.questionMode === "general") {
@@ -197,8 +214,19 @@ export function SubmitFlowPage() {
     }
   };
 
+  const setEditableQuestions = (updater: (current: Question[]) => Question[]) => {
+    if (draft.questionMode === "general") {
+      setGeneralQuestions(updater);
+      return;
+    }
+
+    if (draft.questionMode === "custom") {
+      setCustomQuestions(updater);
+    }
+  };
+
   const updateQuestion = (index: number, next: Partial<Question>) => {
-    setCustomQuestions((current) =>
+    setEditableQuestions((current) =>
       current.map((question, questionIndex) =>
         questionIndex === index ? { ...question, ...next } : question,
       ),
@@ -206,16 +234,20 @@ export function SubmitFlowPage() {
   };
 
   const addQuestion = (type: Question["type"]) => {
-    if (customQuestions.length >= 10) {
+    if (hasReachedEditableQuestionLimit) {
       setError("You can add up to 10 questions total.");
       return;
     }
 
-    const nextQuestion = createBlankQuestion(customQuestions.length, type);
+    const nextQuestion = createBlankQuestion(
+      editableQuestions.length,
+      type,
+      draft.questionMode === "general" ? "general" : "custom",
+    );
 
     setError("");
     setPendingScrollQuestionId(nextQuestion.id);
-    setCustomQuestions((current) => {
+    setEditableQuestions((current) => {
       if (current.length >= 10) {
         return current;
       }
@@ -229,7 +261,7 @@ export function SubmitFlowPage() {
 
   const removeQuestion = (index: number) => {
     setError("");
-    setCustomQuestions((current) =>
+    setEditableQuestions((current) =>
       current
         .filter((_, questionIndex) => questionIndex !== index)
         .map((question, questionIndex) => ({ ...question, sortOrder: questionIndex + 1 })),
@@ -237,12 +269,12 @@ export function SubmitFlowPage() {
   };
 
   const duplicateQuestion = (index: number) => {
-    if (customQuestions.length >= 10) {
+    if (hasReachedEditableQuestionLimit) {
       setError("You can add up to 10 questions total.");
       return;
     }
 
-    const sourceQuestion = customQuestions[index];
+    const sourceQuestion = editableQuestions[index];
 
     if (!sourceQuestion) {
       return;
@@ -250,13 +282,13 @@ export function SubmitFlowPage() {
 
     const duplicate: Question = {
       ...sourceQuestion,
-      id: `custom-${Date.now()}-${index}-duplicate`,
+      id: `${draft.questionMode}-${Date.now()}-${index}-duplicate`,
       options: sourceQuestion.options ? [...sourceQuestion.options] : undefined,
     };
 
     setError("");
     setPendingScrollQuestionId(duplicate.id);
-    setCustomQuestions((current) => {
+    setEditableQuestions((current) => {
       if (current.length >= 10) {
         return current;
       }
@@ -350,19 +382,24 @@ export function SubmitFlowPage() {
       }
     }
 
-    if (currentStep === 3 && draft.questionMode === "custom") {
-      if (customQuestions.length < 5 || customQuestions.length > 10) {
-        return "Custom mode needs between 5 and 10 questions for MVP.";
+    if (currentStep === 3 && isEditableQuestionMode) {
+      const minimumQuestionCount = draft.questionMode === "custom" ? 2 : 5;
+
+      if (
+        editableQuestions.length < minimumQuestionCount ||
+        editableQuestions.length > 10
+      ) {
+        return `${questionModeLabel(draft.questionMode)} mode needs between ${minimumQuestionCount} and 10 questions for MVP.`;
       }
 
       if (
-        customQuestions.some(
+        editableQuestions.some(
           (question) =>
             !question.title.trim() ||
             (question.type === "multiple" && (question.options?.filter(Boolean).length ?? 0) < 2),
         )
       ) {
-        return "Each custom question needs a title, and multiple-choice questions need at least two options.";
+        return "Each question needs a title, and multiple-choice questions need at least two options.";
       }
     }
 
@@ -617,24 +654,22 @@ export function SubmitFlowPage() {
                         </div>
                       </div>
 
-                      {draft.questionMode === "custom" ? (
+                      {isEditableQuestionMode ? (
                         <div className="question-studio__note">
-                          <span>{questionModeLabel(draft.questionMode)} questions</span>
-                          <small>Edit your questions and answers below</small>
-                        </div>
-                      ) : null}
-
-                      {draft.questionMode === "general" ? (
-                        <div className="question-studio__note">
-                          <span>{questionModeLabel(draft.questionMode)} questions</span>
-                          <button
-                            type="button"
-                            className="button button--secondary button--small"
-                            onClick={refreshQuestions}
-                          >
-                            <RefreshCcw size={16} />
-                            Refresh questions
-                          </button>
+                          <div className="question-studio__note-copy">
+                            <span>{questionModeLabel(draft.questionMode)} questions</span>
+                            <small>Edit your questions and answers below</small>
+                          </div>
+                          {draft.questionMode === "general" ? (
+                            <button
+                              type="button"
+                              className="button button--secondary button--small"
+                              onClick={refreshQuestions}
+                            >
+                              <RefreshCcw size={16} />
+                              Refresh questions
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -672,7 +707,7 @@ export function SubmitFlowPage() {
                               }}
                               className="question-card question-card--studio"
                             >
-                              {draft.questionMode === "custom" ? (
+                              {isEditableQuestionMode ? (
                                 <div className="question-card__topbar">
                                   <div className="question-card__meta question-card__meta--editor">
                                     <button
@@ -687,7 +722,7 @@ export function SubmitFlowPage() {
                                 </div>
                               ) : null}
                               <div className="question-card__body">
-                                {draft.questionMode === "custom" ? (
+                                {isEditableQuestionMode ? (
                                   <div className="question-card__prompt-row">
                                     <input
                                       className="question-card__prompt-input"
@@ -700,7 +735,7 @@ export function SubmitFlowPage() {
                                   <h4>{question.title}</h4>
                                 )}
                                 {question.type === "multiple" ? (
-                                  draft.questionMode === "custom" ? (
+                                  isEditableQuestionMode ? (
                                     <div className="option-list option-list--editor">
                                       {(question.options ?? []).map((option, optionIndex) => (
                                         <div key={`${question.id}-${optionIndex}`} className="option-input-row">
@@ -741,12 +776,12 @@ export function SubmitFlowPage() {
                                   )
                                 ) : (
                                   <div className="question-card__response-preview">
-                                    <span>{draft.questionMode === "custom" ? "Written answer" : "Open response"}</span>
+                                    <span>{isEditableQuestionMode ? "Written answer" : "Open response"}</span>
                                     <p>Testers will leave written feedback here.</p>
                                   </div>
                                 )}
                               </div>
-                              {draft.questionMode === "custom" && question.type === "multiple" ? (
+                              {isEditableQuestionMode && question.type === "multiple" ? (
                                 <div className="question-card__custom-actions">
                                   {(question.options?.length ?? 0) < 6 ? (
                                     <button
@@ -769,7 +804,7 @@ export function SubmitFlowPage() {
                                     type="button"
                                     className="button button--secondary question-card__duplicate-button"
                                     onClick={() => duplicateQuestion(index)}
-                                    disabled={hasReachedCustomQuestionLimit}
+                                    disabled={hasReachedEditableQuestionLimit}
                                   >
                                     Duplicate
                                   </button>
@@ -780,14 +815,14 @@ export function SubmitFlowPage() {
                         </div>
                       )}
 
-                      {draft.questionMode === "custom" ? (
+                      {isEditableQuestionMode ? (
                         <div className="question-studio__footer">
                           <div className="inline-actions inline-actions--compact">
                             <button
                               type="button"
                               className="button button--secondary"
                               onClick={() => addQuestion("multiple")}
-                              disabled={hasReachedCustomQuestionLimit}
+                              disabled={hasReachedEditableQuestionLimit}
                             >
                               <Plus size={16} />
                               Add multiple choice
@@ -796,7 +831,7 @@ export function SubmitFlowPage() {
                               type="button"
                               className="button button--secondary"
                               onClick={() => addQuestion("paragraph")}
-                              disabled={hasReachedCustomQuestionLimit}
+                              disabled={hasReachedEditableQuestionLimit}
                             >
                               <Plus size={16} />
                               Add paragraph question

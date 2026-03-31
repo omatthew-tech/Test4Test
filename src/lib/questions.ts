@@ -33,6 +33,7 @@ const GENERAL_MULTIPLE_QUESTION_COUNT = 3;
 const GENERAL_PARAGRAPH_QUESTION_COUNT = 2;
 const GENERAL_QUESTION_COUNT = GENERAL_MULTIPLE_QUESTION_COUNT + GENERAL_PARAGRAPH_QUESTION_COUNT;
 const GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID = "q025";
+const GENERAL_PLACEHOLDER_QUESTION_ID = "general-placeholder";
 const GENERAL_PERSONALIZED_QUESTION_ID_PREFIX = "general-featured-";
 const LEGACY_GENERAL_PERSONALIZED_QUESTION_ID = "general-company-clarity";
 const generalQuestionTemplateById = new Map(
@@ -122,15 +123,26 @@ function normalizeGeneralQuestionOptions(options: readonly string[]) {
   ];
 }
 
+function buildGeneralPlaceholderQuestion() {
+  return createQuestion(
+    GENERAL_PLACEHOLDER_QUESTION_ID,
+    "",
+    "multiple",
+    1,
+    ["", ""],
+  );
+}
+
 function buildPersonalizedGeneralQuestion(
   productName: string,
   template: (typeof GENERAL_QUESTION_BANK)[number],
+  sortOrder = 2,
 ) {
   return createQuestion(
     `${GENERAL_PERSONALIZED_QUESTION_ID_PREFIX}${template.id}`,
     personalizeGeneralPrompt(template.prompt, productName),
     "multiple",
-    1,
+    sortOrder,
     normalizeGeneralQuestionOptions(template.options),
   );
 }
@@ -154,13 +166,13 @@ function buildGeneralQuestionsFromTemplates(
   paragraphTemplates: readonly (typeof GENERAL_PARAGRAPH_QUESTION_BANK)[number][],
 ) {
   const fallbackMultipleTemplates =
-    multipleTemplates.length >= GENERAL_MULTIPLE_QUESTION_COUNT - 1
+    multipleTemplates.length >= GENERAL_MULTIPLE_QUESTION_COUNT - 2
       ? multipleTemplates
       : [
           ...multipleTemplates,
           ...sampleTemplates(
             GENERAL_QUESTION_BANK,
-            GENERAL_MULTIPLE_QUESTION_COUNT - 1 - multipleTemplates.length,
+            GENERAL_MULTIPLE_QUESTION_COUNT - 2 - multipleTemplates.length,
             [featuredTemplate.id, ...multipleTemplates.map((template) => template.id)],
           ),
         ];
@@ -177,13 +189,14 @@ function buildGeneralQuestionsFromTemplates(
         ];
 
   return [
-    buildPersonalizedGeneralQuestion(productName, featuredTemplate),
-    ...fallbackMultipleTemplates.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT - 1).map((template, index) =>
+    buildGeneralPlaceholderQuestion(),
+    buildPersonalizedGeneralQuestion(productName, featuredTemplate, 2),
+    ...fallbackMultipleTemplates.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT - 2).map((template, index) =>
       createQuestion(
         `general-${template.id}`,
         template.prompt,
         "multiple",
-        index + 2,
+        index + 3,
         normalizeGeneralQuestionOptions(template.options),
       ),
     ),
@@ -226,7 +239,7 @@ export function buildGeneralQuestions(productName: string) {
 export function buildRandomGeneralQuestions(productName: string) {
   const [featuredTemplate, ...remainingTemplates] = sampleTemplates(
     GENERAL_QUESTION_BANK,
-    GENERAL_MULTIPLE_QUESTION_COUNT,
+    GENERAL_MULTIPLE_QUESTION_COUNT - 1,
   );
 
   return buildGeneralQuestionsFromTemplates(
@@ -242,21 +255,28 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
     questions.length === GENERAL_QUESTION_COUNT &&
     questions.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "multiple") &&
     questions.slice(GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "paragraph") &&
-    (questions[0]?.id.startsWith(GENERAL_PERSONALIZED_QUESTION_ID_PREFIX) ||
-      questions[0]?.id === LEGACY_GENERAL_PERSONALIZED_QUESTION_ID);
+    questions[0]?.id === GENERAL_PLACEHOLDER_QUESTION_ID &&
+    (questions[1]?.id.startsWith(GENERAL_PERSONALIZED_QUESTION_ID_PREFIX) ||
+      questions[1]?.id === LEGACY_GENERAL_PERSONALIZED_QUESTION_ID);
 
   if (!isGeneralSet) {
     return buildGeneralQuestions(productName);
   }
 
   return [
+    {
+      ...questions[0],
+      sortOrder: 1,
+      options: questions[0].type === "multiple" && questions[0].options ? [...questions[0].options] : undefined,
+    },
     buildPersonalizedGeneralQuestion(
       productName,
-      getFeaturedGeneralTemplateFromQuestion(questions[0]),
+      getFeaturedGeneralTemplateFromQuestion(questions[1]),
+      2,
     ),
-    ...questions.slice(1).map((question, index) => ({
+    ...questions.slice(2).map((question, index) => ({
       ...question,
-      sortOrder: index + 2,
+      sortOrder: index + 3,
       options: question.type === "multiple" && question.options ? [...question.options] : undefined,
     })),
   ];
@@ -417,29 +437,9 @@ export function defaultCustomQuestions(productName: string) {
     ),
     createQuestion(
       `${productName}-custom-2`,
-      "How easy is the main action to find?",
-      "multiple",
+      "",
+      "paragraph",
       2,
-      [...easeScale],
-    ),
-    createQuestion(
-      `${productName}-custom-3`,
-      "How easy are the labels and buttons to understand?",
-      "multiple",
-      3,
-      [...clarityScale],
-    ),
-    createQuestion(
-      `${productName}-custom-4`,
-      "What worked well?",
-      "paragraph",
-      4,
-    ),
-    createQuestion(
-      `${productName}-custom-5`,
-      "What should change first?",
-      "paragraph",
-      5,
     ),
   ];
 }
