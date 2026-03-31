@@ -5,10 +5,13 @@ const corsHeaders = {
 };
 
 const AI_QUESTION_COUNT = 5;
+const PRODUCT_TYPE_ORDER = ["website", "ios", "android"] as const;
+
+type ProductType = (typeof PRODUCT_TYPE_ORDER)[number];
 
 interface GenerateQuestionRequest {
   productName?: string;
-  productType?: string;
+  productTypes?: string[];
   description?: string;
   instructions?: string;
   accessUrl?: string;
@@ -35,24 +38,31 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
 }
 
-function normalizeProductType(value: unknown) {
-  if (value === "ios" || value === "android") {
-    return value;
+function normalizeProductTypes(value: unknown) {
+  if (!Array.isArray(value)) {
+    return ["website"] satisfies ProductType[];
   }
 
-  return "website";
+  const requested = new Set(
+    value
+      .map((entry) => (typeof entry === "string" ? entry.trim().toLowerCase() : ""))
+      .filter(Boolean),
+  );
+
+  const normalized = PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
+  return normalized.length > 0 ? normalized : ["website"];
 }
 
 function buildPrompt(payload: GenerateQuestionRequest) {
   const productName = normalizeText(payload.productName) || "This product";
-  const productType = normalizeProductType(payload.productType);
+  const productTypes = normalizeProductTypes(payload.productTypes);
   const description = normalizeText(payload.description) || "No description provided.";
   const instructions = normalizeText(payload.instructions) || "No tester instructions provided.";
   const accessUrl = normalizeText(payload.accessUrl) || "No public URL provided.";
 
   return [
     `Product name: ${productName}`,
-    `Product type: ${productType}`,
+    `Product types: ${productTypes.join(", ")}`,
     `Public link: ${accessUrl}`,
     `Short description: ${description}`,
     `Tester instructions: ${instructions}`,

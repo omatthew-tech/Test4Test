@@ -1,5 +1,23 @@
 import { ProductType } from "../types";
 
+export const PRODUCT_TYPE_ORDER: ProductType[] = ["website", "ios", "android"];
+
+function joinWithAnd(values: string[]) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} and ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+}
+
 export function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -66,7 +84,7 @@ export function displayAccessUrl(value: string) {
 export function productTypeLabel(value: ProductType) {
   switch (value) {
     case "ios":
-      return "IOS app";
+      return "iOS app";
     case "android":
       return "Android app";
     default:
@@ -77,7 +95,7 @@ export function productTypeLabel(value: ProductType) {
 export function productTypeBadge(value: ProductType) {
   switch (value) {
     case "ios":
-      return "IOS";
+      return "iOS";
     case "android":
       return "Android";
     default:
@@ -85,17 +103,59 @@ export function productTypeBadge(value: ProductType) {
   }
 }
 
+export function normalizeProductTypes(values: ProductType[]): ProductType[] {
+  const requested = new Set<ProductType>(values);
+  const normalized: ProductType[] = PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
+  return normalized.length > 0 ? normalized : ["website"];
+}
+
+export function productTypesLabel(values: ProductType[]) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  return joinWithAnd(normalizeProductTypes(values).map(productTypeLabel));
+}
+
+export function productTypesBadges(values: ProductType[]) {
+  if (values.length === 0) {
+    return [];
+  }
+
+  return normalizeProductTypes(values).map(productTypeBadge);
+}
+
 export function isNativeAppType(value: ProductType) {
   return value === "ios" || value === "android";
 }
 
-export function defaultAccessMethod(value: ProductType) {
-  switch (value) {
-    case "ios":
-      return "App Store / TestFlight link";
-    case "android":
-      return "Google Play / Android link";
-    default:
-      return "Website";
-  }
+export function hasNativeProductTypes(values: ProductType[]) {
+  return normalizeProductTypes(values).some(isNativeAppType);
 }
+
+export function defaultAccessMethod(values: ProductType[]) {
+  if (values.length === 0) {
+    return "";
+  }
+
+  const productTypes = normalizeProductTypes(values);
+
+  if (productTypes.length === 1) {
+    switch (productTypes[0]) {
+      case "ios":
+        return "App Store / TestFlight link";
+      case "android":
+        return "Google Play / Android link";
+      default:
+        return "Website";
+    }
+  }
+
+  if (productTypes.includes("website")) {
+    return "Public website, beta, or store link";
+  }
+
+  return "App Store, Google Play, or beta link";
+}
+
+

@@ -55,7 +55,7 @@ export interface Submission {
   id: string;
   userId: string | null;
   productName: string;
-  productType: ProductType;
+  productTypes: ProductType[];
   description: string;
   targetAudience: string;
   instructions: string;
@@ -156,7 +156,7 @@ export interface AppState {
 
 export interface SubmissionDraft {
   productName: string;
-  productType: ProductType;
+  productTypes: ProductType[];
   description: string;
   targetAudience: string;
   instructions: string;

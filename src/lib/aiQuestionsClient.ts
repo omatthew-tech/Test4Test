@@ -1,5 +1,5 @@
 import { Question, SubmissionDraft } from "../types";
-import { displayAccessUrl, normalizeAccessUrl } from "./format";
+import { displayAccessUrl, normalizeAccessUrl, normalizeProductTypes } from "./format";
 import { hasSupabaseConfig, requireSupabase } from "./supabase";
 
 const AI_FUNCTION_NAME = "generate-ai-questions";
@@ -85,7 +85,7 @@ function normalizeGeneratedQuestions(payload: GeneratedAiQuestionPayload[]) {
 export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
   return JSON.stringify({
     productName: normalizeText(draft.productName),
-    productType: draft.productType,
+    productTypes: normalizeProductTypes(draft.productTypes),
     description: normalizeText(draft.description),
     instructions: normalizeText(draft.instructions),
     accessUrl: normalizeText(displayAccessUrl(draft.accessUrl)),
@@ -110,7 +110,7 @@ export async function generateAiQuestions(draft: SubmissionDraft) {
   const { data, error } = await supabase.functions.invoke<AiQuestionResponse>(AI_FUNCTION_NAME, {
     body: {
       productName: draft.productName,
-      productType: draft.productType,
+      productTypes: normalizeProductTypes(draft.productTypes),
       description: draft.description,
       instructions: draft.instructions,
       accessUrl: normalizeAccessUrl(draft.accessUrl),

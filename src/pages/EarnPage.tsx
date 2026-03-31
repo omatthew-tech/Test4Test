@@ -3,9 +3,9 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { formatDate, productTypeBadge } from "../lib/format";
+import { formatDate, productTypeLabel, productTypesBadges } from "../lib/format";
 import { getAvailableSubmissions } from "../lib/selectors";
-import { Submission } from "../types";
+import { ProductType, Submission } from "../types";
 
 export function EarnPage() {
   const [sortMode, setSortMode] = useState("recommended");
@@ -17,7 +17,7 @@ export function EarnPage() {
     let next = [...available];
 
     if (typeFilter !== "all") {
-      next = next.filter((item) => item.productType === typeFilter);
+      next = next.filter((item) => item.productTypes.includes(typeFilter as ProductType));
     }
 
     if (sortMode === "newest") {
@@ -59,9 +59,9 @@ export function EarnPage() {
               <div className="earn-filter__control">
                 <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                   <option value="all">All apps</option>
-                  <option value="website">Website / Web app</option>
-                  <option value="ios">IOS app</option>
-                  <option value="android">Android app</option>
+                  <option value="website">{productTypeLabel("website")}</option>
+                  <option value="ios">{productTypeLabel("ios")}</option>
+                  <option value="android">{productTypeLabel("android")}</option>
                 </select>
                 <ChevronDown size={16} className="earn-filter__icon" aria-hidden="true" />
               </div>
@@ -98,7 +98,9 @@ function EarnRow({
     <Surface className="earn-row">
       <div className="earn-row__main">
         <div className="earn-row__pills">
-          <span className="pill pill--accent">{productTypeBadge(submission.productType)}</span>
+          {productTypesBadges(submission.productTypes).map((badge) => (
+            <span key={`${submission.id}-${badge}`} className="pill pill--accent">{badge}</span>
+          ))}
         </div>
         <div className="earn-row__head">
           <h3>{submission.productName}</h3>

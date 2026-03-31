@@ -68,7 +68,7 @@ const sproutQuestions = withIds(buildGeneralQuestions("Sprout Habit"), "sprout")
 const paletteQuestions = withIds(
   buildAiQuestions({
     productName: "Palette Pilot",
-    productType: "website",
+    productTypes: ["website"],
     description: "A collaborative moodboard and creative direction tool for freelance designers.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a sample moodboard and invite a collaborator.",
@@ -86,7 +86,7 @@ const submissions: Submission[] = [
     id: "submission-sprout",
     userId: "user-avery",
     productName: "Sprout Habit",
-    productType: "ios",
+    productTypes: ["ios"],
     description: "A habit-tracking app focused on gentle accountability and daily routines.",
     targetAudience: "people building healthier daily habits",
     instructions: "Try adding a habit and reviewing the weekly summary.",
@@ -99,13 +99,13 @@ const submissions: Submission[] = [
     estimatedMinutes: estimateMinutes(sproutQuestions),
     responseCount: 0,
     lastResponseAt: null,
-    tags: ["Wellness", "IOS", "Routine"],
+    tags: ["Wellness", "iOS", "Routine"],
   },
   {
     id: "submission-palette",
     userId: "user-mateo",
     productName: "Palette Pilot",
-    productType: "website",
+    productTypes: ["website"],
     description: "A collaborative moodboard and creative direction workspace for design teams.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a board and inspect how easy it is to add references.",
@@ -124,7 +124,7 @@ const submissions: Submission[] = [
     id: "submission-pantry",
     userId: "user-jo",
     productName: "Pocket Pantry",
-    productType: "website",
+    productTypes: ["website"],
     description: "A meal planning tool that helps users turn pantry items into realistic weekly dinners.",
     targetAudience: "busy households that want low-friction meal planning",
     instructions: "Search for a pantry-based recipe and save it to the week plan.",
@@ -143,12 +143,12 @@ const submissions: Submission[] = [
     id: "submission-trail",
     userId: "user-nina",
     productName: "TrailMixer",
-    productType: "android",
+    productTypes: ["ios", "android"],
     description: "A trip-planning companion for stitching outdoor routes, packing lists, and weather together.",
     targetAudience: "casual hikers planning day trips",
     instructions: "Plan a route and check what would help you trust the trip details.",
     accessUrl: "https://trailmixer.app",
-    accessMethod: "Google Play",
+    accessMethod: "App Store, Google Play, or beta link",
     status: "live",
     questionMode: "general",
     isOpenForMoreTests: true,
@@ -156,7 +156,7 @@ const submissions: Submission[] = [
     estimatedMinutes: estimateMinutes(trailQuestions),
     responseCount: 1,
     lastResponseAt: "2026-03-25T18:10:00.000Z",
-    tags: ["Travel", "Outdoor", "Android"],
+    tags: ["Travel", "Outdoor", "iOS", "Android"],
   },
 ];
 
@@ -353,3 +353,5 @@ export const seededState: AppState = {
   ],
   otpChallenge: null,
 };
+
+

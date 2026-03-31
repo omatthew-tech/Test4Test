@@ -1,6 +1,6 @@
 import { GENERAL_QUESTION_BANK } from "../data/generalQuestionBank";
 import { Question, QuestionMode, ProductType, SubmissionDraft } from "../types";
-import { isNativeAppType, normalizeAccessUrl } from "./format";
+import { hasNativeProductTypes, normalizeAccessUrl } from "./format";
 
 const easeScale = [
   "Very hard",
@@ -58,8 +58,8 @@ function normalizeProductName(productName: string) {
 function personalizeGeneralPrompt(prompt: string, productName: string) {
   const name = normalizeProductName(productName);
   const normalizedPrompt = prompt
-    .replace(/this product[ï¿½']s/gi, `${name}'s`)
-    .replace(/the product[ï¿½']s/gi, `${name}'s`)
+    .replace(/this product['�]s/gi, `${name}'s`)
+    .replace(/the product['�]s/gi, `${name}'s`)
     .replace(/this product/gi, name)
     .replace(/the product/gi, name);
 
@@ -222,7 +222,7 @@ function inferPrimaryTask(draft: SubmissionDraft) {
     return "move through the workflow";
   }
 
-  return isNativeAppType(draft.productType)
+  return hasNativeProductTypes(draft.productTypes)
     ? "use the main mobile flow"
     : "use the main flow";
 }
@@ -274,7 +274,7 @@ export function estimateMinutes(questions: Question[]) {
   return Math.max(3, Math.round(paragraphCount * 1.2 + multipleCount * 0.35 + 1));
 }
 
-export function validateAccessUrl(url: string, productType: ProductType) {
+export function validateAccessUrl(url: string, productTypes: ProductType[]) {
   const rawValue = url.trim();
 
   if (!rawValue) {
@@ -320,7 +320,8 @@ export function validateAccessUrl(url: string, productType: ProductType) {
     }
 
     if (
-      isNativeAppType(productType) &&
+      hasNativeProductTypes(productTypes) &&
+      !productTypes.includes("website") &&
       !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(normalizedUrl)
     ) {
       return {

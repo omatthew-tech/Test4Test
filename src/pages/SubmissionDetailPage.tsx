@@ -70,7 +70,7 @@ export function SubmissionDetailPage() {
       setEditQuestions(
         buildAiQuestions({
           productName: submission.productName,
-          productType: submission.productType,
+          productTypes: submission.productTypes,
           description: submission.description,
           targetAudience: submission.targetAudience,
           instructions: submission.instructions,
@@ -440,4 +440,5 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
 

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
-import { normalizeAccessUrl, productTypeBadge } from "../lib/format";
+import { normalizeAccessUrl, normalizeProductTypes, productTypesBadges } from "../lib/format";
 import {
   clearPendingSubmission,
   clearStoredOtpChallenge,
@@ -49,7 +49,8 @@ interface SubmissionRow {
   id: string;
   user_id: string;
   product_name: string;
-  product_type: Submission["productType"];
+  product_type?: Submission["productTypes"][number] | null;
+  product_types?: Submission["productTypes"] | null;
   description: string;
   target_audience: string;
   instructions: string;
@@ -242,11 +243,19 @@ function normalizeQuestions(value: unknown) {
 }
 
 function mapSubmission(row: SubmissionRow): Submission {
+  const productTypes = normalizeProductTypes(
+    Array.isArray(row.product_types)
+      ? row.product_types
+      : row.product_type
+        ? [row.product_type]
+        : [],
+  );
+
   return {
     id: row.id,
     userId: row.user_id,
     productName: row.product_name,
-    productType: row.product_type,
+    productTypes,
     description: row.description ?? "",
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
@@ -259,7 +268,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     estimatedMinutes: row.estimated_minutes,
     responseCount: row.response_count ?? 0,
     lastResponseAt: row.last_response_at,
-    tags: [productTypeBadge(row.product_type)],
+    tags: productTypesBadges(productTypes),
   };
 }
 
@@ -338,6 +347,10 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
     .single();
 
   if (error) {
+    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
+      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    }
+
     throw new Error(error.message);
   }
 
@@ -394,6 +407,10 @@ async function loadActiveQuestionSets(submissionIds: string[]) {
     .order("created_at", { ascending: false });
 
   if (error) {
+    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
+      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    }
+
     throw new Error(error.message);
   }
 
@@ -481,7 +498,7 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   const supabase = requireSupabase();
   const { data, error } = await supabase.rpc("create_submission_with_questions", {
     p_product_name: draft.productName,
-    p_product_type: draft.productType,
+    p_product_types: draft.productTypes,
     p_description: draft.description,
     p_target_audience: draft.targetAudience,
     p_instructions: draft.instructions,
@@ -493,6 +510,10 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   });
 
   if (error) {
+    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
+      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    }
+
     throw new Error(error.message);
   }
 
@@ -924,6 +945,11 @@ export function useAppState() {
 
   return context;
 }
+
+
+
+
+
 
 
 

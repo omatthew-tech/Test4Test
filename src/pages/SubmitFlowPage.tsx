@@ -1,12 +1,19 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { StepIndicator } from "../components/StepIndicator";
 import { useAppState } from "../context/AppStateContext";
 import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
-import { defaultAccessMethod, displayAccessUrl, normalizeAccessUrl, productTypeLabel } from "../lib/format";
+import {
+  defaultAccessMethod,
+  displayAccessUrl,
+  normalizeAccessUrl,
+  productTypeLabel,
+  productTypesLabel,
+  PRODUCT_TYPE_ORDER,
+} from "../lib/format";
 import {
   buildGeneralQuestions,
   buildRandomGeneralQuestions,
@@ -16,16 +23,24 @@ import {
   syncGeneralQuestionsProductName,
   validateAccessUrl,
 } from "../lib/questions";
-import { Question, SubmissionDraft } from "../types";
-import { wait } from "../lib/timing";
+import { ProductType, Question, SubmissionDraft } from "../types";
+
 
 const steps = [
   "App name",
-  "App type",
+  "App types",
   "Link to app",
   "Questions",
   "Review",
 ];
+
+const productTypeOptions: Array<{
+  value: ProductType;
+  title: string;
+}> = PRODUCT_TYPE_ORDER.map((value) => ({
+  value,
+  title: productTypeLabel(value),
+}));
 
 type AiQuestionStatus = "idle" | "loading" | "ready" | "error";
 
@@ -58,12 +73,12 @@ export function SubmitFlowPage() {
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
   const [draft, setDraft] = useState<SubmissionDraft>({
     productName: initialProductName,
-    productType: "website",
+    productTypes: [],
     description: "",
     targetAudience: "",
     instructions: "",
     accessUrl: "",
-    accessMethod: defaultAccessMethod("website"),
+    accessMethod: "",
     questionMode: "general",
   });
   const [generalQuestions, setGeneralQuestions] = useState<Question[]>(() =>
@@ -107,8 +122,8 @@ export function SubmitFlowPage() {
   }, [pendingScrollQuestionId, customQuestions]);
 
   const accessValidation = useMemo(
-    () => validateAccessUrl(draft.accessUrl, draft.productType),
-    [draft.accessUrl, draft.productType],
+    () => validateAccessUrl(draft.accessUrl, draft.productTypes),
+    [draft.accessUrl, draft.productTypes],
   );
   const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
   const hasCurrentAiQuestions =
@@ -257,9 +272,29 @@ export function SubmitFlowPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+
+  const toggleProductType = (productType: ProductType) => {
+    setError("");
+    setDraft((current) => {
+      const isSelected = current.productTypes.includes(productType);
+      const nextProductTypes = isSelected
+        ? current.productTypes.filter((value) => value !== productType)
+        : [...current.productTypes, productType];
+
+      return {
+        ...current,
+        productTypes: nextProductTypes,
+        accessMethod: defaultAccessMethod(nextProductTypes),
+      };
+    });
+  };
   const validateCurrentStep = () => {
     if (currentStep === 0 && !draft.productName.trim()) {
       return "Add an app name to continue.";
+    }
+
+    if (currentStep === 1 && draft.productTypes.length === 0) {
+      return "Select at least one app type to continue.";
     }
 
     if (currentStep === 2) {
@@ -383,8 +418,12 @@ export function SubmitFlowPage() {
                       )}
                     </div>
                     <div className="wizard-preview__item">
-                      <small>App type</small>
-                      <strong>{productTypeLabel(draft.productType)}</strong>
+                      <small>Platforms</small>
+                      {draft.productTypes.length > 0 ? (
+                        <strong>{productTypesLabel(draft.productTypes)}</strong>
+                      ) : (
+                        <strong>Select at least one platform</strong>
+                      )}
                     </div>
                     <div className="wizard-preview__item">
                       <small>Question setup</small>
@@ -432,31 +471,31 @@ export function SubmitFlowPage() {
                     <div className="section-heading">
                       <span className="eyebrow">Step 2</span>
                       <h2>What kind of app is it?</h2>
+                      <p>Choose every platform testers can use right now.</p>
                     </div>
                     <div className="choice-grid">
-                      {[
-                        { value: "website", title: "Website / Web app" },
-                        { value: "ios", title: "IOS app" },
-                        { value: "android", title: "Android app" },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`choice-card${draft.productType === option.value ? " choice-card--active" : ""}`}
-                          onClick={() =>
-                            setDraft((current) => ({
-                              ...current,
-                              productType: option.value as SubmissionDraft["productType"],
-                              accessMethod: defaultAccessMethod(
-                                option.value as SubmissionDraft["productType"],
-                              ),
-                            }))
-                          }
-                        >
-                          <strong>{option.title}</strong>
-                        </button>
-                      ))}
+                      {productTypeOptions.map((option) => {
+                        const isSelected = draft.productTypes.includes(option.value);
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}`}
+                            onClick={() => toggleProductType(option.value)}
+                            aria-pressed={isSelected}
+                          >
+                            <span className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`} aria-hidden="true">
+                              {isSelected ? <Check size={16} /> : null}
+                            </span>
+                            <span className="choice-card__content">
+                              <strong>{option.title}</strong>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
+
                   </div>
                 ) : null}
 
@@ -550,7 +589,7 @@ export function SubmitFlowPage() {
                         <div className="question-studio__empty">
                           <h4>Generate 5 tailored questions</h4>
                           <p>
-                            We&apos;ll use your app name, type, description, link, and tester instructions
+                            We&apos;ll use your app name, platforms, description, link, and tester instructions
                             to draft a focused question set.
                           </p>
                           <button
@@ -736,8 +775,12 @@ export function SubmitFlowPage() {
                           </button>
                           <button type="button" className="review-edit-row" onClick={() => jumpToStep(1)}>
                             <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Type</span>
-                              <strong>{productTypeLabel(draft.productType)}</strong>
+                              <span className="review-edit-row__label">Platforms</span>
+                              {draft.productTypes.length > 0 ? (
+                        <strong>{productTypesLabel(draft.productTypes)}</strong>
+                      ) : (
+                        <strong>Select at least one platform</strong>
+                      )}
                             </span>
                             <ArrowRight size={16} />
                           </button>
@@ -846,6 +889,11 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
+
+
+
+
 
 
 

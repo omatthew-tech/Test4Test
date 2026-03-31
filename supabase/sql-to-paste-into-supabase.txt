@@ -12,6 +12,7 @@ create table if not exists public.submissions (
   user_id uuid not null references public.profiles (id) on delete cascade,
   product_name text not null,
   product_type text not null check (product_type in ('website', 'ios', 'android')),
+  product_types text[] not null default array['website']::text[] check (cardinality(product_types) >= 1 and product_types <@ array['website', 'ios', 'android']::text[]),
   description text not null default '',
   target_audience text not null default '',
   instructions text not null default '',
@@ -249,7 +250,7 @@ create trigger on_auth_user_created
 
 create or replace function public.create_submission_with_questions(
   p_product_name text,
-  p_product_type text,
+  p_product_types text[],
   p_description text,
   p_target_audience text,
   p_instructions text,
@@ -267,15 +268,31 @@ as $$
 declare
   v_user_id uuid := auth.uid();
   v_submission_id uuid;
+  v_product_types text[];
 begin
   if v_user_id is null then
     raise exception 'You must be signed in to create a submission.';
+  end if;
+
+  select coalesce(
+    array_agg(product_type order by array_position(array['website', 'ios', 'android']::text[], product_type)),
+    array['website']::text[]
+  )
+  into v_product_types
+  from (
+    select distinct unnest(coalesce(p_product_types, array[]::text[])) as product_type
+  ) normalized
+  where product_type = any (array['website', 'ios', 'android']::text[]);
+
+  if coalesce(cardinality(v_product_types), 0) = 0 then
+    raise exception 'Select at least one app type.';
   end if;
 
   insert into public.submissions (
     user_id,
     product_name,
     product_type,
+    product_types,
     description,
     target_audience,
     instructions,
@@ -288,7 +305,8 @@ begin
   ) values (
     v_user_id,
     trim(p_product_name),
-    p_product_type,
+    v_product_types[1],
+    v_product_types,
     coalesce(p_description, ''),
     coalesce(p_target_audience, ''),
     coalesce(p_instructions, ''),
@@ -317,7 +335,7 @@ begin
 
   return v_submission_id;
 end;
-$$;
+$;
 
 create or replace function public.update_question_set(
   p_submission_id uuid,
@@ -550,6 +568,9 @@ begin
 end;
 $$;
 
-grant execute on function public.create_submission_with_questions(text, text, text, text, text, text, text, text, jsonb, integer) to authenticated;
+grant execute on function public.create_submission_with_questions(text, text[], text, text, text, text, text, text, jsonb, integer) to authenticated;
 grant execute on function public.update_question_set(uuid, text, jsonb, integer) to authenticated;
 grant execute on function public.submit_test_response(uuid, jsonb, integer) to authenticated;
+
+
+
