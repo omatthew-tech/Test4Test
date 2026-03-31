@@ -1,4 +1,9 @@
-import { GENERAL_QUESTION_BANK } from "../data/generalQuestionBank";
+import {
+  GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS,
+  GENERAL_DEFAULT_TEMPLATE_IDS,
+  GENERAL_PARAGRAPH_QUESTION_BANK,
+  GENERAL_QUESTION_BANK,
+} from "../data/generalQuestionBank";
 import { ProductType, Question, QuestionMode, SubmissionDraft } from "../types";
 import { hasNativeProductTypes, normalizeAccessUrl } from "./format";
 
@@ -24,13 +29,17 @@ const trustScale = [
   "Very",
 ];
 
-const GENERAL_QUESTION_COUNT = 5;
+const GENERAL_MULTIPLE_QUESTION_COUNT = 3;
+const GENERAL_PARAGRAPH_QUESTION_COUNT = 2;
+const GENERAL_QUESTION_COUNT = GENERAL_MULTIPLE_QUESTION_COUNT + GENERAL_PARAGRAPH_QUESTION_COUNT;
 const GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID = "q025";
-const GENERAL_DEFAULT_TEMPLATE_IDS = ["q033", "q080", "q089", "q064"] as const;
 const GENERAL_PERSONALIZED_QUESTION_ID_PREFIX = "general-featured-";
 const LEGACY_GENERAL_PERSONALIZED_QUESTION_ID = "general-company-clarity";
 const generalQuestionTemplateById = new Map(
   GENERAL_QUESTION_BANK.map((template) => [template.id, template]),
+);
+const generalParagraphQuestionTemplateById = new Map(
+  GENERAL_PARAGRAPH_QUESTION_BANK.map((template) => [template.id, template]),
 );
 
 function createQuestion(
@@ -58,8 +67,8 @@ function normalizeProductName(productName: string) {
 function personalizeGeneralPrompt(prompt: string, productName: string) {
   const name = normalizeProductName(productName);
   const normalizedPrompt = prompt
-    .replace(/this product['’]s/gi, `${name}'s`)
-    .replace(/the product['’]s/gi, `${name}'s`)
+    .replace(/this product(?:'s|\u2019s)/gi, `${name}'s`)
+    .replace(/the product(?:'s|\u2019s)/gi, `${name}'s`)
     .replace(/this product/gi, name)
     .replace(/the product/gi, name);
 
@@ -73,18 +82,21 @@ function personalizeGeneralPrompt(prompt: string, productName: string) {
 
   return `${normalizedPrompt} in ${name}`;
 }
-
-function getGeneralTemplatesByIds(ids: readonly string[]) {
+function getTemplatesByIds<T>(templateById: Map<string, T>, ids: readonly string[]) {
   return ids
-    .map((id) => generalQuestionTemplateById.get(id))
-    .filter((template): template is (typeof GENERAL_QUESTION_BANK)[number] => Boolean(template));
+    .map((id) => templateById.get(id))
+    .filter((template): template is T => Boolean(template));
 }
 
-function sampleGeneralTemplates(count: number, excludedIds: readonly string[] = []) {
+function sampleTemplates<T extends { id: string }>(
+  templates: readonly T[],
+  count: number,
+  excludedIds: readonly string[] = [],
+) {
   const excluded = new Set(excludedIds);
-  const pool = GENERAL_QUESTION_BANK.filter((template) => !excluded.has(template.id));
+  const pool = templates.filter((template) => !excluded.has(template.id));
 
-  for (let index = 0; index < count; index += 1) {
+  for (let index = 0; index < count && index < pool.length; index += 1) {
     const randomIndex = index + Math.floor(Math.random() * (pool.length - index));
     [pool[index], pool[randomIndex]] = [pool[randomIndex], pool[index]];
   }
@@ -96,6 +108,20 @@ function resolveGeneralTemplate(templateId: string) {
   return generalQuestionTemplateById.get(templateId) ?? GENERAL_QUESTION_BANK[0];
 }
 
+function normalizeGeneralQuestionOptions(options: readonly string[]) {
+  if (options.length <= 5) {
+    return [...options];
+  }
+
+  return [
+    options[0],
+    options[1],
+    options[Math.floor(options.length / 2)],
+    options[options.length - 2],
+    options[options.length - 1],
+  ];
+}
+
 function buildPersonalizedGeneralQuestion(
   productName: string,
   template: (typeof GENERAL_QUESTION_BANK)[number],
@@ -105,36 +131,64 @@ function buildPersonalizedGeneralQuestion(
     personalizeGeneralPrompt(template.prompt, productName),
     "multiple",
     1,
-    [...template.options],
+    normalizeGeneralQuestionOptions(template.options),
+  );
+}
+
+function buildGeneralParagraphQuestion(
+  template: (typeof GENERAL_PARAGRAPH_QUESTION_BANK)[number],
+  sortOrder: number,
+) {
+  return createQuestion(
+    `general-paragraph-${template.id}`,
+    template.prompt,
+    "paragraph",
+    sortOrder,
   );
 }
 
 function buildGeneralQuestionsFromTemplates(
   productName: string,
   featuredTemplate: (typeof GENERAL_QUESTION_BANK)[number],
-  templates: readonly (typeof GENERAL_QUESTION_BANK)[number][],
+  multipleTemplates: readonly (typeof GENERAL_QUESTION_BANK)[number][],
+  paragraphTemplates: readonly (typeof GENERAL_PARAGRAPH_QUESTION_BANK)[number][],
 ) {
-  const fallbackTemplates =
-    templates.length >= GENERAL_QUESTION_COUNT - 1
-      ? templates
+  const fallbackMultipleTemplates =
+    multipleTemplates.length >= GENERAL_MULTIPLE_QUESTION_COUNT - 1
+      ? multipleTemplates
       : [
-          ...templates,
-          ...sampleGeneralTemplates(
-            GENERAL_QUESTION_COUNT - 1 - templates.length,
-            [featuredTemplate.id, ...templates.map((template) => template.id)],
+          ...multipleTemplates,
+          ...sampleTemplates(
+            GENERAL_QUESTION_BANK,
+            GENERAL_MULTIPLE_QUESTION_COUNT - 1 - multipleTemplates.length,
+            [featuredTemplate.id, ...multipleTemplates.map((template) => template.id)],
+          ),
+        ];
+  const fallbackParagraphTemplates =
+    paragraphTemplates.length >= GENERAL_PARAGRAPH_QUESTION_COUNT
+      ? paragraphTemplates
+      : [
+          ...paragraphTemplates,
+          ...sampleTemplates(
+            GENERAL_PARAGRAPH_QUESTION_BANK,
+            GENERAL_PARAGRAPH_QUESTION_COUNT - paragraphTemplates.length,
+            paragraphTemplates.map((template) => template.id),
           ),
         ];
 
   return [
     buildPersonalizedGeneralQuestion(productName, featuredTemplate),
-    ...fallbackTemplates.slice(0, GENERAL_QUESTION_COUNT - 1).map((template, index) =>
+    ...fallbackMultipleTemplates.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT - 1).map((template, index) =>
       createQuestion(
         `general-${template.id}`,
         template.prompt,
         "multiple",
         index + 2,
-        [...template.options],
+        normalizeGeneralQuestionOptions(template.options),
       ),
+    ),
+    ...fallbackParagraphTemplates.slice(0, GENERAL_PARAGRAPH_QUESTION_COUNT).map((template, index) =>
+      buildGeneralParagraphQuestion(template, GENERAL_MULTIPLE_QUESTION_COUNT + index + 1),
     ),
   ];
 }
@@ -161,24 +215,33 @@ export function buildGeneralQuestions(productName: string) {
   return buildGeneralQuestionsFromTemplates(
     productName,
     resolveGeneralTemplate(GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID),
-    getGeneralTemplatesByIds(GENERAL_DEFAULT_TEMPLATE_IDS),
+    getTemplatesByIds(generalQuestionTemplateById, GENERAL_DEFAULT_TEMPLATE_IDS),
+    getTemplatesByIds(
+      generalParagraphQuestionTemplateById,
+      GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS,
+    ),
   );
 }
 
 export function buildRandomGeneralQuestions(productName: string) {
-  const [featuredTemplate, ...remainingTemplates] = sampleGeneralTemplates(GENERAL_QUESTION_COUNT);
+  const [featuredTemplate, ...remainingTemplates] = sampleTemplates(
+    GENERAL_QUESTION_BANK,
+    GENERAL_MULTIPLE_QUESTION_COUNT,
+  );
 
   return buildGeneralQuestionsFromTemplates(
     productName,
-    featuredTemplate,
+    featuredTemplate ?? resolveGeneralTemplate(GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID),
     remainingTemplates,
+    sampleTemplates(GENERAL_PARAGRAPH_QUESTION_BANK, GENERAL_PARAGRAPH_QUESTION_COUNT),
   );
 }
 
 export function syncGeneralQuestionsProductName(questions: Question[], productName: string) {
   const isGeneralSet =
     questions.length === GENERAL_QUESTION_COUNT &&
-    questions.every((question) => question.type === "multiple") &&
+    questions.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "multiple") &&
+    questions.slice(GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "paragraph") &&
     (questions[0]?.id.startsWith(GENERAL_PERSONALIZED_QUESTION_ID_PREFIX) ||
       questions[0]?.id === LEGACY_GENERAL_PERSONALIZED_QUESTION_ID);
 
@@ -194,11 +257,10 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
     ...questions.slice(1).map((question, index) => ({
       ...question,
       sortOrder: index + 2,
-      options: question.options ? [...question.options] : undefined,
+      options: question.type === "multiple" && question.options ? [...question.options] : undefined,
     })),
   ];
 }
-
 function inferPrimaryTask(draft: SubmissionDraft) {
   const source = `${draft.productName} ${draft.description} ${draft.targetAudience}`.toLowerCase();
 

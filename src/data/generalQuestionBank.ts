@@ -4,6 +4,11 @@ export interface GeneralQuestionTemplate {
   options: readonly string[];
 }
 
+export interface GeneralParagraphQuestionTemplate {
+  id: string;
+  prompt: string;
+}
+
 const VERY_UNLIKELY_SCALE = [
   "Very unlikely",
   "Unlikely",
@@ -152,14 +157,18 @@ const TRUSTWORTHY_SCALE = [
   "Extremely trustworthy",
 ] as const;
 
-const NPS_SCALE = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] as const;
+const RECOMMEND_SCALE = [
+  "Very unlikely",
+  "Unlikely",
+  "Neither likely nor unlikely",
+  "Likely",
+  "Very likely",
+] as const;
 
 const LOW_HIGH_SCALE = [
   "Very low",
   "Low",
-  "Somewhat low",
   "Moderate",
-  "Somewhat high",
   "High",
   "Very high",
 ] as const;
@@ -167,9 +176,7 @@ const LOW_HIGH_SCALE = [
 const PRESSURE_SCALE = [
   "Not at all",
   "Slightly",
-  "Somewhat",
   "Moderately",
-  "Quite a bit",
   "Very",
   "Extremely",
 ] as const;
@@ -177,10 +184,8 @@ const PRESSURE_SCALE = [
 const SUCCESS_SCALE = [
   "Not at all successful",
   "Slightly successful",
-  "Somewhat successful",
   "Moderately successful",
   "Very successful",
-  "Highly successful",
   "Completely successful",
 ] as const;
 
@@ -254,159 +259,237 @@ const WILLING_SCALE = [
 ] as const;
 const NEUTRAL_SUPPORTIVE_SCALE = [
   "Obstructive",
-  "Mostly obstructive",
-  "Slightly obstructive",
+  "Somewhat obstructive",
   "Neutral",
-  "Slightly supportive",
-  "Mostly supportive",
+  "Somewhat supportive",
   "Supportive",
 ] as const;
 const NEUTRAL_EASY_SCALE = [
   "Complicated",
-  "Mostly complicated",
-  "Slightly complicated",
+  "Somewhat complicated",
   "Neutral",
-  "Slightly easy",
-  "Mostly easy",
+  "Somewhat easy",
   "Easy",
 ] as const;
 const NEUTRAL_EFFICIENT_SCALE = [
   "Inefficient",
-  "Mostly inefficient",
-  "Slightly inefficient",
+  "Somewhat inefficient",
   "Neutral",
-  "Slightly efficient",
-  "Mostly efficient",
+  "Somewhat efficient",
   "Efficient",
 ] as const;
 const NEUTRAL_CLEAR_SCALE = [
   "Confusing",
-  "Mostly confusing",
-  "Slightly confusing",
+  "Somewhat confusing",
   "Neutral",
-  "Slightly clear",
-  "Mostly clear",
+  "Somewhat clear",
   "Clear",
 ] as const;
 const NEUTRAL_EXCITING_SCALE = [
   "Boring",
-  "Mostly boring",
-  "Slightly boring",
+  "Somewhat boring",
   "Neutral",
-  "Slightly exciting",
-  "Mostly exciting",
+  "Somewhat exciting",
   "Exciting",
 ] as const;
 const NEUTRAL_INTERESTING_SCALE = [
-  "Not interesting",
-  "Mostly not interesting",
-  "Slightly not interesting",
+  "Uninteresting",
+  "Somewhat uninteresting",
   "Neutral",
-  "Slightly interesting",
-  "Mostly interesting",
+  "Somewhat interesting",
   "Interesting",
 ] as const;
 const NEUTRAL_INVENTIVE_SCALE = [
   "Conventional",
-  "Mostly conventional",
-  "Slightly conventional",
+  "Somewhat conventional",
   "Neutral",
-  "Slightly inventive",
-  "Mostly inventive",
+  "Somewhat inventive",
   "Inventive",
 ] as const;
 const NEUTRAL_LEADING_EDGE_SCALE = [
   "Usual",
-  "Mostly usual",
-  "Slightly usual",
+  "Somewhat usual",
   "Neutral",
-  "Slightly leading-edge",
-  "Mostly leading-edge",
+  "Somewhat leading-edge",
   "Leading-edge",
 ] as const;
 const NEUTRAL_TECHNICAL_SCALE = [
   "Human",
-  "Mostly human",
-  "Slightly human",
+  "Somewhat human",
   "Neutral",
-  "Slightly technical",
-  "Mostly technical",
+  "Somewhat technical",
   "Technical",
 ] as const;
 const NEUTRAL_CONNECTIVE_SCALE = [
   "Isolating",
-  "Mostly isolating",
-  "Slightly isolating",
+  "Somewhat isolating",
   "Neutral",
-  "Slightly connective",
-  "Mostly connective",
+  "Somewhat connective",
   "Connective",
 ] as const;
 const NEUTRAL_PLEASANT_SCALE = [
   "Unpleasant",
-  "Mostly unpleasant",
-  "Slightly unpleasant",
+  "Somewhat unpleasant",
   "Neutral",
-  "Slightly pleasant",
-  "Mostly pleasant",
+  "Somewhat pleasant",
   "Pleasant",
 ] as const;
 const NEUTRAL_SIMPLE_SCALE = [
   "Complicated",
-  "Mostly complicated",
-  "Slightly complicated",
+  "Somewhat complicated",
   "Neutral",
-  "Slightly simple",
-  "Mostly simple",
+  "Somewhat simple",
   "Simple",
 ] as const;
 const NEUTRAL_PROFESSIONAL_SCALE = [
   "Unprofessional",
-  "Mostly unprofessional",
-  "Slightly unprofessional",
+  "Somewhat unprofessional",
   "Neutral",
-  "Slightly professional",
-  "Mostly professional",
+  "Somewhat professional",
   "Professional",
 ] as const;
 const NEUTRAL_ATTRACTIVE_SCALE = [
-  "Ugly",
-  "Mostly ugly",
-  "Slightly ugly",
+  "Unattractive",
+  "Somewhat unattractive",
   "Neutral",
-  "Slightly attractive",
-  "Mostly attractive",
+  "Somewhat attractive",
   "Attractive",
 ] as const;
 const NEUTRAL_PRACTICAL_SCALE = [
   "Impractical",
-  "Mostly impractical",
-  "Slightly impractical",
+  "Somewhat impractical",
   "Neutral",
-  "Slightly practical",
-  "Mostly practical",
+  "Somewhat practical",
   "Practical",
 ] as const;
 const NEUTRAL_LIKEABLE_SCALE = [
   "Disagreeable",
-  "Mostly disagreeable",
-  "Slightly disagreeable",
+  "Somewhat disagreeable",
   "Neutral",
-  "Slightly likeable",
-  "Mostly likeable",
+  "Somewhat likeable",
   "Likeable",
 ] as const;
 const NEUTRAL_STRAIGHTFORWARD_SCALE = [
   "Cumbersome",
-  "Mostly cumbersome",
-  "Slightly cumbersome",
+  "Somewhat cumbersome",
   "Neutral",
-  "Slightly straightforward",
-  "Mostly straightforward",
+  "Somewhat straightforward",
   "Straightforward",
 ] as const;
 
-export const GENERAL_DEFAULT_TEMPLATE_IDS = ["q003", "q033", "q080", "q089"] as const;
+const GENERAL_PARAGRAPH_QUESTION_PROMPTS = `
+1. What was your first impression of this product?
+2. What do you think this product is mainly for?
+3. What kinds of things do you think you can do here?
+4. How do you think someone like you would use this product?
+5. What would you do next if you were using this on your own?
+6. What part of the page or screen drew your attention first, and why?
+7. What, if anything, felt unclear the first time you looked at this?
+8. What words, labels, or messages stood out to you right away?
+9. What were you expecting to find when you opened this?
+10. What did this product seem to expect you to do first?
+11. What about the design or layout shaped your first impression?
+12. What about the content or language shaped your first impression?
+13. What seemed most useful at first glance?
+14. What seemed least useful at first glance?
+15. What made you feel that this product was or was not relevant to you?
+16. Where would you go to complete the task you had in mind?
+17. How did you decide where to go first?
+18. What made you choose that option instead of another one?
+19. What did you expect to find when you selected that label, menu, or link?
+20. What did you expect that label, menu, or heading to mean?
+21. What would you expect to find under that section or category?
+22. What label or wording would make this easier to understand?
+23. Which labels or categories felt too vague, and why?
+24. Which labels or categories felt clear, and why?
+25. What parts of the navigation felt intuitive to you?
+26. What parts of the navigation felt hard to predict?
+27. How did you try to find information when you were not sure where to go?
+28. What, if anything, made browsing easier than searching here?
+29. What, if anything, made searching easier than browsing here?
+30. What would make it easier to know where you are and where to go next?
+31. How did that task go for you?
+32. What part of the task felt easiest?
+33. What part of the task felt hardest?
+34. What, if anything, was confusing during the task?
+35. What, if anything, was frustrating during the task?
+36. At what point did you feel unsure about what to do next?
+37. What were you expecting to happen at that moment?
+38. What happened instead of what you expected?
+39. What slowed you down, if anything?
+40. What helped you keep moving through the task?
+41. What did you try when your first approach did not work?
+42. What made a step feel harder or easier than you expected?
+43. What made this task feel more complicated or simpler than it needed to be?
+44. What part of the process felt smooth or natural?
+45. What part of the process felt awkward or unnecessary?
+46. What did the information on this page or screen mean to you?
+47. What words or phrases were easiest to understand?
+48. What words or phrases were hardest to understand?
+49. What messages or instructions felt helpful?
+50. What messages or instructions felt unhelpful?
+51. What information felt clear and complete?
+52. What information felt incomplete or missing context?
+53. What information felt too technical, too vague, or too dense?
+54. What information helped you decide what to do next?
+55. What information did you ignore, and why?
+56. What information felt most useful to you?
+57. What information felt least useful to you?
+58. What would make this page or screen more useful?
+59. How could the wording be improved to make this easier to use?
+60. What would you rewrite, shorten, or explain differently?
+61. What is your impression of the look and feel of this product?
+62. What do you think about the overall design and layout?
+63. What do you think about how the content is presented visually?
+64. What did you notice about the balance between text and visual elements?
+65. What visual elements helped you understand what to do?
+66. What visual elements distracted or confused you?
+67. What did you think about the images, illustrations, icons, or media here?
+68. What made this feel clean or cluttered to you?
+69. What made this feel professional or unprofessional to you?
+70. What made this feel modern, dated, serious, friendly, or something else?
+71. What would you change about the visual presentation first?
+72. What should stay exactly as it is in the visual presentation?
+73. In what ways did this product work the way you expected, or not?
+74. What made you trust or distrust this product?
+75. What made the information here feel credible or not credible?
+76. What made the product feel reliable or unreliable?
+77. What made you feel confident or uncertain while using it?
+78. What, if anything, made you hesitate before taking action?
+79. What concerns, if any, did you have about accuracy, privacy, or safety?
+80. What did any privacy, security, or confidentiality language mean to you?
+81. How, if at all, did using this product affect your trust in it?
+82. What would make you more comfortable relying on this product?
+83. What made the product feel honest and transparent, or not?
+84. What would help you feel more confident that your information is handled well?
+85. What did you like best about this product?
+86. What did you like least about this product?
+87. What should be improved first?
+88. How would you improve it?
+89. What feels missing from this product?
+90. What would you add to make this more useful?
+91. How does this compare with the way you usually do this today?
+92. How does this compare with other products you use for similar tasks?
+93. Tell me about a recent time this product worked especially well for you.
+94. What made that experience work well?
+95. Tell me about a recent time this product worked poorly for you.
+96. What made that experience work poorly?
+97. What would make you want to use this again?
+98. What would make you stop using this?
+99. Is there anything else you would like to share about this experience?
+`
+  .trim()
+  .split("\n")
+  .map((line) => line.replace(/^\d+\.\s*/, "").trim());
+
+export const GENERAL_DEFAULT_TEMPLATE_IDS = ["q033", "q080"] as const;
+export const GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS = ["gp001", "gp087"] as const;
+
+export const GENERAL_PARAGRAPH_QUESTION_BANK: readonly GeneralParagraphQuestionTemplate[] =
+  GENERAL_PARAGRAPH_QUESTION_PROMPTS.map((prompt, index) => ({
+    id: `gp${String(index + 1).padStart(3, "0")}`,
+    prompt,
+  }));
 
 export const GENERAL_QUESTION_BANK: readonly GeneralQuestionTemplate[] = [
   { id: "q001", prompt: "How likely are you to want to use this product frequently?", options: VERY_UNLIKELY_SCALE },
@@ -447,7 +530,7 @@ export const GENERAL_QUESTION_BANK: readonly GeneralQuestionTemplate[] = [
   { id: "q036", prompt: "How attractive do you find this product?", options: ATTRACTIVE_SCALE },
   { id: "q037", prompt: "How clean and simple is this product's presentation?", options: ["Not at all clean and simple", "Slightly clean and simple", "Moderately clean and simple", "Very clean and simple", "Extremely clean and simple"] },
   { id: "q038", prompt: "How likely are you to use this product again in the future?", options: VERY_UNLIKELY_SCALE },
-  { id: "q039", prompt: "How likely are you to recommend this product to a friend or colleague?", options: NPS_SCALE },
+  { id: "q039", prompt: "How likely are you to recommend this product to a friend or colleague?", options: RECOMMEND_SCALE },
   { id: "q040", prompt: "How would you rate this product on a scale from obstructive to supportive?", options: NEUTRAL_SUPPORTIVE_SCALE },
   { id: "q041", prompt: "How would you rate this product on a scale from complicated to easy?", options: NEUTRAL_EASY_SCALE },
   { id: "q042", prompt: "How would you rate this product on a scale from inefficient to efficient?", options: NEUTRAL_EFFICIENT_SCALE },
