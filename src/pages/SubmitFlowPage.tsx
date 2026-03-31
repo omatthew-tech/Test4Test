@@ -632,7 +632,7 @@ export function SubmitFlowPage() {
                     <div className="section-heading">
                       <span className="eyebrow">Step 4</span>
                       <h2>Set up your questions</h2>
-                      <p>Pick a question style, then review the exact prompts testers will answer.</p>
+
                     </div>
                     <div className="question-studio">
                       <div className="question-studio__header">
@@ -658,7 +658,7 @@ export function SubmitFlowPage() {
                         <div className="question-studio__note">
                           <div className="question-studio__note-copy">
                             <span>{questionModeLabel(draft.questionMode)} questions</span>
-                            <small>Edit your questions and answers below</small>
+
                           </div>
                           {draft.questionMode === "general" ? (
                             <button

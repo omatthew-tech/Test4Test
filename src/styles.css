@@ -2693,8 +2693,15 @@ body {
 }
 /* Question refresh placement */
 .question-studio__note {
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
+}
+
+.question-studio__note-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .question-studio__note .button {
