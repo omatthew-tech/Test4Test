@@ -1,5 +1,5 @@
 import { Question, SubmissionDraft } from "../types";
-import { displayAccessUrl, normalizeAccessUrl, normalizeProductTypes } from "./format";
+import { getOrderedAccessLinks, normalizeAccessUrl, normalizeProductTypes } from "./format";
 import { hasSupabaseConfig, requireSupabase } from "./supabase";
 
 const AI_FUNCTION_NAME = "generate-ai-questions";
@@ -15,6 +15,11 @@ interface AiQuestionResponse {
   questions: GeneratedAiQuestionPayload[];
   cached?: boolean;
   error?: string;
+}
+
+interface AccessLinkPayload {
+  productType: string;
+  url: string;
 }
 
 const aiQuestionCache = new Map<string, Question[]>();
@@ -82,13 +87,20 @@ function normalizeGeneratedQuestions(payload: GeneratedAiQuestionPayload[]) {
   return normalized;
 }
 
+function buildAccessLinkPayload(draft: SubmissionDraft): AccessLinkPayload[] {
+  return getOrderedAccessLinks(draft.accessLinks, draft.productTypes).map((link) => ({
+    productType: link.productType,
+    url: normalizeAccessUrl(link.url),
+  }));
+}
+
 export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
   return JSON.stringify({
     productName: normalizeText(draft.productName),
     productTypes: normalizeProductTypes(draft.productTypes),
     description: normalizeText(draft.description),
     instructions: normalizeText(draft.instructions),
-    accessUrl: normalizeText(displayAccessUrl(draft.accessUrl)),
+    accessLinks: buildAccessLinkPayload(draft),
   });
 }
 
@@ -113,7 +125,7 @@ export async function generateAiQuestions(draft: SubmissionDraft) {
       productTypes: normalizeProductTypes(draft.productTypes),
       description: draft.description,
       instructions: draft.instructions,
-      accessUrl: normalizeAccessUrl(draft.accessUrl),
+      accessLinks: buildAccessLinkPayload(draft),
     },
   });
 

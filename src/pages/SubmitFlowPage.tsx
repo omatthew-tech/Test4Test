@@ -7,9 +7,11 @@ import { StepIndicator } from "../components/StepIndicator";
 import { useAppState } from "../context/AppStateContext";
 import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
 import {
-  defaultAccessMethod,
-  displayAccessUrl,
-  normalizeAccessUrl,
+  accessLinkFieldLabel,
+  accessLinkPlaceholder,
+  accessLinksSummary,
+  getOrderedAccessLinks,
+  normalizeProductTypes,
   productTypeLabel,
   productTypesLabel,
   PRODUCT_TYPE_ORDER,
@@ -21,7 +23,7 @@ import {
   questionModeLabel,
   questionTypeLabel,
   syncGeneralQuestionsProductName,
-  validateAccessUrl,
+  validateAccessLink,
 } from "../lib/questions";
 import { ProductType, Question, SubmissionDraft } from "../types";
 
@@ -29,7 +31,7 @@ import { ProductType, Question, SubmissionDraft } from "../types";
 const steps = [
   "App name",
   "App types",
-  "Link to app",
+  "App links",
   "Questions",
   "Review",
 ];
@@ -77,8 +79,7 @@ export function SubmitFlowPage() {
     description: "",
     targetAudience: "",
     instructions: "",
-    accessUrl: "",
-    accessMethod: "",
+    accessLinks: {},
     questionMode: "general",
   });
   const [generalQuestions, setGeneralQuestions] = useState<Question[]>(() =>
@@ -121,9 +122,17 @@ export function SubmitFlowPage() {
     return () => window.cancelAnimationFrame(frame);
   }, [pendingScrollQuestionId, customQuestions]);
 
-  const accessValidation = useMemo(
-    () => validateAccessUrl(draft.accessUrl, draft.productTypes),
-    [draft.accessUrl, draft.productTypes],
+  const selectedProductTypes = useMemo(
+    () => normalizeProductTypes(draft.productTypes),
+    [draft.productTypes],
+  );
+  const orderedAccessLinks = useMemo(
+    () => getOrderedAccessLinks(draft.accessLinks, selectedProductTypes),
+    [draft.accessLinks, selectedProductTypes],
+  );
+  const accessLinksSummaryText = useMemo(
+    () => accessLinksSummary(draft.accessLinks, selectedProductTypes),
+    [draft.accessLinks, selectedProductTypes],
   );
   const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
   const hasCurrentAiQuestions =
@@ -277,16 +286,34 @@ export function SubmitFlowPage() {
     setError("");
     setDraft((current) => {
       const isSelected = current.productTypes.includes(productType);
-      const nextProductTypes = isSelected
-        ? current.productTypes.filter((value) => value !== productType)
-        : [...current.productTypes, productType];
+      const nextProductTypes = normalizeProductTypes(
+        isSelected
+          ? current.productTypes.filter((value) => value !== productType)
+          : [...current.productTypes, productType],
+      );
+      const nextAccessLinks = { ...current.accessLinks };
+
+      if (isSelected) {
+        delete nextAccessLinks[productType];
+      }
 
       return {
         ...current,
         productTypes: nextProductTypes,
-        accessMethod: defaultAccessMethod(nextProductTypes),
+        accessLinks: nextAccessLinks,
       };
     });
+  };
+
+  const updateAccessLink = (productType: ProductType, value: string) => {
+    setError("");
+    setDraft((current) => ({
+      ...current,
+      accessLinks: {
+        ...current.accessLinks,
+        [productType]: value,
+      },
+    }));
   };
   const validateCurrentStep = () => {
     if (currentStep === 0 && !draft.productName.trim()) {
@@ -298,12 +325,16 @@ export function SubmitFlowPage() {
     }
 
     if (currentStep === 2) {
-      if (!draft.accessUrl.trim()) {
-        return "Add a public app link for testers.";
-      }
+      for (const productType of selectedProductTypes) {
+        const validation = validateAccessLink(draft.accessLinks[productType] ?? "", productType);
 
-      if (!accessValidation.valid) {
-        return accessValidation.message;
+        if (!(draft.accessLinks[productType] ?? "").trim()) {
+          return `Add a public ${accessLinkFieldLabel(productType).toLowerCase()} for testers.`;
+        }
+
+        if (!validation.valid) {
+          return `${productTypeLabel(productType)}: ${validation.message}`;
+        }
       }
     }
 
@@ -408,13 +439,28 @@ export function SubmitFlowPage() {
 
                   <div className="wizard-preview__stack">
                     <div className="wizard-preview__item">
-                      <small>App link</small>
-                      {draft.accessUrl ? (
-                        <a href={normalizeAccessUrl(draft.accessUrl)} target="_blank" rel="noreferrer" className="wizard-preview__link">
-                          {displayAccessUrl(draft.accessUrl)}
-                        </a>
+                      <small>{selectedProductTypes.length > 1 ? "App links" : "App link"}</small>
+                      {orderedAccessLinks.length > 0 ? (
+                        <div className="wizard-link-list">
+                          {orderedAccessLinks.map((link) => (
+                            <a
+                              key={link.productType}
+                              href={link.normalizedUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="wizard-preview__link"
+                            >
+                              <span className="wizard-preview__link-label">{link.label}</span>
+                              <span>{link.displayUrl}</span>
+                            </a>
+                          ))}
+                        </div>
                       ) : (
-                        <strong>Add your live app link</strong>
+                        <strong>
+                          {selectedProductTypes.length > 1
+                            ? "Add a link for each selected platform"
+                            : "Add your live app link"}
+                        </strong>
                       )}
                     </div>
                     <div className="wizard-preview__item">
@@ -503,23 +549,33 @@ export function SubmitFlowPage() {
                   <div className="form-stack">
                     <div className="section-heading">
                       <span className="eyebrow">Step 3</span>
-                      <h2>What&apos;s the link to your app?</h2>
+                      <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What&apos;s the link to your app?"}</h2>
+                      {selectedProductTypes.length > 1 ? (
+                        <p>Add one public link for each selected platform.</p>
+                      ) : null}
                     </div>
-                    <label className="field">
-                      <span>Link to app</span>
-                      <input
-                        value={draft.accessUrl}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, accessUrl: event.target.value }))
-                        }
-                        placeholder="test4test.io"
-                      />
-                      <small
-                        className={`helper-text ${accessValidation.valid ? "helper-text--success" : "helper-text--warning"}`}
-                      >
-                        {accessValidation.message}
-                      </small>
-                    </label>
+                    {selectedProductTypes.map((productType) => {
+                      const value = draft.accessLinks[productType] ?? "";
+                      const validation = validateAccessLink(value, productType);
+
+                      return (
+                        <label key={productType} className="field">
+                          <span>{accessLinkFieldLabel(productType)}</span>
+                          <input
+                            value={value}
+                            onChange={(event) => updateAccessLink(productType, event.target.value)}
+                            placeholder={accessLinkPlaceholder(productType)}
+                          />
+                          {value.trim() ? (
+                            <small
+                              className={`helper-text ${validation.valid ? "helper-text--success" : "helper-text--warning"}`}
+                            >
+                              {validation.message}
+                            </small>
+                          ) : null}
+                        </label>
+                      );
+                    })}
                     <label className="field">
                       <span>(optional) Tester Instructions</span>
                       <textarea
@@ -589,7 +645,7 @@ export function SubmitFlowPage() {
                         <div className="question-studio__empty">
                           <h4>Generate 5 tailored questions</h4>
                           <p>
-                            We&apos;ll use your app name, platforms, description, link, and tester instructions
+                            We&apos;ll use your app name, platforms, links, description, and tester instructions
                             to draft a focused question set.
                           </p>
                           <button
@@ -786,8 +842,13 @@ export function SubmitFlowPage() {
                           </button>
                           <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
                             <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Link</span>
-                              <strong>{displayAccessUrl(draft.accessUrl)}</strong>
+                              <span className="review-edit-row__label">Links</span>
+                              <strong>
+                                {accessLinksSummaryText ||
+                                  (selectedProductTypes.length > 1
+                                    ? "Add a link for each selected platform"
+                                    : "Add your live app link")}
+                              </strong>
                             </span>
                             <ArrowRight size={16} />
                           </button>

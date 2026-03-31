@@ -13,7 +13,7 @@ import { useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { ReactionFaces } from "../components/ReactionFaces";
 import { useAppState } from "../context/AppStateContext";
-import { formatDateTime, normalizeAccessUrl } from "../lib/format";
+import { formatDateTime, getOrderedAccessLinks } from "../lib/format";
 import {
   buildAiQuestions,
   buildGeneralQuestions,
@@ -37,6 +37,10 @@ export function SubmissionDetailPage() {
   const responses = submission ? getSubmissionResponses(state, submission.id) : [];
   const summary = submission ? buildSubmissionSummary(state, submission, responses) : null;
   const latestResponse = responses[0] ?? null;
+  const accessLinks = useMemo(
+    () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
+    [submission],
+  );
   const [responseView, setResponseView] = useState<ResponseViewMode>("all");
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
   const [editMode, setEditMode] = useState<QuestionMode>(submission?.questionMode ?? "general");
@@ -53,7 +57,6 @@ export function SubmissionDetailPage() {
   const selectedRating = selectedResponse
     ? getResponseRating(state, selectedResponse.id, currentUser?.id ?? null)
     : null;
-
 
   const refreshPreset = (mode: QuestionMode) => {
     if (!submission) {
@@ -74,8 +77,7 @@ export function SubmissionDetailPage() {
           description: submission.description,
           targetAudience: submission.targetAudience,
           instructions: submission.instructions,
-          accessUrl: submission.accessUrl,
-          accessMethod: submission.accessMethod,
+          accessLinks: submission.accessLinks,
           questionMode: mode,
         }),
       );
@@ -112,10 +114,22 @@ export function SubmissionDetailPage() {
               <h1>{submission.productName}</h1>
               <p>{submission.description || "All of your tester feedback will appear here as responses come in."}</p>
             </div>
-            <a href={normalizeAccessUrl(submission.accessUrl)} target="_blank" rel="noreferrer" className="button button--secondary">
-              Open live product
-              <ExternalLink size={16} />
-            </a>
+            {accessLinks.length > 0 ? (
+              <div className="results-header-card__actions inline-actions">
+                {accessLinks.map((link) => (
+                  <a
+                    key={link.productType}
+                    href={link.normalizedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button button--secondary"
+                  >
+                    {link.buttonLabel}
+                    <ExternalLink size={16} />
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="results-header-card__meta">
@@ -440,5 +454,3 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
-
-

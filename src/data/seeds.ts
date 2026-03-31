@@ -72,8 +72,9 @@ const paletteQuestions = withIds(
     description: "A collaborative moodboard and creative direction tool for freelance designers.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a sample moodboard and invite a collaborator.",
-    accessUrl: "https://palettepilot.app",
-    accessMethod: "Website",
+    accessLinks: {
+      website: "https://palettepilot.app",
+    },
     questionMode: "ai",
   }),
   "palette",
@@ -90,8 +91,9 @@ const submissions: Submission[] = [
     description: "A habit-tracking app focused on gentle accountability and daily routines.",
     targetAudience: "people building healthier daily habits",
     instructions: "Try adding a habit and reviewing the weekly summary.",
-    accessUrl: "https://sprouthabit.app",
-    accessMethod: "TestFlight",
+    accessLinks: {
+      ios: "https://testflight.apple.com/join/sprouthabit",
+    },
     status: "live",
     questionMode: "general",
     isOpenForMoreTests: true,
@@ -109,8 +111,9 @@ const submissions: Submission[] = [
     description: "A collaborative moodboard and creative direction workspace for design teams.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a board and inspect how easy it is to add references.",
-    accessUrl: "https://palettepilot.app",
-    accessMethod: "Website",
+    accessLinks: {
+      website: "https://palettepilot.app",
+    },
     status: "live",
     questionMode: "ai",
     isOpenForMoreTests: true,
@@ -128,8 +131,9 @@ const submissions: Submission[] = [
     description: "A meal planning tool that helps users turn pantry items into realistic weekly dinners.",
     targetAudience: "busy households that want low-friction meal planning",
     instructions: "Search for a pantry-based recipe and save it to the week plan.",
-    accessUrl: "https://pocketpantry.app",
-    accessMethod: "Website",
+    accessLinks: {
+      website: "https://pocketpantry.app",
+    },
     status: "live",
     questionMode: "custom",
     isOpenForMoreTests: true,
@@ -147,8 +151,10 @@ const submissions: Submission[] = [
     description: "A trip-planning companion for stitching outdoor routes, packing lists, and weather together.",
     targetAudience: "casual hikers planning day trips",
     instructions: "Plan a route and check what would help you trust the trip details.",
-    accessUrl: "https://trailmixer.app",
-    accessMethod: "App Store, Google Play, or beta link",
+    accessLinks: {
+      ios: "https://apps.apple.com/app/trailmixer/id1234567890",
+      android: "https://play.google.com/store/apps/details?id=app.trailmixer",
+    },
     status: "live",
     questionMode: "general",
     isOpenForMoreTests: true,
@@ -353,5 +359,3 @@ export const seededState: AppState = {
   ],
   otpChallenge: null,
 };
-
-

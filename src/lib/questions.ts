@@ -1,5 +1,5 @@
 import { GENERAL_QUESTION_BANK } from "../data/generalQuestionBank";
-import { Question, QuestionMode, ProductType, SubmissionDraft } from "../types";
+import { ProductType, Question, QuestionMode, SubmissionDraft } from "../types";
 import { hasNativeProductTypes, normalizeAccessUrl } from "./format";
 
 const easeScale = [
@@ -58,8 +58,8 @@ function normalizeProductName(productName: string) {
 function personalizeGeneralPrompt(prompt: string, productName: string) {
   const name = normalizeProductName(productName);
   const normalizedPrompt = prompt
-    .replace(/this product['�]s/gi, `${name}'s`)
-    .replace(/the product['�]s/gi, `${name}'s`)
+    .replace(/this product['’]s/gi, `${name}'s`)
+    .replace(/the product['’]s/gi, `${name}'s`)
     .replace(/this product/gi, name)
     .replace(/the product/gi, name);
 
@@ -274,13 +274,13 @@ export function estimateMinutes(questions: Question[]) {
   return Math.max(3, Math.round(paragraphCount * 1.2 + multipleCount * 0.35 + 1));
 }
 
-export function validateAccessUrl(url: string, productTypes: ProductType[]) {
+export function validateAccessLink(url: string, productType: ProductType) {
   const rawValue = url.trim();
 
   if (!rawValue) {
     return {
       valid: false,
-      message: "Enter a public domain like test4test.io or a full public URL.",
+      message: "Add a public link testers can open.",
     };
   }
 
@@ -320,8 +320,7 @@ export function validateAccessUrl(url: string, productTypes: ProductType[]) {
     }
 
     if (
-      hasNativeProductTypes(productTypes) &&
-      !productTypes.includes("website") &&
+      productType !== "website" &&
       !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(normalizedUrl)
     ) {
       return {

@@ -9,12 +9,17 @@ const PRODUCT_TYPE_ORDER = ["website", "ios", "android"] as const;
 
 type ProductType = (typeof PRODUCT_TYPE_ORDER)[number];
 
+interface AccessLinkPayload {
+  productType?: string;
+  url?: string;
+}
+
 interface GenerateQuestionRequest {
   productName?: string;
   productTypes?: string[];
+  accessLinks?: AccessLinkPayload[];
   description?: string;
   instructions?: string;
-  accessUrl?: string;
 }
 
 interface GeneratedQuestionPayload {
@@ -40,7 +45,7 @@ function normalizeText(value: unknown) {
 
 function normalizeProductTypes(value: unknown) {
   if (!Array.isArray(value)) {
-    return ["website"] satisfies ProductType[];
+    return [] as ProductType[];
   }
 
   const requested = new Set(
@@ -49,21 +54,51 @@ function normalizeProductTypes(value: unknown) {
       .filter(Boolean),
   );
 
-  const normalized = PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
-  return normalized.length > 0 ? normalized : ["website"];
+  return PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
+}
+
+function normalizeAccessLinks(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as Array<{ productType: ProductType; url: string }>;
+  }
+
+  const normalized: Array<{ productType: ProductType; url: string }> = [];
+  const seen = new Set<ProductType>();
+
+  for (const entry of value) {
+    const productType = typeof entry?.productType === "string"
+      ? entry.productType.trim().toLowerCase()
+      : "";
+    const url = normalizeText(entry?.url);
+
+    if (!PRODUCT_TYPE_ORDER.includes(productType as ProductType) || !url || seen.has(productType as ProductType)) {
+      continue;
+    }
+
+    seen.add(productType as ProductType);
+    normalized.push({ productType: productType as ProductType, url });
+  }
+
+  return normalized.sort(
+    (first, second) => PRODUCT_TYPE_ORDER.indexOf(first.productType) - PRODUCT_TYPE_ORDER.indexOf(second.productType),
+  );
 }
 
 function buildPrompt(payload: GenerateQuestionRequest) {
   const productName = normalizeText(payload.productName) || "This product";
   const productTypes = normalizeProductTypes(payload.productTypes);
+  const accessLinks = normalizeAccessLinks(payload.accessLinks);
   const description = normalizeText(payload.description) || "No description provided.";
   const instructions = normalizeText(payload.instructions) || "No tester instructions provided.";
-  const accessUrl = normalizeText(payload.accessUrl) || "No public URL provided.";
+  const accessLinkLines = accessLinks.length > 0
+    ? accessLinks.map((link) => `- ${link.productType}: ${link.url}`)
+    : ["- No public links provided."];
 
   return [
     `Product name: ${productName}`,
-    `Product types: ${productTypes.join(", ")}`,
-    `Public link: ${accessUrl}`,
+    `Product types: ${productTypes.join(", ") || "Not provided"}`,
+    "Public links:",
+    ...accessLinkLines,
     `Short description: ${description}`,
     `Tester instructions: ${instructions}`,
     "",
@@ -168,10 +203,10 @@ Deno.serve(async (request) => {
   try {
     const payload = (await request.json()) as GenerateQuestionRequest;
     const productName = normalizeText(payload.productName);
-    const accessUrl = normalizeText(payload.accessUrl);
+    const accessLinks = normalizeAccessLinks(payload.accessLinks);
 
-    if (!productName || !accessUrl) {
-      return json({ error: "Add your app name and public app link before generating AI questions." }, 400);
+    if (!productName || accessLinks.length === 0) {
+      return json({ error: "Add your app name and at least one public app link before generating AI questions." }, 400);
     }
 
     const openAiResponse = await fetch("https://api.openai.com/v1/responses", {

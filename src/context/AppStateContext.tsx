@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
-import { normalizeAccessUrl, normalizeProductTypes, productTypesBadges } from "../lib/format";
+import { getPrimaryAccessLink, normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "../lib/format";
 import {
   clearPendingSubmission,
   clearStoredOtpChallenge,
@@ -54,6 +54,7 @@ interface SubmissionRow {
   description: string;
   target_audience: string;
   instructions: string;
+  access_links?: Submission["accessLinks"] | null;
   access_url: string;
   access_method: string;
   status: Submission["status"];
@@ -243,12 +244,19 @@ function normalizeQuestions(value: unknown) {
 }
 
 function mapSubmission(row: SubmissionRow): Submission {
+  const accessLinks = normalizeAccessLinks(
+    row.access_links && typeof row.access_links === "object"
+      ? row.access_links
+      : row.access_url && row.product_type
+        ? { [row.product_type]: row.access_url }
+        : {},
+  );
   const productTypes = normalizeProductTypes(
-    Array.isArray(row.product_types)
+    Array.isArray(row.product_types) && row.product_types.length > 0
       ? row.product_types
       : row.product_type
         ? [row.product_type]
-        : [],
+        : (Object.keys(accessLinks) as Submission["productTypes"]),
   );
 
   return {
@@ -259,8 +267,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     description: row.description ?? "",
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
-    accessUrl: row.access_url,
-    accessMethod: row.access_method ?? "",
+    accessLinks,
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
@@ -496,22 +503,43 @@ async function loadCreditTransactions(currentUserId: string | null) {
 
 async function persistSubmission(draft: SubmissionDraft, questions: Question[]) {
   const supabase = requireSupabase();
+  const productTypes = normalizeProductTypes(draft.productTypes);
+  const accessLinks = normalizeAccessLinks(
+    productTypes.reduce<SubmissionDraft["accessLinks"]>((links, productType) => {
+      const value = draft.accessLinks[productType];
+
+      if (typeof value === "string") {
+        links[productType] = value;
+      }
+
+      return links;
+    }, {}),
+  );
+  const primaryAccessLink = getPrimaryAccessLink(accessLinks, productTypes);
+
+  if (!primaryAccessLink) {
+    throw new Error("Add at least one public link before creating the submission.");
+  }
+
   const { data, error } = await supabase.rpc("create_submission_with_questions", {
     p_product_name: draft.productName,
-    p_product_types: draft.productTypes,
+    p_product_types: productTypes,
     p_description: draft.description,
     p_target_audience: draft.targetAudience,
     p_instructions: draft.instructions,
-    p_access_url: normalizeAccessUrl(draft.accessUrl),
-    p_access_method: draft.accessMethod,
+    p_access_links: accessLinks,
     p_question_mode: draft.questionMode,
     p_questions: questions,
     p_estimated_minutes: estimateMinutes(questions),
   });
 
   if (error) {
-    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
-      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    if (
+      error.message.includes("create_submission_with_questions") ||
+      error.message.includes("p_product_types") ||
+      error.message.includes("p_access_links")
+    ) {
+      throw new Error("Run the latest Supabase migrations before creating submissions with multiple app links.");
     }
 
     throw new Error(error.message);

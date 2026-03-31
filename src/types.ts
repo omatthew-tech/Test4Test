@@ -1,4 +1,5 @@
 export type ProductType = "website" | "ios" | "android";
+export type AccessLinks = Partial<Record<ProductType, string>>;
 export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
 export type SubmissionStatus =
@@ -59,8 +60,7 @@ export interface Submission {
   description: string;
   targetAudience: string;
   instructions: string;
-  accessUrl: string;
-  accessMethod: string;
+  accessLinks: AccessLinks;
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;
@@ -160,7 +160,6 @@ export interface SubmissionDraft {
   description: string;
   targetAudience: string;
   instructions: string;
-  accessUrl: string;
-  accessMethod: string;
+  accessLinks: AccessLinks;
   questionMode: QuestionMode;
 }

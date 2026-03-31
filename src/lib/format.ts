@@ -1,6 +1,17 @@
-import { ProductType } from "../types";
+import { AccessLinks, ProductType } from "../types";
 
 export const PRODUCT_TYPE_ORDER: ProductType[] = ["website", "ios", "android"];
+
+export interface AccessLinkItem {
+  productType: ProductType;
+  label: string;
+  buttonLabel: string;
+  fieldLabel: string;
+  placeholder: string;
+  url: string;
+  normalizedUrl: string;
+  displayUrl: string;
+}
 
 function joinWithAnd(values: string[]) {
   if (values.length === 0) {
@@ -105,23 +116,15 @@ export function productTypeBadge(value: ProductType) {
 
 export function normalizeProductTypes(values: ProductType[]): ProductType[] {
   const requested = new Set<ProductType>(values);
-  const normalized: ProductType[] = PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
-  return normalized.length > 0 ? normalized : ["website"];
+  return PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
 }
 
 export function productTypesLabel(values: ProductType[]) {
-  if (values.length === 0) {
-    return "";
-  }
-
-  return joinWithAnd(normalizeProductTypes(values).map(productTypeLabel));
+  const productTypes = normalizeProductTypes(values);
+  return productTypes.length > 0 ? joinWithAnd(productTypes.map(productTypeLabel)) : "";
 }
 
 export function productTypesBadges(values: ProductType[]) {
-  if (values.length === 0) {
-    return [];
-  }
-
   return normalizeProductTypes(values).map(productTypeBadge);
 }
 
@@ -133,29 +136,85 @@ export function hasNativeProductTypes(values: ProductType[]) {
   return normalizeProductTypes(values).some(isNativeAppType);
 }
 
-export function defaultAccessMethod(values: ProductType[]) {
-  if (values.length === 0) {
-    return "";
-  }
+export function normalizeAccessLinks(accessLinks: AccessLinks) {
+  const normalized: AccessLinks = {};
 
-  const productTypes = normalizeProductTypes(values);
+  PRODUCT_TYPE_ORDER.forEach((productType) => {
+    const value = accessLinks[productType];
 
-  if (productTypes.length === 1) {
-    switch (productTypes[0]) {
-      case "ios":
-        return "App Store / TestFlight link";
-      case "android":
-        return "Google Play / Android link";
-      default:
-        return "Website";
+    if (typeof value === "string" && value.trim()) {
+      normalized[productType] = value.trim();
     }
-  }
+  });
 
-  if (productTypes.includes("website")) {
-    return "Public website, beta, or store link";
-  }
-
-  return "App Store, Google Play, or beta link";
+  return normalized;
 }
 
+export function accessLinkFieldLabel(productType: ProductType) {
+  switch (productType) {
+    case "ios":
+      return "iOS app link";
+    case "android":
+      return "Android app link";
+    default:
+      return "Website / Web app link";
+  }
+}
 
+export function accessLinkButtonLabel(productType: ProductType) {
+  switch (productType) {
+    case "ios":
+      return "Open iOS app";
+    case "android":
+      return "Open Android app";
+    default:
+      return "Open website";
+  }
+}
+
+export function accessLinkPlaceholder(productType: ProductType) {
+  switch (productType) {
+    case "ios":
+      return "apps.apple.com/app/... or testflight.apple.com/join/...";
+    case "android":
+      return "play.google.com/store/apps/...";
+    default:
+      return "yourapp.com";
+  }
+}
+
+export function getOrderedAccessLinks(accessLinks: AccessLinks, productTypes: ProductType[] = []) {
+  const normalizedLinks = normalizeAccessLinks(accessLinks);
+  const orderedTypes = normalizeProductTypes(productTypes);
+  const sourceTypes = orderedTypes.length > 0
+    ? orderedTypes
+    : PRODUCT_TYPE_ORDER.filter((productType) => Boolean(normalizedLinks[productType]));
+
+  return sourceTypes.flatMap((productType) => {
+    const url = normalizedLinks[productType];
+
+    if (!url) {
+      return [];
+    }
+
+    return [{
+      productType,
+      label: productTypeLabel(productType),
+      buttonLabel: accessLinkButtonLabel(productType),
+      fieldLabel: accessLinkFieldLabel(productType),
+      placeholder: accessLinkPlaceholder(productType),
+      url,
+      normalizedUrl: normalizeAccessUrl(url),
+      displayUrl: displayAccessUrl(url),
+    } satisfies AccessLinkItem];
+  });
+}
+
+export function getPrimaryAccessLink(accessLinks: AccessLinks, productTypes: ProductType[] = []) {
+  return getOrderedAccessLinks(accessLinks, productTypes)[0] ?? null;
+}
+
+export function accessLinksSummary(accessLinks: AccessLinks, productTypes: ProductType[] = []) {
+  const orderedLinks = getOrderedAccessLinks(accessLinks, productTypes);
+  return orderedLinks.map((link) => `${link.label}: ${link.displayUrl}`).join(" | ");
+}

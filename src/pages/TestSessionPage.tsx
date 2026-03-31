@@ -3,7 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { displayAccessUrl, normalizeAccessUrl } from "../lib/format";
+import { getOrderedAccessLinks } from "../lib/format";
 import { getActiveQuestionSet } from "../lib/selectors";
 import { Question, TestAnswer } from "../types";
 
@@ -29,6 +29,10 @@ export function TestSessionPage() {
   const { state, completeTest } = useAppState();
   const submission = state.submissions.find((item) => item.id === submissionId);
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
+  const accessLinks = useMemo(
+    () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
+    [submission],
+  );
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,11 +104,26 @@ export function TestSessionPage() {
         <Surface className="test-questions test-questions--full">
           <div className="test-session__intro-card">
             <div className="test-session__resource">
-              <span className="test-session__label">App link</span>
-              <a href={normalizeAccessUrl(submission.accessUrl)} target="_blank" rel="noreferrer" className="test-session__link">
-                <span>{displayAccessUrl(submission.accessUrl)}</span>
-                <ExternalLink size={15} />
-              </a>
+              <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+              {accessLinks.length > 0 ? (
+                <div className="test-session__link-list">
+                  {accessLinks.map((link) => (
+                    <a
+                      key={link.productType}
+                      href={link.normalizedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="test-session__link"
+                    >
+                      <span className="test-session__link-label">{link.label}</span>
+                      <span>{link.displayUrl}</span>
+                      <ExternalLink size={15} />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p>No public app links were provided for this test.</p>
+              )}
             </div>
             <div className="test-session__resource">
               <span className="test-session__label">Tester instructions</span>

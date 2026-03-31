@@ -18,6 +18,7 @@ create table if not exists public.submissions (
   instructions text not null default '',
   access_url text not null,
   access_method text not null default '',
+  access_links jsonb not null default '{}'::jsonb check (jsonb_typeof(access_links) = 'object'),
   status text not null default 'live' check (status in ('pending_verification', 'live', 'paused', 'flagged')),
   question_mode text not null check (question_mode in ('general', 'ai', 'custom')),
   is_open_for_more_tests boolean not null default true,
@@ -254,8 +255,7 @@ create or replace function public.create_submission_with_questions(
   p_description text,
   p_target_audience text,
   p_instructions text,
-  p_access_url text,
-  p_access_method text,
+  p_access_links jsonb,
   p_question_mode text,
   p_questions jsonb,
   p_estimated_minutes integer
@@ -264,14 +264,21 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $
 declare
   v_user_id uuid := auth.uid();
   v_submission_id uuid;
   v_product_types text[];
+  v_primary_product_type text;
+  v_primary_access_url text;
+  v_access_links jsonb;
 begin
   if v_user_id is null then
     raise exception 'You must be signed in to create a submission.';
+  end if;
+
+  if p_access_links is not null and jsonb_typeof(p_access_links) <> 'object' then
+    raise exception 'Provide app links as a JSON object keyed by app type.';
   end if;
 
   select coalesce(
@@ -288,6 +295,27 @@ begin
     raise exception 'Select at least one app type.';
   end if;
 
+  if exists (
+    select 1
+    from unnest(v_product_types) as product_type
+    where nullif(trim(coalesce(p_access_links ->> product_type, '')), '') is null
+  ) then
+    raise exception 'Add a public link for each selected app type.';
+  end if;
+
+  select coalesce(
+    jsonb_object_agg(product_type, access_url),
+    '{}'::jsonb
+  )
+  into v_access_links
+  from (
+    select product_type, trim(p_access_links ->> product_type) as access_url
+    from unnest(v_product_types) as product_type
+  ) normalized_links;
+
+  v_primary_product_type := v_product_types[1];
+  v_primary_access_url := v_access_links ->> v_primary_product_type;
+
   insert into public.submissions (
     user_id,
     product_name,
@@ -298,6 +326,7 @@ begin
     instructions,
     access_url,
     access_method,
+    access_links,
     status,
     question_mode,
     is_open_for_more_tests,
@@ -305,13 +334,14 @@ begin
   ) values (
     v_user_id,
     trim(p_product_name),
-    v_product_types[1],
+    v_primary_product_type,
     v_product_types,
     coalesce(p_description, ''),
     coalesce(p_target_audience, ''),
     coalesce(p_instructions, ''),
-    trim(p_access_url),
-    coalesce(p_access_method, ''),
+    v_primary_access_url,
+    '',
+    v_access_links,
     'live',
     p_question_mode,
     true,
@@ -335,7 +365,7 @@ begin
 
   return v_submission_id;
 end;
-$;
+$$;
 
 create or replace function public.update_question_set(
   p_submission_id uuid,
@@ -568,7 +598,7 @@ begin
 end;
 $$;
 
-grant execute on function public.create_submission_with_questions(text, text[], text, text, text, text, text, text, jsonb, integer) to authenticated;
+grant execute on function public.create_submission_with_questions(text, text[], text, text, text, jsonb, text, jsonb, integer) to authenticated;
 grant execute on function public.update_question_set(uuid, text, jsonb, integer) to authenticated;
 grant execute on function public.submit_test_response(uuid, jsonb, integer) to authenticated;
 
