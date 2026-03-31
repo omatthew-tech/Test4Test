@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Minus, Plus, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
@@ -17,6 +17,7 @@ import {
   validateAccessUrl,
 } from "../lib/questions";
 import { Question, SubmissionDraft } from "../types";
+import { wait } from "../lib/timing";
 
 const steps = [
   "App name",
@@ -53,6 +54,7 @@ export function SubmitFlowPage() {
   const [error, setError] = useState("");
   const [pendingScrollQuestionId, setPendingScrollQuestionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
   const [draft, setDraft] = useState<SubmissionDraft>({
     productName: initialProductName,
@@ -338,7 +340,7 @@ export function SubmitFlowPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSendingCode(true);
 
     try {
       await requestOtp(email.trim(), submissionId);
@@ -352,7 +354,7 @@ export function SubmitFlowPage() {
           : "We could not send a verification code.",
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSendingCode(false);
     }
   };
 
@@ -620,7 +622,7 @@ export function SubmitFlowPage() {
                                           />
                                           <button
                                             type="button"
-                                            className="icon-button option-input-row__remove"
+                                            className="option-input-row__remove"
                                             onClick={() => {
                                               const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
                                               updateQuestion(index, { options: nextOptions });
@@ -628,7 +630,7 @@ export function SubmitFlowPage() {
                                             aria-label={`Remove option ${optionIndex + 1}`}
                                             disabled={(question.options?.length ?? 0) <= 2}
                                           >
-                                            <Minus size={14} />
+                                            <X size={16} strokeWidth={2} aria-hidden />
                                           </button>
                                         </div>
                                       ))}
@@ -810,9 +812,18 @@ export function SubmitFlowPage() {
                     placeholder="you@example.com"
                   />
                 </label>
-                <button type="button" className="button button--primary" onClick={sendOtp}>
-                  <Sparkles size={16} />
-                  Send one-time code
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={sendOtp}
+                  disabled={isSendingCode || !email.trim() || !submissionId}
+                >
+                  {isSendingCode ? (
+                    <span className="button__spinner" aria-hidden="true" />
+                  ) : (
+                    <Sparkles size={16} />
+                  )}
+                  {isSendingCode ? "Sending..." : "Send one-time code"}
                 </button>
               </div>
             ) : (
@@ -835,5 +846,9 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
+
+
+
 
 

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
+import { wait } from "../lib/timing";
+
 export function SignInPage() {
   const navigate = useNavigate();
   const { currentUser, requestOtp, state, verifyOtp } = useAppState();
@@ -11,26 +13,31 @@ export function SignInPage() {
   const [email, setEmail] = useState(activeChallenge?.email ?? "");
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [hasRequestedCode, setHasRequestedCode] = useState(Boolean(activeChallenge?.email));
+
   useEffect(() => {
     if (currentUser) {
       navigate("/earn", { replace: true });
     }
   }, [currentUser, navigate]);
+
   useEffect(() => {
     if (activeChallenge?.email) {
       setEmail(activeChallenge.email);
       setHasRequestedCode(true);
     }
   }, [activeChallenge?.email]);
+
   const handleRequestCode = async () => {
     const nextEmail = email.trim().toLowerCase();
     if (!nextEmail) {
       setMessage("Add your email address to get a sign-in code.");
       return;
     }
-    setIsSubmitting(true);
+
+    setIsSendingCode(true);
     try {
       await requestOtp(nextEmail);
       setEmail(nextEmail);
@@ -40,32 +47,42 @@ export function SignInPage() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not send a sign-in code right now.");
     } finally {
-      setIsSubmitting(false);
+      setIsSendingCode(false);
     }
   };
+
   const handleVerify = async () => {
-    setIsSubmitting(true);
+    setIsVerifying(true);
     try {
       const result = await verifyOtp(code);
       setMessage(result.message);
       if (result.ok) {
         navigate("/earn", { replace: true });
       }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "We could not verify that code.");
     } finally {
-      setIsSubmitting(false);
+      setIsVerifying(false);
     }
   };
+
   const handleChangeEmail = () => {
     setHasRequestedCode(false);
     setCode("");
     setMessage("");
   };
+
   return (
     <AppShell eyebrowLabel={null}>
       <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel">
         {hasRequestedCode ? (
           <>
-            <button type="button" className="button button--ghost sign-in-back-button" onClick={handleChangeEmail}>
+            <button
+              type="button"
+              className="button button--ghost sign-in-back-button"
+              onClick={handleChangeEmail}
+              disabled={isSendingCode || isVerifying}
+            >
               <ArrowLeft size={16} />
               Change email
             </button>
@@ -92,7 +109,7 @@ export function SignInPage() {
                 type="button"
                 className="button button--primary"
                 onClick={() => void handleVerify()}
-                disabled={isSubmitting || !code.trim()}
+                disabled={isVerifying || isSendingCode || !code.trim()}
               >
                 Verify and continue
               </button>
@@ -100,10 +117,14 @@ export function SignInPage() {
                 type="button"
                 className="button button--secondary"
                 onClick={() => void handleRequestCode()}
-                disabled={isSubmitting}
+                disabled={isSendingCode || isVerifying}
               >
-                <RefreshCcw size={16} />
-                Resend code
+                {isSendingCode ? (
+                  <span className="button__spinner" aria-hidden="true" />
+                ) : (
+                  <RefreshCcw size={16} />
+                )}
+                {isSendingCode ? "Sending..." : "Resend code"}
               </button>
             </div>
           </>
@@ -127,10 +148,14 @@ export function SignInPage() {
                 type="button"
                 className="button button--primary"
                 onClick={() => void handleRequestCode()}
-                disabled={isSubmitting || !email.trim()}
+                disabled={isSendingCode || !email.trim()}
               >
-                <Mail size={16} />
-                Send one-time code
+                {isSendingCode ? (
+                  <span className="button__spinner" aria-hidden="true" />
+                ) : (
+                  <Mail size={16} />
+                )}
+                {isSendingCode ? "Sending..." : "Send one-time code"}
               </button>
             </div>
             <div className="sign-in-panel__footer">
@@ -144,7 +169,5 @@ export function SignInPage() {
     </AppShell>
   );
 }
-
-
 
 

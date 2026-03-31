@@ -3222,23 +3222,35 @@ body {
 }
 
 .option-input-row__remove {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  color: #f2854b;
-  border-color: #f4d7c8;
-  background: #fff8f3;
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink-500);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .option-input-row__remove:hover:not(:disabled) {
-  background: #fff1e6;
-  border-color: #f0c2a8;
+  background: var(--color-surface-100);
+  color: var(--color-ink-700);
+}
+
+.option-input-row__remove:focus-visible {
+  outline: 2px solid var(--color-orange-500);
+  outline-offset: 2px;
 }
 
 .option-input-row__remove:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 

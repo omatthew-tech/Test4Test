@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+﻿import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,32 +125,30 @@ Deno.serve(async (request) => {
   }
 
   const resultsUrl = `${appBaseUrl}/my-tests/${submission.id}`;
-  const ownerName = owner.display_name?.trim() || submission.product_name;
   const safeProductName = escapeHtml(submission.product_name);
-  const safeOwnerName = escapeHtml(ownerName);
   const safeResultsUrl = escapeHtml(resultsUrl);
 
   const subject = `New feedback for ${submission.product_name}`;
   const textBody = [
-    `Hi ${ownerName},`,
+    `Someone just tested ${submission.product_name}.`,
     "",
-    `Someone just tested ${submission.product_name} on Test4Test.`,
-    "Your latest feedback is ready to review.",
+    "Your feedback is ready to view.",
     "",
-    `View the new results: ${resultsUrl}`,
+    `View Feedback: ${resultsUrl}`,
+    "",
+    `Or open this link directly: ${resultsUrl}`,
   ].join("\n");
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; color: #231f1c; line-height: 1.6;">
-      <p>Hi ${safeOwnerName},</p>
-      <p>Someone just tested <strong>${safeProductName}</strong> on Test4Test.</p>
-      <p>Your latest feedback is ready to review.</p>
+      <p>Someone just tested <strong>${safeProductName}</strong>.</p>
+      <p>Your feedback is ready to view.</p>
       <p>
         <a href="${safeResultsUrl}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #f58e56; color: #fffaf6; text-decoration: none; font-weight: 600;">
-          View new results
+          View Feedback
         </a>
       </p>
-      <p style="margin-top: 18px; color: #6f655d;">Or open this link directly:<br /><a href="${safeResultsUrl}" style="color: #a34f25;">${safeResultsUrl}</a></p>
+      <p style="margin-top: 18px; color: #6f655d;">Or open this link directly: <a href="${safeResultsUrl}" style="color: #a34f25;">${safeResultsUrl}</a></p>
     </div>
   `;
 
@@ -162,7 +160,7 @@ Deno.serve(async (request) => {
       "X-Smtp2go-Api-Key": smtp2goApiKey,
     },
     body: JSON.stringify({
-      sender: smtp2goSender,
+      sender: `Test4Test <${smtp2goSender}>`,
       to: [owner.email],
       subject,
       text_body: textBody,
@@ -195,3 +193,7 @@ Deno.serve(async (request) => {
 
   return json({ ok: true, message: "Notification sent." });
 });
+
+
+
+
