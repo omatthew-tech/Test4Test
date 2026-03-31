@@ -49,12 +49,9 @@ export function HomePage() {
             </div>
           </div>
 
-          <section className="home-stage__steps" aria-labelledby="home-steps-title">
+          <section className="home-stage__steps" aria-label="Three steps">
             <div className="home-stage__steps-intro">
-              <div className="simple-section__copy">
-                <span className="eyebrow">How it works</span>
-                <h2 id="home-steps-title">Three steps</h2>
-              </div>
+
               <div className="simple-section__art" aria-hidden="true">
                 <img src={groupLogoPath} alt="" className="simple-section__logo" />
               </div>
