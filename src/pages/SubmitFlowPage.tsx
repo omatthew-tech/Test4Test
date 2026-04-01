@@ -483,7 +483,7 @@ export function SubmitFlowPage() {
   };
 
   return (
-    <AppShell title={currentStep < steps.length ? "Submit your product" : undefined} eyebrowLabel={null}>
+    <AppShell eyebrowLabel={null}>
       <div className="page-stack">
         {currentStep < steps.length ? (
           <div className="wizard-layout">

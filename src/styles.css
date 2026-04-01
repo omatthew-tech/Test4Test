@@ -1867,6 +1867,19 @@ body {
   justify-content: space-between;
 }
 
+@media (max-width: 760px) {
+  .topbar--guest {
+    flex-direction: row;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .topbar--guest .topbar__actions {
+    width: auto;
+    flex-wrap: nowrap;
+  }
+}
+
 /* Question studio redesign */
 .form-stack--question-studio {
   gap: 24px;
