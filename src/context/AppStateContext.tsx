@@ -156,6 +156,8 @@ interface AppStateContextValue {
   signOut: () => Promise<void>;
 }
 
+const OTP_REQUEST_DEDUPE_WINDOW_MS = 10000;
+
 const emptyState: AppState = {
   currentUserId: null,
   users: [],
@@ -633,6 +635,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const loadIdRef = useRef(0);
+  const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
+  const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(new Map());
 
   const refreshState = useCallback(async (authUserOverride?: SupabaseAuthUser | null) => {
     const loadId = ++loadIdRef.current;
@@ -734,28 +738,67 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           throw new Error("Add an email so we can send the one-time code.");
         }
 
-        const supabase = requireSupabase();
-        const { error } = await supabase.auth.signInWithOtp({
-          email: normalizedEmail,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
+        const requestKey = `${normalizedEmail}::${submissionId ?? ""}`;
+        const now = Date.now();
 
-        if (error) {
-          throw new Error(error.message);
+        for (const [key, entry] of recentOtpRequestsRef.current.entries()) {
+          if (now - entry.sentAt >= OTP_REQUEST_DEDUPE_WINDOW_MS) {
+            recentOtpRequestsRef.current.delete(key);
+          }
         }
 
-        const challenge = createOtpChallenge(normalizedEmail, submissionId);
-        storeOtpChallenge(challenge);
-        setState((current) => ({
-          ...current,
-          otpChallenge: challenge,
-        }));
+        const recentRequest = recentOtpRequestsRef.current.get(requestKey);
 
-        return challenge;
-      },
-      async verifyOtp(code) {
+        if (recentRequest && now - recentRequest.sentAt < OTP_REQUEST_DEDUPE_WINDOW_MS) {
+          storeOtpChallenge(recentRequest.challenge);
+          setState((current) => ({
+            ...current,
+            otpChallenge: recentRequest.challenge,
+          }));
+          return recentRequest.challenge;
+        }
+
+        const inFlightRequest = otpRequestInFlightRef.current.get(requestKey);
+
+        if (inFlightRequest) {
+          return inFlightRequest;
+        }
+
+        const sendPromise = (async () => {
+          const supabase = requireSupabase();
+          const { error } = await supabase.auth.signInWithOtp({
+            email: normalizedEmail,
+            options: {
+              shouldCreateUser: true,
+            },
+          });
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          const challenge = createOtpChallenge(normalizedEmail, submissionId);
+          recentOtpRequestsRef.current.set(requestKey, {
+            challenge,
+            sentAt: Date.now(),
+          });
+          storeOtpChallenge(challenge);
+          setState((current) => ({
+            ...current,
+            otpChallenge: challenge,
+          }));
+
+          return challenge;
+        })();
+
+        otpRequestInFlightRef.current.set(requestKey, sendPromise);
+
+        try {
+          return await sendPromise;
+        } finally {
+          otpRequestInFlightRef.current.delete(requestKey);
+        }
+      },      async verifyOtp(code) {
         const challenge = state.otpChallenge ?? getStoredOtpChallenge();
 
         if (!challenge) {
@@ -981,13 +1024,53 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const supabase = requireSupabase();
-        const { data, error } = await supabase.functions.invoke<{
-          ok?: boolean;
-          message?: string;
-          error?: string;
-        }>("delete-account", {
-          body: {},
-        });
+        const invokeDeleteAccount = async (accessToken: string) => {
+          return supabase.functions.invoke<{
+            ok?: boolean;
+            message?: string;
+            error?: string;
+          }>("delete-account", {
+            body: {},
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+        };
+
+        let accessToken: string;
+
+        try {
+          const { session } = await ensureAuthenticatedSession(
+            "We couldn't verify your account deletion request. Refresh the page and try again.",
+          );
+          accessToken = session.access_token;
+        } catch (sessionError) {
+          return {
+            ok: false,
+            message:
+              sessionError instanceof Error
+                ? sessionError.message
+                : "We couldn't verify your account deletion request. Refresh the page and try again.",
+          };
+        }
+
+        let result = await invokeDeleteAccount(accessToken);
+
+        if (result.error && /invalid jwt/i.test(result.error.message ?? "")) {
+          try {
+            const { session } = await ensureAuthenticatedSession(
+              "We couldn't verify your account deletion request. Refresh the page and try again.",
+            );
+            result = await invokeDeleteAccount(session.access_token);
+          } catch {
+            return {
+              ok: false,
+              message: "We couldn't verify your account deletion request. Refresh the page and try again.",
+            };
+          }
+        }
+
+        const { data, error } = result;
 
         if (error) {
           let message = error.message?.trim() || "We could not delete your account right now.";
@@ -1003,6 +1086,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             } catch {
               // Keep the function error message when the response body is unavailable.
             }
+          }
+
+          if (/invalid jwt/i.test(message) || /unauthorized/i.test(message)) {
+            message = "We couldn't verify your account deletion request. Refresh the page and try again.";
           }
 
           return {

@@ -36,36 +36,23 @@ Deno.serve(async (request) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim() ||
     "";
   const authHeader = request.headers.get("Authorization") ?? "";
+  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
   if (!supabaseUrl || !anonKey || !secretKey) {
     return json({ error: "Missing Supabase server secrets for account deletion." }, 500);
   }
 
-  if (!authHeader.trim()) {
+  if (!accessToken) {
     return json({ error: "Unauthorized." }, 401);
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
-    global: {
-      headers: {
-        Authorization: authHeader,
-      },
-    },
     auth: {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
   });
-
-  const {
-    data: { user },
-    error: userError,
-  } = await userClient.auth.getUser();
-
-  if (userError || !user) {
-    return json({ error: "Unauthorized." }, 401);
-  }
 
   const admin = createClient(supabaseUrl, secretKey, {
     auth: {
@@ -74,6 +61,35 @@ Deno.serve(async (request) => {
       detectSessionInUrl: false,
     },
   });
+
+  let user = null;
+  let userError: Error | null = null;
+
+  {
+    const {
+      data: userData,
+      error,
+    } = await userClient.auth.getUser(accessToken);
+    user = userData.user;
+    userError = error;
+  }
+
+  if (userError || !user) {
+    const {
+      data: userData,
+      error,
+    } = await admin.auth.getUser(accessToken);
+    user = userData.user;
+    userError = error;
+  }
+
+  if (userError || !user) {
+    console.error("delete-account auth failed", {
+      message: userError?.message ?? null,
+      accessTokenLength: accessToken.length,
+    });
+    return json({ error: userError?.message ?? "Unauthorized." }, 401);
+  }
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
 
