@@ -95,6 +95,7 @@ export function SubmitFlowPage() {
   const [aiQuestions, setAiQuestions] = useState<Question[]>([]);
   const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>("idle");
   const [aiQuestionError, setAiQuestionError] = useState("");
+  const [aiQuestionNotice, setAiQuestionNotice] = useState("");
   const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -181,6 +182,7 @@ export function SubmitFlowPage() {
 
     if (aiQuestionStatus === "ready" && !hasCurrentAiQuestions) {
       setAiQuestionStatus("idle");
+      setAiQuestionNotice("");
     }
   }, [aiQuestionStatus, draft.questionMode, hasCurrentAiQuestions]);
 
@@ -192,20 +194,23 @@ export function SubmitFlowPage() {
   const generateQuestionSet = async () => {
     setError("");
     setAiQuestionError("");
+    setAiQuestionNotice("");
     setAiQuestionStatus("loading");
 
     try {
       const requestKey = aiQuestionDraftKey;
-      const generatedQuestions = await generateAiQuestions({
+      const generationResult = await generateAiQuestions({
         ...draft,
         productName: draft.productName || "Your product",
       });
 
-      setAiQuestions(generatedQuestions);
+      setAiQuestions(generationResult.questions);
+      setAiQuestionNotice(generationResult.notice ?? "");
       setAiQuestionSourceKey(requestKey);
       setAiQuestionStatus("ready");
     } catch (generationError) {
       setAiQuestionStatus("error");
+      setAiQuestionNotice("");
       setAiQuestionError(
         generationError instanceof Error
           ? generationError.message
@@ -303,6 +308,7 @@ export function SubmitFlowPage() {
     setError("");
     setPendingScrollQuestionId(null);
     setAiQuestionError("");
+    setAiQuestionNotice("");
     setDraft((current) => ({ ...current, questionMode: mode }));
   };
 
@@ -674,6 +680,7 @@ export function SubmitFlowPage() {
                       ) : null}
 
 
+                      {aiQuestionNotice ? <div className="callout callout--soft">{aiQuestionNotice}</div> : null}
                       {aiQuestionError ? <div className="callout callout--warning">{aiQuestionError}</div> : null}
 
                       {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (

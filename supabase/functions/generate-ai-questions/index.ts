@@ -16,10 +16,12 @@ interface AccessLinkPayload {
 
 interface GenerateQuestionRequest {
   productName?: string;
+  productType?: string;
   productTypes?: string[];
   accessLinks?: AccessLinkPayload[];
   description?: string;
   instructions?: string;
+  accessUrl?: string;
 }
 
 interface GeneratedQuestionPayload {
@@ -43,6 +45,13 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
 }
 
+function normalizeSingleProductType(value: unknown) {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return PRODUCT_TYPE_ORDER.includes(normalized as ProductType)
+    ? (normalized as ProductType)
+    : null;
+}
+
 function normalizeProductTypes(value: unknown) {
   if (!Array.isArray(value)) {
     return [] as ProductType[];
@@ -57,9 +66,33 @@ function normalizeProductTypes(value: unknown) {
   return PRODUCT_TYPE_ORDER.filter((type) => requested.has(type));
 }
 
-function normalizeAccessLinks(value: unknown) {
-  if (!Array.isArray(value)) {
+function resolveProductTypes(payload: GenerateQuestionRequest) {
+  const productTypes = normalizeProductTypes(payload.productTypes);
+
+  if (productTypes.length > 0) {
+    return productTypes;
+  }
+
+  const singleProductType = normalizeSingleProductType(payload.productType);
+  return singleProductType ? [singleProductType] : [];
+}
+
+function buildLegacyAccessLinks(payload: GenerateQuestionRequest) {
+  const accessUrl = normalizeText(payload.accessUrl);
+
+  if (!accessUrl) {
     return [] as Array<{ productType: ProductType; url: string }>;
+  }
+
+  return [{
+    productType: normalizeSingleProductType(payload.productType) ?? resolveProductTypes(payload)[0] ?? "website",
+    url: accessUrl,
+  }];
+}
+
+function normalizeAccessLinks(value: unknown, payload: GenerateQuestionRequest) {
+  if (!Array.isArray(value)) {
+    return buildLegacyAccessLinks(payload);
   }
 
   const normalized: Array<{ productType: ProductType; url: string }> = [];
@@ -79,15 +112,19 @@ function normalizeAccessLinks(value: unknown) {
     normalized.push({ productType: productType as ProductType, url });
   }
 
-  return normalized.sort(
-    (first, second) => PRODUCT_TYPE_ORDER.indexOf(first.productType) - PRODUCT_TYPE_ORDER.indexOf(second.productType),
-  );
+  if (normalized.length > 0) {
+    return normalized.sort(
+      (first, second) => PRODUCT_TYPE_ORDER.indexOf(first.productType) - PRODUCT_TYPE_ORDER.indexOf(second.productType),
+    );
+  }
+
+  return buildLegacyAccessLinks(payload);
 }
 
 function buildPrompt(payload: GenerateQuestionRequest) {
   const productName = normalizeText(payload.productName) || "This product";
-  const productTypes = normalizeProductTypes(payload.productTypes);
-  const accessLinks = normalizeAccessLinks(payload.accessLinks);
+  const productTypes = resolveProductTypes(payload);
+  const accessLinks = normalizeAccessLinks(payload.accessLinks, payload);
   const description = normalizeText(payload.description) || "No description provided.";
   const instructions = normalizeText(payload.instructions) || "No tester instructions provided.";
   const accessLinkLines = accessLinks.length > 0
@@ -203,7 +240,7 @@ Deno.serve(async (request) => {
   try {
     const payload = (await request.json()) as GenerateQuestionRequest;
     const productName = normalizeText(payload.productName);
-    const accessLinks = normalizeAccessLinks(payload.accessLinks);
+    const accessLinks = normalizeAccessLinks(payload.accessLinks, payload);
 
     if (!productName || accessLinks.length === 0) {
       return json({ error: "Add your app name and at least one public app link before generating AI questions." }, 400);

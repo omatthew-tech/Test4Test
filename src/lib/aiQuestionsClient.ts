@@ -1,5 +1,11 @@
+import {
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+} from "@supabase/supabase-js";
 import { Question, SubmissionDraft } from "../types";
 import { getOrderedAccessLinks, normalizeAccessUrl, normalizeProductTypes } from "./format";
+import { buildAiQuestions } from "./questions";
 import { hasSupabaseConfig, requireSupabase } from "./supabase";
 
 const AI_FUNCTION_NAME = "generate-ai-questions";
@@ -20,6 +26,22 @@ interface AiQuestionResponse {
 interface AccessLinkPayload {
   productType: string;
   url: string;
+}
+
+interface AiFunctionRequestPayload {
+  productName: string;
+  productTypes: string[];
+  productType: string;
+  accessLinks: AccessLinkPayload[];
+  accessUrl: string;
+  description: string;
+  instructions: string;
+}
+
+export interface AiQuestionGenerationResult {
+  questions: Question[];
+  source: "edge" | "fallback";
+  notice?: string;
 }
 
 const aiQuestionCache = new Map<string, Question[]>();
@@ -94,6 +116,113 @@ function buildAccessLinkPayload(draft: SubmissionDraft): AccessLinkPayload[] {
   }));
 }
 
+// Keep sending the old single-link fields so older deployed edge functions still work.
+function buildAiFunctionRequestPayload(draft: SubmissionDraft): AiFunctionRequestPayload {
+  const productTypes = normalizeProductTypes(draft.productTypes);
+  const accessLinks = buildAccessLinkPayload(draft);
+  const primaryAccessLink = accessLinks[0];
+
+  return {
+    productName: draft.productName,
+    productTypes,
+    productType: primaryAccessLink?.productType ?? productTypes[0] ?? "website",
+    accessLinks,
+    accessUrl: primaryAccessLink?.url ?? "",
+    description: draft.description,
+    instructions: draft.instructions,
+  };
+}
+
+function buildFallbackQuestions(draft: SubmissionDraft, notice: string): AiQuestionGenerationResult {
+  const fallbackQuestions = buildAiQuestions({
+    ...draft,
+    productName: normalizeText(draft.productName) || "Your product",
+  });
+
+  return {
+    questions: cloneQuestions(fallbackQuestions),
+    source: "fallback",
+    notice,
+  };
+}
+
+async function readFunctionErrorMessage(response?: Response) {
+  if (!response) {
+    return "";
+  }
+
+  try {
+    const contentType = (response.headers.get("Content-Type") ?? "").split(";")[0].trim();
+
+    if (contentType === "application/json") {
+      const payload = (await response.clone().json()) as { error?: unknown; message?: unknown };
+
+      if (typeof payload.error === "string" && payload.error.trim()) {
+        return normalizeText(payload.error);
+      }
+
+      if (typeof payload.message === "string" && payload.message.trim()) {
+        return normalizeText(payload.message);
+      }
+    }
+
+    const text = await response.clone().text();
+    return text.trim() ? normalizeText(text) : "";
+  } catch {
+    return "";
+  }
+}
+
+function shouldUseFallback(error: unknown, status?: number) {
+  if (error instanceof FunctionsFetchError || error instanceof FunctionsRelayError) {
+    return true;
+  }
+
+  return error instanceof FunctionsHttpError && [401, 403, 404, 500, 502, 503, 504].includes(status ?? 0);
+}
+
+function buildFallbackNotice(status?: number) {
+  if (status === 401 || status === 403) {
+    return "We couldn't reach the live AI question service, so we created a smart fallback question set instead.";
+  }
+
+  if (status === 404) {
+    return "The live AI question service isn't available right now, so we created a smart fallback question set instead.";
+  }
+
+  return "The live AI question service is unavailable right now, so we created a smart fallback question set instead.";
+}
+
+function buildUserFacingError(error: unknown, status?: number, responseMessage?: string) {
+  if (status === 400 && responseMessage) {
+    return responseMessage;
+  }
+
+  if (responseMessage && status && status < 500) {
+    return responseMessage;
+  }
+
+  if (error instanceof FunctionsFetchError) {
+    return "We couldn't reach the AI question service. Check your connection and try again.";
+  }
+
+  if (error instanceof FunctionsRelayError) {
+    return "The AI question service is temporarily unavailable. Please try again in a moment.";
+  }
+
+  if (error instanceof FunctionsHttpError && status) {
+    if (status === 401 || status === 403) {
+      return "The AI question service is still protected and can't be called before login yet.";
+    }
+
+    if (status === 404) {
+      return "The AI question service isn't deployed in the connected Supabase project yet.";
+    }
+  }
+
+  return responseMessage || (error instanceof Error ? error.message : "AI question generation failed. Please try again.");
+}
+
 export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
   return JSON.stringify({
     productName: normalizeText(draft.productName),
@@ -104,10 +233,13 @@ export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
   });
 }
 
-export async function generateAiQuestions(draft: SubmissionDraft) {
+export async function generateAiQuestions(
+  draft: SubmissionDraft,
+): Promise<AiQuestionGenerationResult> {
   if (!hasSupabaseConfig) {
-    throw new Error(
-      "Missing Supabase configuration. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY before generating AI questions.",
+    return buildFallbackQuestions(
+      draft,
+      "AI question generation isn't configured in this environment, so we created a smart fallback question set instead.",
     );
   }
 
@@ -115,22 +247,32 @@ export async function generateAiQuestions(draft: SubmissionDraft) {
   const cached = aiQuestionCache.get(cacheKey);
 
   if (cached) {
-    return cloneQuestions(cached);
+    return {
+      questions: cloneQuestions(cached),
+      source: "edge",
+    };
   }
 
   const supabase = requireSupabase();
-  const { data, error } = await supabase.functions.invoke<AiQuestionResponse>(AI_FUNCTION_NAME, {
-    body: {
-      productName: draft.productName,
-      productTypes: normalizeProductTypes(draft.productTypes),
-      description: draft.description,
-      instructions: draft.instructions,
-      accessLinks: buildAccessLinkPayload(draft),
-    },
+  const { data, error, response } = await supabase.functions.invoke<AiQuestionResponse>(AI_FUNCTION_NAME, {
+    body: buildAiFunctionRequestPayload(draft),
   });
 
   if (error) {
-    throw new Error(error.message || "AI question generation failed. Please try again.");
+    const status = response?.status;
+    const responseMessage = await readFunctionErrorMessage(response);
+
+    if (shouldUseFallback(error, status)) {
+      console.warn("[generate-ai-questions] Falling back to local question generation.", {
+        status,
+        responseMessage,
+        errorName: error.name,
+      });
+
+      return buildFallbackQuestions(draft, buildFallbackNotice(status));
+    }
+
+    throw new Error(buildUserFacingError(error, status, responseMessage));
   }
 
   if (!data?.questions || !Array.isArray(data.questions)) {
@@ -139,5 +281,9 @@ export async function generateAiQuestions(draft: SubmissionDraft) {
 
   const normalized = normalizeGeneratedQuestions(data.questions);
   aiQuestionCache.set(cacheKey, normalized);
-  return cloneQuestions(normalized);
+
+  return {
+    questions: cloneQuestions(normalized),
+    source: "edge",
+  };
 }
