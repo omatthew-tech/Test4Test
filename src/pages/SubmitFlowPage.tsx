@@ -151,10 +151,16 @@ export function SubmitFlowPage() {
       return customQuestions;
     }
 
+    if (draft.questionMode === "ai" && hasCurrentAiQuestions) {
+      return aiQuestions;
+    }
+
     return [];
-  }, [customQuestions, draft.questionMode, generalQuestions]);
+  }, [aiQuestions, customQuestions, draft.questionMode, generalQuestions, hasCurrentAiQuestions]);
   const isEditableQuestionMode =
-    draft.questionMode === "general" || draft.questionMode === "custom";
+    draft.questionMode === "general" ||
+    draft.questionMode === "custom" ||
+    (draft.questionMode === "ai" && hasCurrentAiQuestions);
   const hasReachedEditableQuestionLimit = editableQuestions.length >= 10;
 
   const displayedQuestions = useMemo(() => {
@@ -227,6 +233,11 @@ export function SubmitFlowPage() {
 
     if (draft.questionMode === "custom") {
       setCustomQuestions(updater);
+      return;
+    }
+
+    if (draft.questionMode === "ai") {
+      setAiQuestions(updater);
     }
   };
 
@@ -247,7 +258,11 @@ export function SubmitFlowPage() {
     const nextQuestion = createBlankQuestion(
       editableQuestions.length,
       type,
-      draft.questionMode === "general" ? "general" : "custom",
+      draft.questionMode === "general"
+        ? "general"
+        : draft.questionMode === "ai"
+          ? "ai"
+          : "custom",
     );
 
     setError("");
