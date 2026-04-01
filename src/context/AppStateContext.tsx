@@ -21,8 +21,9 @@ import {
 } from "../lib/pendingSubmission";
 import { estimateMinutes } from "../lib/questions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
+import { wait } from "../lib/timing";
 import { getCurrentUser } from "../lib/selectors";
-import { hasSupabaseConfig, requireSupabase, supabasePublishableKey, supabaseUrl } from "../lib/supabase";
+import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
 import {
   AppState,
   CreditTransaction,
@@ -374,35 +375,71 @@ async function ensureAuthenticatedSession(
   };
 }
 
+const latestSubmissionSchemaMessage =
+  "Your Supabase database is missing the latest submissions schema. Run the 20260331 migrations for product_types and access_links before creating submissions with multiple app links.";
+
+function isMissingSubmissionSchemaError(message: string) {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes('column "access_links" of relation "submissions" does not exist') ||
+    normalized.includes('column "product_types" of relation "submissions" does not exist') ||
+    normalized.includes("create_submission_with_questions") ||
+    normalized.includes("p_product_types") ||
+    normalized.includes("p_access_links")
+  );
+}
+
+function isProfileAuthRace(error: { code?: string; message: string; details?: string | null }) {
+  const details = error.details?.toLowerCase() ?? "";
+  return error.code === "23503" && error.message.includes("profiles") && details.includes('key is not present in table "users"');
+}
+
 async function ensureProfile(authUser: SupabaseAuthUser) {
   const supabase = requireSupabase();
   const email = authUser.email ?? "";
   const displayName = resolveDisplayName(email, authUser);
+  const retryDelays = [0, 150, 400];
+  let lastError: Error | null = null;
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        id: authUser.id,
-        email,
-        display_name: displayName,
-      },
-      { onConflict: "id" },
-    )
-    .select("id, email, display_name, created_at")
-    .single();
+  for (const delay of retryDelays) {
+    if (delay > 0) {
+      await wait(delay);
+    }
 
-  if (error) {
-    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
-      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: authUser.id,
+          email,
+          display_name: displayName,
+        },
+        { onConflict: "id" },
+      )
+      .select("id, email, display_name, created_at")
+      .single();
+
+    if (!error) {
+      return mapProfile(data as ProfileRow);
+    }
+
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    if (isProfileAuthRace(error)) {
+      lastError = new Error(
+        "We verified your email, but your account is still finishing setup. Please wait a moment and try again.",
+      );
+      continue;
     }
 
     throw new Error(error.message);
   }
 
-  return mapProfile(data as ProfileRow);
+  throw lastError ?? new Error("We could not finish setting up your profile. Please try again.");
 }
-
 async function loadVisibleSubmissions(currentUserId: string | null) {
   const supabase = requireSupabase();
   const { data: liveRows, error: liveError } = await supabase
@@ -453,8 +490,8 @@ async function loadActiveQuestionSets(submissionIds: string[]) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    if (error.message.includes("create_submission_with_questions") || error.message.includes("p_product_types")) {
-      throw new Error("Run the latest Supabase migration before creating submissions with multiple app types.");
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
     }
 
     throw new Error(error.message);
@@ -575,12 +612,8 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   });
 
   if (error) {
-    if (
-      error.message.includes("create_submission_with_questions") ||
-      error.message.includes("p_product_types") ||
-      error.message.includes("p_access_links")
-    ) {
-      throw new Error("Run the latest Supabase migrations before creating submissions with multiple app links.");
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
     }
 
     throw new Error(error.message);
@@ -947,64 +980,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: "Sign in to delete your account." };
         }
 
-        if (!supabaseUrl || !supabasePublishableKey) {
-          return { ok: false, message: "Missing Supabase configuration." };
-        }
+        const supabase = requireSupabase();
+        const { data, error } = await supabase.functions.invoke<{
+          ok?: boolean;
+          message?: string;
+          error?: string;
+        }>("delete-account", {
+          body: {},
+        });
 
-        let session: Session;
-        let supabase: ReturnType<typeof requireSupabase>;
+        if (error) {
+          let message = error.message?.trim() || "We could not delete your account right now.";
+          const response =
+            typeof error === "object" && error && "context" in error && error.context instanceof Response
+              ? error.context
+              : null;
 
-        try {
-          ({ supabase, session } = await ensureAuthenticatedSession(
-            "Please sign in again before deleting your account.",
-          ));
-        } catch (sessionError) {
-          return {
-            ok: false,
-            message:
-              sessionError instanceof Error
-                ? sessionError.message
-                : "Please sign in again before deleting your account.",
-          };
-        }
-        let response: Response;
-
-        try {
-          response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-              apikey: supabasePublishableKey,
-            },
-            body: JSON.stringify({}),
-          });
-        } catch {
-          return {
-            ok: false,
-            message:
-              "Delete account is not configured yet. Deploy the Supabase delete-account function and add the required server secrets.",
-          };
-        }
-
-        let payload: { error?: string; message?: string } | null = null;
-
-        try {
-          payload = (await response.json()) as { error?: string; message?: string };
-        } catch {
-          payload = null;
-        }
-
-        if (!response.ok) {
-          let message = payload?.error ?? payload?.message ?? "";
-
-          if (/invalid jwt/i.test(message) || response.status === 401) {
-            message = "Please sign in again before deleting your account.";
-          } else if (!message) {
-            if (response.status === 404) {
-              message = "Delete account is not configured yet. Deploy the Supabase delete-account function first.";
-            } else {
-              message = "We could not delete your account right now.";
+          if (response) {
+            try {
+              const payload = (await response.json()) as { error?: string; message?: string };
+              message = payload.error ?? payload.message ?? message;
+            } catch {
+              // Keep the function error message when the response body is unavailable.
             }
           }
 
@@ -1013,6 +1010,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             message,
           };
         }
+
         clearStoredOtpChallenge();
 
         try {
@@ -1028,10 +1026,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         return {
           ok: true,
-          message: payload?.message ?? "Your account and associated data have been deleted.",
+          message: data?.message ?? "Your account and associated data have been deleted.",
         };
-      },
-      async signOut() {
+      },      async signOut() {
         if (!hasSupabaseConfig) {
           return;
         }
