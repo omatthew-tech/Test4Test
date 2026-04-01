@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
+import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { getPrimaryAccessLink, normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "../lib/format";
 import {
   clearPendingSubmission,
@@ -335,6 +335,45 @@ function mergeUniqueById<T extends { id: string }>(items: T[]) {
   return [...new Map(items.map((item) => [item.id, item])).values()];
 }
 
+function hasUsableSession(session: Session | null | undefined): session is Session {
+  if (!session?.access_token || !session.user) {
+    return false;
+  }
+
+  if (typeof session.expires_at !== "number") {
+    return true;
+  }
+
+  return session.expires_at > Math.floor(Date.now() / 1000) + 30;
+}
+
+async function ensureAuthenticatedSession(
+  fallbackMessage = "Please sign in again to continue.",
+) {
+  const supabase = requireSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (hasUsableSession(session)) {
+    return { supabase, session };
+  }
+
+  const {
+    data: refreshed,
+    error: refreshError,
+  } = await supabase.auth.refreshSession();
+
+  if (refreshError || !hasUsableSession(refreshed.session)) {
+    throw new Error(fallbackMessage);
+  }
+
+  return {
+    supabase,
+    session: refreshed.session,
+  };
+}
+
 async function ensureProfile(authUser: SupabaseAuthUser) {
   const supabase = requireSupabase();
   const email = authUser.email ?? "";
@@ -502,7 +541,9 @@ async function loadCreditTransactions(currentUserId: string | null) {
 }
 
 async function persistSubmission(draft: SubmissionDraft, questions: Question[]) {
-  const supabase = requireSupabase();
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before publishing your app.",
+  );
   const productTypes = normalizeProductTypes(draft.productTypes);
   const accessLinks = normalizeAccessLinks(
     productTypes.reduce<SubmissionDraft["accessLinks"]>((links, productType) => {
@@ -708,11 +749,55 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: error.message };
         }
 
-        const authUser = data.user ?? (await supabase.auth.getUser()).data.user;
+        if (data.session?.access_token && data.session.refresh_token) {
+          const { error: setSessionError } = await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
 
-        if (authUser) {
-          await ensureProfile(authUser);
+          if (setSessionError) {
+            clearStoredOtpChallenge();
+            setState((current) => ({
+              ...current,
+              otpChallenge: null,
+            }));
+            return {
+              ok: false,
+              message:
+                "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+            };
+          }
         }
+
+        let authUser: SupabaseAuthUser;
+
+        try {
+          const { session } = await ensureAuthenticatedSession(
+            "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+          );
+          authUser = session.user;
+        } catch (sessionError) {
+          clearStoredOtpChallenge();
+          setState((current) => ({
+            ...current,
+            otpChallenge: null,
+          }));
+          return {
+            ok: false,
+            message:
+              sessionError instanceof Error
+                ? sessionError.message
+                : "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+          };
+        }
+
+        await ensureProfile(authUser);
+
+        clearStoredOtpChallenge();
+        setState((current) => ({
+          ...current,
+          otpChallenge: null,
+        }));
 
         let createdSubmissionId: string | null = null;
 
@@ -728,12 +813,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        clearStoredOtpChallenge();
-        setState((current) => ({
-          ...current,
-          otpChallenge: null,
-        }));
-        await refreshState(authUser ?? null);
+        await refreshState();
 
         return {
           ok: true,
@@ -871,16 +951,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: "Missing Supabase configuration." };
         }
 
-        const supabase = requireSupabase();
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        let session: Session;
+        let supabase: ReturnType<typeof requireSupabase>;
 
-        if (sessionError || !session?.access_token) {
-          return { ok: false, message: sessionError?.message ?? "We could not verify your session." };
+        try {
+          ({ supabase, session } = await ensureAuthenticatedSession(
+            "Please sign in again before deleting your account.",
+          ));
+        } catch (sessionError) {
+          return {
+            ok: false,
+            message:
+              sessionError instanceof Error
+                ? sessionError.message
+                : "Please sign in again before deleting your account.",
+          };
         }
-
         let response: Response;
 
         try {
@@ -912,10 +998,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         if (!response.ok) {
           let message = payload?.error ?? payload?.message ?? "";
 
-          if (!message) {
-            if (response.status === 401) {
-              message = "Please sign in again before deleting your account.";
-            } else if (response.status === 404) {
+          if (/invalid jwt/i.test(message) || response.status === 401) {
+            message = "Please sign in again before deleting your account.";
+          } else if (!message) {
+            if (response.status === 404) {
               message = "Delete account is not configured yet. Deploy the Supabase delete-account function first.";
             } else {
               message = "We could not delete your account right now.";
@@ -927,7 +1013,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             message,
           };
         }
-
         clearStoredOtpChallenge();
 
         try {
