@@ -557,7 +557,7 @@ export function SubmitFlowPage() {
                       />
                     </label>
                     <label className="field">
-                      <span>(optional) Short app description for testers to see</span>
+                      <span>(optional) Short app description visible to testers</span>
                       <textarea
                         rows={4}
                         value={draft.description}
