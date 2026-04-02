@@ -5,8 +5,10 @@ import {
   ChevronRight,
   ExternalLink,
   MessageSquareQuote,
+  Plus,
   RefreshCcw,
   Save,
+  Trash2,
   X,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
@@ -86,6 +88,79 @@ export function SubmissionDetailPage() {
 
     setEditQuestions(activeVersion?.questions ?? defaultCustomQuestions(submission.productName));
   };
+
+  const hasReachedEditQuestionLimit = editQuestions.length >= 10;
+
+  const updateEditQuestion = (index: number, next: Partial<Question>) => {
+    setEditQuestions((current) =>
+      current.map((question, questionIndex) =>
+        questionIndex === index ? { ...question, ...next } : question,
+      ),
+    );
+  };
+
+  const addEditQuestion = (type: Question["type"]) => {
+    if (hasReachedEditQuestionLimit) {
+      return;
+    }
+
+    setEditQuestions((current) =>
+      [
+        ...current,
+        {
+          id: `${editMode}-${Date.now()}-${current.length}`,
+          title: "",
+          type,
+          required: true,
+          sortOrder: current.length + 1,
+          options: type === "multiple" ? ["Option 1", "Option 2"] : undefined,
+        },
+      ].map((question, questionIndex) => ({
+        ...question,
+        sortOrder: questionIndex + 1,
+      })),
+    );
+  };
+
+  const removeEditQuestion = (index: number) => {
+    setEditQuestions((current) =>
+      current
+        .filter((_, questionIndex) => questionIndex !== index)
+        .map((question, questionIndex) => ({
+          ...question,
+          sortOrder: questionIndex + 1,
+        })),
+    );
+  };
+
+  const duplicateEditQuestion = (index: number) => {
+    if (hasReachedEditQuestionLimit) {
+      return;
+    }
+
+    const sourceQuestion = editQuestions[index];
+
+    if (!sourceQuestion) {
+      return;
+    }
+
+    const duplicate: Question = {
+      ...sourceQuestion,
+      id: `${editMode}-${Date.now()}-${index}-duplicate`,
+      options: sourceQuestion.options ? [...sourceQuestion.options] : undefined,
+    };
+
+    setEditQuestions((current) =>
+      [...current.slice(0, index + 1), duplicate, ...current.slice(index + 1)].map(
+        (question, questionIndex) => ({
+          ...question,
+          sortOrder: questionIndex + 1,
+        }),
+      ),
+    );
+  };
+
+  const visibleEditMode: "general" | "ai" = editMode === "ai" ? "ai" : "general";
 
   const multipleChoiceSummary = useMemo(
     () => summary?.analytics.filter((item) => item.type === "multiple") ?? [],
@@ -370,65 +445,141 @@ export function SubmissionDetailPage() {
                 <X size={18} />
               </button>
             </div>
+            <div className="question-studio">
+              <div className="question-studio__header">
+                <div className="question-mode-strip">
+                  {[
+                    { value: "general", title: "Custom questions" },
+                    { value: "ai", title: "AI-generated questions" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`question-mode-button${visibleEditMode === option.value ? " question-mode-button--active" : ""}`}
+                      onClick={() => refreshPreset(option.value as Extract<QuestionMode, "general" | "ai">)}
+                    >
+                      <span>{option.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="choice-grid">
-              {[
-                { value: "general", label: "General" },
-                { value: "ai", label: "AI-generated" },
-                { value: "custom", label: "Custom" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`choice-card${editMode === option.value ? " choice-card--active" : ""}`}
-                  onClick={() => refreshPreset(option.value as QuestionMode)}
-                >
-                  <strong>{option.label}</strong>
-                  <span>Future sessions only</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="question-list question-list--compact">
-              {editQuestions.map((question, index) => (
-                <article key={question.id} className="question-card question-card--editorial">
-                  <div className="question-card__meta">
-                    <span className="pill">{question.type === "multiple" ? "MCQ" : "Paragraph"}</span>
-                  </div>
-                  <input
-                    value={question.title}
-                    onChange={(event) =>
-                      setEditQuestions((current) =>
-                        current.map((item, itemIndex) =>
-                          itemIndex === index ? { ...item, title: event.target.value } : item,
-                        ),
-                      )
-                    }
-                  />
-                  {question.type === "multiple" ? (
-                    <div className="option-list">
-                      {(question.options ?? []).map((option, optionIndex) => (
-                        <input
-                          key={`${question.id}-${optionIndex}`}
-                          value={option}
-                          onChange={(event) =>
-                            setEditQuestions((current) =>
-                              current.map((item, itemIndex) => {
-                                if (itemIndex !== index) {
-                                  return item;
-                                }
-                                const nextOptions = [...(item.options ?? [])];
-                                nextOptions[optionIndex] = event.target.value;
-                                return { ...item, options: nextOptions };
-                              }),
-                            )
-                          }
-                        />
-                      ))}
+              <div className="question-list question-list--studio">
+                {editQuestions.map((question, index) => (
+                  <article key={question.id} className="question-card question-card--studio">
+                    <div className="question-card__topbar">
+                      <div className="question-card__meta question-card__meta--editor">
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => removeEditQuestion(index)}
+                          aria-label="Remove question"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  ) : null}
-                </article>
-              ))}
+                    <div className="question-card__body">
+                      <div className="question-card__prompt-row">
+                        <input
+                          className="question-card__prompt-input"
+                          value={question.title}
+                          onChange={(event) => updateEditQuestion(index, { title: event.target.value })}
+                          placeholder="Type your question here"
+                        />
+                      </div>
+                      {question.type === "multiple" ? (
+                        <div className="option-list option-list--editor">
+                          {(question.options ?? []).map((option, optionIndex) => (
+                            <div key={`${question.id}-${optionIndex}`} className="option-input-row">
+                              <span className="option-input-row__icon" aria-hidden="true" />
+                              <input
+                                className="option-input-row__input"
+                                value={option}
+                                onChange={(event) => {
+                                  const nextOptions = [...(question.options ?? [])];
+                                  nextOptions[optionIndex] = event.target.value;
+                                  updateEditQuestion(index, { options: nextOptions });
+                                }}
+                                placeholder={`Option ${optionIndex + 1}`}
+                              />
+                              <button
+                                type="button"
+                                className="option-input-row__remove"
+                                onClick={() => {
+                                  const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
+                                  updateEditQuestion(index, { options: nextOptions });
+                                }}
+                                aria-label={`Remove option ${optionIndex + 1}`}
+                                disabled={(question.options?.length ?? 0) <= 2}
+                              >
+                                <X size={16} strokeWidth={2} aria-hidden />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="question-card__response-preview">
+                          <span>Written answer</span>
+                          <p>Testers will leave written feedback here.</p>
+                        </div>
+                      )}
+                    </div>
+                    {question.type === "multiple" ? (
+                      <div className="question-card__custom-actions">
+                        {(question.options?.length ?? 0) < 6 ? (
+                          <button
+                            type="button"
+                            className="button button--ghost"
+                            onClick={() =>
+                              updateEditQuestion(index, {
+                                options: [
+                                  ...(question.options ?? []),
+                                  `Option ${(question.options?.length ?? 0) + 1}`,
+                                ],
+                              })
+                            }
+                          >
+                            <Plus size={16} />
+                            Add option
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="button button--secondary question-card__duplicate-button"
+                          onClick={() => duplicateEditQuestion(index)}
+                          disabled={hasReachedEditQuestionLimit}
+                        >
+                          Duplicate
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+
+              <div className="question-studio__footer">
+                <div className="inline-actions inline-actions--compact">
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={() => addEditQuestion("multiple")}
+                    disabled={hasReachedEditQuestionLimit}
+                  >
+                    <Plus size={16} />
+                    Add multiple choice
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={() => addEditQuestion("paragraph")}
+                    disabled={hasReachedEditQuestionLimit}
+                  >
+                    <Plus size={16} />
+                    Add paragraph question
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="wizard-actions">
