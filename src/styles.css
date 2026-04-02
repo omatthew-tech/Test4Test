@@ -4607,117 +4607,67 @@ body {
 
 /* Profile settings redesign */
 .profile-page--settings {
-  gap: 22px;
+  width: 100%;
+  margin: 0;
+  gap: 18px;
 }
 
-.profile-hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
-  align-items: end;
-  padding: 28px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(245, 142, 86, 0.09), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 248, 241, 0.95));
-}
-
-.profile-hero-card__copy {
+.profile-settings-shell {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.profile-hero-card__copy h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 2.8rem);
-}
-
-.profile-hero-card__copy p {
-  margin: 0;
-  max-width: 58ch;
-  color: #625850;
-  line-height: 1.65;
-}
-
-.profile-hero-card__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(110px, 1fr));
-  gap: 12px;
-}
-
-.profile-hero-stat {
-  min-width: 110px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  border: 1px solid rgba(216, 208, 200, 0.86);
-  background: rgba(255, 255, 255, 0.78);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.profile-hero-stat small {
-  color: #7b7068;
-  font-size: 0.84rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.profile-hero-stat strong {
-  font-size: 1.85rem;
-  line-height: 1;
-}
-
-.profile-settings-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
-  gap: 20px;
-  align-items: start;
+  gap: 16px;
 }
 
 .profile-panel {
-  padding: 24px;
-  border-radius: 26px;
+  padding: 0;
+  border-radius: 24px;
+  border: 1px solid rgba(223, 214, 206, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 248, 244, 0.98));
+  box-shadow: 0 1px 2px rgba(29, 24, 21, 0.04), 0 20px 44px rgba(29, 24, 21, 0.05);
+  overflow: hidden;
 }
 
 .profile-panel--account,
-.profile-panel--ledger {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.profile-panel--links,
 .profile-panel--danger {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 0;
 }
 
-.profile-section-heading h2 {
-  margin: 0;
+.profile-account-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.profile-account-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
 }
 
 .profile-email-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 16px;
-  padding: 18px 20px;
-  border-radius: 22px;
-  border: 1px solid rgba(216, 208, 200, 0.82);
-  background: rgba(255, 255, 255, 0.76);
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
 }
 
 .profile-email-card__icon {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 16px;
-  background: rgba(245, 142, 86, 0.14);
-  color: var(--color-orange-600);
+  border: 1px solid rgba(230, 222, 215, 0.96);
+  background: rgba(255, 255, 255, 0.96);
+  color: #5f5750;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px rgba(29, 24, 21, 0.04);
 }
 
 .profile-email-card__content {
@@ -4729,59 +4679,93 @@ body {
 
 .profile-email-card__content small {
   color: #7b7068;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .profile-email-card__content strong {
-  font-size: 1.08rem;
-  line-height: 1.4;
+  font-size: 1rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: #201a17;
   overflow-wrap: anywhere;
 }
 
-.profile-email-card__content p,
-.profile-danger-copy {
+.profile-account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-action-button {
+  min-width: 152px;
+}
+
+.profile-signout-button {
+  color: #5f5750;
+}
+
+.profile-section-heading {
   margin: 0;
-  color: #625850;
-  line-height: 1.65;
+  padding: 24px 24px 0;
+}
+
+.profile-section-heading h2 {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .profile-inline-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(231, 223, 215, 0.96);
+  background: rgba(255, 254, 252, 0.9);
 }
 
-.profile-inline-actions {
-  justify-content: space-between;
-}
-
+.profile-inline-actions,
 .profile-inline-actions--danger {
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
-.profile-action-button,
-.profile-delete-button {
-  align-self: flex-start;
+.profile-danger-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px 24px 24px;
 }
 
-.profile-link-row strong {
-  font-size: 1rem;
-}
-
-.profile-link-row p {
-  margin: 6px 0 0;
+.profile-danger-copy {
+  margin: 0;
+  max-width: 60ch;
+  color: #625850;
+  line-height: 1.65;
 }
 
 .profile-panel--danger {
-  border-color: rgba(232, 192, 192, 0.92);
-  background: linear-gradient(180deg, rgba(255, 252, 251, 0.99), rgba(255, 245, 244, 0.96));
+  border-color: rgba(207, 90, 76, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 246, 243, 0.97));
 }
 
 .profile-delete-button {
-  border-color: rgba(219, 122, 122, 0.36);
-  color: #a64040;
+  align-self: flex-start;
+  border-color: rgba(207, 90, 76, 0.22);
+  background: #fff7f5;
+  color: #97413a;
+}
+
+.profile-delete-button:hover:not(:disabled) {
+  border-color: rgba(207, 90, 76, 0.32);
+  background: #fff1ee;
 }
 
 .profile-delete-confirm {
@@ -4797,7 +4781,8 @@ body {
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(28, 23, 20, 0.4);
+  background: rgba(24, 19, 17, 0.48);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4805,27 +4790,27 @@ body {
 }
 
 .account-modal {
-  width: min(560px, 100%);
-  padding: 28px;
-  border-radius: 28px;
-  border: 1px solid rgba(216, 208, 200, 0.9);
+  width: min(480px, 100%);
+  padding: 24px;
+  border-radius: 22px;
+  border: 1px solid rgba(226, 218, 210, 0.94);
   background: #fffefc;
-  box-shadow: 0 24px 60px rgba(29, 24, 21, 0.14);
+  box-shadow: 0 28px 72px rgba(29, 24, 21, 0.16);
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
 }
 
 .account-modal__header {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: flex-start;
 }
 
 .account-modal__badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   background: rgba(207, 90, 76, 0.12);
   color: #cf5a4c;
   display: inline-flex;
@@ -4836,8 +4821,10 @@ body {
 
 .account-modal__header h2 {
   margin: 0;
-  font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(1.55rem, 3vw, 1.95rem);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .account-modal__header p {
@@ -4846,31 +4833,41 @@ body {
   line-height: 1.65;
 }
 
-@media (max-width: 960px) {
-  .profile-settings-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-hero-card {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .profile-hero-card__stats {
+@media (max-width: 760px) {
+  .profile-settings-shell {
     width: 100%;
   }
-}
 
-@media (max-width: 760px) {
-  .profile-panel,
-  .profile-hero-card,
-  .account-modal {
-    padding: 22px;
-    border-radius: 22px;
+  .profile-account-stack,
+  .profile-danger-stack,
+  .profile-section-heading {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
-  .profile-hero-card__stats {
-    grid-template-columns: 1fr 1fr;
+  .profile-section-heading,
+  .profile-account-stack {
+    padding-top: 20px;
+  }
+
+  .profile-danger-stack {
+    padding-bottom: 20px;
+  }
+
+  .profile-account-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .profile-account-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profile-action-button,
+  .profile-delete-button,
+  .profile-signout-button {
+    width: 100%;
   }
 
   .profile-inline-actions,
@@ -4880,14 +4877,18 @@ body {
   }
 
   .profile-inline-actions .button,
-  .profile-inline-actions--danger .button,
-  .profile-action-button,
-  .profile-delete-button {
+  .profile-inline-actions--danger .button {
     width: 100%;
   }
 
   .account-modal-backdrop {
     padding: 12px;
+  }
+
+  .account-modal {
+    width: 100%;
+    padding: 20px;
+    border-radius: 20px;
   }
 
   .account-modal__header {
@@ -5446,4 +5447,5 @@ body {
     padding: 20px 18px 18px 20px;
   }
 }
+
 
