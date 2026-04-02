@@ -34,6 +34,7 @@ const GENERAL_PARAGRAPH_QUESTION_COUNT = 2;
 const GENERAL_QUESTION_COUNT = GENERAL_MULTIPLE_QUESTION_COUNT + GENERAL_PARAGRAPH_QUESTION_COUNT;
 const GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID = "q025";
 const GENERAL_PLACEHOLDER_QUESTION_ID = "general-placeholder";
+const GENERAL_STARTER_PARAGRAPH_QUESTION_ID = "general-starter-paragraph";
 const GENERAL_PERSONALIZED_QUESTION_ID_PREFIX = "general-featured-";
 const LEGACY_GENERAL_PERSONALIZED_QUESTION_ID = "general-company-clarity";
 const generalQuestionTemplateById = new Map(
@@ -224,6 +225,18 @@ function getFeaturedGeneralTemplateFromQuestion(question: Question | undefined) 
   return resolveGeneralTemplate(GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID);
 }
 
+export function buildStarterGeneralQuestions(_productName: string) {
+  return [
+    buildGeneralPlaceholderQuestion(),
+    createQuestion(
+      GENERAL_STARTER_PARAGRAPH_QUESTION_ID,
+      "",
+      "paragraph",
+      2,
+    ),
+  ];
+}
+
 export function buildGeneralQuestions(productName: string) {
   return buildGeneralQuestionsFromTemplates(
     productName,
@@ -251,6 +264,25 @@ export function buildRandomGeneralQuestions(productName: string) {
 }
 
 export function syncGeneralQuestionsProductName(questions: Question[], productName: string) {
+  if (questions.length === 0) {
+    return buildStarterGeneralQuestions(productName);
+  }
+
+  const isStarterGeneralSet =
+    questions.length === 2 &&
+    questions[0]?.id === GENERAL_PLACEHOLDER_QUESTION_ID &&
+    questions[0]?.type === "multiple" &&
+    questions[1]?.id === GENERAL_STARTER_PARAGRAPH_QUESTION_ID &&
+    questions[1]?.type === "paragraph";
+
+  if (isStarterGeneralSet) {
+    return questions.map((question, index) => ({
+      ...question,
+      sortOrder: index + 1,
+      options: question.type === "multiple" && question.options ? [...question.options] : undefined,
+    }));
+  }
+
   const isGeneralSet =
     questions.length === GENERAL_QUESTION_COUNT &&
     questions.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "multiple") &&
@@ -260,7 +292,11 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
       questions[1]?.id === LEGACY_GENERAL_PERSONALIZED_QUESTION_ID);
 
   if (!isGeneralSet) {
-    return buildGeneralQuestions(productName);
+    return questions.map((question, index) => ({
+      ...question,
+      sortOrder: index + 1,
+      options: question.type === "multiple" && question.options ? [...question.options] : undefined,
+    }));
   }
 
   return [
@@ -281,6 +317,7 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
     })),
   ];
 }
+
 function inferPrimaryTask(draft: SubmissionDraft) {
   const source = `${draft.productName} ${draft.description} ${draft.targetAudience}`.toLowerCase();
 
@@ -469,7 +506,7 @@ export function questionModeLabel(mode: QuestionMode) {
     case "custom":
       return "Custom";
     default:
-      return "General";
+      return "Custom";
   }
 }
 
@@ -480,6 +517,6 @@ export function questionTypeLabel(mode: QuestionMode) {
     case "custom":
       return "Custom questions";
     default:
-      return "General questions";
+      return "Custom questions";
   }
 }

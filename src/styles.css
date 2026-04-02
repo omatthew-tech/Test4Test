@@ -2752,6 +2752,10 @@ body {
   flex-shrink: 0;
 }
 
+.question-studio__note--actions-only {
+  justify-content: flex-end;
+}
+
 .question-studio__actions {
   display: none;
 }

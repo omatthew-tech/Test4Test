@@ -17,7 +17,7 @@ import {
   PRODUCT_TYPE_ORDER,
 } from "../lib/format";
 import {
-  buildGeneralQuestions,
+  buildStarterGeneralQuestions,
   buildRandomGeneralQuestions,
   defaultCustomQuestions,
   questionModeLabel,
@@ -88,11 +88,12 @@ export function SubmitFlowPage() {
     questionMode: "general",
   });
   const [generalQuestions, setGeneralQuestions] = useState<Question[]>(() =>
-    buildGeneralQuestions(initialProductName || "Your product"),
+    buildStarterGeneralQuestions(initialProductName || "Your product"),
   );
   const [customQuestions, setCustomQuestions] = useState<Question[]>(() =>
     defaultCustomQuestions(initialProductName || "Your product"),
   );
+  const [hasGeneratedGeneralQuestions, setHasGeneratedGeneralQuestions] = useState(false);
   const [aiQuestions, setAiQuestions] = useState<Question[]>([]);
   const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>("idle");
   const [aiQuestionError, setAiQuestionError] = useState("");
@@ -195,6 +196,7 @@ export function SubmitFlowPage() {
 
   const refreshQuestions = () => {
     setError("");
+    setHasGeneratedGeneralQuestions(true);
     setGeneralQuestions(buildRandomGeneralQuestions(draft.productName || "Your product"));
   };
 
@@ -405,7 +407,7 @@ export function SubmitFlowPage() {
     }
 
     if (currentStep === 3 && isEditableQuestionMode) {
-      const minimumQuestionCount = draft.questionMode === "custom" ? 2 : 5;
+      const minimumQuestionCount = draft.questionMode === "ai" ? 5 : 2;
 
       if (
         editableQuestions.length < minimumQuestionCount ||
@@ -660,9 +662,8 @@ export function SubmitFlowPage() {
                       <div className="question-studio__header">
                         <div className="question-mode-strip">
                           {[
-                            { value: "general", title: "General questions" },
+                            { value: "general", title: "Custom questions" },
                             { value: "ai", title: "AI-generated questions" },
-                            { value: "custom", title: "Custom questions" },
                           ].map((option) => (
                             <button
                               key={option.value}
@@ -677,11 +678,12 @@ export function SubmitFlowPage() {
                       </div>
 
                       {isEditableQuestionMode ? (
-                        <div className="question-studio__note">
-                          <div className="question-studio__note-copy">
-                            <span>{questionModeLabel(draft.questionMode)} questions</span>
-
-                          </div>
+                        <div className={`question-studio__note${draft.questionMode === "general" ? " question-studio__note--actions-only" : ""}`}>
+                          {draft.questionMode !== "general" ? (
+                            <div className="question-studio__note-copy">
+                              <span>{questionModeLabel(draft.questionMode)} questions</span>
+                            </div>
+                          ) : null}
                           {draft.questionMode === "general" ? (
                             <button
                               type="button"
@@ -689,7 +691,7 @@ export function SubmitFlowPage() {
                               onClick={refreshQuestions}
                             >
                               <RefreshCcw size={16} />
-                              Refresh questions
+                              {hasGeneratedGeneralQuestions ? "Refresh questions" : "Generate questions"}
                             </button>
                           ) : null}
                         </div>
