@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+﻿import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
 
@@ -28,7 +27,6 @@ export function AppShell({
 }) {
   const { state, currentUser } = useAppState();
   const credits = getCreditBalance(state, currentUser?.id ?? null);
-  const [hasBrandLogo, setHasBrandLogo] = useState(false);
   const showMemberNav = Boolean(currentUser);
   const profileHref = currentUser ? "/profile" : "/sign-in";
   const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
@@ -36,26 +34,20 @@ export function AppShell({
   const topbarClassName = `topbar${showMemberNav ? "" : " topbar--guest"}${variant === "marketing" ? " topbar--marketing" : ""}`;
   const pageShellClassName = `page-shell${variant === "marketing" ? " page-shell--marketing" : ""}`;
 
-  useEffect(() => {
-    const image = new Image();
-    image.onload = () => setHasBrandLogo(true);
-    image.onerror = () => setHasBrandLogo(false);
-    image.src = brandLogoPath;
-  }, []);
-
   return (
     <div className={shellClassName}>
       <div className={siteHeaderClassName}>
         <header className={topbarClassName}>
           <NavLink to="/" className="brandmark" aria-label="Test4Test home">
-            {hasBrandLogo ? (
-              <>
-                <img src={brandLogoPath} alt="" className="brandmark__image" />
-                <span className="brandmark__wordmark">Test4Test</span>
-              </>
-            ) : (
-              <span className="brandmark__wordmark">Test4Test</span>
-            )}
+            <img
+              src={brandLogoPath}
+              alt=""
+              className="brandmark__image"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
+            />
+            <span className="brandmark__wordmark">Test4Test</span>
           </NavLink>
 
           {showMemberNav ? (
