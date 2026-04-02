@@ -90,19 +90,10 @@ export function ProfilePage() {
   return (
     <AppShell title="Profile" eyebrowLabel={null}>
       <div className="page-stack profile-page profile-page--settings">
-        <Surface className="profile-hero-card profile-hero-card--simple">
-          <div className="profile-hero-card__copy">
-            <span className="eyebrow">Account</span>
-            <h1>{currentUser.displayName}</h1>
-            <p>Manage your sign-in email, stay secure, and control your Test4Test account.</p>
-          </div>
-        </Surface>
-
         <div className="profile-settings-grid profile-settings-grid--simple">
           <Surface className="profile-panel profile-panel--account">
             <div className="section-heading section-heading--split profile-section-heading">
               <div>
-                <span className="eyebrow">Sign-in</span>
                 <h2>Account settings</h2>
               </div>
               <button
@@ -123,7 +114,6 @@ export function ProfilePage() {
               <div className="profile-email-card__content">
                 <small>Current email</small>
                 <strong>{currentUser.email}</strong>
-                <p>Weâ€™ll send sign-in codes, confirmations, and account updates here.</p>
               </div>
             </div>
 
@@ -174,7 +164,6 @@ export function ProfilePage() {
           <Surface className="profile-panel profile-panel--danger">
             <div className="section-heading profile-section-heading">
               <div>
-                <span className="eyebrow">Danger zone</span>
                 <h2>Delete account</h2>
               </div>
             </div>
