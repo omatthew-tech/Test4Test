@@ -49,11 +49,20 @@ export function SubmissionDetailPage() {
   const [editQuestions, setEditQuestions] = useState<Question[]>(activeVersion?.questions ?? []);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
 
+  const savedEditMode: QuestionMode = activeVersion?.mode ?? submission?.questionMode ?? "general";
+  const savedEditQuestions = activeVersion?.questions ?? [];
+
+  const openQuestionEditor = () => {
+    setEditMode(savedEditMode);
+    setEditQuestions(savedEditQuestions);
+    setShowQuestionEditor(true);
+  };
+
   useEffect(() => {
     setSelectedResponseIndex(0);
-    setEditMode(submission?.questionMode ?? "general");
-    setEditQuestions(activeVersion?.questions ?? []);
-  }, [submission?.id, activeVersion?.id, responses.length]);
+    setEditMode(savedEditMode);
+    setEditQuestions(savedEditQuestions);
+  }, [submission?.id, activeVersion?.id, savedEditMode, responses.length]);
 
   const selectedResponse = responses[selectedResponseIndex] ?? null;
   const selectedRating = selectedResponse
@@ -160,7 +169,7 @@ export function SubmissionDetailPage() {
     );
   };
 
-  const visibleEditMode: "general" | "ai" = editMode === "ai" ? "ai" : "general";
+  const visibleEditMode: "custom" | "ai" = editMode === "ai" ? "ai" : "custom";
 
   const multipleChoiceSummary = useMemo(
     () => summary?.analytics.filter((item) => item.type === "multiple") ?? [],
@@ -305,7 +314,7 @@ export function SubmissionDetailPage() {
                 Individual Responses
               </button>
             </div>
-            <button type="button" className="button button--secondary" onClick={() => setShowQuestionEditor(true)}>
+            <button type="button" className="button button--secondary" onClick={openQuestionEditor}>
               Edit questions
             </button>
           </div>
@@ -449,14 +458,14 @@ export function SubmissionDetailPage() {
               <div className="question-studio__header">
                 <div className="question-mode-strip">
                   {[
-                    { value: "general", title: "Custom questions" },
+                    { value: "custom", title: "Custom questions" },
                     { value: "ai", title: "AI-generated questions" },
                   ].map((option) => (
                     <button
                       key={option.value}
                       type="button"
                       className={`question-mode-button${visibleEditMode === option.value ? " question-mode-button--active" : ""}`}
-                      onClick={() => refreshPreset(option.value as Extract<QuestionMode, "general" | "ai">)}
+                      onClick={() => refreshPreset(option.value === "ai" ? "ai" : "general")}
                     >
                       <span>{option.title}</span>
                     </button>
@@ -605,3 +614,4 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
