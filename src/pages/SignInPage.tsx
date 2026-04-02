@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, MailCheck, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/Layout";
@@ -39,7 +39,7 @@ export function SignInPage() {
 
     setIsSendingCode(true);
     try {
-      await requestOtp(nextEmail);
+      await Promise.all([requestOtp(nextEmail), wait(5000)]);
       setEmail(nextEmail);
       setHasRequestedCode(true);
       setCode("");

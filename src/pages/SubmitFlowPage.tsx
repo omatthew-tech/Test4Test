@@ -25,6 +25,7 @@ import {
   syncGeneralQuestionsProductName,
   validateAccessLink,
 } from "../lib/questions";
+import { wait } from "../lib/timing";
 import { ProductType, Question, SubmissionDraft } from "../types";
 
 
@@ -467,7 +468,7 @@ export function SubmitFlowPage() {
     setIsSendingCode(true);
 
     try {
-      await requestOtp(email.trim(), submissionId);
+      await Promise.all([requestOtp(email.trim(), submissionId), wait(5000)]);
       navigate(
         "/verify?email=" + encodeURIComponent(email.trim()) + "&submissionId=" + encodeURIComponent(submissionId),
       );

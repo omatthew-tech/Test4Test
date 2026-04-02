@@ -37,7 +37,7 @@ export function EarnPage() {
   return (
     <AppShell
       title="Earn credits"
-      description="Pick the next best product to review, keep the questionnaire open, and turn thoughtful feedback into more testing credits."
+      description={undefined}
       eyebrowLabel={null}
     >
       <div className="page-stack earn-page">
