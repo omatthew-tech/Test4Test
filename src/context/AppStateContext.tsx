@@ -64,6 +64,7 @@ interface SubmissionRow {
   estimated_minutes: number;
   response_count: number;
   last_response_at: string | null;
+  promoted?: boolean | null;
   created_at: string;
 }
 
@@ -274,6 +275,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
+    promoted: row.promoted === true,
     createdAt: row.created_at,
     estimatedMinutes: row.estimated_minutes,
     responseCount: row.response_count ?? 0,

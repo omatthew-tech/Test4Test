@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
@@ -6,6 +6,30 @@ import { useAppState } from "../context/AppStateContext";
 import { formatDate, productTypeLabel, productTypesBadges } from "../lib/format";
 import { getAvailableSubmissions } from "../lib/selectors";
 import { ProductType, Submission } from "../types";
+
+function compareEarnSubmissions(first: Submission, second: Submission, sortMode: string) {
+  if (first.promoted !== second.promoted) {
+    return first.promoted ? -1 : 1;
+  }
+
+  if (sortMode === "newest") {
+    return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+  }
+
+  if (sortMode === "shortest") {
+    if (first.estimatedMinutes !== second.estimatedMinutes) {
+      return first.estimatedMinutes - second.estimatedMinutes;
+    }
+
+    return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+  }
+
+  if (first.responseCount !== second.responseCount) {
+    return first.responseCount - second.responseCount;
+  }
+
+  return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+}
 
 export function EarnPage() {
   const [sortMode, setSortMode] = useState("recommended");
@@ -20,16 +44,7 @@ export function EarnPage() {
       next = next.filter((item) => item.productTypes.includes(typeFilter as ProductType));
     }
 
-    if (sortMode === "newest") {
-      next.sort(
-        (first, second) =>
-          new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
-      );
-    }
-
-    if (sortMode === "shortest") {
-      next.sort((first, second) => first.estimatedMinutes - second.estimatedMinutes);
-    }
+    next.sort((first, second) => compareEarnSubmissions(first, second, sortMode));
 
     return next;
   }, [available, sortMode, typeFilter]);

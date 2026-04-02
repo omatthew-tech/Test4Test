@@ -120,6 +120,10 @@ export function getAvailableSubmissions(state: AppState) {
       return !completedByUser;
     })
     .sort((first, second) => {
+      if (first.promoted !== second.promoted) {
+        return first.promoted ? -1 : 1;
+      }
+
       if (first.responseCount !== second.responseCount) {
         return first.responseCount - second.responseCount;
       }

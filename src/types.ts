@@ -64,6 +64,7 @@ export interface Submission {
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;
+  promoted: boolean;
   createdAt: string;
   estimatedMinutes: number;
   responseCount: number;
