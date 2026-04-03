@@ -4088,10 +4088,22 @@ body {
   line-height: 1.5;
 }
 
+.my-test-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
 .my-test-row .button {
   min-width: 156px;
-  margin-left: auto;
+  margin-left: 0;
   align-self: flex-end;
+}
+
+.my-test-row__actions .button {
+  align-self: auto;
 }
 
 @media (max-width: 760px) {
@@ -4107,6 +4119,13 @@ body {
 
   .my-test-row__date {
     white-space: normal;
+  }
+
+  .my-test-row__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    margin-left: 0;
   }
 
   .my-test-row .button {
@@ -4342,6 +4361,20 @@ body {
   max-width: 58ch;
   color: #6b625b;
   line-height: 1.6;
+}
+
+.results-modal--edit-test {
+  width: min(980px, 100%);
+}
+
+.form-stack--edit-test-modal {
+  gap: 28px;
+}
+
+.edit-test-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 @media (max-width: 760px) {
@@ -5466,6 +5499,7 @@ body {
     padding: 20px 18px 18px 20px;
   }
 }
+
 
 
 

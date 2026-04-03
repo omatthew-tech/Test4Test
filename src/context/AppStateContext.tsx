@@ -131,6 +131,7 @@ interface AppStateContextValue {
     code: string,
   ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
   createSubmission: (draft: SubmissionDraft, questions: Question[]) => Promise<string>;
+  updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
   completeTest: (
     submissionId: string,
     answers: TestAnswer[],
@@ -630,6 +631,57 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   return data;
 }
 
+async function persistSubmissionDetails(submissionId: string, draft: SubmissionDraft) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before updating your app.",
+  );
+  const productTypes = normalizeProductTypes(draft.productTypes);
+
+  if (productTypes.length === 0) {
+    throw new Error("Select at least one app type before saving.");
+  }
+
+  const accessLinks = normalizeAccessLinks(
+    productTypes.reduce<SubmissionDraft["accessLinks"]>((links, productType) => {
+      const value = draft.accessLinks[productType];
+
+      if (typeof value === "string") {
+        links[productType] = value;
+      }
+
+      return links;
+    }, {}),
+  );
+  const primaryAccessLink = getPrimaryAccessLink(accessLinks, productTypes);
+
+  if (!primaryAccessLink) {
+    throw new Error("Add at least one public link before saving.");
+  }
+
+  const { error } = await supabase
+    .from("submissions")
+    .update({
+      product_name: draft.productName.trim(),
+      product_type: productTypes[0],
+      product_types: productTypes,
+      description: draft.description,
+      target_audience: draft.targetAudience,
+      instructions: draft.instructions,
+      access_url: primaryAccessLink.url,
+      access_links: accessLinks,
+    })
+    .eq("id", submissionId)
+    .select("id")
+    .single();
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+}
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     ...emptyState,
@@ -915,6 +967,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return createdId;
       },
+      async updateSubmissionDetails(submissionId, draft) {
+        await persistSubmissionDetails(submissionId, draft);
+        await refreshState();
+      },
       async completeTest(submissionId, answers, durationSeconds) {
         if (!currentUser) {
           return { ok: false, message: "Verify your email before completing tests." };
@@ -1144,6 +1200,7 @@ export function useAppState() {
 
   return context;
 }
+
 
 
 
