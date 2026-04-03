@@ -3386,6 +3386,11 @@ body {
   gap: 20px;
 }
 
+.submissions-switcher {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .submission-feedback-list {
   display: flex;
   flex-direction: column;
@@ -3473,6 +3478,8 @@ body {
   justify-content: center;
   color: rgba(29, 24, 21, 0.62);
   flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .submission-feedback-card__body {
@@ -3489,7 +3496,18 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-.submission-feedback-card__title-row {
+.submission-feedback-card__bookmark:hover {
+  color: rgba(29, 24, 21, 0.82);
+  border-color: rgba(29, 24, 21, 0.24);
+}
+
+.submission-feedback-card__bookmark--active {
+  color: rgba(29, 24, 21, 0.82);
+  border-color: rgba(245, 142, 86, 0.24);
+  background: rgba(255, 244, 234, 0.94);
+}
+
+.submission-feedback-card__title-row {
   display: inline-flex;
   align-items: center;
   gap: 8px;

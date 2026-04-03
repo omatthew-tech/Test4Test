@@ -2,85 +2,107 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Bookmark,
-  ChevronDown,
   ExternalLink,
   Smile,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { getPrimaryAccessLink, productTypeLabel, productTypesBadges } from "../lib/format";
+import { getPrimaryAccessLink, productTypesBadges } from "../lib/format";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
-import { FeedbackRatingValue, ProductType, SubmittedFeedbackCard } from "../types";
+import { FeedbackRatingValue, SubmittedFeedbackCard } from "../types";
 
-type SortMode = "attention" | "newest" | "highest";
 type CardTone = FeedbackRatingValue | "pending";
+type SubmissionViewMode = "all" | "favorites";
+
+const FAVORITES_STORAGE_PREFIX = "test4test:submission-favorites:";
 
 function getCardTone(ratingValue: FeedbackRatingValue | null): CardTone {
   return ratingValue ?? "pending";
 }
-
-function getAttentionRank(ratingValue: FeedbackRatingValue | null) {
-  switch (ratingValue) {
+function getAllSubmissionPriority(card: SubmittedFeedbackCard) {
+  switch (card.ratingValue) {
     case "frowny":
       return 0;
     case "neutral":
       return 1;
-    case "smiley":
-      return 3;
     default:
       return 2;
   }
 }
 
-function getHighestRank(ratingValue: FeedbackRatingValue | null) {
-  switch (ratingValue) {
-    case "smiley":
-      return 3;
-    case "neutral":
-      return 2;
-    case "frowny":
-      return 1;
-    default:
-      return 0;
-  }
-}
+function compareAllSubmissionCards(first: SubmittedFeedbackCard, second: SubmittedFeedbackCard) {
+  const priorityDifference = getAllSubmissionPriority(first) - getAllSubmissionPriority(second);
 
-function compareSubmittedCards(
-  first: SubmittedFeedbackCard,
-  second: SubmittedFeedbackCard,
-  sortMode: SortMode,
-) {
-  if (sortMode === "newest") {
-    return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
-  }
-
-  if (sortMode === "highest") {
-    const scoreDifference = getHighestRank(second.ratingValue) - getHighestRank(first.ratingValue);
-
-    if (scoreDifference !== 0) {
-      return scoreDifference;
-    }
-
-    return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
-  }
-
-  const attentionDifference = getAttentionRank(first.ratingValue) - getAttentionRank(second.ratingValue);
-
-  if (attentionDifference !== 0) {
-    return attentionDifference;
+  if (priorityDifference !== 0) {
+    return priorityDifference;
   }
 
   return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
 }
 
+function getFavoriteStorageKey(userId: string) {
+  return `${FAVORITES_STORAGE_PREFIX}${userId}`;
+}
+
+function loadFavoriteResponseIds(userId: string) {
+  if (typeof window === "undefined") {
+    return [] as string[];
+  }
+
+  try {
+    const stored = window.localStorage.getItem(getFavoriteStorageKey(userId));
+
+    if (!stored) {
+      return [];
+    }
+
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeFavoriteResponseIds(userId: string, responseIds: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(getFavoriteStorageKey(userId), JSON.stringify(responseIds));
+  } catch {
+    return;
+  }
+}
+
 export function SubmissionsPage() {
-  const [sortMode, setSortMode] = useState<SortMode>("attention");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<SubmissionViewMode>("all");
   const [cards, setCards] = useState<SubmittedFeedbackCard[]>([]);
+  const [favoriteResponseIds, setFavoriteResponseIds] = useState<string[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(true);
   const [loadError, setLoadError] = useState("");
   const { state, currentUser, isConfigured } = useAppState();
+
+  useEffect(() => {
+    if (!currentUser) {
+      setFavoriteResponseIds([]);
+      setViewMode("all");
+      return;
+    }
+
+    setFavoriteResponseIds(loadFavoriteResponseIds(currentUser.id));
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    storeFavoriteResponseIds(currentUser.id, favoriteResponseIds);
+  }, [currentUser?.id, favoriteResponseIds]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -125,17 +147,35 @@ export function SubmissionsPage() {
     };
   }, [currentUser, isConfigured]);
 
-  const items = useMemo(() => {
-    let next = [...cards];
-
-    if (typeFilter !== "all") {
-      next = next.filter((item) => item.productTypes.includes(typeFilter as ProductType));
+  useEffect(() => {
+    if (cards.length === 0) {
+      return;
     }
 
-    next.sort((first, second) => compareSubmittedCards(first, second, sortMode));
+    const validIds = new Set(cards.map((card) => card.responseId));
+    setFavoriteResponseIds((current) => current.filter((responseId) => validIds.has(responseId)));
+  }, [cards]);
 
-    return next;
-  }, [cards, sortMode, typeFilter]);
+  const favoriteResponseIdSet = useMemo(
+    () => new Set(favoriteResponseIds),
+    [favoriteResponseIds],
+  );
+
+  const items = useMemo(() => {
+    if (viewMode === "favorites") {
+      return cards.filter((card) => favoriteResponseIdSet.has(card.responseId));
+    }
+
+    return [...cards].sort(compareAllSubmissionCards);
+  }, [cards, favoriteResponseIdSet, viewMode]);
+
+  const toggleFavorite = (responseId: string) => {
+    setFavoriteResponseIds((current) =>
+      current.includes(responseId)
+        ? current.filter((currentId) => currentId !== responseId)
+        : [...current, responseId],
+    );
+  };
 
   if (!currentUser) {
     return (
@@ -144,7 +184,7 @@ export function SubmissionsPage() {
           <Surface>
             <div className="empty-state">
               <h3>Sign in to view your submitted tests</h3>
-              <p>Once you complete tests for other users, they&apos;ll appear here so you can revise feedback when needed.</p>
+              <p>Once you complete tests for other users, they&apos;ll appear here so you can save favorites and revise feedback when needed.</p>
               <Link to="/sign-in" className="button button--primary">Sign in</Link>
             </div>
           </Surface>
@@ -156,31 +196,22 @@ export function SubmissionsPage() {
   return (
     <AppShell title="Submissions" eyebrowLabel={null}>
       <div className="page-stack submissions-page">
-        <Surface className="earn-controls">
-          <div className="earn-controls__toolbar">
-            <label className="earn-filter">
-              <span className="earn-filter__label">Sort by</span>
-              <div className="earn-filter__control">
-                <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
-                  <option value="attention">Needs attention / best next step</option>
-                  <option value="newest">Newest submitted</option>
-                  <option value="highest">Highest rated</option>
-                </select>
-                <ChevronDown size={16} className="earn-filter__icon" aria-hidden="true" />
-              </div>
-            </label>
-            <label className="earn-filter">
-              <span className="earn-filter__label">App type</span>
-              <div className="earn-filter__control">
-                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-                  <option value="all">All apps</option>
-                  <option value="website">{productTypeLabel("website")}</option>
-                  <option value="ios">{productTypeLabel("ios")}</option>
-                  <option value="android">{productTypeLabel("android")}</option>
-                </select>
-                <ChevronDown size={16} className="earn-filter__icon" aria-hidden="true" />
-              </div>
-            </label>
+        <Surface className="earn-controls submissions-switcher">
+          <div className="results-toggle" role="tablist" aria-label="Submission view">
+            <button
+              type="button"
+              className={`results-toggle__button${viewMode === "all" ? " results-toggle__button--active" : ""}`}
+              onClick={() => setViewMode("all")}
+            >
+              All Submissions
+            </button>
+            <button
+              type="button"
+              className={`results-toggle__button${viewMode === "favorites" ? " results-toggle__button--active" : ""}`}
+              onClick={() => setViewMode("favorites")}
+            >
+              Favorites
+            </button>
           </div>
         </Surface>
 
@@ -205,11 +236,21 @@ export function SubmissionsPage() {
                 <SubmissionFeedbackRow
                   key={card.responseId}
                   card={card}
+                  isFavorite={favoriteResponseIdSet.has(card.responseId)}
                   primaryAccessUrl={primaryAccessUrl}
+                  onToggleFavorite={toggleFavorite}
                 />
               );
             })}
           </div>
+        ) : viewMode === "favorites" ? (
+          <Surface>
+            <div className="empty-state">
+              <h3>No favorite submissions yet</h3>
+              <p>Click the bookmark on any submission card to save it here for quick access later.</p>
+              <button type="button" className="button button--secondary" onClick={() => setViewMode("all")}>View all submissions</button>
+            </div>
+          </Surface>
         ) : (
           <Surface>
             <div className="empty-state">
@@ -226,10 +267,14 @@ export function SubmissionsPage() {
 
 function SubmissionFeedbackRow({
   card,
+  isFavorite,
   primaryAccessUrl,
+  onToggleFavorite,
 }: {
   card: SubmittedFeedbackCard;
+  isFavorite: boolean;
   primaryAccessUrl: string | null;
+  onToggleFavorite: (responseId: string) => void;
 }) {
   const tone = getCardTone(card.ratingValue);
   const canRevise =
@@ -246,9 +291,15 @@ function SubmissionFeedbackRow({
             </span>
           ))}
         </div>
-        <span className="pill submission-feedback-card__bookmark" aria-hidden="true">
-          <Bookmark size={18} />
-        </span>
+        <button
+          type="button"
+          className={`pill submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
+          aria-label={isFavorite ? `Remove ${card.productName} from favorites` : `Add ${card.productName} to favorites`}
+          aria-pressed={isFavorite}
+          onClick={() => onToggleFavorite(card.responseId)}
+        >
+          <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} />
+        </button>
       </div>
 
       <div className="submission-feedback-card__body">
