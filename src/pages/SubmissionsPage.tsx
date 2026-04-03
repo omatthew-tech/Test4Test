@@ -9,17 +9,24 @@ import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getPrimaryAccessLink, productTypesBadges } from "../lib/format";
+import {
+  addSubmissionFavorite,
+  loadSubmissionFavoriteResponseIds,
+  removeSubmissionFavorite,
+  syncSubmissionFavorites,
+} from "../lib/submissionFavorites";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { FeedbackRatingValue, SubmittedFeedbackCard } from "../types";
 
 type CardTone = FeedbackRatingValue | "pending";
 type SubmissionViewMode = "all" | "favorites";
 
-const FAVORITES_STORAGE_PREFIX = "test4test:submission-favorites:";
+const LEGACY_FAVORITES_STORAGE_PREFIX = "test4test:submission-favorites:";
 
 function getCardTone(ratingValue: FeedbackRatingValue | null): CardTone {
   return ratingValue ?? "pending";
 }
+
 function getAllSubmissionPriority(card: SubmittedFeedbackCard) {
   switch (card.ratingValue) {
     case "frowny":
@@ -41,17 +48,17 @@ function compareAllSubmissionCards(first: SubmittedFeedbackCard, second: Submitt
   return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
 }
 
-function getFavoriteStorageKey(userId: string) {
-  return `${FAVORITES_STORAGE_PREFIX}${userId}`;
+function getLegacyFavoriteStorageKey(userId: string) {
+  return `${LEGACY_FAVORITES_STORAGE_PREFIX}${userId}`;
 }
 
-function loadFavoriteResponseIds(userId: string) {
+function loadLegacyFavoriteResponseIds(userId: string) {
   if (typeof window === "undefined") {
     return [] as string[];
   }
 
   try {
-    const stored = window.localStorage.getItem(getFavoriteStorageKey(userId));
+    const stored = window.localStorage.getItem(getLegacyFavoriteStorageKey(userId));
 
     if (!stored) {
       return [];
@@ -59,20 +66,20 @@ function loadFavoriteResponseIds(userId: string) {
 
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed)
-      ? parsed.filter((value): value is string => typeof value === "string")
+      ? parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       : [];
   } catch {
     return [];
   }
 }
 
-function storeFavoriteResponseIds(userId: string, responseIds: string[]) {
+function clearLegacyFavoriteResponseIds(userId: string) {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.setItem(getFavoriteStorageKey(userId), JSON.stringify(responseIds));
+    window.localStorage.removeItem(getLegacyFavoriteStorageKey(userId));
   } catch {
     return;
   }
@@ -82,27 +89,70 @@ export function SubmissionsPage() {
   const [viewMode, setViewMode] = useState<SubmissionViewMode>("all");
   const [cards, setCards] = useState<SubmittedFeedbackCard[]>([]);
   const [favoriteResponseIds, setFavoriteResponseIds] = useState<string[]>([]);
+  const [favoritePendingIds, setFavoritePendingIds] = useState<string[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(true);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [favoriteError, setFavoriteError] = useState("");
   const { state, currentUser, isConfigured } = useAppState();
 
   useEffect(() => {
-    if (!currentUser) {
+    let isCancelled = false;
+
+    if (!currentUser || !isConfigured) {
       setFavoriteResponseIds([]);
+      setFavoritePendingIds([]);
+      setIsLoadingFavorites(false);
+      setFavoriteError("");
       setViewMode("all");
-      return;
+      return undefined;
     }
 
-    setFavoriteResponseIds(loadFavoriteResponseIds(currentUser.id));
-  }, [currentUser?.id]);
+    const loadFavorites = async () => {
+      setIsLoadingFavorites(true);
+      setFavoriteError("");
 
-  useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
+      try {
+        const remoteFavorites = await loadSubmissionFavoriteResponseIds();
+        const legacyFavorites = loadLegacyFavoriteResponseIds(currentUser.id);
+        const missingLegacyFavorites = legacyFavorites.filter(
+          (responseId) => !remoteFavorites.includes(responseId),
+        );
+        const nextFavorites =
+          missingLegacyFavorites.length > 0
+            ? [...remoteFavorites, ...missingLegacyFavorites]
+            : remoteFavorites;
 
-    storeFavoriteResponseIds(currentUser.id, favoriteResponseIds);
-  }, [currentUser?.id, favoriteResponseIds]);
+        if (missingLegacyFavorites.length > 0) {
+          await syncSubmissionFavorites(currentUser.id, missingLegacyFavorites);
+          clearLegacyFavoriteResponseIds(currentUser.id);
+        }
+
+        if (!isCancelled) {
+          setFavoriteResponseIds(nextFavorites);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setFavoriteResponseIds([]);
+          setFavoriteError(
+            error instanceof Error
+              ? error.message
+              : "We could not load favorites right now.",
+          );
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingFavorites(false);
+        }
+      }
+    };
+
+    void loadFavorites();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -161,6 +211,11 @@ export function SubmissionsPage() {
     [favoriteResponseIds],
   );
 
+  const favoritePendingIdSet = useMemo(
+    () => new Set(favoritePendingIds),
+    [favoritePendingIds],
+  );
+
   const items = useMemo(() => {
     if (viewMode === "favorites") {
       return cards.filter((card) => favoriteResponseIdSet.has(card.responseId));
@@ -169,12 +224,42 @@ export function SubmissionsPage() {
     return [...cards].sort(compareAllSubmissionCards);
   }, [cards, favoriteResponseIdSet, viewMode]);
 
-  const toggleFavorite = (responseId: string) => {
+  const toggleFavorite = async (responseId: string) => {
+    if (!currentUser || favoritePendingIdSet.has(responseId)) {
+      return;
+    }
+
+    const wasFavorite = favoriteResponseIdSet.has(responseId);
+    setFavoriteError("");
+    setFavoritePendingIds((current) => [...current, responseId]);
     setFavoriteResponseIds((current) =>
-      current.includes(responseId)
+      wasFavorite
         ? current.filter((currentId) => currentId !== responseId)
         : [...current, responseId],
     );
+
+    try {
+      if (wasFavorite) {
+        await removeSubmissionFavorite(currentUser.id, responseId);
+      } else {
+        await addSubmissionFavorite(currentUser.id, responseId);
+      }
+    } catch (error) {
+      setFavoriteResponseIds((current) =>
+        wasFavorite
+          ? current.includes(responseId)
+            ? current
+            : [...current, responseId]
+          : current.filter((currentId) => currentId !== responseId),
+      );
+      setFavoriteError(
+        error instanceof Error
+          ? error.message
+          : "We could not update favorites right now.",
+      );
+    } finally {
+      setFavoritePendingIds((current) => current.filter((currentId) => currentId !== responseId));
+    }
   };
 
   if (!currentUser) {
@@ -216,8 +301,9 @@ export function SubmissionsPage() {
         </Surface>
 
         {loadError ? <Surface className="callout callout--warning">{loadError}</Surface> : null}
+        {favoriteError ? <Surface className="callout callout--warning">{favoriteError}</Surface> : null}
 
-        {isLoadingCards ? (
+        {isLoadingCards || isLoadingFavorites ? (
           <Surface>
             <div className="empty-state">
               <h3>Loading your submissions</h3>
@@ -237,6 +323,7 @@ export function SubmissionsPage() {
                   key={card.responseId}
                   card={card}
                   isFavorite={favoriteResponseIdSet.has(card.responseId)}
+                  isFavoritePending={favoritePendingIdSet.has(card.responseId)}
                   primaryAccessUrl={primaryAccessUrl}
                   onToggleFavorite={toggleFavorite}
                 />
@@ -268,11 +355,13 @@ export function SubmissionsPage() {
 function SubmissionFeedbackRow({
   card,
   isFavorite,
+  isFavoritePending,
   primaryAccessUrl,
   onToggleFavorite,
 }: {
   card: SubmittedFeedbackCard;
   isFavorite: boolean;
+  isFavoritePending: boolean;
   primaryAccessUrl: string | null;
   onToggleFavorite: (responseId: string) => void;
 }) {
@@ -296,7 +385,8 @@ function SubmissionFeedbackRow({
           className={`pill submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
           aria-label={isFavorite ? `Remove ${card.productName} from favorites` : `Add ${card.productName} to favorites`}
           aria-pressed={isFavorite}
-          onClick={() => onToggleFavorite(card.responseId)}
+          disabled={isFavoritePending}
+          onClick={() => void onToggleFavorite(card.responseId)}
         >
           <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} />
         </button>

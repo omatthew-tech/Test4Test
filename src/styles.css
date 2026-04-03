@@ -3507,6 +3507,11 @@ body {
   background: rgba(255, 244, 234, 0.94);
 }
 
+.submission-feedback-card__bookmark:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .submission-feedback-card__title-row {
   display: inline-flex;
   align-items: center;
