@@ -2655,7 +2655,8 @@ body {
   line-height: 1.55;
 }
 
-.question-card--studio input {
+.question-card--studio input,
+.question-card--studio textarea {
   margin: 0;
 }
 
@@ -2822,6 +2823,9 @@ body {
 
 /* Custom question inputs match preview */
 .question-card__prompt-input {
+  display: block;
+  width: 100%;
+  min-height: calc(1em * 1.55);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -2831,6 +2835,10 @@ body {
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.55;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .question-card__prompt-input:focus {
@@ -5451,5 +5459,6 @@ body {
     padding: 20px 18px 18px 20px;
   }
 }
+
 
 

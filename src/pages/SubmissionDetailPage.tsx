@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
+import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 import { AppShell, Surface } from "../components/Layout";
 import { ReactionFaces } from "../components/ReactionFaces";
 import { useAppState } from "../context/AppStateContext";
@@ -490,7 +491,7 @@ export function SubmissionDetailPage() {
                     </div>
                     <div className="question-card__body">
                       <div className="question-card__prompt-row">
-                        <input
+                        <AutoResizeTextarea
                           className="question-card__prompt-input"
                           value={question.title}
                           onChange={(event) => updateEditQuestion(index, { title: event.target.value })}
@@ -614,4 +615,5 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
 

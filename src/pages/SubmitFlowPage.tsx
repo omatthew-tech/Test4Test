@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { StepIndicator } from "../components/StepIndicator";
@@ -69,7 +70,7 @@ export function SubmitFlowPage() {
   const initialEmail = searchParams.get("email") ?? "";
   const initialSubmissionId = searchParams.get("submissionId");
   const navigate = useNavigate();
-  const { currentUser, createSubmission, requestOtp } = useAppState();
+  const { state, currentUser, createSubmission, requestOtp } = useAppState();
   const [currentStep, setCurrentStep] = useState(resumeVerifyEmail ? steps.length : 0);
   const [submissionId, setSubmissionId] = useState<string | null>(initialSubmissionId);
   const [email, setEmail] = useState(initialEmail);
@@ -182,6 +183,17 @@ export function SubmitFlowPage() {
     generalQuestions,
     hasCurrentAiQuestions,
   ]);
+  const ownedSubmissionCount = useMemo(
+    () =>
+      currentUser
+        ? state.submissions.filter((submission) => submission.userId === currentUser.id).length
+        : 0,
+    [currentUser, state.submissions],
+  );
+  const submitSuccessMessage =
+    !currentUser || ownedSubmissionCount <= 1
+      ? "Congrats on submitting your first app! You're helping other founders, like yourself, make better apps."
+      : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
 
   useEffect(() => {
     if (draft.questionMode !== "ai") {
@@ -749,7 +761,7 @@ export function SubmitFlowPage() {
                               <div className="question-card__body">
                                 {isEditableQuestionMode ? (
                                   <div className="question-card__prompt-row">
-                                    <input
+                                    <AutoResizeTextarea
                                       className="question-card__prompt-input"
                                       value={question.title}
                                       onChange={(event) => updateQuestion(index, { title: event.target.value })}
@@ -962,9 +974,7 @@ export function SubmitFlowPage() {
           <VerificationFlowShell title="Your app has been submitted">
             <span className="eyebrow">Submitted</span>
             <h2>{currentUser ? "Your app has been submitted." : "Verify your email"}</h2>
-            <p>
-              Congrats on submitting another app! Go earn credits or view your tests to see how they&apos;re doing
-            </p>
+            <p>{submitSuccessMessage}</p>
             {!currentUser ? (
               <div className="form-stack form-stack--narrow form-stack--verification">
                 <label className="field">
@@ -1010,6 +1020,8 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
+
 
 
 
