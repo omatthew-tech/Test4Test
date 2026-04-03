@@ -3416,11 +3416,11 @@ body {
 }
 
 .submission-feedback-card--frowny {
-  --submission-card-bg: linear-gradient(180deg, #f12313, #ef1b0d);
-  --submission-card-border: rgba(80, 15, 10, 0.38);
-  --submission-card-footer: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.12));
-  --submission-card-button-bg: rgba(230, 52, 38, 0.9);
-  --submission-card-button-border: rgba(29, 24, 21, 0.78);
+  --submission-card-bg: linear-gradient(180deg, rgba(201, 91, 91, 0.9), rgba(244, 193, 205, 0.72) 62%, rgba(255, 254, 252, 0.98));
+  --submission-card-border: rgba(132, 48, 48, 0.42);
+  --submission-card-footer: linear-gradient(180deg, rgba(201, 91, 91, 0.24), rgba(244, 193, 205, 0.36));
+  --submission-card-button-bg: rgba(255, 254, 252, 0.96);
+  --submission-card-button-border: rgba(132, 48, 48, 0.28);
 }
 
 .submission-feedback-card--neutral {
