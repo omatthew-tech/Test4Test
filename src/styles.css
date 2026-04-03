@@ -2615,6 +2615,7 @@ body {
 }
 
 .question-card--studio {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2628,6 +2629,10 @@ body {
 }
 
 .question-card__topbar {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
 }
@@ -2641,6 +2646,8 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  min-height: 38px;
+  padding-right: 56px;
 }
 
 .question-card__prompt-row .question-card__prompt-input {
@@ -5459,6 +5466,7 @@ body {
     padding: 20px 18px 18px 20px;
   }
 }
+
 
 
 
