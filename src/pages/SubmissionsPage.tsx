@@ -246,8 +246,8 @@ function SubmissionFeedbackRow({
             </span>
           ))}
         </div>
-        <span className="submission-feedback-card__bookmark" aria-hidden="true">
-          <Bookmark size={20} />
+        <span className="pill submission-feedback-card__bookmark" aria-hidden="true">
+          <Bookmark size={18} />
         </span>
       </div>
 

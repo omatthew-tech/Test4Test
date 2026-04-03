@@ -3450,6 +3450,12 @@ body {
   flex-wrap: wrap;
 }
 
+.earn-row__pills .pill,
+.submission-feedback-card__badge {
+  color: rgba(29, 24, 21, 0.62);
+  font-weight: 500;
+}
+
 .submission-feedback-card__badge {
   background: rgba(255, 255, 255, 0.92);
   border-color: rgba(29, 24, 21, 0.18);
@@ -3458,13 +3464,14 @@ body {
 .submission-feedback-card__bookmark {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(29, 24, 21, 0.74);
-  background: rgba(255, 255, 255, 0.94);
+  padding: 0;
+  border-radius: 8px;
+  border-color: rgba(29, 24, 21, 0.18);
+  background: rgba(255, 255, 255, 0.92);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-ink-900);
+  color: rgba(29, 24, 21, 0.62);
   flex-shrink: 0;
 }
 
