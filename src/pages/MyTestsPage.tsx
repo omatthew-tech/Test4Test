@@ -273,7 +273,6 @@ export function MyTestsPage() {
             <div className="form-stack form-stack--edit-test-modal">
               <div className="edit-test-modal__section">
                 <div className="section-heading">
-                  <span className="eyebrow">Step 1</span>
                   <h2>What&apos;s the name of your app?</h2>
                 </div>
                 <label className="field">
@@ -297,7 +296,6 @@ export function MyTestsPage() {
 
               <div className="edit-test-modal__section">
                 <div className="section-heading">
-                  <span className="eyebrow">Step 2</span>
                   <h2>What kind of app is it?</h2>
                   <p>Choose every platform testers can use right now.</p>
                 </div>
@@ -327,7 +325,6 @@ export function MyTestsPage() {
 
               <div className="edit-test-modal__section">
                 <div className="section-heading">
-                  <span className="eyebrow">Step 3</span>
                   <h2>{selectedEditProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
                   {selectedEditProductTypes.length > 1 ? (
                     <p>Add one public link for each selected platform.</p>
