@@ -1,11 +1,17 @@
-﻿import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
+import { loadEarnSubmissionReputations } from "../lib/earnReputation";
 import { formatDate, productTypeLabel, productTypesBadges } from "../lib/format";
 import { getAvailableSubmissions } from "../lib/selectors";
-import { ProductType, Submission } from "../types";
+import {
+  EarnSubmissionCard,
+  EarnSubmissionReputation,
+  ProductType,
+  Submission,
+} from "../types";
 
 function compareEarnSubmissions(first: Submission, second: Submission, sortMode: string) {
   if (first.promoted !== second.promoted) {
@@ -34,7 +40,10 @@ function compareEarnSubmissions(first: Submission, second: Submission, sortMode:
 export function EarnPage() {
   const [sortMode, setSortMode] = useState("recommended");
   const [typeFilter, setTypeFilter] = useState("all");
-  const { state } = useAppState();
+  const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
+    Record<string, EarnSubmissionReputation>
+  >({});
+  const { state, currentUser, isConfigured } = useAppState();
   const available = getAvailableSubmissions(state);
 
   const items = useMemo(() => {
@@ -48,6 +57,59 @@ export function EarnPage() {
 
     return next;
   }, [available, sortMode, typeFilter]);
+
+  const visibleSubmissionIdsKey = useMemo(
+    () => [...new Set(items.map((item) => item.id))].sort().join("|"),
+    [items],
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+    const submissionIds = visibleSubmissionIdsKey ? visibleSubmissionIdsKey.split("|") : [];
+
+    if (!isConfigured || !currentUser || submissionIds.length === 0) {
+      setReputationBySubmissionId({});
+      return undefined;
+    }
+
+    const loadReputations = async () => {
+      try {
+        const reputations = await loadEarnSubmissionReputations(submissionIds);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setReputationBySubmissionId(
+          Object.fromEntries(
+            reputations.map((reputation) => [reputation.submissionId, reputation]),
+          ),
+        );
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        console.error(error);
+        setReputationBySubmissionId({});
+      }
+    };
+
+    void loadReputations();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured, visibleSubmissionIdsKey]);
+
+  const cards = useMemo<EarnSubmissionCard[]>(
+    () =>
+      items.map((submission) => ({
+        submission,
+        reputation: reputationBySubmissionId[submission.id] ?? null,
+      })),
+    [items, reputationBySubmissionId],
+  );
 
   return (
     <AppShell
@@ -84,10 +146,10 @@ export function EarnPage() {
           </div>
         </Surface>
 
-        {items.length > 0 ? (
+        {cards.length > 0 ? (
           <div className="earn-list">
-            {items.map((submission) => (
-              <EarnRow key={submission.id} submission={submission} />
+            {cards.map((card) => (
+              <EarnRow key={card.submission.id} card={card} />
             ))}
           </div>
         ) : (
@@ -105,30 +167,58 @@ export function EarnPage() {
 }
 
 function EarnRow({
-  submission,
+  card,
 }: {
-  submission: Submission;
+  card: EarnSubmissionCard;
 }) {
+  const { submission, reputation } = card;
+  const showReputation = reputation?.ownerHasTestedYou === true;
+
   return (
     <Surface className="earn-row">
-      <div className="earn-row__main">
-        <div className="earn-row__pills">
-          {productTypesBadges(submission.productTypes).map((badge) => (
-            <span key={`${submission.id}-${badge}`} className="pill pill--accent">{badge}</span>
-          ))}
+      <div className="earn-row__content">
+        <div className="earn-row__main">
+          <div className="earn-row__pills">
+            {showReputation ? (
+              <span className="tag tag--warm earn-row__reciprocal-tag">
+                This user tested your app
+              </span>
+            ) : null}
+            {productTypesBadges(submission.productTypes).map((badge) => (
+              <span key={`${submission.id}-${badge}`} className="pill pill--accent">{badge}</span>
+            ))}
+          </div>
+          <div className="earn-row__head">
+            <h3>{submission.productName}</h3>
+            <p>{submission.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
+          </div>
         </div>
-        <div className="earn-row__head">
-          <h3>{submission.productName}</h3>
-          <p>{submission.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
+        <div className="earn-row__aside">
+          <small className="earn-row__date">Submitted {formatDate(submission.createdAt)}</small>
+          <Link to={`/test/${submission.id}`} className="button button--primary">
+            Start test
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
-      <div className="earn-row__aside">
-        <small className="earn-row__date">Submitted {formatDate(submission.createdAt)}</small>
-        <Link to={`/test/${submission.id}`} className="button button--primary">
-          Start test
-          <ArrowRight size={16} />
-        </Link>
-      </div>
+
+      {showReputation && reputation ? (
+        <div className="earn-row__footer">
+          {reputation.ownerAvatarUrl ? (
+            <img
+              src={reputation.ownerAvatarUrl}
+              alt=""
+              className="earn-row__avatar"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="earn-row__footer-text">
+            <span>{reputation.ownerTestBackRatePercent}% Test-back Rate</span>
+            <span aria-hidden="true">•</span>
+            <span>{reputation.ownerSatisfactionRatePercent}% Satisfaction Rate</span>
+          </div>
+        </div>
+      ) : null}
     </Surface>
   );
 }

@@ -72,6 +72,19 @@ export interface Submission {
   tags: string[];
 }
 
+export interface EarnSubmissionReputation {
+  submissionId: string;
+  ownerHasTestedYou: boolean;
+  ownerTestBackRatePercent: number;
+  ownerSatisfactionRatePercent: number;
+  ownerAvatarUrl?: string | null;
+}
+
+export interface EarnSubmissionCard {
+  submission: Submission;
+  reputation: EarnSubmissionReputation | null;
+}
+
 export interface TestAnswer {
   questionId: string;
   questionTitle: string;
