@@ -3,13 +3,13 @@ import {
   ArrowRight,
   Bookmark,
   ChevronDown,
-  Clock3,
+  ExternalLink,
   Smile,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { productTypeLabel, productTypesBadges } from "../lib/format";
+import { getPrimaryAccessLink, productTypeLabel, productTypesBadges } from "../lib/format";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { FeedbackRatingValue, ProductType, SubmittedFeedbackCard } from "../types";
 
@@ -80,7 +80,7 @@ export function SubmissionsPage() {
   const [cards, setCards] = useState<SubmittedFeedbackCard[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const { currentUser, isConfigured } = useAppState();
+  const { state, currentUser, isConfigured } = useAppState();
 
   useEffect(() => {
     let isCancelled = false;
@@ -195,9 +195,20 @@ export function SubmissionsPage() {
           </Surface>
         ) : items.length > 0 ? (
           <div className="submission-feedback-list">
-            {items.map((card) => (
-              <SubmissionFeedbackRow key={card.responseId} card={card} />
-            ))}
+            {items.map((card) => {
+              const submission = state.submissions.find((item) => item.id === card.submissionId);
+              const primaryAccessUrl = submission
+                ? getPrimaryAccessLink(submission.accessLinks, submission.productTypes)?.normalizedUrl ?? null
+                : null;
+
+              return (
+                <SubmissionFeedbackRow
+                  key={card.responseId}
+                  card={card}
+                  primaryAccessUrl={primaryAccessUrl}
+                />
+              );
+            })}
           </div>
         ) : (
           <Surface>
@@ -215,8 +226,10 @@ export function SubmissionsPage() {
 
 function SubmissionFeedbackRow({
   card,
+  primaryAccessUrl,
 }: {
   card: SubmittedFeedbackCard;
+  primaryAccessUrl: string | null;
 }) {
   const tone = getCardTone(card.ratingValue);
   const canRevise =
@@ -240,7 +253,20 @@ function SubmissionFeedbackRow({
 
       <div className="submission-feedback-card__body">
         <div className="submission-feedback-card__copy">
-          <h3>{card.productName}</h3>
+          <div className="submission-feedback-card__title-row">
+            <h3>{card.productName}</h3>
+            {primaryAccessUrl ? (
+              <a
+                href={primaryAccessUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="submission-feedback-card__title-link"
+                aria-label={`Open ${card.productName}`}
+              >
+                <ExternalLink size={16} />
+              </a>
+            ) : null}
+          </div>
           <p>{card.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
         </div>
         <div className="submission-feedback-card__actions">
@@ -256,12 +282,7 @@ function SubmissionFeedbackRow({
             <span className="submission-feedback-card__status-icon" aria-label="Helpful feedback">
               <Smile size={30} />
             </span>
-          ) : card.ratingValue === null ? (
-            <span className="submission-feedback-card__status-pill">
-              <Clock3 size={16} />
-              Awaiting rating
-            </span>
-          ) : (
+          ) : card.ratingValue === null ? null : (
             <span className="submission-feedback-card__status-pill">Test closed</span>
           )}
         </div>

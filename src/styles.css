@@ -3471,7 +3471,7 @@ body {
 .submission-feedback-card__body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: stretch;
   gap: 24px;
   padding-bottom: 18px;
 }
@@ -3481,6 +3481,28 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.submission-feedback-card__title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.submission-feedback-card__title-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: rgba(29, 24, 21, 0.82);
+  flex-shrink: 0;
+  transform: translateY(1px);
+}
+
+.submission-feedback-card__title-link:hover {
+  color: rgba(29, 24, 21, 1);
 }
 
 .submission-feedback-card__copy h3 {
@@ -3497,9 +3519,12 @@ body {
 }
 
 .submission-feedback-card__actions {
+  min-width: 174px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: flex-end;
+  align-items: flex-end;
+  gap: 20px;
 }
 
 .submission-feedback-card__action-button {
