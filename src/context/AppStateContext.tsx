@@ -137,6 +137,11 @@ interface AppStateContextValue {
     answers: TestAnswer[],
     durationSeconds: number,
   ) => Promise<{ ok: boolean; message: string }>;
+  reviseTestResponse: (
+    responseId: string,
+    answers: TestAnswer[],
+    durationSeconds: number,
+  ) => Promise<{ ok: boolean; message: string }>;
   rateFeedback: (
     responseId: string,
     ratingValue: FeedbackRatingValue,
@@ -997,6 +1002,34 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return {
           ok: Boolean(result.ok),
           message: result.message ?? "Test submitted.",
+        };
+      },
+      async reviseTestResponse(responseId, answers, durationSeconds) {
+        if (!currentUser) {
+          return { ok: false, message: "Verify your email before revising feedback." };
+        }
+
+        const supabase = requireSupabase();
+        const { data, error } = await supabase.rpc("revise_test_response", {
+          p_response_id: responseId,
+          p_answers: answers,
+          p_duration_seconds: durationSeconds,
+        });
+
+        if (error) {
+          return { ok: false, message: error.message };
+        }
+
+        const result = (data ?? {}) as SubmissionRpcResult;
+        await refreshState();
+
+        if (result.responseId) {
+          void notifySubmissionOwnerAboutNewResult(result.responseId);
+        }
+
+        return {
+          ok: Boolean(result.ok),
+          message: result.message ?? "Feedback revised.",
         };
       },
       async rateFeedback(responseId, ratingValue) {

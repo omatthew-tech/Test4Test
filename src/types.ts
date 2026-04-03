@@ -85,6 +85,20 @@ export interface EarnSubmissionCard {
   reputation: EarnSubmissionReputation | null;
 }
 
+export interface SubmittedFeedbackCard {
+  responseId: string;
+  submissionId: string;
+  productName: string;
+  productTypes: ProductType[];
+  description: string;
+  submittedAt: string;
+  ratingValue: FeedbackRatingValue | null;
+  ownerTestBackRatePercent: number;
+  ownerSatisfactionRatePercent: number;
+  ownerAvatarUrl?: string | null;
+  submissionStatus: SubmissionStatus;
+}
+
 export interface TestAnswer {
   questionId: string;
   questionTitle: string;

@@ -4,6 +4,8 @@ import { EarnPage } from "./pages/EarnPage";
 import { HomePage } from "./pages/HomePage";
 import { MyTestsPage } from "./pages/MyTestsPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { ReviseSubmissionPage } from "./pages/ReviseSubmissionPage";
+import { SubmissionsPage } from "./pages/SubmissionsPage";
 import { SignInPage } from "./pages/SignInPage";
 import { SubmissionDetailPage } from "./pages/SubmissionDetailPage";
 import { SubmitFlowPage } from "./pages/SubmitFlowPage";
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="/test/:submissionId/success" element={<TestSuccessPage />} />
           <Route path="/my-tests" element={<MyTestsPage />} />
           <Route path="/my-tests/:submissionId" element={<SubmissionDetailPage />} />
+          <Route path="/submissions" element={<SubmissionsPage />} />
+          <Route path="/submissions/:responseId/revise" element={<ReviseSubmissionPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>

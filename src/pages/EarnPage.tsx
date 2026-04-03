@@ -214,7 +214,7 @@ function EarnRow({
           ) : null}
           <div className="earn-row__footer-text">
             <span>{reputation.ownerTestBackRatePercent}% Test-back Rate</span>
-            <span aria-hidden="true">•</span>
+            <span aria-hidden="true">&bull;</span>
             <span>{reputation.ownerSatisfactionRatePercent}% Satisfaction Rate</span>
           </div>
         </div>

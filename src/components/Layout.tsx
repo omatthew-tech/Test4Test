@@ -1,4 +1,4 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
 
@@ -6,6 +6,7 @@ const navItems = [
   { to: "/earn", label: "Earn" },
   { to: "/my-tests", label: "My Tests" },
   { to: "/submit", label: "Submit" },
+  { to: "/submissions", label: "Submissions" },
 ];
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
