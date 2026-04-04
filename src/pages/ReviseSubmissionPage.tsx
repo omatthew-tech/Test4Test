@@ -218,13 +218,13 @@ export function ReviseSubmissionPage() {
         <div className="test-session__header">
           <h1>{`Revise feedback for ${submission?.productName ?? "this app"}`}</h1>
           <p>
-            Tighten your answers, add clearer specifics, and make the feedback more useful for the app owner.
+            Submitting a revision replaces your previous answers and let's the reviewer send you a new rating.
           </p>
         </div>
         <Surface className="test-questions test-questions--full">
           <div className="test-session__intro-card">
             <div className="test-session__resource">
-              <span className="test-session__label">App link</span>
+              <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
               {accessLinks.length > 0 ? (
                 <div className="test-session__link-list">
                   {accessLinks.map((link) => (
@@ -246,9 +246,11 @@ export function ReviseSubmissionPage() {
               )}
             </div>
             <div className="test-session__resource">
-              <span className="test-session__label">What happens next</span>
+              <span className="test-session__label">Tester instructions</span>
               <p>
-                Saving a revision replaces your previous answers and clears the current owner rating so they can review your updated feedback again.
+                {submission?.instructions.trim()
+                  ? submission.instructions
+                  : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience."}
               </p>
             </div>
           </div>

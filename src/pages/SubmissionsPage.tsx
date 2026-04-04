@@ -8,7 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { getPrimaryAccessLink, productTypesBadges } from "../lib/format";
+import { getPrimaryAccessLink } from "../lib/format";
 import {
   addSubmissionFavorite,
   loadSubmissionFavoriteResponseIds,
@@ -46,6 +46,9 @@ function compareAllSubmissionCards(first: SubmittedFeedbackCard, second: Submitt
   }
 
   return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
+}
+function canFavoriteSubmissionCard(card: SubmittedFeedbackCard) {
+  return card.ratingValue !== "frowny" && card.ratingValue !== "neutral";
 }
 
 function getLegacyFavoriteStorageKey(userId: string) {
@@ -198,13 +201,26 @@ export function SubmissionsPage() {
   }, [currentUser, isConfigured]);
 
   useEffect(() => {
-    if (cards.length === 0) {
+    if (!currentUser || cards.length === 0) {
       return;
     }
 
-    const validIds = new Set(cards.map((card) => card.responseId));
+    const validIds = new Set(
+      cards
+        .filter((card) => canFavoriteSubmissionCard(card))
+        .map((card) => card.responseId),
+    );
+    const staleIds = favoriteResponseIds.filter((responseId) => !validIds.has(responseId));
+
+    if (staleIds.length === 0) {
+      return;
+    }
+
     setFavoriteResponseIds((current) => current.filter((responseId) => validIds.has(responseId)));
-  }, [cards]);
+    void Promise.allSettled(
+      staleIds.map((responseId) => removeSubmissionFavorite(currentUser.id, responseId)),
+    );
+  }, [cards, currentUser, favoriteResponseIds]);
 
   const favoriteResponseIdSet = useMemo(
     () => new Set(favoriteResponseIds),
@@ -218,7 +234,9 @@ export function SubmissionsPage() {
 
   const items = useMemo(() => {
     if (viewMode === "favorites") {
-      return cards.filter((card) => favoriteResponseIdSet.has(card.responseId));
+      return cards.filter(
+        (card) => canFavoriteSubmissionCard(card) && favoriteResponseIdSet.has(card.responseId),
+      );
     }
 
     return [...cards].sort(compareAllSubmissionCards);
@@ -366,30 +384,28 @@ function SubmissionFeedbackRow({
   onToggleFavorite: (responseId: string) => void;
 }) {
   const tone = getCardTone(card.ratingValue);
+  const isAttentionCard = card.ratingValue === "frowny" || card.ratingValue === "neutral";
   const canRevise =
     card.submissionStatus === "live" &&
-    (card.ratingValue === "frowny" || card.ratingValue === "neutral");
+    isAttentionCard;
+  const showBookmark = !isAttentionCard;
 
   return (
     <Surface className={`submission-feedback-card submission-feedback-card--${tone}`}>
       <div className="submission-feedback-card__top">
-        <div className="submission-feedback-card__badges">
-          {productTypesBadges(card.productTypes).map((badge) => (
-            <span key={`${card.responseId}-${badge}`} className="pill submission-feedback-card__badge">
-              {badge}
-            </span>
-          ))}
-        </div>
-        <button
-          type="button"
-          className={`pill submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
-          aria-label={isFavorite ? `Remove ${card.productName} from favorites` : `Add ${card.productName} to favorites`}
-          aria-pressed={isFavorite}
-          disabled={isFavoritePending}
-          onClick={() => void onToggleFavorite(card.responseId)}
-        >
-          <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} />
-        </button>
+        <div className="submission-feedback-card__badges" aria-hidden="true" />
+        {showBookmark ? (
+          <button
+            type="button"
+            className={`pill submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
+            aria-label={isFavorite ? `Remove ${card.productName} from favorites` : `Add ${card.productName} to favorites`}
+            aria-pressed={isFavorite}
+            disabled={isFavoritePending}
+            onClick={() => void onToggleFavorite(card.responseId)}
+          >
+            <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
+        ) : null}
       </div>
 
       <div className="submission-feedback-card__body">
@@ -429,16 +445,7 @@ function SubmissionFeedbackRow({
         </div>
       </div>
 
-      <div className="submission-feedback-card__footer">
-        {card.ownerAvatarUrl ? (
-          <img src={card.ownerAvatarUrl} alt="" className="submission-feedback-card__avatar" />
-        ) : null}
-        <div className="submission-feedback-card__footer-text">
-          <span>{card.ownerTestBackRatePercent}% Test-back Rate</span>
-          <span aria-hidden="true">&bull;</span>
-          <span>{card.ownerSatisfactionRatePercent}% Satisfaction Rate</span>
-        </div>
-      </div>
+
     </Surface>
   );
 }
