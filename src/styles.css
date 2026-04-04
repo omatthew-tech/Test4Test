@@ -3550,12 +3550,6 @@ body {
   --submission-card-button-border: rgba(144, 131, 11, 0.18);
 }
 
-.submission-feedback-card--smiley {
-  --submission-card-bg: linear-gradient(180deg, #17eca4, #0ff0a1);
-  --submission-card-border: rgba(10, 111, 74, 0.22);
-  --submission-card-footer: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.12));
-}
-
 .submission-feedback-card::before {
   display: none;
 }
@@ -3589,16 +3583,29 @@ body {
   width: 40px;
   height: 40px;
   padding: 0;
+  border: none;
   border-radius: 8px;
-  border-color: rgba(29, 24, 21, 0.18);
-  background: rgba(255, 255, 255, 0.92);
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(29, 24, 21, 0.62);
+  color: rgba(29, 24, 21, 0.54);
   flex-shrink: 0;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition: color 140ms ease, opacity 140ms ease;
+}
+
+.submission-feedback-card__bookmark:hover {
+  color: rgba(29, 24, 21, 0.82);
+}
+
+.submission-feedback-card__bookmark--active {
+  color: var(--color-orange-500);
+}
+
+.submission-feedback-card__bookmark:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .submission-feedback-card__body {
@@ -3606,7 +3613,7 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   gap: 24px;
-  padding-bottom: 18px;
+  padding-bottom: 24px;
 }
 
 .submission-feedback-card__copy {
@@ -3615,21 +3622,7 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-.submission-feedback-card__bookmark:hover {
-  color: rgba(29, 24, 21, 0.82);
-  border-color: rgba(29, 24, 21, 0.24);
-}
 
-.submission-feedback-card__bookmark--active {
-  color: rgba(29, 24, 21, 0.82);
-  border-color: rgba(245, 142, 86, 0.24);
-  background: rgba(255, 244, 234, 0.94);
-}
-
-.submission-feedback-card__bookmark:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
 
 .submission-feedback-card__report-button {
   min-height: 40px;
@@ -3728,17 +3721,6 @@ body {
   box-shadow: 0 12px 24px rgba(29, 24, 21, 0.08);
 }
 
-.submission-feedback-card__status-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-ink-900);
-}
-
-.submission-feedback-card__status-icon svg {
-  stroke-width: 1.85;
-}
-
 .submission-feedback-card__status-pill {
   display: inline-flex;
   align-items: center;
@@ -3758,6 +3740,17 @@ body {
   border-color: rgba(201, 91, 91, 0.24);
   background: linear-gradient(180deg, rgba(255, 248, 247, 0.98), rgba(255, 241, 239, 0.96));
   color: rgba(132, 48, 48, 0.96);
+}
+
+.submission-feedback-card__status-pill--helpful {
+  gap: 4px;
+  border-color: rgba(78, 157, 114, 0.82);
+  background: var(--color-success);
+  color: var(--color-ink-900);
+}
+
+.submission-feedback-card__status-pill--helpful svg {
+  margin-left: 0;
 }
 
 .submission-feedback-card__footer {
@@ -6198,3 +6191,7 @@ body {
   }
 
 }
+
+
+
+

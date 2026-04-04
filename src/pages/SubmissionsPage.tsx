@@ -28,6 +28,10 @@ type SubmissionViewMode = "all" | "favorites";
 const LEGACY_FAVORITES_STORAGE_PREFIX = "test4test:submission-favorites:";
 
 function getCardTone(ratingValue: FeedbackRatingValue | null): CardTone {
+  if (ratingValue === "smiley") {
+    return "pending";
+  }
+
   return ratingValue ?? "pending";
 }
 
@@ -414,7 +418,7 @@ function SubmissionFeedbackRow({
         {showBookmark ? (
           <button
             type="button"
-            className={`pill submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
+            className={`submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
             aria-label={isFavorite ? `Remove ${card.productName} from favorites` : `Add ${card.productName} to favorites`}
             aria-pressed={isFavorite}
             disabled={isFavoritePending}
@@ -455,8 +459,9 @@ function SubmissionFeedbackRow({
               <ArrowRight size={16} />
             </Link>
           ) : card.ratingValue === "smiley" ? (
-            <span className="submission-feedback-card__status-icon" aria-label="Helpful feedback">
-              <Smile size={30} />
+            <span className="submission-feedback-card__status-pill submission-feedback-card__status-pill--helpful" aria-label="Helpful feedback">
+              <span>Helpful</span>
+              <Smile size={20} strokeWidth={1.85} aria-hidden="true" />
             </span>
           ) : card.ratingValue === null ? null : (
             <span className="submission-feedback-card__status-pill">Test closed</span>
@@ -466,3 +471,7 @@ function SubmissionFeedbackRow({
     </Surface>
   );
 }
+
+
+
+
