@@ -10,6 +10,10 @@ import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getPrimaryAccessLink } from "../lib/format";
 import {
+  loadReportedFeedbackResponseIds,
+  reconcileReportedFeedbackResponseIds,
+} from "../lib/reportedFeedback";
+import {
   addSubmissionFavorite,
   loadSubmissionFavoriteResponseIds,
   removeSubmissionFavorite,
@@ -174,9 +178,19 @@ export function SubmissionsPage() {
 
       try {
         const nextCards = await loadSubmittedFeedbackCards();
+        const localReportedIds = loadReportedFeedbackResponseIds(currentUser.id);
+        const mergedCards = nextCards.map((card) => (
+          card.reportStatus
+            ? card
+            : localReportedIds.includes(card.responseId)
+              ? { ...card, reportStatus: "pending" as const }
+              : card
+        ));
+
+        reconcileReportedFeedbackResponseIds(currentUser.id, mergedCards);
 
         if (!isCancelled) {
-          setCards(nextCards);
+          setCards(mergedCards);
         }
       } catch (error) {
         if (!isCancelled) {
@@ -386,9 +400,11 @@ function SubmissionFeedbackRow({
 }) {
   const tone = getCardTone(card.ratingValue);
   const isAttentionCard = card.ratingValue === "frowny" || card.ratingValue === "neutral";
+  const hasPendingReport = card.reportStatus === "pending";
   const canRevise =
     card.submissionStatus === "live" &&
-    isAttentionCard;
+    isAttentionCard &&
+    !hasPendingReport;
   const showBookmark = !isAttentionCard;
 
   return (
@@ -428,7 +444,9 @@ function SubmissionFeedbackRow({
           <p>{card.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
         </div>
         <div className="submission-feedback-card__actions">
-          {canRevise ? (
+          {hasPendingReport ? (
+            <span className="submission-feedback-card__status-pill submission-feedback-card__status-pill--report">Report in progress</span>
+          ) : canRevise ? (
             <Link
               to={`/submissions/${card.responseId}/revise`}
               className={`submission-feedback-card__action-button submission-feedback-card__action-button--${tone}`}

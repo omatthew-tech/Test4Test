@@ -3635,6 +3635,12 @@ body {
   text-decoration: none;
 }
 
+.submission-feedback-card__status-pill--report {
+  border-color: rgba(201, 91, 91, 0.24);
+  background: linear-gradient(180deg, rgba(255, 248, 247, 0.98), rgba(255, 241, 239, 0.96));
+  color: rgba(132, 48, 48, 0.96);
+}
+
 .submission-feedback-card__footer {
   display: flex;
   align-items: center;
@@ -3742,34 +3748,61 @@ body {
 .revise-response-page__report-button {
   min-height: 44px;
   padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(216, 208, 200, 0.92);
-  background: rgba(255, 250, 245, 0.92);
-  color: rgba(29, 24, 21, 0.86);
+  border-radius: 16px;
+  border: 1px solid rgba(201, 91, 91, 0.26);
+  background: linear-gradient(180deg, rgba(255, 248, 247, 0.98), rgba(255, 241, 239, 0.96));
+  color: rgba(142, 58, 58, 0.98);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 10px 22px rgba(29, 24, 21, 0.06);
+  box-shadow: 0 6px 18px rgba(29, 24, 21, 0.05);
   cursor: pointer;
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
+.revise-response-page__report-button svg {
+  stroke-width: 1.9;
+  flex-shrink: 0;
+}
+
 .revise-response-page__report-button:hover {
-  border-color: rgba(184, 163, 143, 0.92);
-  background: rgba(255, 255, 255, 0.96);
-  color: rgba(29, 24, 21, 1);
+  border-color: rgba(201, 91, 91, 0.4);
+  background: linear-gradient(180deg, rgba(255, 244, 242, 0.99), rgba(255, 234, 231, 0.97));
+  color: rgba(122, 44, 44, 1);
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(29, 24, 21, 0.08);
+  box-shadow: 0 10px 24px rgba(201, 91, 91, 0.12);
+}
+
+.revise-response-page__report-button:focus-visible {
+  outline: none;
+  border-color: rgba(201, 91, 91, 0.46);
+  box-shadow: 0 0 0 3px rgba(201, 91, 91, 0.14), 0 10px 24px rgba(201, 91, 91, 0.12);
 }
 
 .revise-response-page__report-button:disabled {
   cursor: wait;
   opacity: 0.72;
   transform: none;
-  box-shadow: 0 10px 22px rgba(29, 24, 21, 0.06);
+  box-shadow: 0 6px 18px rgba(29, 24, 21, 0.05);
+}
+
+.revise-response-page__report-status {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 91, 91, 0.22);
+  background: linear-gradient(180deg, rgba(255, 248, 247, 0.98), rgba(255, 241, 239, 0.96));
+  color: rgba(132, 48, 48, 0.96);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .test-questions--full {
@@ -4787,26 +4820,38 @@ body {
   gap: 18px;
 }
 
-.submission-report-modal__summary {
+.submission-report-modal__success {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(216, 208, 200, 0.9);
-  background: linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(248, 242, 235, 0.96));
+  justify-content: center;
+  gap: 14px;
+  min-height: 240px;
+  text-align: center;
 }
 
-.submission-report-modal__summary strong {
+.submission-report-modal__success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background: rgba(78, 157, 114, 0.12);
+  color: var(--color-success);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submission-report-modal__success h2 {
+  margin: 0;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: 1.02rem;
+  font-size: clamp(1.9rem, 3vw, 2.3rem);
 }
 
-.submission-report-modal__rating {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(29, 24, 21, 0.16);
-  color: rgba(29, 24, 21, 0.7);
+.submission-report-modal__success p {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--color-ink-700);
+  line-height: 1.6;
 }
 
 .submissions-report-modal .field textarea {

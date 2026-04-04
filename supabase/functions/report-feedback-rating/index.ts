@@ -55,6 +55,11 @@ function normalizeMessage(value: unknown) {
   return value.trim().slice(0, 500);
 }
 
+function isMissingReportsTableError(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes("feedback_rating_reports") && normalized.includes("does not exist");
+}
+
 function normalizeQuestions(value: unknown) {
   if (!Array.isArray(value)) {
     return [] as NormalizedQuestion[];
@@ -272,6 +277,26 @@ Deno.serve(async (request) => {
     return json({ error: "Only Low Value or Okay ratings can be reported." }, 400);
   }
 
+  let reportTableAvailable = true;
+  const { data: existingReport, error: existingReportError } = await admin
+    .from("feedback_rating_reports")
+    .select("status")
+    .eq("test_response_id", responseRow.id)
+    .eq("reporter_user_id", user.id)
+    .maybeSingle();
+
+  if (existingReportError) {
+    if (isMissingReportsTableError(existingReportError.message)) {
+      reportTableAvailable = false;
+    } else {
+      return json({ error: existingReportError.message }, 500);
+    }
+  }
+
+  if (existingReport?.status === "pending") {
+    return json({ ok: true, message: "This report is already in progress.", reportStatus: "pending" });
+  }
+
   const { data: questionSetVersion, error: questionSetError } = await admin
     .from("question_set_versions")
     .select("questions")
@@ -385,5 +410,24 @@ Deno.serve(async (request) => {
     return json({ error: failureMessage }, 502);
   }
 
-  return json({ ok: true, message: "Report sent. We emailed the rating and your answers for review." });
+  if (reportTableAvailable) {
+    const { error: upsertError } = await admin
+      .from("feedback_rating_reports")
+      .upsert(
+        {
+          test_response_id: responseRow.id,
+          reporter_user_id: user.id,
+          status: "pending",
+          message: reporterMessage,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "test_response_id,reporter_user_id" },
+      );
+
+    if (upsertError && !isMissingReportsTableError(upsertError.message)) {
+      console.error("Failed to persist feedback report state.", upsertError.message);
+    }
+  }
+
+  return json({ ok: true, message: "Report sent.", reportStatus: "pending" });
 });

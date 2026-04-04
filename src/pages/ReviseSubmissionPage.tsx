@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, CheckCircle2, ExternalLink, Flag } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getOrderedAccessLinks } from "../lib/format";
+import {
+  loadReportedFeedbackResponseIds,
+  markReportedFeedbackResponseId,
+} from "../lib/reportedFeedback";
 import { reportFeedbackRating } from "../lib/reportFeedbackRating";
 import { requireSupabase } from "../lib/supabase";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
-import { FeedbackRatingValue, Question, TestAnswer } from "../types";
+import { FeedbackRatingValue, FeedbackReportStatus, Question, TestAnswer } from "../types";
 
 interface QuestionSetVersionRow {
   questions: Question[];
@@ -72,6 +76,7 @@ function normalizeQuestions(value: unknown) {
 export function ReviseSubmissionPage() {
   const { responseId = "" } = useParams();
   const navigate = useNavigate();
+  const redirectTimeoutRef = useRef<number | null>(null);
   const { state, currentUser, reviseTestResponse, isConfigured } = useAppState();
   const response = state.responses.find(
     (item) => item.id === responseId && item.testerUserId === currentUser?.id,
@@ -94,14 +99,15 @@ export function ReviseSubmissionPage() {
   );
   const [questions, setQuestions] = useState<Question[]>([]);
   const [receivedRating, setReceivedRating] = useState<FeedbackRatingValue | null>(receivedRatingFallback);
+  const [reportStatus, setReportStatus] = useState<FeedbackReportStatus | null>(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
-  const [reportNotice, setReportNotice] = useState("");
   const [reportMessage, setReportMessage] = useState("");
   const [reportError, setReportError] = useState("");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportPhase, setReportPhase] = useState<"form" | "success">("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startedAt] = useState(() => Date.now());
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -109,6 +115,16 @@ export function ReviseSubmissionPage() {
   useEffect(() => {
     setReceivedRating(receivedRatingFallback);
   }, [receivedRatingFallback]);
+
+  useEffect(() => {
+    if (!currentUser || !response) {
+      setReportStatus(null);
+      return;
+    }
+
+    const localReportedIds = loadReportedFeedbackResponseIds(currentUser.id);
+    setReportStatus(localReportedIds.includes(response.id) ? "pending" : null);
+  }, [currentUser?.id, response?.id]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -124,6 +140,7 @@ export function ReviseSubmissionPage() {
 
         if (!isCancelled) {
           setReceivedRating(matchingCard?.ratingValue ?? null);
+          setReportStatus((current) => matchingCard?.reportStatus ?? current);
         }
       } catch {
         if (!isCancelled) {
@@ -139,7 +156,33 @@ export function ReviseSubmissionPage() {
     };
   }, [currentUser?.id, isConfigured, receivedRatingFallback, response?.id]);
 
-  const canReport = receivedRating === "frowny" || receivedRating === "neutral";
+  useEffect(() => {
+    if (reportPhase !== "success") {
+      return undefined;
+    }
+
+    redirectTimeoutRef.current = window.setTimeout(() => {
+      window.location.assign("/submissions");
+    }, 2000);
+
+    return () => {
+      if (redirectTimeoutRef.current !== null) {
+        window.clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+  }, [reportPhase]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current !== null) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const isReportInProgress = reportStatus === "pending";
+  const canReport = (receivedRating === "frowny" || receivedRating === "neutral") && !isReportInProgress;
 
   useEffect(() => {
     if (!response) {
@@ -228,7 +271,7 @@ export function ReviseSubmissionPage() {
   }, [isConfigured, response, state.questionSetVersions]);
 
   useEffect(() => {
-    if (!isReportModalOpen) {
+    if (!isReportModalOpen || reportPhase !== "form") {
       return undefined;
     }
 
@@ -237,6 +280,7 @@ export function ReviseSubmissionPage() {
         setIsReportModalOpen(false);
         setReportMessage("");
         setReportError("");
+        setReportPhase("form");
       }
     };
 
@@ -245,7 +289,7 @@ export function ReviseSubmissionPage() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isReportModalOpen, isSubmittingReport]);
+  }, [isReportModalOpen, isSubmittingReport, reportPhase]);
 
   const completion = useMemo(() => {
     if (questions.length === 0) {
@@ -278,13 +322,14 @@ export function ReviseSubmissionPage() {
   }
 
   const closeReportModal = () => {
-    if (isSubmittingReport) {
+    if (isSubmittingReport || reportPhase === "success") {
       return;
     }
 
     setIsReportModalOpen(false);
     setReportMessage("");
     setReportError("");
+    setReportPhase("form");
   };
 
   const submit = async () => {
@@ -321,11 +366,11 @@ export function ReviseSubmissionPage() {
 
     try {
       const result = await reportFeedbackRating(response.id, reportMessage.trim());
-      setReportNotice(
-        result.message ?? `${getRatingLabel(receivedRating)} rating reported for review.`,
-      );
-      setIsReportModalOpen(false);
-      setReportMessage("");
+      markReportedFeedbackResponseId(currentUser.id, response.id);
+      setReportStatus("pending");
+      setIsReportModalOpen(true);
+      setReportPhase("success");
+      setMessage(result.message ?? "");
     } catch (error) {
       setReportError(
         error instanceof Error
@@ -351,13 +396,17 @@ export function ReviseSubmissionPage() {
                 type="button"
                 className="revise-response-page__report-button"
                 onClick={() => {
-                  setReportNotice("");
                   setReportError("");
+                  setReportMessage("");
+                  setReportPhase("form");
                   setIsReportModalOpen(true);
                 }}
               >
-                Report Rating
+                <Flag size={16} aria-hidden="true" />
+                <span>Report Rating</span>
               </button>
+            ) : isReportInProgress ? (
+              <span className="revise-response-page__report-status">Report in progress</span>
             ) : null}
           </div>
         </div>
@@ -396,8 +445,10 @@ export function ReviseSubmissionPage() {
           </div>
 
           {loadError ? <div className="callout callout--warning">{loadError}</div> : null}
-          {message ? <div className="callout callout--soft">{message}</div> : null}
-          {reportNotice ? <div className="callout callout--soft">{reportNotice}</div> : null}
+          {message && reportPhase !== "success" ? <div className="callout callout--soft">{message}</div> : null}
+          {isReportInProgress && reportPhase !== "success" ? (
+            <div className="callout callout--soft">Your report is in progress. This feedback is locked while we review it.</div>
+          ) : null}
 
           {isLoadingQuestions ? (
             <div className="empty-state empty-state--left">
@@ -420,6 +471,7 @@ export function ReviseSubmissionPage() {
                               name={question.id}
                               checked={answers[question.id] === option}
                               onChange={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                              disabled={isReportInProgress}
                             />
                             <span>{option}</span>
                           </label>
@@ -432,6 +484,7 @@ export function ReviseSubmissionPage() {
                           value={answers[question.id] ?? ""}
                           onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
                           placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
+                          disabled={isReportInProgress}
                         />
                         <small className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}>
                           {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters
@@ -454,7 +507,7 @@ export function ReviseSubmissionPage() {
                 type="button"
                 className="button button--primary"
                 onClick={() => void submit()}
-                disabled={!completion.canSubmit || isSubmitting || isLoadingQuestions || questions.length === 0}
+                disabled={isReportInProgress || !completion.canSubmit || isSubmitting || isLoadingQuestions || questions.length === 0}
               >
                 {isSubmitting ? "Saving..." : "Save revised feedback"}
                 <ArrowRight size={16} />
@@ -464,7 +517,7 @@ export function ReviseSubmissionPage() {
         </Surface>
       </div>
 
-      {isReportModalOpen && canReport ? (
+      {isReportModalOpen ? (
         <div
           className="results-modal-backdrop"
           role="presentation"
@@ -481,57 +534,66 @@ export function ReviseSubmissionPage() {
             aria-labelledby="submission-report-title"
             aria-describedby="submission-report-description"
           >
-            <div className="results-modal__header">
-              <div>
-                <h2 id="submission-report-title">Report this {getRatingLabel(receivedRating)} rating?</h2>
+            {reportPhase === "success" ? (
+              <div className="submission-report-modal__success">
+                <span className="submission-report-modal__success-icon" aria-hidden="true">
+                  <CheckCircle2 size={34} />
+                </span>
+                <h2 id="submission-report-title">Report Sent!</h2>
                 <p id="submission-report-description">
-                  We&apos;ll email this rating, your optional note, and the exact questions and answers from {submission?.productName ?? "this app"} so it can be reviewed.
+                  We&apos;re on it. Taking you back to Submissions now.
                 </p>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="results-modal__header">
+                  <div>
+                    <h2 id="submission-report-title">Report this {getRatingLabel(receivedRating)} rating?</h2>
+                    <p id="submission-report-description">
+                      We&apos;ll review this rating and your answers for {submission?.productName ?? "this app"}, and make things right. Thanks for reporting!
+                    </p>
+                  </div>
+                </div>
 
-            <div className="submission-report-modal__body">
-              <div className="submission-report-modal__summary">
-                <span className="pill submission-report-modal__rating">{getRatingLabel(receivedRating)}</span>
-                <strong>{submission?.productName ?? "This app"}</strong>
-              </div>
+                <div className="submission-report-modal__body">
+                  <label className="field">
+                    <span>Optional message</span>
+                    <textarea
+                      rows={4}
+                      maxLength={REPORT_MESSAGE_LIMIT}
+                      value={reportMessage}
+                      onChange={(event) => setReportMessage(event.target.value)}
+                      placeholder="Add any context that would help explain why you think this rating should be reviewed."
+                      autoFocus
+                    />
+                    <small className="helper-text">
+                      {reportMessage.length} / {REPORT_MESSAGE_LIMIT} characters
+                    </small>
+                  </label>
 
-              <label className="field">
-                <span>Optional message</span>
-                <textarea
-                  rows={4}
-                  maxLength={REPORT_MESSAGE_LIMIT}
-                  value={reportMessage}
-                  onChange={(event) => setReportMessage(event.target.value)}
-                  placeholder="Add any context that would help explain why you think this rating should be reviewed."
-                  autoFocus
-                />
-                <small className="helper-text">
-                  {reportMessage.length} / {REPORT_MESSAGE_LIMIT} characters
-                </small>
-              </label>
+                  {reportError ? <div className="callout callout--warning">{reportError}</div> : null}
+                </div>
 
-              {reportError ? <div className="callout callout--warning">{reportError}</div> : null}
-            </div>
-
-            <div className="inline-actions inline-actions--compact">
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={closeReportModal}
-                disabled={isSubmittingReport}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="button button--primary"
-                onClick={() => void submitReport()}
-                disabled={isSubmittingReport}
-              >
-                {isSubmittingReport ? "Sending..." : "Send report"}
-              </button>
-            </div>
+                <div className="inline-actions inline-actions--compact">
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={closeReportModal}
+                    disabled={isSubmittingReport}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void submitReport()}
+                    disabled={isSubmittingReport}
+                  >
+                    {isSubmittingReport ? "Sending..." : "Send report"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}

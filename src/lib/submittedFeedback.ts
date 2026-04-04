@@ -1,5 +1,6 @@
 import {
   FeedbackRatingValue,
+  FeedbackReportStatus,
   ProductType,
   SubmissionStatus,
   SubmittedFeedbackCard,
@@ -18,6 +19,7 @@ interface SubmittedFeedbackCardRpcRow {
   owner_test_back_rate_percent: number | null;
   owner_satisfaction_rate_percent: number | null;
   submission_status: SubmissionStatus;
+  report_status?: FeedbackReportStatus | null;
 }
 
 function normalizePercent(value: number | null | undefined) {
@@ -30,6 +32,12 @@ function normalizePercent(value: number | null | undefined) {
 
 function normalizeRatingValue(value: FeedbackRatingValue | null) {
   return value === "frowny" || value === "neutral" || value === "smiley"
+    ? value
+    : null;
+}
+
+function normalizeReportStatus(value: FeedbackReportStatus | null | undefined) {
+  return value === "pending" || value === "resolved" || value === "dismissed"
     ? value
     : null;
 }
@@ -58,5 +66,6 @@ export async function loadSubmittedFeedbackCards() {
     ),
     ownerAvatarUrl: null,
     submissionStatus: row.submission_status,
+    reportStatus: normalizeReportStatus(row.report_status),
   })) satisfies SubmittedFeedbackCard[];
 }

@@ -10,6 +10,7 @@ export type SubmissionStatus =
   | "flagged";
 export type ResponseStatus = "approved" | "flagged" | "rejected";
 export type FeedbackRatingValue = "smiley" | "neutral" | "frowny";
+export type FeedbackReportStatus = "pending" | "resolved" | "dismissed";
 export type CreditTransactionType =
   | "starter_credit"
   | "earned_test"
@@ -97,6 +98,7 @@ export interface SubmittedFeedbackCard {
   ownerSatisfactionRatePercent: number;
   ownerAvatarUrl?: string | null;
   submissionStatus: SubmissionStatus;
+  reportStatus: FeedbackReportStatus | null;
 }
 
 export interface TestAnswer {
