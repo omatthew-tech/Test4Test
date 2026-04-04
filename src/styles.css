@@ -3271,12 +3271,12 @@ body {
   border-radius: 12px;
   border-color: rgba(245, 142, 86, 0.34);
   background:
-    radial-gradient(circle at 12% 20%, rgba(245, 142, 86, 0.32), transparent 32%),
-    radial-gradient(circle at 86% 18%, rgba(201, 87, 116, 0.24), transparent 34%),
-    radial-gradient(circle at 76% 88%, rgba(78, 157, 114, 0.18), transparent 30%),
-    linear-gradient(135deg, rgba(255, 244, 234, 0.98) 0%, rgba(255, 254, 252, 0.98) 52%, rgba(255, 242, 245, 0.9) 100%);
-  background-size: 165% 165%, 155% 155%, 150% 150%, 100% 100%;
-  background-position: 8% 18%, 92% 12%, 76% 84%, 0% 0%;
+    radial-gradient(circle at 12% 20%, rgba(245, 142, 86, 0.34), transparent 31%),
+    radial-gradient(circle at 86% 18%, rgba(201, 87, 116, 0.26), transparent 34%),
+    radial-gradient(circle at 58% 78%, rgba(78, 157, 114, 0.28), transparent 32%),
+    linear-gradient(135deg, rgba(255, 244, 234, 0.98) 0%, rgba(255, 254, 252, 0.98) 46%, rgba(240, 251, 245, 0.96) 76%, rgba(255, 242, 245, 0.92) 100%);
+  background-size: 165% 165%, 155% 155%, 155% 155%, 100% 100%;
+  background-position: 8% 18%, 92% 12%, 58% 80%, 0% 0%;
   color: var(--color-ink-900);
   font-weight: 700;
   box-shadow:
