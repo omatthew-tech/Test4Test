@@ -4,7 +4,7 @@ import { getCreditBalance } from "../lib/selectors";
 
 const navItems = [
   { to: "/earn", label: "Earn" },
-  { to: "/my-tests", label: "My Tests" },
+  { to: "/my-tests", label: "My Apps" },
   { to: "/submit", label: "Submit" },
   { to: "/submissions", label: "Submissions" },
 ];

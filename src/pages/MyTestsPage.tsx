@@ -183,7 +183,7 @@ export function MyTestsPage() {
   };
 
   return (
-    <AppShell title="My Tests" eyebrowLabel={null}>
+    <AppShell title="My Apps" eyebrowLabel={null}>
       <div className="page-stack my-tests-page">
         {submissions.length === 0 ? (
           <Surface>
