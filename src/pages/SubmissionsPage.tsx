@@ -47,6 +47,7 @@ function compareAllSubmissionCards(first: SubmittedFeedbackCard, second: Submitt
 
   return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
 }
+
 function canFavoriteSubmissionCard(card: SubmittedFeedbackCard) {
   return card.ratingValue !== "frowny" && card.ratingValue !== "neutral";
 }
@@ -444,8 +445,6 @@ function SubmissionFeedbackRow({
           )}
         </div>
       </div>
-
-
     </Surface>
   );
 }

@@ -4,12 +4,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getOrderedAccessLinks } from "../lib/format";
+import { reportFeedbackRating } from "../lib/reportFeedbackRating";
 import { requireSupabase } from "../lib/supabase";
-import { Question, TestAnswer } from "../types";
+import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
+import { FeedbackRatingValue, Question, TestAnswer } from "../types";
 
 interface QuestionSetVersionRow {
   questions: Question[];
 }
+
+const REPORT_MESSAGE_LIMIT = 280;
 
 function buildAnswer(question: Question, value: string): TestAnswer {
   return question.type === "multiple"
@@ -25,6 +29,19 @@ function buildAnswer(question: Question, value: string): TestAnswer {
         type: question.type,
         textAnswer: value,
       };
+}
+
+function getRatingLabel(ratingValue: FeedbackRatingValue | null) {
+  switch (ratingValue) {
+    case "frowny":
+      return "Low Value";
+    case "neutral":
+      return "Okay";
+    case "smiley":
+      return "Helpful";
+    default:
+      return "Feedback";
+  }
 }
 
 function normalizeQuestions(value: unknown) {
@@ -60,17 +77,69 @@ export function ReviseSubmissionPage() {
     (item) => item.id === responseId && item.testerUserId === currentUser?.id,
   );
   const submission = state.submissions.find((item) => item.id === response?.submissionId);
+  const receivedRatingFallback = useMemo(() => {
+    if (!response || !submission?.userId) {
+      return null;
+    }
+
+    return state.feedbackRatings.find(
+      (rating) =>
+        rating.testResponseId === response.id &&
+        rating.ratedByUserId === submission.userId,
+    )?.ratingValue ?? null;
+  }, [response, state.feedbackRatings, submission?.userId]);
   const accessLinks = useMemo(
     () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
     [submission],
   );
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [receivedRating, setReceivedRating] = useState<FeedbackRatingValue | null>(receivedRatingFallback);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
+  const [reportNotice, setReportNotice] = useState("");
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startedAt] = useState(() => Date.now());
   const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setReceivedRating(receivedRatingFallback);
+  }, [receivedRatingFallback]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!currentUser || !response || !isConfigured) {
+      return undefined;
+    }
+
+    const loadReceivedRating = async () => {
+      try {
+        const cards = await loadSubmittedFeedbackCards();
+        const matchingCard = cards.find((card) => card.responseId === response.id);
+
+        if (!isCancelled) {
+          setReceivedRating(matchingCard?.ratingValue ?? null);
+        }
+      } catch {
+        if (!isCancelled) {
+          setReceivedRating(receivedRatingFallback);
+        }
+      }
+    };
+
+    void loadReceivedRating();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured, receivedRatingFallback, response?.id]);
+
+  const canReport = receivedRating === "frowny" || receivedRating === "neutral";
 
   useEffect(() => {
     if (!response) {
@@ -158,6 +227,26 @@ export function ReviseSubmissionPage() {
     };
   }, [isConfigured, response, state.questionSetVersions]);
 
+  useEffect(() => {
+    if (!isReportModalOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSubmittingReport) {
+        setIsReportModalOpen(false);
+        setReportMessage("");
+        setReportError("");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isReportModalOpen, isSubmittingReport]);
+
   const completion = useMemo(() => {
     if (questions.length === 0) {
       return { answered: 0, total: 0, canSubmit: false, shortParagraphs: 0 };
@@ -188,6 +277,16 @@ export function ReviseSubmissionPage() {
     );
   }
 
+  const closeReportModal = () => {
+    if (isSubmittingReport) {
+      return;
+    }
+
+    setIsReportModalOpen(false);
+    setReportMessage("");
+    setReportError("");
+  };
+
   const submit = async () => {
     const payload = questions.map((question) =>
       buildAnswer(question, answers[question.id]?.trim() ?? ""),
@@ -212,14 +311,55 @@ export function ReviseSubmissionPage() {
     }
   };
 
+  const submitReport = async () => {
+    if (!canReport || isSubmittingReport) {
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    setReportError("");
+
+    try {
+      const result = await reportFeedbackRating(response.id, reportMessage.trim());
+      setReportNotice(
+        result.message ?? `${getRatingLabel(receivedRating)} rating reported for review.`,
+      );
+      setIsReportModalOpen(false);
+      setReportMessage("");
+    } catch (error) {
+      setReportError(
+        error instanceof Error
+          ? error.message
+          : "We could not send your report right now.",
+      );
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   return (
     <AppShell eyebrowLabel={null}>
       <div className="test-layout test-layout--single revise-response-page">
         <div className="test-session__header">
           <h1>{`Revise feedback for ${submission?.productName ?? "this app"}`}</h1>
-          <p>
-            Submitting a revision replaces your previous answers and let's the reviewer send you a new rating.
-          </p>
+          <div className="revise-response-page__subheader-row">
+            <p>
+              Submitting a revision replaces your previous answers and let's the reviewer send you a new rating.
+            </p>
+            {canReport ? (
+              <button
+                type="button"
+                className="revise-response-page__report-button"
+                onClick={() => {
+                  setReportNotice("");
+                  setReportError("");
+                  setIsReportModalOpen(true);
+                }}
+              >
+                Report Rating
+              </button>
+            ) : null}
+          </div>
         </div>
         <Surface className="test-questions test-questions--full">
           <div className="test-session__intro-card">
@@ -257,6 +397,7 @@ export function ReviseSubmissionPage() {
 
           {loadError ? <div className="callout callout--warning">{loadError}</div> : null}
           {message ? <div className="callout callout--soft">{message}</div> : null}
+          {reportNotice ? <div className="callout callout--soft">{reportNotice}</div> : null}
 
           {isLoadingQuestions ? (
             <div className="empty-state empty-state--left">
@@ -322,6 +463,78 @@ export function ReviseSubmissionPage() {
           </div>
         </Surface>
       </div>
+
+      {isReportModalOpen && canReport ? (
+        <div
+          className="results-modal-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeReportModal();
+            }
+          }}
+        >
+          <div
+            className="results-modal submissions-report-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="submission-report-title"
+            aria-describedby="submission-report-description"
+          >
+            <div className="results-modal__header">
+              <div>
+                <h2 id="submission-report-title">Report this {getRatingLabel(receivedRating)} rating?</h2>
+                <p id="submission-report-description">
+                  We&apos;ll email this rating, your optional note, and the exact questions and answers from {submission?.productName ?? "this app"} so it can be reviewed.
+                </p>
+              </div>
+            </div>
+
+            <div className="submission-report-modal__body">
+              <div className="submission-report-modal__summary">
+                <span className="pill submission-report-modal__rating">{getRatingLabel(receivedRating)}</span>
+                <strong>{submission?.productName ?? "This app"}</strong>
+              </div>
+
+              <label className="field">
+                <span>Optional message</span>
+                <textarea
+                  rows={4}
+                  maxLength={REPORT_MESSAGE_LIMIT}
+                  value={reportMessage}
+                  onChange={(event) => setReportMessage(event.target.value)}
+                  placeholder="Add any context that would help explain why you think this rating should be reviewed."
+                  autoFocus
+                />
+                <small className="helper-text">
+                  {reportMessage.length} / {REPORT_MESSAGE_LIMIT} characters
+                </small>
+              </label>
+
+              {reportError ? <div className="callout callout--warning">{reportError}</div> : null}
+            </div>
+
+            <div className="inline-actions inline-actions--compact">
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={closeReportModal}
+                disabled={isSubmittingReport}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => void submitReport()}
+                disabled={isSubmittingReport}
+              >
+                {isSubmittingReport ? "Sending..." : "Send report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }
