@@ -181,7 +181,7 @@ function EarnRow({
           <div className="earn-row__pills">
             {showReputation ? (
               <span className="tag tag--warm earn-row__reciprocal-tag">
-                This user tested your app
+                <span className="earn-row__reciprocal-tag-label">This user tested your app</span>
               </span>
             ) : null}
             {productTypesBadges(submission.productTypes).map((badge) => (

@@ -3266,39 +3266,128 @@ body {
 .earn-row__reciprocal-tag {
   position: relative;
   isolation: isolate;
+  display: inline-flex;
+  align-items: center;
   overflow: hidden;
   padding: 8px 14px;
   border-radius: 12px;
-  border-color: rgba(245, 142, 86, 0.34);
+  border-color: rgba(245, 142, 86, 0.78);
   background:
-    radial-gradient(circle at 12% 20%, rgba(245, 142, 86, 0.34), transparent 31%),
-    radial-gradient(circle at 86% 18%, rgba(201, 87, 116, 0.26), transparent 34%),
-    radial-gradient(circle at 58% 78%, rgba(78, 157, 114, 0.28), transparent 32%),
-    linear-gradient(135deg, rgba(255, 244, 234, 0.98) 0%, rgba(255, 254, 252, 0.98) 46%, rgba(240, 251, 245, 0.96) 76%, rgba(255, 242, 245, 0.92) 100%);
-  background-size: 165% 165%, 155% 155%, 155% 155%, 100% 100%;
-  background-position: 8% 18%, 92% 12%, 58% 80%, 0% 0%;
+    linear-gradient(
+      118deg,
+      rgba(255, 236, 220, 0.99) 0%,
+      rgba(255, 214, 182, 0.98) 18%,
+      rgba(245, 142, 86, 0.78) 40%,
+      rgba(255, 205, 168, 0.96) 60%,
+      rgba(201, 87, 116, 0.52) 82%,
+      rgba(255, 226, 205, 0.96) 100%
+    ),
+    radial-gradient(circle at 14% 22%, rgba(245, 142, 86, 0.74) 0%, rgba(245, 142, 86, 0.3) 30%, rgba(245, 142, 86, 0) 58%),
+    radial-gradient(circle at 88% 18%, rgba(255, 208, 174, 0.84) 0%, rgba(255, 208, 174, 0.32) 28%, rgba(255, 208, 174, 0) 56%),
+    radial-gradient(circle at 58% 92%, rgba(201, 87, 116, 0.52) 0%, rgba(201, 87, 116, 0.2) 24%, rgba(201, 87, 116, 0) 56%),
+    linear-gradient(180deg, rgba(255, 240, 228, 0.24), rgba(255, 240, 228, 0.04));
+  background-size: 180% 180%, 220% 220%, 220% 220%, 220% 220%, 100% 100%;
+  background-position: 0% 50%, 14% 18%, 92% 18%, 48% 88%, 0 0;
   color: var(--color-ink-900);
   font-weight: 700;
+  text-shadow:
+    0 1px 0 rgba(255, 248, 241, 0.56),
+    0 0 6px rgba(255, 233, 214, 0.16);
   box-shadow:
-    0 8px 18px rgba(245, 142, 86, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    0 0 0 1px rgba(255, 247, 240, 0.9),
+    0 16px 30px rgba(245, 142, 86, 0.28),
+    0 4px 10px rgba(201, 87, 116, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  will-change: background-position;
+  animation: earn-reciprocal-tag-flow 6.8s cubic-bezier(0.4, 0.06, 0.2, 1) infinite alternate;
+}
+
+.earn-row__reciprocal-tag-label {
+  position: relative;
+  z-index: 1;
 }
 
 .earn-row__reciprocal-tag::before {
-  content: none;
+  content: "";
+  position: absolute;
+  inset: -34% -18%;
+  background:
+    radial-gradient(circle at 18% 32%, rgba(245, 142, 86, 0.84) 0%, rgba(245, 142, 86, 0.38) 30%, rgba(245, 142, 86, 0) 56%),
+    radial-gradient(circle at 76% 28%, rgba(255, 208, 174, 0.82) 0%, rgba(255, 208, 174, 0.28) 24%, rgba(255, 208, 174, 0) 50%);
+  background-size: 150% 150%, 150% 150%;
+  background-position: 0% 40%, 100% 24%;
+  filter: blur(13px);
+  opacity: 0.94;
+  pointer-events: none;
+  z-index: 0;
+  will-change: background-position;
+  animation: earn-reciprocal-tag-blob-a 7.4s ease-in-out infinite alternate;
 }
 
 .earn-row__reciprocal-tag::after {
   content: "";
   position: absolute;
-  top: -6px;
-  right: -2px;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0) 74%);
+  inset: -40% -12%;
+  background:
+    radial-gradient(circle at 78% 72%, rgba(201, 87, 116, 0.48) 0%, rgba(201, 87, 116, 0.22) 24%, rgba(201, 87, 116, 0) 52%),
+    linear-gradient(112deg, rgba(255, 220, 190, 0) 18%, rgba(255, 212, 176, 0.56) 46%, rgba(255, 220, 190, 0) 74%);
+  background-size: 150% 150%, 220% 100%;
+  background-position: 100% 76%, 142% 50%;
+  filter: blur(10px);
+  opacity: 0.92;
   pointer-events: none;
-}.earn-row__head {
+  z-index: 0;
+  will-change: background-position;
+  animation: earn-reciprocal-tag-blob-b 8.1s ease-in-out infinite alternate;
+}
+
+@keyframes earn-reciprocal-tag-flow {
+  0% {
+    background-position: 0% 50%, 14% 18%, 92% 18%, 48% 88%, 0 0;
+  }
+
+  35% {
+    background-position: 36% 46%, 24% 26%, 78% 10%, 60% 82%, 0 0;
+  }
+
+  65% {
+    background-position: 72% 54%, 10% 42%, 86% 28%, 38% 72%, 0 0;
+  }
+
+  100% {
+    background-position: 100% 50%, 20% 36%, 72% 20%, 54% 80%, 0 0;
+  }
+}
+
+@keyframes earn-reciprocal-tag-blob-a {
+  0% {
+    background-position: 0% 40%, 100% 24%;
+  }
+
+  50% {
+    background-position: 56% 26%, 58% 34%;
+  }
+
+  100% {
+    background-position: 100% 36%, 0% 20%;
+  }
+}
+
+@keyframes earn-reciprocal-tag-blob-b {
+  0% {
+    background-position: 100% 76%, 142% 50%;
+  }
+
+  50% {
+    background-position: 42% 56%, 50% 50%;
+  }
+
+  100% {
+    background-position: 0% 64%, -34% 50%;
+  }
+}
+
+.earn-row__head {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -4164,9 +4253,32 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .test-success-panel__content,
   .test-success-chip,
+  .earn-row__reciprocal-tag,
+  .earn-row__reciprocal-tag::before,
+  .earn-row__reciprocal-tag::after,
   .test-success-burst__glow,
   .test-success-burst__logo {
     animation: none;
+  }
+
+  .earn-row__reciprocal-tag {
+    background-position: 58% 50%, 22% 22%, 78% 18%, 50% 82%, 0 0;
+    box-shadow:
+      0 0 0 1px rgba(255, 247, 240, 0.9),
+      0 16px 30px rgba(245, 142, 86, 0.28),
+      0 4px 10px rgba(201, 87, 116, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.88);
+    will-change: auto;
+  }
+
+  .earn-row__reciprocal-tag::before {
+    background-position: 42% 30%, 72% 26%;
+    will-change: auto;
+  }
+
+  .earn-row__reciprocal-tag::after {
+    background-position: 34% 60%, 48% 50%;
+    will-change: auto;
   }
 
   .test-success-burst__logo {
