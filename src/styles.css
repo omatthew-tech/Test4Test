@@ -3596,11 +3596,11 @@ body {
 }
 
 .submission-feedback-card__bookmark:hover {
-  color: rgba(29, 24, 21, 0.82);
+  color: rgba(29, 24, 21, 0.54);
 }
 
 .submission-feedback-card__bookmark--active {
-  color: var(--color-orange-500);
+  color: rgba(29, 24, 21, 0.54);
 }
 
 .submission-feedback-card__bookmark:disabled {
@@ -6191,6 +6191,9 @@ body {
   }
 
 }
+
+
+
 
 
 

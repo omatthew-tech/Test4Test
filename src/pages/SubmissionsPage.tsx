@@ -424,7 +424,7 @@ function SubmissionFeedbackRow({
             disabled={isFavoritePending}
             onClick={() => void onToggleFavorite(card.responseId)}
           >
-            <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} />
+            <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} stroke={isFavorite ? "none" : "currentColor"} />
           </button>
         ) : null}
       </div>
@@ -471,6 +471,7 @@ function SubmissionFeedbackRow({
     </Surface>
   );
 }
+
 
 
 
