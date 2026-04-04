@@ -19,7 +19,7 @@ export function SignInPage() {
 
   useEffect(() => {
     if (currentUser) {
-      navigate("/earn", { replace: true });
+      navigate(currentUser.banStatus === "banned" ? "/banned" : "/earn", { replace: true });
     }
   }, [currentUser, navigate]);
 
@@ -56,9 +56,6 @@ export function SignInPage() {
     try {
       const result = await verifyOtp(code);
       setMessage(result.message);
-      if (result.ok) {
-        navigate("/earn", { replace: true });
-      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not verify that code.");
     } finally {
@@ -169,5 +166,3 @@ export function SignInPage() {
     </AppShell>
   );
 }
-
-

@@ -43,6 +43,8 @@ interface ProfileRow {
   id: string;
   email: string;
   display_name: string;
+  ban_status: User["banStatus"];
+  banned_at: string | null;
   created_at: string;
 }
 
@@ -224,7 +226,8 @@ function mapProfile(row: ProfileRow): User {
     displayName: row.display_name,
     status: "active",
     createdAt: row.created_at,
-    banStatus: "clear",
+    banStatus: row.ban_status === "banned" ? "banned" : "clear",
+    bannedAt: row.banned_at,
   };
 }
 
@@ -427,7 +430,7 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
         },
         { onConflict: "id" },
       )
-      .select("id, email, display_name, created_at")
+      .select("id, email, display_name, ban_status, banned_at, created_at")
       .single();
 
     if (!error) {
@@ -719,6 +722,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           : (await supabase.auth.getUser()).data.user;
       const currentUserId = authUser?.id ?? null;
       const currentProfile = authUser ? await ensureProfile(authUser) : null;
+
+      if (currentProfile?.banStatus === "banned") {
+        if (loadId !== loadIdRef.current) {
+          return;
+        }
+
+        setState({
+          currentUserId,
+          users: [currentProfile],
+          submissions: [],
+          questionSetVersions: [],
+          responses: [],
+          feedbackRatings: [],
+          creditTransactions: [],
+          emailLogs: [],
+          moderationActions: [],
+          otpChallenge: getStoredOtpChallenge(),
+        });
+        return;
+      }
+
       const submissions = await loadVisibleSubmissions(currentUserId);
       const questionSetVersions = await loadActiveQuestionSets(submissions.map((submission) => submission.id));
       const ownedSubmissionIds = currentUserId
@@ -926,13 +950,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        await ensureProfile(authUser);
+        const verifiedProfile = await ensureProfile(authUser);
 
         clearStoredOtpChallenge();
         setState((current) => ({
           ...current,
           otpChallenge: null,
         }));
+
+        if (verifiedProfile.banStatus === "banned") {
+          await refreshState(authUser);
+          return {
+            ok: true,
+            message: "Email verified. You're ready to go.",
+          };
+        }
 
         let createdSubmissionId: string | null = null;
 

@@ -31,7 +31,8 @@ export interface User {
   displayName: string;
   status: "active" | "warned";
   createdAt: string;
-  banStatus: "clear" | "suspended" | "banned";
+  banStatus: "clear" | "banned";
+  bannedAt?: string | null;
 }
 
 export interface Question {

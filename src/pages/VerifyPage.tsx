@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, MailCheck, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/Layout";
@@ -15,7 +15,13 @@ export function VerifyPage() {
   const email = searchParams.get("email") ?? "";
   const submissionId = searchParams.get("submissionId") ?? undefined;
   const navigate = useNavigate();
-  const { requestOtp, verifyOtp } = useAppState();
+  const { currentUser, requestOtp, verifyOtp } = useAppState();
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate(currentUser.banStatus === "banned" ? "/banned" : "/earn", { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const resend = async () => {
     if (!email) {
@@ -41,10 +47,6 @@ export function VerifyPage() {
     try {
       const result = await verifyOtp(code);
       setMessage(result.message);
-
-      if (result.ok) {
-        navigate("/earn");
-      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not verify that code.");
     } finally {
@@ -115,5 +117,3 @@ export function VerifyPage() {
     </AppShell>
   );
 }
-
-

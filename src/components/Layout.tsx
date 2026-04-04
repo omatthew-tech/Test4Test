@@ -17,6 +17,7 @@ export function AppShell({
   actions,
   eyebrowLabel,
   variant = "default",
+  hideMemberChrome = false,
   children,
 }: {
   title?: string;
@@ -24,11 +25,13 @@ export function AppShell({
   actions?: React.ReactNode;
   eyebrowLabel?: string | null;
   variant?: "default" | "marketing";
+  hideMemberChrome?: boolean;
   children: React.ReactNode;
 }) {
   const { state, currentUser } = useAppState();
   const credits = getCreditBalance(state, currentUser?.id ?? null);
-  const showMemberNav = Boolean(currentUser);
+  const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
+  const showTopbarActions = !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
   const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
   const siteHeaderClassName = `site-header${variant === "marketing" ? " site-header--marketing" : ""}`;
@@ -67,17 +70,19 @@ export function AppShell({
             </nav>
           ) : null}
 
-          <div className="topbar__actions">
-            {showMemberNav ? (
-              <div className="credit-chip">
-                <strong>{credits}</strong>
-                <span className="credit-chip__label">credits</span>
-              </div>
-            ) : null}
-            <NavLink to={profileHref} className="button button--secondary button--small">
-              {currentUser ? "Profile" : "Log in"}
-            </NavLink>
-          </div>
+          {showTopbarActions ? (
+            <div className="topbar__actions">
+              {showMemberNav ? (
+                <div className="credit-chip">
+                  <strong>{credits}</strong>
+                  <span className="credit-chip__label">credits</span>
+                </div>
+              ) : null}
+              <NavLink to={profileHref} className="button button--secondary button--small">
+                {currentUser ? "Profile" : "Log in"}
+              </NavLink>
+            </div>
+          ) : null}
         </header>
       </div>
 
