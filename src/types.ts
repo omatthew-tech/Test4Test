@@ -1,4 +1,4 @@
-export type ProductType = "website" | "ios" | "android";
+﻿export type ProductType = "website" | "ios" | "android";
 export type AccessLinks = Partial<Record<ProductType, string>>;
 export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
@@ -25,7 +25,13 @@ export type ModerationActionType =
   | "suspend"
   | "ban";
 
-export interface User {
+export interface PaymentMethods {
+  paypalHandle?: string | null;
+  venmoHandle?: string | null;
+  cashAppHandle?: string | null;
+}
+
+export interface User extends PaymentMethods {
   id: string;
   email: string;
   displayName: string;

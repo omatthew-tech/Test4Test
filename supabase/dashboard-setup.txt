@@ -1,5 +1,6 @@
-1. In Supabase, open SQL Editor and paste:
-   C:\Projects\LIKE4LIKE\supabase\sql-to-paste-into-supabase.txt
+﻿1. In Supabase, open SQL Editor and run these in order:
+   - C:\Projects\LIKE4LIKE\supabase\sql-to-paste-into-supabase.txt
+   - C:\Projects\LIKE4LIKE\supabase\migrations\20260405_profile_payment_methods.sql
 
 2. In Authentication -> Providers -> Email:
    - Enable email login / OTP

@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   ReactNode,
   useCallback,
@@ -30,6 +30,7 @@ import {
   FeedbackRatingValue,
   ModerationAction,
   OTPChallenge,
+  PaymentMethods,
   Question,
   QuestionMode,
   Submission,
@@ -45,6 +46,9 @@ interface ProfileRow {
   display_name: string;
   ban_status: User["banStatus"];
   banned_at: string | null;
+  paypal_handle?: string | null;
+  venmo_handle?: string | null;
+  cash_app_handle?: string | null;
   created_at: string;
 }
 
@@ -161,6 +165,7 @@ interface AppStateContextValue {
   ) => Promise<void>;
   resetDemo: () => Promise<void>;
   changeEmail: (nextEmail: string) => Promise<{ ok: boolean; message: string }>;
+  updatePaymentMethods: (paymentMethods: PaymentMethods) => Promise<{ ok: boolean; message: string }>;
   deleteAccount: () => Promise<{ ok: boolean; message: string }>;
   signOut: () => Promise<void>;
 }
@@ -228,6 +233,9 @@ function mapProfile(row: ProfileRow): User {
     createdAt: row.created_at,
     banStatus: row.ban_status === "banned" ? "banned" : "clear",
     bannedAt: row.banned_at,
+    paypalHandle: row.paypal_handle ?? null,
+    venmoHandle: row.venmo_handle ?? null,
+    cashAppHandle: row.cash_app_handle ?? null,
   };
 }
 
@@ -390,6 +398,83 @@ async function ensureAuthenticatedSession(
 
 const latestSubmissionSchemaMessage =
   "Your Supabase database is missing the latest submissions schema. Run the 20260331 migrations for product_types and access_links before creating submissions with multiple app links.";
+const latestProfilePaymentSchemaMessage =
+  "Your Supabase database is missing the latest payment methods schema. Run the 20260405 profile payment methods migration before saving payout details.";
+const PAYMENT_METHOD_MAX_LENGTH = 120;
+const profileBaseSelectClause = "id, email, display_name, ban_status, banned_at, created_at";
+const profilePaymentSelectClause =
+  `${profileBaseSelectClause}, paypal_handle, venmo_handle, cash_app_handle`;
+
+function normalizeOptionalProfileText(value: string | null | undefined) {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  return trimmed ? trimmed : null;
+}
+
+function normalizeVenmoHandle(value: string | null | undefined) {
+  const trimmed = normalizeOptionalProfileText(value);
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed
+    .replace(/^https?:\/\/(www\.)?venmo\.com\//i, "")
+    .replace(/\s+/g, "")
+    .replace(/^@+/, "");
+
+  return normalized ? `@${normalized}` : null;
+}
+
+function normalizeCashAppHandle(value: string | null | undefined) {
+  const trimmed = normalizeOptionalProfileText(value);
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = trimmed
+    .replace(/^https?:\/\/(www\.)?cash\.app\/\$?/i, "")
+    .replace(/\s+/g, "")
+    .replace(/^\$+/, "");
+
+  return normalized ? `$${normalized}` : null;
+}
+
+function normalizePaymentMethods(paymentMethods: PaymentMethods): Required<PaymentMethods> {
+  return {
+    paypalHandle: normalizeOptionalProfileText(paymentMethods.paypalHandle),
+    venmoHandle: normalizeVenmoHandle(paymentMethods.venmoHandle),
+    cashAppHandle: normalizeCashAppHandle(paymentMethods.cashAppHandle),
+  };
+}
+
+function validatePaymentMethods(paymentMethods: Required<PaymentMethods>) {
+  const labels: Record<keyof Required<PaymentMethods>, string> = {
+    paypalHandle: "PayPal",
+    venmoHandle: "Venmo",
+    cashAppHandle: "Cash App",
+  };
+
+  for (const key of Object.keys(labels) as (keyof Required<PaymentMethods>)[]) {
+    const value = paymentMethods[key];
+
+    if (value && value.length > PAYMENT_METHOD_MAX_LENGTH) {
+      return `${labels[key]} must be ${PAYMENT_METHOD_MAX_LENGTH} characters or fewer.`;
+    }
+  }
+
+  return null;
+}
+
+function isMissingProfilePaymentSchemaError(message: string) {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes('column "paypal_handle" of relation "profiles" does not exist') ||
+    normalized.includes('column "venmo_handle" of relation "profiles" does not exist') ||
+    normalized.includes('column "cash_app_handle" of relation "profiles" does not exist')
+  );
+}
 
 function isMissingSubmissionSchemaError(message: string) {
   const normalized = message.toLowerCase();
@@ -413,6 +498,11 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
   const email = authUser.email ?? "";
   const displayName = resolveDisplayName(email, authUser);
   const retryDelays = [0, 150, 400];
+  const profileUpsertPayload = {
+    id: authUser.id,
+    email,
+    display_name: displayName,
+  };
   let lastError: Error | null = null;
 
   for (const delay of retryDelays) {
@@ -422,19 +512,33 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
 
     const { data, error } = await supabase
       .from("profiles")
-      .upsert(
-        {
-          id: authUser.id,
-          email,
-          display_name: displayName,
-        },
-        { onConflict: "id" },
-      )
-      .select("id, email, display_name, ban_status, banned_at, created_at")
+      .upsert(profileUpsertPayload, { onConflict: "id" })
+      .select(profilePaymentSelectClause)
       .single();
 
     if (!error) {
       return mapProfile(data as ProfileRow);
+    }
+
+    if (isMissingProfilePaymentSchemaError(error.message)) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("profiles")
+        .upsert(profileUpsertPayload, { onConflict: "id" })
+        .select(profileBaseSelectClause)
+        .single();
+
+      if (!fallbackError) {
+        return mapProfile(fallbackData as ProfileRow);
+      }
+
+      if (isProfileAuthRace(fallbackError)) {
+        lastError = new Error(
+          "We verified your email, but your account is still finishing setup. Please wait a moment and try again.",
+        );
+        continue;
+      }
+
+      throw new Error(fallbackError.message);
     }
 
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -1141,6 +1245,65 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             "Check your inboxes to confirm the new email address. Your sign-in email stays the same until you finish confirmation.",
         };
       },
+      async updatePaymentMethods(paymentMethods: PaymentMethods) {
+        if (!currentUser) {
+          return { ok: false, message: "Sign in to save your payment methods." };
+        }
+
+        const normalizedPaymentMethods = normalizePaymentMethods(paymentMethods);
+        const validationMessage = validatePaymentMethods(normalizedPaymentMethods);
+
+        if (validationMessage) {
+          return { ok: false, message: validationMessage };
+        }
+
+        let supabase: ReturnType<typeof requireSupabase>;
+
+        try {
+          ({ supabase } = await ensureAuthenticatedSession(
+            "Please sign in again before saving your payment methods.",
+          ));
+        } catch (sessionError) {
+          return {
+            ok: false,
+            message:
+              sessionError instanceof Error
+                ? sessionError.message
+                : "Please sign in again before saving your payment methods.",
+          };
+        }
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            paypal_handle: normalizedPaymentMethods.paypalHandle,
+            venmo_handle: normalizedPaymentMethods.venmoHandle,
+            cash_app_handle: normalizedPaymentMethods.cashAppHandle,
+          })
+          .eq("id", currentUser.id)
+          .select("id")
+          .single();
+
+        if (error) {
+          if (isMissingProfilePaymentSchemaError(error.message)) {
+            return { ok: false, message: latestProfilePaymentSchemaMessage };
+          }
+
+          return { ok: false, message: error.message };
+        }
+
+        await refreshState();
+
+        const filledCount = Object.values(normalizedPaymentMethods).filter((value) => Boolean(value)).length;
+
+        return {
+          ok: true,
+          message:
+            filledCount > 0
+              ? `Payment methods saved. ${filledCount} payout option${filledCount === 1 ? "" : "s"} ready on your profile.`
+              : "Payment methods cleared from your profile.",
+        };
+      },
       async deleteAccount() {
         if (!currentUser) {
           return { ok: false, message: "Sign in to delete your account." };
@@ -1238,7 +1401,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ok: true,
           message: data?.message ?? "Your account and associated data have been deleted.",
         };
-      },      async signOut() {
+      },
+      async signOut() {
         if (!hasSupabaseConfig) {
           return;
         }
@@ -1265,6 +1429,8 @@ export function useAppState() {
 
   return context;
 }
+
+
 
 
 

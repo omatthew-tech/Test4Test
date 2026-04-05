@@ -1,7 +1,7 @@
-# Supabase Launch Setup
+﻿# Supabase Launch Setup
 
 1. Create a Supabase project.
-2. Run the SQL in `supabase/migrations/20260327_initial.sql`.
+2. Run the SQL in the `supabase/migrations` folder in order, starting with `20260327_initial.sql` and including `20260405_profile_payment_methods.sql`.
 3. In Auth, enable email OTP sign-in.
 4. Update the email template so it sends the OTP token (for example using `{{ .Token }}`) instead of only a magic link.
 5. In Auth URL configuration, set the site URL to `https://test4test.io`.
@@ -16,3 +16,4 @@
 Recommended free-stack deployment:
 - Supabase free project for Auth, Postgres, and Edge Functions
 - Cloudflare Pages free for the React app
+

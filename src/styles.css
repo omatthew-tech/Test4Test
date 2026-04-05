@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap");
 
 :root {
   --color-orange-500: #f58e56;
@@ -3522,6 +3522,7 @@ body {
   --submission-card-footer: linear-gradient(180deg, rgba(246, 242, 238, 0.92), rgba(241, 236, 231, 0.94));
   --submission-card-button-bg: rgba(255, 255, 255, 0.88);
   --submission-card-button-border: rgba(29, 24, 21, 0.2);
+  --submission-card-button-text: var(--color-ink-900);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -3535,19 +3536,9 @@ body {
 }
 
 .submission-feedback-card--frowny {
-  --submission-card-bg: linear-gradient(180deg, rgba(201, 91, 91, 0.9), rgba(244, 193, 205, 0.72) 62%, rgba(255, 254, 252, 0.98));
-  --submission-card-border: rgba(132, 48, 48, 0.42);
-  --submission-card-footer: linear-gradient(180deg, rgba(201, 91, 91, 0.24), rgba(244, 193, 205, 0.36));
-  --submission-card-button-bg: rgba(255, 254, 252, 0.96);
-  --submission-card-button-border: rgba(132, 48, 48, 0.28);
 }
 
 .submission-feedback-card--neutral {
-  --submission-card-bg: linear-gradient(180deg, #fff81d, #fff500);
-  --submission-card-border: rgba(140, 124, 0, 0.28);
-  --submission-card-footer: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.16));
-  --submission-card-button-bg: rgba(255, 255, 214, 0.72);
-  --submission-card-button-border: rgba(144, 131, 11, 0.18);
 }
 
 .submission-feedback-card::before {
@@ -3714,6 +3705,18 @@ body {
   font-weight: 600;
   text-decoration: none;
   transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.submission-feedback-card__action-button--frowny {
+  border-color: rgba(132, 48, 48, 0.34);
+  background: linear-gradient(180deg, rgba(201, 91, 91, 0.98), rgba(184, 80, 80, 0.96));
+  color: var(--color-surface-000);
+}
+
+.submission-feedback-card__action-button--neutral {
+  border-color: rgba(164, 121, 13, 0.28);
+  background: linear-gradient(180deg, rgba(247, 207, 95, 0.98), rgba(229, 169, 61, 0.94));
+  color: var(--color-ink-900);
 }
 
 .submission-feedback-card__action-button:hover {
@@ -5316,6 +5319,7 @@ body {
 }
 
 .profile-panel--account,
+.profile-panel--payments,
 .profile-panel--danger {
   display: flex;
   flex-direction: column;
@@ -5407,6 +5411,57 @@ body {
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.profile-panel--payments {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 244, 234, 0.82));
+}
+
+.profile-payments-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px 24px 24px;
+}
+
+.profile-payments-copy {
+  width: 100%;
+  margin: 0;
+  color: #625850;
+  line-height: 1.65;
+}
+
+.profile-payments-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(231, 223, 215, 0.96);
+  background: rgba(255, 254, 252, 0.92);
+}
+
+.profile-payment-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-payments-form .field span {
+  color: #433b36;
+  font-weight: 700;
+}
+
+.profile-payments-form .field small {
+  color: #6d625b;
+  line-height: 1.55;
+}
+
+.profile-inline-actions--payments {
+  justify-content: flex-start;
+}
+
+.profile-payments-save {
+  min-width: 220px;
 }
 
 .profile-inline-form {
@@ -5520,12 +5575,19 @@ body {
   line-height: 1.65;
 }
 
+@media (max-width: 960px) {
+  .profile-payments-form {
+    padding: 18px;
+  }
+}
+
 @media (max-width: 760px) {
   .profile-settings-shell {
     width: 100%;
   }
 
   .profile-account-stack,
+  .profile-payments-stack,
   .profile-danger-stack,
   .profile-section-heading {
     padding-left: 20px;
@@ -5533,11 +5595,16 @@ body {
   }
 
   .profile-section-heading,
-  .profile-account-stack {
+  .profile-account-stack,
+  .profile-payments-stack {
     padding-top: 20px;
   }
 
   .profile-danger-stack {
+    padding-bottom: 20px;
+  }
+
+  .profile-payments-stack {
     padding-bottom: 20px;
   }
 
@@ -5564,7 +5631,8 @@ body {
   }
 
   .profile-inline-actions .button,
-  .profile-inline-actions--danger .button {
+  .profile-inline-actions--danger .button,
+  .profile-payments-save {
     width: 100%;
   }
 
@@ -6191,6 +6259,23 @@ body {
   }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

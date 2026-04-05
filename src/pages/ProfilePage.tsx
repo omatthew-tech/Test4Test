@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -12,18 +12,58 @@ import { Link, useNavigate } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 
+type PaymentField = "paypalHandle" | "venmoHandle" | "cashAppHandle";
+type PaymentDraft = Record<PaymentField, string>;
+
+const paymentMethodConfigs = [
+  {
+    key: "paypalHandle",
+    label: "PayPal:",
+    placeholder: "paypal.me/yourname",
+  },
+  {
+    key: "venmoHandle",
+    label: "Venmo:",
+    placeholder: "@yourhandle",
+  },
+  {
+    key: "cashAppHandle",
+    label: "Cash App:",
+    placeholder: "$yourcashtag",
+  },
+] as const;
+
+function createPaymentDraft(currentUser?: {
+  paypalHandle?: string | null;
+  venmoHandle?: string | null;
+  cashAppHandle?: string | null;
+} | null): PaymentDraft {
+  return {
+    paypalHandle: currentUser?.paypalHandle ?? "",
+    venmoHandle: currentUser?.venmoHandle ?? "",
+    cashAppHandle: currentUser?.cashAppHandle ?? "",
+  };
+}
+
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { currentUser, signOut, changeEmail, deleteAccount } = useAppState();
+  const { currentUser, signOut, changeEmail, updatePaymentMethods, deleteAccount } = useAppState();
 
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nextEmail, setNextEmail] = useState("");
+  const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() => createPaymentDraft(currentUser));
   const [emailMessage, setEmailMessage] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
   const [deleteMessage, setDeleteMessage] = useState("");
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [isSavingPayments, setIsSavingPayments] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    setPaymentDraft(createPaymentDraft(currentUser));
+  }, [currentUser]);
 
   if (!currentUser) {
     return (
@@ -56,12 +96,27 @@ export function ProfilePage() {
 
   const handleChangeEmail = async () => {
     setIsSavingEmail(true);
-    const result = await changeEmail(nextEmail);
-    setEmailMessage(result.message);
-    setIsSavingEmail(false);
 
-    if (result.ok) {
-      setIsEditingEmail(false);
+    try {
+      const result = await changeEmail(nextEmail);
+      setEmailMessage(result.message);
+
+      if (result.ok) {
+        setIsEditingEmail(false);
+      }
+    } finally {
+      setIsSavingEmail(false);
+    }
+  };
+
+  const handleSavePaymentMethods = async () => {
+    setIsSavingPayments(true);
+
+    try {
+      const result = await updatePaymentMethods(paymentDraft);
+      setPaymentMessage(result.message);
+    } finally {
+      setIsSavingPayments(false);
     }
   };
 
@@ -168,6 +223,59 @@ export function ProfilePage() {
             </div>
           </Surface>
 
+          <Surface className="profile-panel profile-panel--payments">
+            <div className="section-heading profile-section-heading">
+              <h2>Payment methods</h2>
+            </div>
+            <div className="profile-payments-stack">
+              <p className="profile-payments-copy">
+                Add your preferred payment method(s). Users can tip you when they
+                review your feedback.
+              </p>
+
+              <form
+                className="profile-payments-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleSavePaymentMethods();
+                }}
+              >
+                <div className="profile-payment-fields">
+                  {paymentMethodConfigs.map(({ key, label, placeholder }) => (
+                    <label className="field" key={key}>
+                      <span>{label}</span>
+                      <input
+                        type="text"
+                        value={paymentDraft[key]}
+                        onChange={(event) =>
+                          setPaymentDraft((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        placeholder={placeholder}
+                        autoComplete="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="inline-actions profile-inline-actions profile-inline-actions--payments">
+                  <button
+                    type="submit"
+                    className="button button--primary profile-payments-save"
+                    disabled={isSavingPayments}
+                  >
+                    {isSavingPayments ? "Saving..." : "Save payment methods"}
+                  </button>
+                </div>
+              </form>
+
+              {paymentMessage ? <div className="callout callout--soft">{paymentMessage}</div> : null}
+            </div>
+          </Surface>
+
           <Surface className="profile-panel profile-panel--danger">
             <div className="section-heading profile-section-heading profile-section-heading--danger">
               <h2>Delete account</h2>
@@ -239,3 +347,8 @@ export function ProfilePage() {
     </AppShell>
   );
 }
+
+
+
+
+
