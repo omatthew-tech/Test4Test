@@ -18,17 +18,17 @@ type PaymentDraft = Record<PaymentField, string>;
 const paymentMethodConfigs = [
   {
     key: "paypalHandle",
-    label: "PayPal:",
+    label: "PayPal",
     placeholder: "paypal.me/yourname",
   },
   {
     key: "venmoHandle",
-    label: "Venmo:",
+    label: "Venmo",
     placeholder: "@yourhandle",
   },
   {
     key: "cashAppHandle",
-    label: "Cash App:",
+    label: "Cash App",
     placeholder: "$yourcashtag",
   },
 ] as const;
@@ -234,7 +234,8 @@ export function ProfilePage() {
               </p>
 
               <form
-                className="profile-payments-form"
+                className={`profile-payments-form${isSavingPayments ? " profile-payments-form--saving" : ""}`}
+                aria-busy={isSavingPayments}
                 onSubmit={(event) => {
                   event.preventDefault();
                   void handleSavePaymentMethods();
@@ -257,17 +258,25 @@ export function ProfilePage() {
                         autoComplete="off"
                         autoCapitalize="none"
                         spellCheck={false}
+                        disabled={isSavingPayments}
                       />
                     </label>
                   ))}
                 </div>
+                {isSavingPayments ? (
+                  <div className="profile-payments-feedback" role="status" aria-live="polite">
+                    <span className="profile-payments-feedback__pulse" aria-hidden="true" />
+                    <span>Saving your payment details...</span>
+                  </div>
+                ) : null}
                 <div className="inline-actions profile-inline-actions profile-inline-actions--payments">
                   <button
                     type="submit"
                     className="button button--primary profile-payments-save"
                     disabled={isSavingPayments}
                   >
-                    {isSavingPayments ? "Saving..." : "Save payment methods"}
+                    {isSavingPayments ? <span className="button__spinner" aria-hidden="true" /> : null}
+                    {isSavingPayments ? "Saving payment methods..." : "Save payment methods"}
                   </button>
                 </div>
               </form>
@@ -347,6 +356,9 @@ export function ProfilePage() {
     </AppShell>
   );
 }
+
+
+
 
 
 

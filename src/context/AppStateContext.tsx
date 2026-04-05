@@ -1292,7 +1292,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: error.message };
         }
 
-        await refreshState();
+        setState((currentState) => {
+          const existingUser = currentState.users.find((user) => user.id === currentUser.id);
+          const nextUser = {
+            ...(existingUser ?? currentUser),
+            paypalHandle: normalizedPaymentMethods.paypalHandle,
+            venmoHandle: normalizedPaymentMethods.venmoHandle,
+            cashAppHandle: normalizedPaymentMethods.cashAppHandle,
+          };
+
+          return {
+            ...currentState,
+            users: existingUser
+              ? currentState.users.map((user) =>
+                  user.id === currentUser.id ? nextUser : user,
+                )
+              : [...currentState.users, nextUser],
+          };
+        });
 
         const filledCount = Object.values(normalizedPaymentMethods).filter((value) => Boolean(value)).length;
 
@@ -1429,6 +1446,7 @@ export function useAppState() {
 
   return context;
 }
+
 
 
 
