@@ -1,6 +1,7 @@
-﻿1. In Supabase, open SQL Editor and run these in order:
+1. In Supabase, open SQL Editor and run these in order:
    - C:\Projects\LIKE4LIKE\supabase\sql-to-paste-into-supabase.txt
    - C:\Projects\LIKE4LIKE\supabase\migrations\20260405_profile_payment_methods.sql
+   - C:\Projects\LIKE4LIKE\supabase\migrations\20260405_response_tip_methods.sql (opens direct profile reads for tipping)
 
 2. In Authentication -> Providers -> Email:
    - Enable email login / OTP
@@ -38,3 +39,5 @@
 
 12. Detailed notification setup is in:
     C:\Projects\LIKE4LIKE\supabase\send-test-results-notification-setup.txt
+
+

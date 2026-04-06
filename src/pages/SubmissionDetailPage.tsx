@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  HandCoins,
   ExternalLink,
   MessageSquareQuote,
   Plus,
@@ -28,9 +29,74 @@ import {
   getResponseRating,
   getSubmissionResponses,
 } from "../lib/selectors";
-import { Question, QuestionMode } from "../types";
+import { requireSupabase } from "../lib/supabase";
+import { PaymentMethods, Question, QuestionMode } from "../types";
 
 type ResponseViewMode = "all" | "individual";
+type TipMethodKey = "paypalHandle" | "venmoHandle" | "cashAppHandle";
+
+interface TipProfile extends PaymentMethods {
+  anonymousLabel: string;
+}
+
+const tipMethodConfigs: Array<{ key: TipMethodKey; label: string }> = [
+  { key: "paypalHandle", label: "PayPal" },
+  { key: "venmoHandle", label: "Venmo" },
+  { key: "cashAppHandle", label: "Cash App" },
+];
+
+function getTipHref(key: TipMethodKey, value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  switch (key) {
+    case "paypalHandle": {
+      if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+      }
+
+      if (/paypal\.me\//i.test(trimmed)) {
+        return `https://${trimmed.replace(/^https?:\/\//i, "")}`;
+      }
+
+      return null;
+    }
+    case "venmoHandle":
+      return `https://account.venmo.com/u/${encodeURIComponent(trimmed.replace(/^@/, ""))}`;
+    case "cashAppHandle":
+      return `https://cash.app/$${encodeURIComponent(trimmed.replace(/^\$/, ""))}`;
+    default:
+      return null;
+  }
+}
+
+async function copyTextToClipboard(value: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
 
 export function SubmissionDetailPage() {
   const { submissionId = "" } = useParams();
@@ -49,6 +115,14 @@ export function SubmissionDetailPage() {
   const [editMode, setEditMode] = useState<QuestionMode>(submission?.questionMode ?? "general");
   const [editQuestions, setEditQuestions] = useState<Question[]>(activeVersion?.questions ?? []);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
+  const [showTipPanel, setShowTipPanel] = useState(false);
+  const [isLoadingTipProfile, setIsLoadingTipProfile] = useState(false);
+  const [tipProfile, setTipProfile] = useState<TipProfile | null>(null);
+  const [tipProfileResponseId, setTipProfileResponseId] = useState<string | null>(null);
+  const [tipError, setTipError] = useState("");
+  const [copiedTipMethod, setCopiedTipMethod] = useState<TipMethodKey | null>(null);
+  const selectedResponseIdRef = useRef<string | null>(null);
+  const copyResetTimeoutRef = useRef<number | null>(null);
 
   const savedEditMode: QuestionMode = activeVersion?.mode ?? submission?.questionMode ?? "general";
   const savedEditQuestions = activeVersion?.questions ?? [];
@@ -69,6 +143,140 @@ export function SubmissionDetailPage() {
   const selectedRating = selectedResponse
     ? getResponseRating(state, selectedResponse.id, currentUser?.id ?? null)
     : null;
+
+  useEffect(() => {
+    selectedResponseIdRef.current = selectedResponse?.id ?? null;
+  }, [selectedResponse?.id]);
+
+  useEffect(() => {
+    setShowTipPanel(false);
+    setIsLoadingTipProfile(false);
+    setTipProfile(null);
+    setTipProfileResponseId(null);
+    setTipError("");
+    setCopiedTipMethod(null);
+
+    if (copyResetTimeoutRef.current !== null) {
+      window.clearTimeout(copyResetTimeoutRef.current);
+      copyResetTimeoutRef.current = null;
+    }
+  }, [selectedResponse?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimeoutRef.current !== null) {
+        window.clearTimeout(copyResetTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const tipMethods = useMemo(() => {
+    if (!tipProfile) {
+      return [] as Array<{ key: TipMethodKey; label: string; value: string; href: string | null }>;
+    }
+
+    return tipMethodConfigs.flatMap(({ key, label }) => {
+      const value = tipProfile[key];
+
+      if (typeof value !== "string" || !value.trim()) {
+        return [];
+      }
+
+      return [{
+        key,
+        label,
+        value,
+        href: getTipHref(key, value),
+      }];
+    });
+  }, [tipProfile]);
+
+  const handleTipToggle = async () => {
+    if (!selectedResponse) {
+      return;
+    }
+
+    if (showTipPanel) {
+      setShowTipPanel(false);
+      return;
+    }
+
+    setShowTipPanel(true);
+    setTipError("");
+
+    if (tipProfileResponseId === selectedResponse.id && tipProfile) {
+      return;
+    }
+
+    const responseId = selectedResponse.id;
+    const fallbackAnonymousLabel = selectedResponse.anonymousLabel;
+    setIsLoadingTipProfile(true);
+
+    try {
+      const supabase = requireSupabase();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("paypal_handle, venmo_handle, cash_app_handle")
+        .eq("id", selectedResponse.testerUserId)
+        .maybeSingle();
+
+      if (selectedResponseIdRef.current !== responseId) {
+        return;
+      }
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const payload = (data ?? {}) as {
+        paypal_handle?: string | null;
+        venmo_handle?: string | null;
+        cash_app_handle?: string | null;
+      };
+      setTipProfileResponseId(responseId);
+      setTipProfile({
+        anonymousLabel: fallbackAnonymousLabel,
+        paypalHandle: typeof payload.paypal_handle === "string" ? payload.paypal_handle : null,
+        venmoHandle: typeof payload.venmo_handle === "string" ? payload.venmo_handle : null,
+        cashAppHandle: typeof payload.cash_app_handle === "string" ? payload.cash_app_handle : null,
+      });
+    } catch (error) {
+      if (selectedResponseIdRef.current !== responseId) {
+        return;
+      }
+
+      setTipProfileResponseId(responseId);
+      setTipProfile(null);
+      setTipError(
+        error instanceof Error ? error.message : "We couldn't load tip details right now.",
+      );
+    } finally {
+      if (selectedResponseIdRef.current === responseId) {
+        setIsLoadingTipProfile(false);
+      }
+    }
+  };
+
+  const handleCopyTipMethod = async (methodKey: TipMethodKey, value: string) => {
+    const copied = await copyTextToClipboard(value);
+
+    if (!copied) {
+      setTipError("We couldn't copy that automatically. Please copy it manually.");
+      return;
+    }
+
+    setCopiedTipMethod(methodKey);
+    setTipError("");
+
+    if (copyResetTimeoutRef.current !== null) {
+      window.clearTimeout(copyResetTimeoutRef.current);
+    }
+
+    copyResetTimeoutRef.current = window.setTimeout(() => {
+      setCopiedTipMethod((current) => (current === methodKey ? null : current));
+      copyResetTimeoutRef.current = null;
+    }, 1800);
+  };
 
   const refreshPreset = (mode: QuestionMode) => {
     if (!submission) {
@@ -411,12 +619,93 @@ export function SubmissionDetailPage() {
                       <ChevronRight size={18} />
                     </button>
                   </div>
-                  <ReactionFaces
-                    value={selectedRating?.ratingValue}
-                    onChange={(value) => { void rateFeedback(selectedResponse.id, value); }}
-                  />
+                  <div className="results-individual-shell__feedback-actions">
+                    <ReactionFaces
+                      value={selectedRating?.ratingValue}
+                      onChange={(value) => { void rateFeedback(selectedResponse.id, value); }}
+                    />
+                    <button
+                      type="button"
+                      className={`reaction-face results-tip-button${showTipPanel ? " results-tip-button--active" : ""}`}
+                      onClick={() => { void handleTipToggle(); }}
+                      disabled={isLoadingTipProfile}
+                      aria-expanded={showTipPanel}
+                      aria-pressed={showTipPanel}
+                      aria-controls="response-tip-panel"
+                    >
+                      {isLoadingTipProfile ? <span className="button__spinner" aria-hidden="true" /> : <HandCoins size={18} aria-hidden="true" />}
+                      <span>{isLoadingTipProfile ? "Loading" : "Tip"}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {showTipPanel ? (
+                <div id="response-tip-panel" className="results-tip-panel" role="region" aria-label="Tip this tester">
+                  <div className="results-tip-panel__header">
+                    <div>
+                      <h4>Tip {tipProfile?.anonymousLabel ?? selectedResponse.anonymousLabel}</h4>
+                      <p>Choose a payment method to copy or open in a new tab.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => setShowTipPanel(false)}
+                      aria-label="Close tip options"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {isLoadingTipProfile ? (
+                    <div className="results-tip-loading" aria-live="polite">
+                      <span className="button__spinner" aria-hidden="true" />
+                      <span>Loading tip methods...</span>
+                    </div>
+                  ) : tipError ? (
+                    <div className="results-tip-empty results-tip-empty--warning" aria-live="polite">
+                      <strong>Tip methods unavailable</strong>
+                      <p>{tipError}</p>
+                    </div>
+                  ) : tipMethods.length > 0 ? (
+                    <div className="results-tip-methods">
+                      {tipMethods.map((method) => (
+                        <article key={method.key} className="results-tip-method">
+                          <div className="results-tip-method__meta">
+                            <small>{method.label}</small>
+                            <strong>{method.value}</strong>
+                          </div>
+                          <div className="results-tip-method__actions">
+                            <button
+                              type="button"
+                              className="results-tip-chip"
+                              onClick={() => { void handleCopyTipMethod(method.key, method.value); }}
+                            >
+                              {copiedTipMethod === method.key ? "Copied" : "Copy"}
+                            </button>
+                            {method.href ? (
+                              <a
+                                className="results-tip-chip results-tip-chip--primary"
+                                href={method.href}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Open
+                                <ExternalLink size={14} aria-hidden="true" />
+                              </a>
+                            ) : null}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="results-tip-empty" aria-live="polite">
+                      <strong>No tip methods yet</strong>
+                      <p>This tester has not added a payment method to their profile.</p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
 
               <div className="answer-list">
                 {selectedResponse.answers.map((answer) => (
@@ -615,5 +904,10 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
+
+
+
+
 
 
