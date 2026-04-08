@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   HandCoins,
@@ -380,16 +379,6 @@ export function SubmissionDetailPage() {
 
   const visibleEditMode: "custom" | "ai" = editMode === "ai" ? "ai" : "custom";
 
-  const multipleChoiceSummary = useMemo(
-    () => summary?.analytics.filter((item) => item.type === "multiple") ?? [],
-    [summary],
-  );
-
-  const paragraphSummary = useMemo(
-    () => summary?.analytics.filter((item) => item.type === "paragraph") ?? [],
-    [summary],
-  );
-
   if (!currentUser || !submission || submission.userId !== currentUser.id || !summary) {
     return (
       <AppShell title="Results" description="That submission could not be found.">
@@ -429,77 +418,6 @@ export function SubmissionDetailPage() {
             <span>{responses.length} {responses.length === 1 ? "response" : "responses"}</span>
             <span>{latestResponse ? `Latest feedback ${formatDateTime(latestResponse.submittedAt)}` : "No feedback yet"}</span>
           </div>
-        </Surface>
-
-        <Surface className="results-section">
-          <div className="results-section__header">
-            <div>
-              <h2>Feedback overview</h2>
-              <p>Patterns and themes update here as testers respond.</p>
-            </div>
-          </div>
-
-          {responses.length === 0 ? (
-            <div className="results-placeholder">
-              <strong>No feedback yet</strong>
-              <p>Once someone completes your test, this page will start surfacing trends, top friction points, and written themes.</p>
-            </div>
-          ) : (
-            <div className="results-summary-columns">
-              <div>
-                <h3>Multiple-choice trends</h3>
-                <div className="chart-list">
-                  {multipleChoiceSummary.map((item) => (
-                    <article key={item.question.id} className="chart-card chart-card--elevated">
-                      <div className="chart-card__header">
-                        <h4>{item.question.title}</h4>
-                        <span className="pill"><BarChart3 size={14} /> Avg {item.averageScore.toFixed(1)}</span>
-                      </div>
-                      {item.counts.map((count) => (
-                        <div key={count.option} className="bar-row">
-                          <span>{count.option}</span>
-                          <div className="bar-track">
-                            <div className="bar-fill" style={{ width: item.total > 0 ? `${(count.count / item.total) * 100}%` : "0%" }} />
-                          </div>
-                          <strong>{count.count}</strong>
-                        </div>
-                      ))}
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3>Written feedback themes</h3>
-                <div className="results-theme-stack">
-                  <div className="theme-card results-theme-card">
-                    <strong>Most praised</strong>
-                    <div className="tag-row">
-                      {summary.topPositiveThemes.map((theme) => (
-                        <span key={theme} className="tag tag--warm">{theme}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="theme-card results-theme-card">
-                    <strong>Most confusing</strong>
-                    <div className="tag-row">
-                      {summary.topFrictionThemes.map((theme) => (
-                        <span key={theme} className="tag tag--rose">{theme}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="theme-card results-theme-card">
-                    <strong>Prompts generating detail</strong>
-                    <ul className="check-list">
-                      {paragraphSummary.slice(0, 3).map((item) => (
-                        <li key={item.question.id}>{item.question.title}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </Surface>
 
         <Surface className="results-section">

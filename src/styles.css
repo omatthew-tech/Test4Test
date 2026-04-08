@@ -468,8 +468,7 @@ textarea {
 .feature-list,
 .list-stack,
 .answer-list,
-.option-list,
-.chart-list {
+.option-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -484,7 +483,6 @@ textarea {
 }
 
 .feature-card,
-.chart-card,
 .question-card,
 .review-card,
 .answer-card,
@@ -504,7 +502,6 @@ textarea {
 }
 
 .feature-card,
-.chart-card,
 .question-card,
 .review-card,
 .answer-card,
@@ -619,8 +616,7 @@ textarea {
 .question-card__meta,
 .earn-card__top,
 .submission-card__header,
-.moderation-card__header,
-.chart-card__header {
+.moderation-card__header {
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -629,7 +625,6 @@ textarea {
 }
 
 .question-card h4,
-.chart-card h4,
 .feature-card h3,
 .earn-card h3,
 .submission-card h3,
@@ -782,26 +777,6 @@ textarea {
 .email-card p,
 .moderation-card p {
   margin: 8px 0 0;
-}
-
-.bar-row {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(120px, 2fr) 30px;
-  align-items: center;
-  gap: 12px;
-}
-
-.bar-track {
-  height: 10px;
-  border-radius: 8px;
-  background: var(--color-surface-100);
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  border-radius: 8px;
-  background: linear-gradient(90deg, var(--color-orange-500), #ffc089);
 }
 
 .reaction-faces {
@@ -1038,10 +1013,6 @@ textarea {
   .topnav__link {
     flex: 1;
     justify-content: center;
-  }
-
-  .bar-row {
-    grid-template-columns: 1fr;
   }
 
   .success-stats {
@@ -1364,7 +1335,6 @@ body::after {
 
 .question-card--editorial,
 .review-card--highlight,
-.chart-card--elevated,
 .stat-panel--hero,
 .earn-card--featured {
   background:
@@ -1667,7 +1637,6 @@ body {
 .earn-card--featured,
 .question-card--editorial,
 .review-card--highlight,
-.chart-card--elevated,
 .stat-panel--hero {
   background: #fffefc;
   box-shadow: none;
@@ -1721,7 +1690,6 @@ body {
 .earn-card,
 .submission-card,
 .moderation-card,
-.chart-card,
 .email-card,
 .theme-card,
 .answer-card,
@@ -4825,27 +4793,6 @@ body {
   align-items: center;
 }
 
-.results-summary-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  gap: 24px;
-}
-
-.results-summary-columns h3 {
-  margin: 0 0 14px;
-  font-size: 1rem;
-}
-
-.results-theme-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.results-theme-card {
-  padding: 18px;
-}
-
 .results-placeholder {
   padding: 24px 22px;
   border-radius: 18px;
@@ -4877,7 +4824,6 @@ body {
 }
 
 @media (max-width: 960px) {
-  .results-summary-columns,
   .response-browser--results {
     grid-template-columns: 1fr;
   }
