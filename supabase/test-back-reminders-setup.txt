@@ -11,6 +11,7 @@ What this system does
    - day-2 final reminder
 3. If the owner tests back before the next reminder, the sequence stops automatically.
 4. If the tester no longer has a live app available to test back, the sequence cancels automatically.
+5. The missed test-back does not affect the owner's public Test-back Rate until the final reminder is sent.
 
 What makes the copy easy to update
 ----------------------------------
@@ -30,16 +31,19 @@ Template variables available in reminder emails:
 - {{targetProductName}}
 - {{feedbackUrl}}
 - {{testBackUrl}}
+- {{currentTestBackRatePercent}}
+- {{newTestBackRatePercent}}
 
 Template variables available in the plain feedback email:
 - {{ownerDisplayName}}
 - {{ownerProductName}}
 - {{feedbackUrl}}
 
-Step 1: Run the migration
--------------------------
-Run the latest migration in order:
-  supabase/migrations/20260408_test_back_reminder_emails.sql
+Step 1: Run the migrations
+--------------------------
+Run the latest migrations in order:
+- supabase/migrations/20260408_test_back_reminder_emails.sql
+- supabase/migrations/20260409_test_back_rate_grace_period.sql
 
 Step 2: Set the required function secrets
 -----------------------------------------
@@ -99,9 +103,9 @@ Step 5: Verify the flow
 4. User B should receive either:
    - a plain feedback email, or
    - the first test-back reminder email if they still owe User A a test back.
-5. If User B does not test back, the hourly function will send the day-1 reminder after at least 24 hours.
-6. If User B still does not test back, the hourly function will send the final reminder after at least another 24 hours.
-7. As soon as User B tests any eligible app from User A, the reminder sequence resolves automatically.
+5. User B's public Test-back Rate should stay unchanged during the grace period.
+6. If User B still does not test back, the hourly function sends the final reminder and applies the Test-back Rate drop at the same time.
+7. As soon as User B tests any eligible app from User A, the reminder sequence resolves automatically and the rate can recover.
 
 Useful tables to inspect
 ------------------------

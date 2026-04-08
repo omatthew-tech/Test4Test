@@ -36,6 +36,11 @@ interface SubmissionRow {
   created_at: string;
 }
 
+interface TestBackRateTransitionRow {
+  current_test_back_rate_percent: number | null;
+  new_test_back_rate_percent: number | null;
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export const reminderTemplateKeys = [
@@ -43,6 +48,14 @@ export const reminderTemplateKeys = [
   "test_back_reminder_stage_2",
   "test_back_reminder_stage_3",
 ] as const;
+
+function normalizePercent(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return 100;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
 export function getReminderTemplateKey(emailsSent: number) {
   if (emailsSent <= 0) {
@@ -221,6 +234,30 @@ async function loadSubmission(admin: SupabaseClient, submissionId: string) {
   return (data as SubmissionRow | null) ?? null;
 }
 
+async function loadFinalReminderRateTransition(
+  admin: SupabaseClient,
+  ownerUserId: string,
+  pendingTesterUserId: string,
+) {
+  const { data, error } = await admin.rpc("get_test_back_rate_transition", {
+    p_owner_user_id: ownerUserId,
+    p_pending_tester_user_id: pendingTesterUserId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const row = Array.isArray(data)
+    ? ((data[0] as TestBackRateTransitionRow | undefined) ?? null)
+    : ((data as TestBackRateTransitionRow | null) ?? null);
+
+  return {
+    currentRatePercent: normalizePercent(row?.current_test_back_rate_percent),
+    newRatePercent: normalizePercent(row?.new_test_back_rate_percent),
+  };
+}
+
 async function resolveReminderSequence(
   admin: SupabaseClient,
   reminderId: string,
@@ -287,9 +324,12 @@ export async function processReminderSequence(
     return { outcome: "cancelled" as const, reason: "missing_target_submission" as const };
   }
 
-  const [profiles, triggeringSubmission] = await Promise.all([
+  const [profiles, triggeringSubmission, rateTransition] = await Promise.all([
     loadProfiles(admin, [reminder.owner_user_id, reminder.tester_user_id]),
     loadSubmission(admin, reminder.latest_triggering_submission_id),
+    templateKey === "test_back_reminder_stage_3"
+      ? loadFinalReminderRateTransition(admin, reminder.owner_user_id, reminder.tester_user_id)
+      : Promise.resolve({ currentRatePercent: 100, newRatePercent: 100 }),
   ]);
 
   const owner = profiles.get(reminder.owner_user_id);
@@ -315,6 +355,8 @@ export async function processReminderSequence(
     targetProductName: targetSubmission.product_name,
     feedbackUrl,
     testBackUrl,
+    currentTestBackRatePercent: String(rateTransition.currentRatePercent),
+    newTestBackRatePercent: String(rateTransition.newRatePercent),
   });
 
   try {
@@ -339,6 +381,8 @@ export async function processReminderSequence(
         stage: reminder.emails_sent + 1,
         testerUserId: tester.id,
         targetSubmissionId: targetSubmission.id,
+        currentTestBackRatePercent: rateTransition.currentRatePercent,
+        newTestBackRatePercent: rateTransition.newRatePercent,
       },
     });
   } catch (error) {
@@ -356,6 +400,8 @@ export async function processReminderSequence(
         stage: reminder.emails_sent + 1,
         testerUserId: tester.id,
         targetSubmissionId: targetSubmission.id,
+        currentTestBackRatePercent: rateTransition.currentRatePercent,
+        newTestBackRatePercent: rateTransition.newRatePercent,
       },
     });
     throw error;
@@ -376,6 +422,7 @@ export async function processReminderSequence(
             status: "resolved",
             resolved_reason: "sequence_complete",
             resolved_at: sentAt,
+            affects_test_back_rate: true,
             updated_at: sentAt,
           }
         : {

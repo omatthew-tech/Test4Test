@@ -56,10 +56,11 @@ export function EmailPreviewPage() {
 
         <Surface className="email-card">
           <span className="eyebrow">Final reminder</span>
-          <h2>Final reminder: protect your test-back rate</h2>
-          <p>Hello,</p>
-          <p>If another day passes without a test back, the final email explains that a lower test-back rate can lead to fewer people choosing to test your app.</p>
-          <button type="button" className="button button--primary">Test back now</button>
+          <h2>Your test-back rate dropped from 100% to 67%</h2>
+          <p>Hey tester,</p>
+          <p>You still have not tested back another user's app. This may result in less visibility and less user feedback for {ownerProductName}.</p>
+          <p>Don't worry. You can always test back any time.</p>
+          <button type="button" className="button button--primary">View test</button>
         </Surface>
       </div>
     </AppShell>
