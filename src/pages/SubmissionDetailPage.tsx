@@ -27,6 +27,7 @@ import {
   getActiveQuestionSet,
   getActiveSubmissionVersion,
   getResponseRating,
+  getSubmissionResponses,
   getSubmissionResponsesForSubmissionVersion,
   getSubmissionVersions,
 } from "../lib/selectors";
@@ -157,6 +158,10 @@ export function SubmissionDetailPage() {
       submissionVersions[0]
     );
   }, [activeSubmissionVersion, selectedVersionId, submissionVersions]);
+  const allResponses = useMemo(
+    () => (submission ? getSubmissionResponses(state, submission.id) : []),
+    [state, submission],
+  );
 
   const responses = useMemo(
     () =>
@@ -196,7 +201,7 @@ export function SubmissionDetailPage() {
   const versionPendingDeleteResponseCount = versionPendingDelete
     ? responseCountsByVersion.get(versionPendingDelete.id) ?? 0
     : 0;
-  const latestResponse = responses[0] ?? null;
+  const latestResponse = allResponses[0] ?? null;
   const nextVersionNumber = submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
 
   const savedEditMode: QuestionMode = activeQuestionSet?.mode ?? submission?.questionMode ?? "general";
@@ -217,8 +222,8 @@ export function SubmissionDetailPage() {
 
   const openVersionCreator = () => {
     setVersionCreateError("");
-    setNextVersionTitle(`version ${nextVersionNumber}`);
-    setNextVersionDescription(defaultVersionDescription);
+    setNextVersionTitle(`Version ${nextVersionNumber}`);
+    setNextVersionDescription("");
     setShowVersionCreator(true);
   };
 
@@ -570,6 +575,7 @@ export function SubmissionDetailPage() {
   };
 
   const visibleEditMode: "custom" | "ai" = editMode === "ai" ? "ai" : "custom";
+  const shouldShowVersionSwitcher = submissionVersions.length > 1 || (selectedVersion?.versionNumber ?? 1) > 1;
 
   if (!currentUser || !submission || submission.userId !== currentUser.id || !selectedVersion || !activeQuestionSet || !summary) {
     return (
@@ -607,7 +613,7 @@ export function SubmissionDetailPage() {
           </div>
 
           <div className="results-header-card__meta">
-            <span>{responses.length} {responses.length === 1 ? "response" : "responses"}</span>
+            <span>{allResponses.length} {allResponses.length === 1 ? "response" : "responses"}</span>
             <span>{latestResponse ? `Latest feedback ${formatDateTime(latestResponse.submittedAt)}` : "No feedback yet"}</span>
           </div>
         </Surface>
@@ -615,53 +621,57 @@ export function SubmissionDetailPage() {
         <Surface className="results-section">
           <div className="results-version-header">
             <div className="results-version-header__copy">
-              <span className="results-version-header__eyebrow">Selected version</span>
               <h2>{selectedVersion.title}</h2>
               {selectedVersion.description ? <p>{selectedVersion.description}</p> : null}
             </div>
-            <div className="results-version-switcher" role="tablist" aria-label="Versions">
-              {submissionVersions.map((version) => {
-                const versionResponseCount = responseCountsByVersion.get(version.id) ?? 0;
+            {shouldShowVersionSwitcher ? (
+              <div
+                className={`results-version-switcher${submissionVersions.length === 1 ? " results-version-switcher--single" : " results-version-switcher--multi"}`}
+                role="tablist"
+                aria-label="Versions"
+              >
+                {submissionVersions.map((version) => {
+                  const versionResponseCount = responseCountsByVersion.get(version.id) ?? 0;
 
-                return (
-                  <div
-                    key={version.id}
-                    className={`results-version-switcher__item${selectedVersion.id === version.id ? " results-version-switcher__item--active" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="results-version-switcher__button"
-                      onClick={() => setSelectedVersionId(version.id)}
-                      aria-pressed={selectedVersion.id === version.id}
+                  return (
+                    <div
+                      key={version.id}
+                      className={`results-version-switcher__item${selectedVersion.id === version.id ? " results-version-switcher__item--active" : ""}`}
                     >
-                      {`Version ${version.versionNumber}`}
-                    </button>
-                    {submissionVersions.length > 1 ? (
                       <button
                         type="button"
-                        className="results-version-switcher__remove"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openVersionDeleteConfirm(version.id);
-                        }}
-                        aria-label={
-                          versionResponseCount > 0
-                            ? `Delete Version ${version.versionNumber}, tested ${versionResponseCount} ${versionResponseCount === 1 ? "time" : "times"}`
-                            : `Delete Version ${version.versionNumber}`
-                        }
+                        className="results-version-switcher__button"
+                        onClick={() => setSelectedVersionId(version.id)}
+                        aria-pressed={selectedVersion.id === version.id}
                       >
-                        <X size={14} />
+                        {`Version ${version.versionNumber}`}
                       </button>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+                      {submissionVersions.length > 1 ? (
+                        <button
+                          type="button"
+                          className="results-version-switcher__remove"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openVersionDeleteConfirm(version.id);
+                          }}
+                          aria-label={
+                            versionResponseCount > 0
+                              ? `Delete Version ${version.versionNumber}, tested ${versionResponseCount} ${versionResponseCount === 1 ? "time" : "times"}`
+                              : `Delete Version ${version.versionNumber}`
+                          }
+                        >
+                          <X size={14} />
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
-
           <div className="results-section__header results-section__header--responses">
             <button type="button" className="button button--secondary" onClick={openVersionCreator}>
-              Change Version
+              New Version
             </button>
             <div className="results-toggle" role="tablist" aria-label="Response view">
               <button
@@ -897,13 +907,13 @@ export function SubmissionDetailPage() {
 
       {showVersionCreator ? (
         <div className="results-modal-backdrop" role="presentation" onClick={closeVersionCreator}>
-          <div className="results-modal results-modal--version-creator" role="dialog" aria-modal="true" aria-label="Change version" onClick={(event) => event.stopPropagation()}>
+          <div className="results-modal results-modal--version-creator" role="dialog" aria-modal="true" aria-label="New version" onClick={(event) => event.stopPropagation()}>
             <div className="results-modal__header">
               <div>
-                <h2>Change Version</h2>
-                <p>Create a new app version to group future feedback. Your current Test4Test questions stay the same until you edit them separately.</p>
+                <h2>New Version</h2>
+                <p>Keep track of feedback and compare results with previous versions of your app. We recommend creating a new version only after you've released major updates or changes to your app.</p>
               </div>
-              <button type="button" className="icon-button" onClick={closeVersionCreator} aria-label="Close change version">
+              <button type="button" className="icon-button" onClick={closeVersionCreator} aria-label="Close new version">
                 <X size={18} />
               </button>
             </div>
@@ -914,7 +924,7 @@ export function SubmissionDetailPage() {
                 <input
                   value={nextVersionTitle}
                   onChange={(event) => setNextVersionTitle(event.target.value)}
-                  placeholder={`version ${nextVersionNumber}`}
+                  placeholder={`Version ${nextVersionNumber}`}
                 />
               </label>
               <label className="field">
@@ -957,7 +967,7 @@ export function SubmissionDetailPage() {
             <div className="results-modal__header">
               <div>
                 <h2>Delete Version</h2>
-                <p>Delete {versionPendingDelete.title}? All test responses for this version will be deleted.</p>
+                <p>Delete {versionPendingDelete.title}? Test responses for this version will be <strong>permanently deleted</strong>.</p>
               </div>
               <button type="button" className="icon-button" onClick={closeVersionDeleteConfirm} aria-label="Close delete version">
                 <X size={18} />

@@ -4808,14 +4808,6 @@ body {
   gap: 10px;
 }
 
-.results-version-header__eyebrow {
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #8b7f75;
-}
-
 .results-version-header__copy h2 {
   margin: 0;
   font-family: "Sora", system-ui, sans-serif;
@@ -4832,41 +4824,77 @@ body {
 .results-version-switcher {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.results-version-switcher--single {
+  justify-content: flex-start;
+}
+
+.results-version-switcher--multi {
   justify-content: flex-end;
-  gap: 8px;
 }
 
 .results-version-switcher__item {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  padding-left: 16px;
+  min-height: 44px;
+  padding-left: 18px;
   border-radius: 999px;
-  border: 1px solid rgba(216, 208, 200, 0.9);
+  border: 1px solid rgba(216, 208, 200, 0.92);
   background: rgba(255, 255, 255, 0.96);
   color: #6b625b;
+  box-shadow: 0 10px 24px rgba(82, 52, 28, 0.06);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.results-version-switcher--multi .results-version-switcher__item {
+  min-width: 136px;
+}
+
+.results-version-switcher--multi .results-version-switcher__item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(82, 52, 28, 0.08);
 }
 
 .results-version-switcher__item--active {
-  border-color: rgba(245, 142, 86, 0.38);
-  background: rgba(245, 142, 86, 0.12);
+  border-color: rgba(245, 142, 86, 0.3);
+  background: linear-gradient(180deg, rgba(255, 248, 242, 0.98) 0%, rgba(255, 241, 231, 0.94) 100%);
   color: var(--color-ink-900);
+  box-shadow: 0 14px 32px rgba(245, 142, 86, 0.14);
+}
+
+.results-version-switcher--single .results-version-switcher__item {
+  min-height: 52px;
+  padding: 0 20px;
+  border-color: rgba(245, 142, 86, 0.26);
+  background: linear-gradient(180deg, rgba(255, 250, 246, 0.98) 0%, rgba(255, 244, 236, 0.94) 100%);
+  box-shadow: 0 14px 32px rgba(245, 142, 86, 0.12);
 }
 
 .results-version-switcher__button {
-  min-height: 38px;
-  padding: 0;
+  min-height: 42px;
+  padding: 0 4px 0 0;
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.results-version-switcher--single .results-version-switcher__button {
+  min-height: 50px;
+  padding-right: 0;
+  font-size: 0.98rem;
+  cursor: default;
 }
 
 .results-version-switcher__remove {
-  width: 28px;
-  height: 28px;
-  margin: 0 8px 0 6px;
+  width: 30px;
+  height: 30px;
+  margin: 0 8px 0 4px;
   border: none;
   border-radius: 999px;
   background: transparent;
@@ -4874,6 +4902,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .results-version-switcher__button:focus-visible,
@@ -4884,6 +4913,7 @@ body {
 
 .results-version-switcher__remove:hover {
   background: rgba(245, 142, 86, 0.14);
+  transform: scale(1.03);
 }
 
 .results-version-delete-count {
@@ -5053,12 +5083,39 @@ body {
   width: min(980px, 100%);
 }
 
-.results-modal--version-creator {
-  width: min(640px, 100%);
+.results-modal--version-creator,
+.results-modal--version-delete {
+  width: min(462px, 100%);
+  padding: 21px;
+  gap: 21px;
+}
+
+.results-modal--version-creator .results-modal__header,
+.results-modal--version-delete .results-modal__header {
+  width: 100%;
+  max-width: 420px;
+  gap: 13px;
+}
+
+.results-modal--version-creator .results-modal__header p,
+.results-modal--version-delete .results-modal__header p {
+  max-width: 34ch;
+}
+
+.results-modal--version-creator .wizard-actions,
+.results-modal--version-delete .wizard-actions,
+.results-version-form {
+  width: 100%;
+  max-width: 420px;
+}
+
+.results-modal--version-creator .wizard-actions,
+.results-modal--version-delete .wizard-actions {
+  margin-top: 0;
 }
 
 .results-version-form {
-  gap: 16px;
+  gap: 21px;
 }
 
 .form-stack--edit-test-modal {
@@ -5464,8 +5521,13 @@ body {
   }
 
   .results-version-switcher__item {
-    flex: 1 1 132px;
+    flex: 1 1 148px;
     justify-content: space-between;
+  }
+
+  .results-version-switcher--single .results-version-switcher__item {
+    flex: 0 1 auto;
+    max-width: 100%;
   }
 
   .results-version-switcher__button {
