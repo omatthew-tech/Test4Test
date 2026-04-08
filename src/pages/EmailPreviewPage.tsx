@@ -3,10 +3,15 @@ import { useAppState } from "../context/AppStateContext";
 
 export function EmailPreviewPage() {
   const { state } = useAppState();
-  const sampleName = state.submissions[0]?.productName ?? "your product";
+  const ownerProductName = state.submissions[0]?.productName ?? "your app";
+  const targetProductName = state.submissions[1]?.productName ?? "their app";
+  const testerName = state.users[1]?.displayName ?? "Alex";
 
   return (
-    <AppShell title="Email preview" description="The MVP includes a one-time passcode email and a new-feedback email that links people back into the results flow.">
+    <AppShell
+      title="Email preview"
+      description="Preview the editable email system: OTP delivery, plain feedback alerts, and the staged test-back reminder cadence."
+    >
       <div className="detail-grid">
         <Surface className="email-card">
           <span className="eyebrow">OTP delivery email</span>
@@ -18,16 +23,43 @@ export function EmailPreviewPage() {
         </Surface>
 
         <Surface className="email-card">
-          <span className="eyebrow">New feedback email</span>
-          <h2>New feedback is ready for {sampleName}</h2>
+          <span className="eyebrow">Plain feedback email</span>
+          <h2>New feedback for {ownerProductName}</h2>
           <p>Hello,</p>
-          <p>Your website or app has been tested and fresh feedback is now ready to review in Test4Test.</p>
+          <p>Someone just tested your app and your feedback is ready to review.</p>
           <ul className="check-list">
-            <li>Open the response summary to see recurring patterns quickly</li>
-            <li>Inspect individual raw responses in full detail</li>
-            <li>Rate the quality of each response with a frowny, neutral, or smiley face</li>
+            <li>Open the response summary to spot patterns quickly</li>
+            <li>Read the full raw responses when you need detail</li>
+            <li>Rate the quality of each response after you review it</li>
           </ul>
-          <button type="button" className="button button--primary">View results</button>
+          <button type="button" className="button button--primary">View feedback</button>
+        </Surface>
+
+        <Surface className="email-card">
+          <span className="eyebrow">Reminder stage 1</span>
+          <h2>{testerName} tested your app. Please test back {targetProductName}</h2>
+          <p>Hello,</p>
+          <p>{testerName} just tested {ownerProductName}. If you still owe them a test back, we send a friendly nudge right away while the exchange is still fresh.</p>
+          <div className="button-row">
+            <button type="button" className="button button--primary">Test back now</button>
+            <button type="button" className="button button--secondary">View feedback</button>
+          </div>
+        </Surface>
+
+        <Surface className="email-card">
+          <span className="eyebrow">Reminder stage 2</span>
+          <h2>Friendly reminder: please test back {targetProductName}</h2>
+          <p>Hello,</p>
+          <p>One day later, if you still have not tested back, we send a softer follow-up with the same direct link into the test flow.</p>
+          <button type="button" className="button button--primary">Test back now</button>
+        </Surface>
+
+        <Surface className="email-card">
+          <span className="eyebrow">Final reminder</span>
+          <h2>Final reminder: protect your test-back rate</h2>
+          <p>Hello,</p>
+          <p>If another day passes without a test back, the final email explains that a lower test-back rate can lead to fewer people choosing to test your app.</p>
+          <button type="button" className="button button--primary">Test back now</button>
         </Surface>
       </div>
     </AppShell>

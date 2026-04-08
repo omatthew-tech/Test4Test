@@ -1304,13 +1304,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        const updatedAt = new Date().toISOString();
         const supabase = requireSupabase();
         const { error } = await supabase.from("feedback_ratings").upsert(
           {
             test_response_id: responseId,
             rated_by_user_id: currentUser.id,
             rating_value: ratingValue,
-            updated_at: new Date().toISOString(),
+            updated_at: updatedAt,
           },
           {
             onConflict: "test_response_id,rated_by_user_id",
@@ -1321,7 +1322,36 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           throw new Error(error.message);
         }
 
-        await refreshState();
+        setState((currentState) => {
+          const existingRating = currentState.feedbackRatings.find(
+            (rating) =>
+              rating.testResponseId === responseId && rating.ratedByUserId === currentUser.id,
+          );
+
+          const nextRating = existingRating
+            ? {
+                ...existingRating,
+                ratingValue,
+                updatedAt,
+              }
+            : {
+                id: createId("rating"),
+                testResponseId: responseId,
+                ratedByUserId: currentUser.id,
+                ratingValue,
+                createdAt: updatedAt,
+                updatedAt,
+              };
+
+          return {
+            ...currentState,
+            feedbackRatings: existingRating
+              ? currentState.feedbackRatings.map((rating) =>
+                  rating.id === existingRating.id ? nextRating : rating,
+                )
+              : [...currentState.feedbackRatings, nextRating],
+          };
+        });
       },
       async updateQuestionSet(submissionId, questionSetVersionId, mode, questions) {
         const supabase = requireSupabase();

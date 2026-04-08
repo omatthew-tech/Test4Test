@@ -1,79 +1,33 @@
 Test result email notification setup for Test4Test
 ===============================================
 
-Current state
+This notification flow now has two parts:
+1. `send-test-results-notification`
+   Sends the first owner email when approved feedback arrives.
+   If the owner still owes that tester a test back, this first email doubles as the stage-1 reminder.
+2. `send-test-back-reminders`
+   Runs on a schedule and handles the day-1 and day-2 follow-up reminders.
+
+Use this file as the quick overview, then follow the full setup guide here:
+  C:\Projects\LIKE4LIKE\supabase\test-back-reminders-setup.txt
+
+Quick summary
 -------------
-You already told me you have run these in Supabase:
-- C:\Projects\LIKE4LIKE\supabase\sql-to-paste-into-supabase.txt
-- C:\Projects\LIKE4LIKE\supabase\delete-account-sql.txt
+- Run the latest migration:
+  supabase/migrations/20260408_test_back_reminder_emails.sql
+- Set these function secrets:
+  - SMTP2GO_API_KEY
+  - SMTP2GO_SENDER
+  - APP_BASE_URL
+  - TEST_BACK_REMINDER_CRON_SECRET
+- Deploy:
+  - send-test-results-notification
+  - send-test-back-reminders --no-verify-jwt
+- Create the hourly pg_cron schedule from the full setup guide.
 
-The send-test-results-notification Edge Function is now deployed.
-
-So from this point forward, you only need to do the remaining notification setup below.
-
-What this feature does
-----------------------
-This feature is already wired in the app.
-When a tester completes a test, the frontend calls the Supabase Edge Function:
-  send-test-results-notification
-
-That function sends the email and then marks the response as already notified.
-
-Important
----------
-The current implementation uses the SMTP2GO Email API, not raw SMTP.
-So the SMTP server and port are NOT needed for this setup.
-What you need instead is:
-- SMTP2GO API key
-- sender email address you want emails sent from
-
-Also important:
-Supabase Edge Functions already expose the built-in server credentials they need.
-You do NOT need to create a custom SUPABASE_SECRET_KEY secret for this notification function.
-
-Remaining Step 1: run the only extra SQL needed for notifications
-----------------------------------------------------------------
-In Supabase SQL Editor, paste and run:
-
-alter table public.test_responses
-  add column if not exists owner_notified_at timestamptz;
-
-Or use this file:
-  C:\Projects\LIKE4LIKE\supabase\test-results-email-update.txt
-
-This statement is safe to run even if the column already exists.
-
-Remaining Step 2: set the SMTP2GO function secrets
---------------------------------------------------
-Run these from PowerShell in:
-  C:\Projects\LIKE4LIKE
-
-npx supabase secrets set SMTP2GO_API_KEY=your_smtp2go_api_key SMTP2GO_SENDER=your_sender_email APP_BASE_URL=https://test4test.io --project-ref lteimepkxuiupbcsbcpz
-
-Example sender:
-  no-reply@test4test.io
-
-Remaining Step 3: redeploy the notification function if secrets change later
-----------------------------------------------------------------------------
-npx supabase functions deploy send-test-results-notification --project-ref lteimepkxuiupbcsbcpz
-
-How to test
------------
-1. Sign in with account A and submit an app.
-2. Sign in with account B and complete a test for account A's app.
-3. Account A should receive an email.
-4. The email should link to:
-   https://test4test.io/my-tests/<submission-id>
-
-What else you needed to provide
--------------------------------
-You did NOT need to provide the SMTP server or port for the current implementation.
-What was needed was:
-- SMTP2GO API key
-- sender email address/domain that SMTP2GO allows you to send from
-
-Notes
------
-- The app already triggers this after successful test submission.
-- Notifications are idempotent because owner_notified_at prevents duplicate sends for the same response.
-- If you want, this can be rewritten later to use raw SMTP instead, but the API approach is much simpler and more reliable inside Supabase Edge Functions.
+Important behavior changes
+--------------------------
+- The owner email now comes only from approved feedback, not flagged feedback.
+- Test-back reminder copy is editable in `public.email_templates`.
+- Reminder delivery history is logged in `public.email_delivery_logs`.
+- Reminder sequences stop automatically when the owner tests back.

@@ -1,0 +1,110 @@
+Test-back reminder email setup for Test4Test
+==========================================
+
+What this system does
+---------------------
+1. When approved feedback arrives, the existing `send-test-results-notification` function sends:
+   - a normal feedback email, or
+   - the first test-back reminder email if the app owner still owes that tester a test back.
+2. A scheduled function then checks for unresolved reminder pairs and sends:
+   - day-1 follow-up reminder
+   - day-2 final reminder
+3. If the owner tests back before the next reminder, the sequence stops automatically.
+4. If the tester no longer has a live app available to test back, the sequence cancels automatically.
+
+What makes the copy easy to update
+----------------------------------
+Email subjects and bodies now live in the database table:
+  public.email_templates
+
+You can update these rows later in the Supabase Table Editor without redeploying code:
+- new_feedback
+- test_back_reminder_stage_1
+- test_back_reminder_stage_2
+- test_back_reminder_stage_3
+
+Template variables available in reminder emails:
+- {{ownerDisplayName}}
+- {{ownerProductName}}
+- {{testerDisplayName}}
+- {{targetProductName}}
+- {{feedbackUrl}}
+- {{testBackUrl}}
+
+Template variables available in the plain feedback email:
+- {{ownerDisplayName}}
+- {{ownerProductName}}
+- {{feedbackUrl}}
+
+Step 1: Run the migration
+-------------------------
+Run the latest migration in order:
+  supabase/migrations/20260408_test_back_reminder_emails.sql
+
+Step 2: Set the required function secrets
+-----------------------------------------
+Run from:
+  C:\Projects\LIKE4LIKE
+
+npx supabase secrets set SMTP2GO_API_KEY=your_smtp2go_api_key SMTP2GO_SENDER=your_sender_email APP_BASE_URL=https://test4test.io TEST_BACK_REMINDER_CRON_SECRET=your_long_random_secret --project-ref lteimepkxuiupbcsbcpz
+
+Use the same `TEST_BACK_REMINDER_CRON_SECRET` value again in Step 4 when you save it to Vault.
+
+Step 3: Deploy the functions
+----------------------------
+The feedback notification function remains user-authenticated:
+
+npx supabase functions deploy send-test-results-notification --project-ref lteimepkxuiupbcsbcpz
+
+The scheduled reminder processor should be deployed without JWT verification because it uses the reminder secret header instead:
+
+npx supabase functions deploy send-test-back-reminders --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
+
+Step 4: Create the hourly schedule
+----------------------------------
+Before running the SQL below, make sure `pg_cron` and `pg_net` are enabled in Database -> Extensions.
+Supabase Vault is used for the schedule secrets via `vault.create_secret(...)`.
+
+In the Supabase SQL Editor, run this once:
+
+select vault.create_secret('https://lteimepkxuiupbcsbcpz.supabase.co', 'project_url');
+select vault.create_secret('your_long_random_secret', 'test_back_reminder_cron_secret');
+
+select cron.schedule(
+  'send-test-back-reminders-hourly',
+  '0 * * * *',
+  $$
+  select
+    net.http_post(
+      url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/send-test-back-reminders',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-reminder-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'test_back_reminder_cron_secret')
+      ),
+      body := '{"limit":25}'::jsonb
+    ) as request_id;
+  $$
+);
+
+Why hourly instead of exactly every 24 hours?
+- The sequence still waits at least one day between sends because each reminder stores its own `next_send_at` timestamp.
+- Running hourly keeps the follow-up delay close to the requested day boundary.
+- It also provides a backup path if the immediate stage-1 notification ever fails.
+
+Step 5: Verify the flow
+-----------------------
+1. User A signs in and publishes an app.
+2. User B signs in and publishes an app.
+3. User A tests User B's app.
+4. User B should receive either:
+   - a plain feedback email, or
+   - the first test-back reminder email if they still owe User A a test back.
+5. If User B does not test back, the hourly function will send the day-1 reminder after at least 24 hours.
+6. If User B still does not test back, the hourly function will send the final reminder after at least another 24 hours.
+7. As soon as User B tests any eligible app from User A, the reminder sequence resolves automatically.
+
+Useful tables to inspect
+------------------------
+- public.email_templates
+- public.test_back_reminder_sequences
+- public.email_delivery_logs

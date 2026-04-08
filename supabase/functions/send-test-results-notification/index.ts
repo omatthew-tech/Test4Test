@@ -1,33 +1,42 @@
-﻿import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import {
+  corsHeaders,
+  createAdminClient,
+  getEmailEnvironment,
+  json,
+  loadEmailTemplates,
+  logEmailDelivery,
+  renderEmailTemplate,
+  sendEmail,
+} from "../_shared/email-system.ts";
+import {
+  loadPendingReminderForPair,
+  processReminderSequence,
+  reminderTemplateKeys,
+} from "../_shared/test-back-reminders.ts";
 
 interface NotificationRequest {
   responseId?: string;
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+interface ResponseRow {
+  id: string;
+  submission_id: string;
+  tester_user_id: string;
+  owner_notified_at: string | null;
+  status: string;
+  credit_awarded: boolean;
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+interface SubmissionRow {
+  id: string;
+  product_name: string;
+  user_id: string;
+}
+
+interface ProfileRow {
+  id: string;
+  email: string;
+  display_name: string;
 }
 
 Deno.serve(async (request) => {
@@ -39,37 +48,22 @@ Deno.serve(async (request) => {
     return json({ error: "Method not allowed." }, 405);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim() ?? "";
-  const secretKey =
-    Deno.env.get("SUPABASE_SECRET_KEY")?.trim() ||
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim() ||
-    "";
-  const smtp2goApiKey = Deno.env.get("SMTP2GO_API_KEY")?.trim() ?? "";
-  const smtp2goSender = Deno.env.get("SMTP2GO_SENDER")?.trim() ?? "";
-  const appBaseUrl = (Deno.env.get("APP_BASE_URL")?.trim() || "https://test4test.io").replace(/\/+$/, "");
+  let env;
+
+  try {
+    env = getEmailEnvironment();
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "Notification setup is incomplete." }, 500);
+  }
+
   const authHeader = request.headers.get("Authorization") ?? "";
   const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  if (!supabaseUrl || !secretKey) {
-    return json({ error: "Missing Supabase server secrets for notifications." }, 500);
-  }
-
-  if (!smtp2goApiKey || !smtp2goSender) {
-    return json({ error: "Missing SMTP2GO secrets for notifications." }, 500);
-  }
 
   if (!accessToken) {
     return json({ error: "Unauthorized." }, 401);
   }
 
-  const admin = createClient(supabaseUrl, secretKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
-
+  const admin = createAdminClient(env);
   const {
     data: { user },
     error: userError,
@@ -88,7 +82,7 @@ Deno.serve(async (request) => {
 
   const { data: responseRow, error: responseError } = await admin
     .from("test_responses")
-    .select("id, submission_id, tester_user_id, owner_notified_at")
+    .select("id, submission_id, tester_user_id, owner_notified_at, status, credit_awarded")
     .eq("id", responseId)
     .single();
 
@@ -96,96 +90,125 @@ Deno.serve(async (request) => {
     return json({ error: responseError?.message ?? "Test response not found." }, 404);
   }
 
-  if (responseRow.tester_user_id !== user.id) {
+  const responseRecord = responseRow as ResponseRow;
+
+  if (responseRecord.tester_user_id !== user.id) {
     return json({ error: "You do not have permission to send this notification." }, 403);
   }
 
-  if (responseRow.owner_notified_at) {
+  if (responseRecord.owner_notified_at) {
     return json({ ok: true, skipped: true, message: "Notification already sent." });
+  }
+
+  if (responseRecord.status !== "approved" || responseRecord.credit_awarded !== true) {
+    return json({ ok: true, skipped: true, message: "Notification will send after the response is approved." });
   }
 
   const { data: submission, error: submissionError } = await admin
     .from("submissions")
     .select("id, product_name, user_id")
-    .eq("id", responseRow.submission_id)
+    .eq("id", responseRecord.submission_id)
     .single();
 
   if (submissionError || !submission) {
     return json({ error: submissionError?.message ?? "Submission not found." }, 404);
   }
 
+  const submissionRecord = submission as SubmissionRow;
   const { data: owner, error: ownerError } = await admin
     .from("profiles")
-    .select("email, display_name")
-    .eq("id", submission.user_id)
+    .select("id, email, display_name")
+    .eq("id", submissionRecord.user_id)
     .single();
 
   if (ownerError || !owner) {
     return json({ error: ownerError?.message ?? "Submission owner not found." }, 404);
   }
 
-  const resultsUrl = `${appBaseUrl}/my-tests/${submission.id}`;
-  const safeProductName = escapeHtml(submission.product_name);
-  const safeResultsUrl = escapeHtml(resultsUrl);
+  const ownerRecord = owner as ProfileRow;
+  const reminder = await loadPendingReminderForPair(
+    admin,
+    submissionRecord.user_id,
+    responseRecord.tester_user_id,
+  );
 
-  const subject = `New feedback for ${submission.product_name}`;
-  const textBody = [
-    `Someone just tested ${submission.product_name}.`,
-    "",
-    "Your feedback is ready to view.",
-    "",
-    `View Feedback: ${resultsUrl}`,
-    "",
-    `Or open this link directly: ${resultsUrl}`,
-  ].join("\n");
+  if (reminder && reminder.status === "pending" && reminder.emails_sent === 0) {
+    try {
+      const reminderTemplates = await loadEmailTemplates(admin, [...reminderTemplateKeys]);
+      const reminderResult = await processReminderSequence(admin, env, reminder, reminderTemplates);
 
-  const htmlBody = `
-    <div style="font-family: Arial, sans-serif; color: #231f1c; line-height: 1.6;">
-      <p>Someone just tested <strong>${safeProductName}</strong>.</p>
-      <p>Your feedback is ready to view.</p>
-      <p>
-        <a href="${safeResultsUrl}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #f58e56; color: #fffaf6; text-decoration: none; font-weight: 600;">
-          View Feedback
-        </a>
-      </p>
-      <p style="margin-top: 18px; color: #6f655d;">Or open this link directly: <a href="${safeResultsUrl}" style="color: #a34f25;">${safeResultsUrl}</a></p>
-    </div>
-  `;
+      if (reminderResult.outcome === "sent") {
+        return json({ ok: true, message: "Notification sent." });
+      }
+    } catch (error) {
+      return json(
+        { error: error instanceof Error ? error.message : "Failed to send reminder notification." },
+        502,
+      );
+    }
+  }
 
-  const smtpResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Smtp2go-Api-Key": smtp2goApiKey,
-    },
-    body: JSON.stringify({
-      sender: `Test4Test <${smtp2goSender}>`,
-      to: [owner.email],
-      subject,
-      text_body: textBody,
-      html_body: htmlBody,
-    }),
+  const templateMap = await loadEmailTemplates(admin, ["new_feedback"]);
+  const template = templateMap.get("new_feedback");
+
+  if (!template) {
+    return json({ error: "Missing email template: new_feedback" }, 500);
+  }
+
+  const feedbackUrl = `${env.appBaseUrl}/my-tests/${submissionRecord.id}`;
+  const rendered = renderEmailTemplate(template, {
+    ownerDisplayName: ownerRecord.display_name,
+    ownerProductName: submissionRecord.product_name,
+    feedbackUrl,
   });
 
-  const smtpPayload = await smtpResponse.json().catch(() => null);
+  try {
+    const sendResult = await sendEmail(env, {
+      to: ownerRecord.email,
+      subject: rendered.subject,
+      textBody: rendered.textBody,
+      htmlBody: rendered.htmlBody,
+    });
 
-  if (!smtpResponse.ok) {
-    const message = smtpPayload?.data?.error || smtpPayload?.error || "SMTP2GO request failed.";
-    return json({ error: message }, smtpResponse.status);
+    await logEmailDelivery(admin, {
+      templateKey: "new_feedback",
+      recipientUserId: ownerRecord.id,
+      recipientEmail: ownerRecord.email,
+      relatedResponseId: responseRecord.id,
+      relatedSubmissionId: submissionRecord.id,
+      subject: rendered.subject,
+      status: "sent",
+      providerMessageId: sendResult.providerMessageId,
+      metadata: {
+        testerUserId: responseRecord.tester_user_id,
+      },
+    });
+  } catch (error) {
+    await logEmailDelivery(admin, {
+      templateKey: "new_feedback",
+      recipientUserId: ownerRecord.id,
+      recipientEmail: ownerRecord.email,
+      relatedResponseId: responseRecord.id,
+      relatedSubmissionId: submissionRecord.id,
+      subject: rendered.subject,
+      status: "failed",
+      errorMessage: error instanceof Error ? error.message : "Failed to send feedback notification.",
+      metadata: {
+        testerUserId: responseRecord.tester_user_id,
+      },
+    }).catch(() => undefined);
+
+    return json(
+      { error: error instanceof Error ? error.message : "Failed to send feedback notification." },
+      502,
+    );
   }
 
-  if ((smtpPayload?.data?.succeeded ?? 0) < 1) {
-    const failureMessage = Array.isArray(smtpPayload?.data?.failures)
-      ? smtpPayload.data.failures.join("; ")
-      : "SMTP2GO did not confirm a successful send.";
-    return json({ error: failureMessage }, 502);
-  }
-
+  const notifiedAt = new Date().toISOString();
   const { error: updateError } = await admin
     .from("test_responses")
-    .update({ owner_notified_at: new Date().toISOString() })
-    .eq("id", responseRow.id);
+    .update({ owner_notified_at: notifiedAt })
+    .eq("id", responseRecord.id);
 
   if (updateError) {
     return json({ error: updateError.message }, 500);
@@ -193,7 +216,3 @@ Deno.serve(async (request) => {
 
   return json({ ok: true, message: "Notification sent." });
 });
-
-
-
-
