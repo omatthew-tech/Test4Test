@@ -359,6 +359,104 @@ begin
 end;
 $$;
 
+drop function if exists public.delete_submission_version(uuid, uuid);
+create or replace function public.delete_submission_version(
+  p_submission_id uuid,
+  p_submission_version_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_target_version public.submission_versions%rowtype;
+  v_next_active_version_id uuid;
+  v_remaining_version_count integer;
+begin
+  if v_user_id is null then
+    raise exception 'You must be signed in to delete a version.';
+  end if;
+
+  if not public.current_user_has_app_access() then
+    raise exception 'Your account cannot access Test4Test right now.';
+  end if;
+
+  select versions.*
+  into v_target_version
+  from public.submission_versions versions
+  join public.submissions submissions
+    on submissions.id = versions.submission_id
+  where submissions.id = p_submission_id
+    and submissions.user_id = v_user_id
+    and versions.id = p_submission_version_id
+  limit 1;
+
+  if not found then
+    raise exception 'You do not have access to delete this version.';
+  end if;
+
+  select count(*)
+  into v_remaining_version_count
+  from public.submission_versions versions
+  where versions.submission_id = p_submission_id
+    and versions.id <> p_submission_version_id;
+
+  if v_remaining_version_count = 0 then
+    raise exception 'Keep at least one version.';
+  end if;
+
+  select versions.id
+  into v_next_active_version_id
+  from public.submission_versions versions
+  where versions.submission_id = p_submission_id
+    and versions.id <> p_submission_version_id
+    and versions.is_active = true
+  order by versions.version_number desc, versions.created_at desc
+  limit 1;
+
+  if v_target_version.is_active or v_next_active_version_id is null then
+    select versions.id
+    into v_next_active_version_id
+    from public.submission_versions versions
+    where versions.submission_id = p_submission_id
+      and versions.id <> p_submission_version_id
+    order by versions.version_number desc, versions.created_at desc
+    limit 1;
+  end if;
+
+  update public.submission_versions
+  set is_active = false
+  where submission_id = p_submission_id
+    and id <> coalesce(v_next_active_version_id, p_submission_version_id);
+
+  if v_next_active_version_id is not null then
+    update public.submission_versions
+    set is_active = true
+    where id = v_next_active_version_id;
+  end if;
+
+  delete from public.submission_versions
+  where id = p_submission_version_id;
+
+  update public.submissions
+  set response_count = (
+        select count(*)
+        from public.test_responses responses
+        where responses.submission_id = p_submission_id
+      ),
+      last_response_at = (
+        select max(responses.submitted_at)
+        from public.test_responses responses
+        where responses.submission_id = p_submission_id
+      )
+  where id = p_submission_id;
+
+  return v_next_active_version_id;
+end;
+$$;
+
 drop function if exists public.update_question_set(uuid, text, jsonb, integer);
 drop function if exists public.update_question_set(uuid, uuid, text, jsonb, integer);
 create or replace function public.update_question_set(
@@ -631,5 +729,6 @@ $$;
 
 grant execute on function public.create_submission_with_questions(text, text[], text, text, text, jsonb, text, jsonb, integer) to authenticated;
 grant execute on function public.create_submission_version(uuid, text, text) to authenticated;
+grant execute on function public.delete_submission_version(uuid, uuid) to authenticated;
 grant execute on function public.update_question_set(uuid, uuid, text, jsonb, integer) to authenticated;
 grant execute on function public.submit_test_response(uuid, jsonb, integer) to authenticated;

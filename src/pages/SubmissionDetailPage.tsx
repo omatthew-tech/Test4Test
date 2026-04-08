@@ -107,6 +107,7 @@ export function SubmissionDetailPage() {
     state,
     currentUser,
     createSubmissionVersion,
+    deleteSubmissionVersion,
     rateFeedback,
     updateQuestionSet,
   } = useAppState();
@@ -132,6 +133,10 @@ export function SubmissionDetailPage() {
   const [nextVersionDescription, setNextVersionDescription] = useState("");
   const [versionCreateError, setVersionCreateError] = useState("");
   const [isCreatingVersion, setIsCreatingVersion] = useState(false);
+  const [showVersionDeleteConfirm, setShowVersionDeleteConfirm] = useState(false);
+  const [versionPendingDeleteId, setVersionPendingDeleteId] = useState<string | null>(null);
+  const [versionDeleteError, setVersionDeleteError] = useState("");
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false);
   const [showTipPanel, setShowTipPanel] = useState(false);
   const [isLoadingTipProfile, setIsLoadingTipProfile] = useState(false);
   const [tipProfile, setTipProfile] = useState<TipProfile | null>(null);
@@ -164,6 +169,33 @@ export function SubmissionDetailPage() {
     () => buildSubmissionSummary(state, activeQuestionSet, responses),
     [activeQuestionSet, responses, state],
   );
+  const responseCountsByVersion = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    if (!submission) {
+      return counts;
+    }
+
+    state.responses.forEach((response) => {
+      if (response.submissionId !== submission.id) {
+        return;
+      }
+
+      counts.set(
+        response.submissionVersionId,
+        (counts.get(response.submissionVersionId) ?? 0) + 1,
+      );
+    });
+
+    return counts;
+  }, [state.responses, submission]);
+  const versionPendingDelete = useMemo(
+    () => submissionVersions.find((version) => version.id === versionPendingDeleteId) ?? null,
+    [submissionVersions, versionPendingDeleteId],
+  );
+  const versionPendingDeleteResponseCount = versionPendingDelete
+    ? responseCountsByVersion.get(versionPendingDelete.id) ?? 0
+    : 0;
   const latestResponse = responses[0] ?? null;
   const nextVersionNumber = submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
 
@@ -197,6 +229,26 @@ export function SubmissionDetailPage() {
 
     setShowVersionCreator(false);
     setVersionCreateError("");
+  };
+
+  const openVersionDeleteConfirm = (versionId: string) => {
+    if (submissionVersions.length <= 1) {
+      return;
+    }
+
+    setVersionPendingDeleteId(versionId);
+    setVersionDeleteError("");
+    setShowVersionDeleteConfirm(true);
+  };
+
+  const closeVersionDeleteConfirm = () => {
+    if (isDeletingVersion) {
+      return;
+    }
+
+    setShowVersionDeleteConfirm(false);
+    setVersionPendingDeleteId(null);
+    setVersionDeleteError("");
   };
 
   useEffect(() => {
@@ -252,6 +304,34 @@ export function SubmissionDetailPage() {
       );
     } finally {
       setIsCreatingVersion(false);
+    }
+  };
+
+  const handleDeleteVersion = async () => {
+    if (!submission || !versionPendingDelete) {
+      return;
+    }
+
+    setIsDeletingVersion(true);
+    setVersionDeleteError("");
+
+    try {
+      const nextVersionId = await deleteSubmissionVersion(submission.id, versionPendingDelete.id);
+      setSelectedVersionId(
+        selectedVersion?.id === versionPendingDelete.id
+          ? nextVersionId
+          : selectedVersion?.id ?? nextVersionId,
+      );
+      setResponseView("all");
+      setSelectedResponseIndex(0);
+      setShowVersionDeleteConfirm(false);
+      setVersionPendingDeleteId(null);
+    } catch (error) {
+      setVersionDeleteError(
+        error instanceof Error ? error.message : "The version could not be deleted.",
+      );
+    } finally {
+      setIsDeletingVersion(false);
     }
   };
 
@@ -540,17 +620,42 @@ export function SubmissionDetailPage() {
               {selectedVersion.description ? <p>{selectedVersion.description}</p> : null}
             </div>
             <div className="results-version-switcher" role="tablist" aria-label="Versions">
-              {submissionVersions.map((version) => (
-                <button
-                  key={version.id}
-                  type="button"
-                  className={`results-version-switcher__button${selectedVersion.id === version.id ? " results-version-switcher__button--active" : ""}`}
-                  onClick={() => setSelectedVersionId(version.id)}
-                  aria-pressed={selectedVersion.id === version.id}
-                >
-                  {`Version ${version.versionNumber}`}
-                </button>
-              ))}
+              {submissionVersions.map((version) => {
+                const versionResponseCount = responseCountsByVersion.get(version.id) ?? 0;
+
+                return (
+                  <div
+                    key={version.id}
+                    className={`results-version-switcher__item${selectedVersion.id === version.id ? " results-version-switcher__item--active" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="results-version-switcher__button"
+                      onClick={() => setSelectedVersionId(version.id)}
+                      aria-pressed={selectedVersion.id === version.id}
+                    >
+                      {`Version ${version.versionNumber}`}
+                    </button>
+                    {submissionVersions.length > 1 ? (
+                      <button
+                        type="button"
+                        className="results-version-switcher__remove"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openVersionDeleteConfirm(version.id);
+                        }}
+                        aria-label={
+                          versionResponseCount > 0
+                            ? `Delete Version ${version.versionNumber}, tested ${versionResponseCount} ${versionResponseCount === 1 ? "time" : "times"}`
+                            : `Delete Version ${version.versionNumber}`
+                        }
+                      >
+                        <X size={14} />
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -846,6 +951,50 @@ export function SubmissionDetailPage() {
         </div>
       ) : null}
 
+      {showVersionDeleteConfirm && versionPendingDelete ? (
+        <div className="results-modal-backdrop" role="presentation" onClick={closeVersionDeleteConfirm}>
+          <div className="results-modal results-modal--version-delete" role="dialog" aria-modal="true" aria-label="Delete version" onClick={(event) => event.stopPropagation()}>
+            <div className="results-modal__header">
+              <div>
+                <h2>Delete Version</h2>
+                <p>Delete {versionPendingDelete.title}? All test responses for this version will be deleted.</p>
+              </div>
+              <button type="button" className="icon-button" onClick={closeVersionDeleteConfirm} aria-label="Close delete version">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="form-stack form-stack--narrow results-version-form">
+              {versionPendingDeleteResponseCount > 0 ? (
+                <p className="results-version-delete-count">
+                  {`This version has been tested ${versionPendingDeleteResponseCount} ${versionPendingDeleteResponseCount === 1 ? "time" : "times"}.`}
+                </p>
+              ) : null}
+              {versionDeleteError ? (
+                <div className="callout callout--warning">
+                  <span>{versionDeleteError}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="wizard-actions">
+              <button type="button" className="button button--secondary" onClick={closeVersionDeleteConfirm} disabled={isDeletingVersion}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button--primary results-version-delete-button"
+                onClick={() => { void handleDeleteVersion(); }}
+                disabled={isDeletingVersion}
+              >
+                {isDeletingVersion ? <span className="button__spinner" aria-hidden="true" /> : null}
+                Delete version
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {showQuestionEditor ? (
         <div className="results-modal-backdrop" role="presentation" onClick={() => setShowQuestionEditor(false)}>
           <div className="results-modal" role="dialog" aria-modal="true" aria-label="Edit questions" onClick={(event) => event.stopPropagation()}>
@@ -1022,6 +1171,19 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

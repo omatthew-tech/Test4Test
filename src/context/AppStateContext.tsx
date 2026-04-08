@@ -151,6 +151,7 @@ interface AppStateContextValue {
   createSubmission: (draft: SubmissionDraft, questions: Question[]) => Promise<string>;
   updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
   createSubmissionVersion: (submissionId: string, title: string, description: string) => Promise<string>;
+  deleteSubmissionVersion: (submissionId: string, versionId: string) => Promise<string>;
   completeTest: (
     submissionId: string,
     answers: TestAnswer[],
@@ -518,6 +519,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes("submission_versions") ||
     normalized.includes("create_submission_with_questions") ||
     normalized.includes("create_submission_version") ||
+    normalized.includes("delete_submission_version") ||
     normalized.includes("update_question_set") ||
     normalized.includes("submit_test_response") ||
     normalized.includes("p_product_types") ||
@@ -883,6 +885,33 @@ async function persistCreateSubmissionVersion(
 
   return data;
 }
+
+async function persistDeleteSubmissionVersion(
+  submissionId: string,
+  versionId: string,
+) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before deleting a version.",
+  );
+  const { data, error } = await supabase.rpc("delete_submission_version", {
+    p_submission_id: submissionId,
+    p_submission_version_id: versionId,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  if (typeof data !== "string") {
+    throw new Error("The version could not be deleted.");
+  }
+
+  return data;
+}
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     ...emptyState,
@@ -1208,6 +1237,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const versionId = await persistCreateSubmissionVersion(submissionId, title, description);
         await refreshState();
         return versionId;
+      },
+      async deleteSubmissionVersion(submissionId, versionId) {
+        const nextVersionId = await persistDeleteSubmissionVersion(submissionId, versionId);
+        await refreshState();
+        return nextVersionId;
       },
       async completeTest(submissionId, answers, durationSeconds) {
         if (!currentUser) {
@@ -1544,6 +1578,7 @@ export function useAppState() {
 
   return context;
 }
+
 
 
 
