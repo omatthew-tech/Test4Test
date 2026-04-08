@@ -4,6 +4,7 @@ import {
   Question,
   QuestionSetVersion,
   Submission,
+  SubmissionVersion,
   TestResponse,
   User,
 } from "../types";
@@ -170,6 +171,45 @@ const submissions: Submission[] = [
   },
 ];
 
+const submissionVersions: SubmissionVersion[] = [
+  {
+    id: "sv-sprout-1",
+    submissionId: "submission-sprout",
+    versionNumber: 1,
+    title: "Version 1",
+    description: null,
+    createdAt: "2026-03-18T14:00:00.000Z",
+    isActive: true,
+  },
+  {
+    id: "sv-palette-1",
+    submissionId: "submission-palette",
+    versionNumber: 1,
+    title: "Version 1",
+    description: null,
+    createdAt: "2026-03-22T17:15:00.000Z",
+    isActive: true,
+  },
+  {
+    id: "sv-pantry-1",
+    submissionId: "submission-pantry",
+    versionNumber: 1,
+    title: "Version 1",
+    description: null,
+    createdAt: "2026-03-24T10:30:00.000Z",
+    isActive: true,
+  },
+  {
+    id: "sv-trail-1",
+    submissionId: "submission-trail",
+    versionNumber: 1,
+    title: "Version 1",
+    description: null,
+    createdAt: "2026-03-25T08:45:00.000Z",
+    isActive: true,
+  },
+];
+
 const questionSetVersions: QuestionSetVersion[] = [
   {
     id: "qsv-sprout-1",
@@ -231,6 +271,7 @@ const responses: TestResponse[] = [
   {
     id: "response-palette-1",
     submissionId: "submission-palette",
+    submissionVersionId: "sv-palette-1",
     testerUserId: "user-avery",
     questionSetVersionId: "qsv-palette-1",
     anonymousLabel: "Tester 4",
@@ -257,6 +298,7 @@ const responses: TestResponse[] = [
   {
     id: "response-pantry-1",
     submissionId: "submission-pantry",
+    submissionVersionId: "sv-pantry-1",
     testerUserId: "user-nina",
     questionSetVersionId: "qsv-pantry-1",
     anonymousLabel: "Tester 2",
@@ -283,6 +325,7 @@ const responses: TestResponse[] = [
   {
     id: "response-trail-1",
     submissionId: "submission-trail",
+    submissionVersionId: "sv-trail-1",
     testerUserId: "user-theo",
     questionSetVersionId: "qsv-trail-1",
     anonymousLabel: "Tester 1",
@@ -317,6 +360,7 @@ export const seededState: AppState = {
   currentUserId: null,
   users,
   submissions,
+  submissionVersions,
   questionSetVersions,
   responses,
   feedbackRatings,
@@ -351,15 +395,6 @@ export const seededState: AppState = {
       subject: "New feedback is ready for Palette Pilot",
     },
   ],
-  moderationActions: [
-    {
-      id: "moderation-trail-1",
-      responseId: "response-trail-1",
-      userId: "user-theo",
-      action: "flag",
-      createdAt: "2026-03-25T18:15:00.000Z",
-      notes: "Auto-flagged for short open-text answers and low completion time.",
-    },
-  ],
+  moderationActions: [],
   otpChallenge: null,
 };

@@ -1,4 +1,4 @@
-﻿export type ProductType = "website" | "ios" | "android";
+export type ProductType = "website" | "ios" | "android";
 export type AccessLinks = Partial<Record<ProductType, string>>;
 export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
@@ -48,6 +48,16 @@ export interface Question {
   required: boolean;
   sortOrder: number;
   options?: string[];
+}
+
+export interface SubmissionVersion {
+  id: string;
+  submissionId: string;
+  versionNumber: number;
+  title: string;
+  description: string | null;
+  createdAt: string;
+  isActive: boolean;
 }
 
 export interface QuestionSetVersion {
@@ -119,6 +129,7 @@ export interface TestAnswer {
 export interface TestResponse {
   id: string;
   submissionId: string;
+  submissionVersionId: string;
   testerUserId: string;
   questionSetVersionId: string;
   anonymousLabel: string;
@@ -182,6 +193,7 @@ export interface AppState {
   currentUserId: string | null;
   users: User[];
   submissions: Submission[];
+  submissionVersions: SubmissionVersion[];
   questionSetVersions: QuestionSetVersion[];
   responses: TestResponse[];
   feedbackRatings: FeedbackRating[];

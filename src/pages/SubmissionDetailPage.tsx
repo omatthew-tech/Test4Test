@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -25,8 +25,10 @@ import {
 import {
   buildSubmissionSummary,
   getActiveQuestionSet,
+  getActiveSubmissionVersion,
   getResponseRating,
-  getSubmissionResponses,
+  getSubmissionResponsesForSubmissionVersion,
+  getSubmissionVersions,
 } from "../lib/selectors";
 import { requireSupabase } from "../lib/supabase";
 import { PaymentMethods, Question, QuestionMode } from "../types";
@@ -37,6 +39,8 @@ type TipMethodKey = "paypalHandle" | "venmoHandle" | "cashAppHandle";
 interface TipProfile extends PaymentMethods {
   anonymousLabel: string;
 }
+
+const defaultVersionDescription = "Describe any updates you've made to your app here";
 
 const tipMethodConfigs: Array<{ key: TipMethodKey; label: string }> = [
   { key: "paypalHandle", label: "PayPal" },
@@ -99,21 +103,35 @@ async function copyTextToClipboard(value: string) {
 
 export function SubmissionDetailPage() {
   const { submissionId = "" } = useParams();
-  const { state, currentUser, rateFeedback, updateQuestionSet } = useAppState();
+  const {
+    state,
+    currentUser,
+    createSubmissionVersion,
+    rateFeedback,
+    updateQuestionSet,
+  } = useAppState();
   const submission = state.submissions.find((item) => item.id === submissionId);
-  const activeVersion = submission ? getActiveQuestionSet(state, submission.id) : null;
-  const responses = submission ? getSubmissionResponses(state, submission.id) : [];
-  const summary = submission ? buildSubmissionSummary(state, submission, responses) : null;
-  const latestResponse = responses[0] ?? null;
   const accessLinks = useMemo(
     () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
     [submission],
   );
+  const submissionVersions = useMemo(
+    () => (submission ? getSubmissionVersions(state, submission.id) : []),
+    [state, submission],
+  );
+  const activeSubmissionVersion = submission ? getActiveSubmissionVersion(state, submission.id) : null;
+  const activeQuestionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [responseView, setResponseView] = useState<ResponseViewMode>("all");
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
   const [editMode, setEditMode] = useState<QuestionMode>(submission?.questionMode ?? "general");
-  const [editQuestions, setEditQuestions] = useState<Question[]>(activeVersion?.questions ?? []);
+  const [editQuestions, setEditQuestions] = useState<Question[]>(activeQuestionSet?.questions ?? []);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
+  const [showVersionCreator, setShowVersionCreator] = useState(false);
+  const [nextVersionTitle, setNextVersionTitle] = useState("");
+  const [nextVersionDescription, setNextVersionDescription] = useState("");
+  const [versionCreateError, setVersionCreateError] = useState("");
+  const [isCreatingVersion, setIsCreatingVersion] = useState(false);
   const [showTipPanel, setShowTipPanel] = useState(false);
   const [isLoadingTipProfile, setIsLoadingTipProfile] = useState(false);
   const [tipProfile, setTipProfile] = useState<TipProfile | null>(null);
@@ -123,25 +141,119 @@ export function SubmissionDetailPage() {
   const selectedResponseIdRef = useRef<string | null>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
 
-  const savedEditMode: QuestionMode = activeVersion?.mode ?? submission?.questionMode ?? "general";
-  const savedEditQuestions = activeVersion?.questions ?? [];
+  const selectedVersion = useMemo(() => {
+    if (submissionVersions.length === 0) {
+      return null;
+    }
+
+    return (
+      submissionVersions.find((version) => version.id === selectedVersionId) ??
+      activeSubmissionVersion ??
+      submissionVersions[0]
+    );
+  }, [activeSubmissionVersion, selectedVersionId, submissionVersions]);
+
+  const responses = useMemo(
+    () =>
+      submission && selectedVersion
+        ? getSubmissionResponsesForSubmissionVersion(state, submission.id, selectedVersion.id)
+        : [],
+    [selectedVersion, state, submission],
+  );
+  const summary = useMemo(
+    () => buildSubmissionSummary(state, activeQuestionSet, responses),
+    [activeQuestionSet, responses, state],
+  );
+  const latestResponse = responses[0] ?? null;
+  const nextVersionNumber = submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
+
+  const savedEditMode: QuestionMode = activeQuestionSet?.mode ?? submission?.questionMode ?? "general";
+  const savedEditQuestions = activeQuestionSet?.questions ?? [];
 
   const openQuestionEditor = () => {
+    if (!activeQuestionSet) {
+      return;
+    }
+
+    if (activeSubmissionVersion) {
+      setSelectedVersionId(activeSubmissionVersion.id);
+    }
     setEditMode(savedEditMode);
     setEditQuestions(savedEditQuestions);
     setShowQuestionEditor(true);
   };
 
+  const openVersionCreator = () => {
+    setVersionCreateError("");
+    setNextVersionTitle(`version ${nextVersionNumber}`);
+    setNextVersionDescription(defaultVersionDescription);
+    setShowVersionCreator(true);
+  };
+
+  const closeVersionCreator = () => {
+    if (isCreatingVersion) {
+      return;
+    }
+
+    setShowVersionCreator(false);
+    setVersionCreateError("");
+  };
+
   useEffect(() => {
-    setSelectedResponseIndex(0);
+    if (submissionVersions.length === 0) {
+      setSelectedVersionId(null);
+      return;
+    }
+
+    setSelectedVersionId((current) => {
+      if (current && submissionVersions.some((version) => version.id === current)) {
+        return current;
+      }
+
+      return activeSubmissionVersion?.id ?? submissionVersions[0].id;
+    });
+  }, [activeSubmissionVersion?.id, submissionVersions]);
+
+  useEffect(() => {
     setEditMode(savedEditMode);
     setEditQuestions(savedEditQuestions);
-  }, [submission?.id, activeVersion?.id, savedEditMode, responses.length]);
+  }, [activeQuestionSet?.id, savedEditMode, savedEditQuestions]);
+
+  useEffect(() => {
+    setSelectedResponseIndex(0);
+  }, [responses.length, selectedVersion?.id]);
 
   const selectedResponse = responses[selectedResponseIndex] ?? null;
   const selectedRating = selectedResponse
     ? getResponseRating(state, selectedResponse.id, currentUser?.id ?? null)
     : null;
+
+  const handleCreateVersion = async () => {
+    if (!submission) {
+      return;
+    }
+
+    setIsCreatingVersion(true);
+    setVersionCreateError("");
+
+    try {
+      const versionId = await createSubmissionVersion(
+        submission.id,
+        nextVersionTitle,
+        nextVersionDescription,
+      );
+      setSelectedVersionId(versionId);
+      setResponseView("all");
+      setSelectedResponseIndex(0);
+      setShowVersionCreator(false);
+    } catch (error) {
+      setVersionCreateError(
+        error instanceof Error ? error.message : "The version could not be created.",
+      );
+    } finally {
+      setIsCreatingVersion(false);
+    }
+  };
 
   useEffect(() => {
     selectedResponseIdRef.current = selectedResponse?.id ?? null;
@@ -303,7 +415,7 @@ export function SubmissionDetailPage() {
       return;
     }
 
-    setEditQuestions(activeVersion?.questions ?? defaultCustomQuestions(submission.productName));
+    setEditQuestions(activeQuestionSet?.questions ?? defaultCustomQuestions(submission.productName));
   };
 
   const hasReachedEditQuestionLimit = editQuestions.length >= 10;
@@ -379,7 +491,7 @@ export function SubmissionDetailPage() {
 
   const visibleEditMode: "custom" | "ai" = editMode === "ai" ? "ai" : "custom";
 
-  if (!currentUser || !submission || submission.userId !== currentUser.id || !summary) {
+  if (!currentUser || !submission || submission.userId !== currentUser.id || !selectedVersion || !activeQuestionSet || !summary) {
     return (
       <AppShell title="Results" description="That submission could not be found.">
         <Surface><p>Try returning to My Tests and opening one of your submissions.</p></Surface>
@@ -421,10 +533,31 @@ export function SubmissionDetailPage() {
         </Surface>
 
         <Surface className="results-section">
-          <div className="results-section__header results-section__header--responses">
-            <div>
-              <h2>Responses</h2>
+          <div className="results-version-header">
+            <div className="results-version-header__copy">
+              <span className="results-version-header__eyebrow">Selected version</span>
+              <h2>{selectedVersion.title}</h2>
+              {selectedVersion.description ? <p>{selectedVersion.description}</p> : null}
             </div>
+            <div className="results-version-switcher" role="tablist" aria-label="Versions">
+              {submissionVersions.map((version) => (
+                <button
+                  key={version.id}
+                  type="button"
+                  className={`results-version-switcher__button${selectedVersion.id === version.id ? " results-version-switcher__button--active" : ""}`}
+                  onClick={() => setSelectedVersionId(version.id)}
+                  aria-pressed={selectedVersion.id === version.id}
+                >
+                  {`Version ${version.versionNumber}`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="results-section__header results-section__header--responses">
+            <button type="button" className="button button--secondary" onClick={openVersionCreator}>
+              Change Version
+            </button>
             <div className="results-toggle" role="tablist" aria-label="Response view">
               <button
                 type="button"
@@ -447,65 +580,72 @@ export function SubmissionDetailPage() {
           </div>
 
           {responseView === "all" ? (
-            <div className="question-list question-list--studio question-list--results-overview">
-              {summary.analytics.map((item) => {
-                if (item.type === "paragraph") {
+            responses.length === 0 ? (
+              <div className="results-placeholder">
+                <strong>No responses yet</strong>
+                <p>When testers start using this version, the results will appear here.</p>
+              </div>
+            ) : (
+              <div className="question-list question-list--studio question-list--results-overview">
+                {summary.analytics.map((item) => {
+                  if (item.type === "paragraph") {
+                    return (
+                      <article key={item.question.id} className="question-card question-card--studio question-card--results-overview">
+                        <div className="question-card__body">
+                          <h4>{item.question.title}</h4>
+                          {item.responses.length > 0 ? (
+                            <div className="results-paragraph-list">
+                              {item.responses.map((response, index) => (
+                                <article key={`${item.question.id}-${index}`} className="results-paragraph-card">
+                                  <span className="results-paragraph-card__label">Response {index + 1}</span>
+                                  <p>{response}</p>
+                                </article>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="question-card__response-preview">
+                              <span>Written responses</span>
+                              <p>No written responses yet.</p>
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  }
+
+                  const maxCount = Math.max(...item.counts.map((count) => count.count), 0);
+
                   return (
                     <article key={item.question.id} className="question-card question-card--studio question-card--results-overview">
                       <div className="question-card__body">
                         <h4>{item.question.title}</h4>
-                        {item.responses.length > 0 ? (
-                          <div className="results-paragraph-list">
-                            {item.responses.map((response, index) => (
-                              <article key={`${item.question.id}-${index}`} className="results-paragraph-card">
-                                <span className="results-paragraph-card__label">Response {index + 1}</span>
-                                <p>{response}</p>
-                              </article>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="question-card__response-preview">
-                            <span>Written responses</span>
-                            <p>No written responses yet.</p>
-                          </div>
-                        )}
+                        <div className="results-choice-list">
+                          {item.counts.map((count) => {
+                            const percent = item.total > 0 ? Math.round((count.count / item.total) * 100) : 0;
+                            const emphasis = maxCount > 0 ? count.count / maxCount : 0;
+
+                            return (
+                              <div
+                                key={count.option}
+                                className={`results-choice-row${maxCount > 0 && count.count === maxCount ? " results-choice-row--top" : ""}`}
+                                style={{
+                                  backgroundColor: `rgba(245, 142, 86, ${0.04 + emphasis * 0.18})`,
+                                  borderColor: `rgba(245, 142, 86, ${0.14 + emphasis * 0.22})`,
+                                }}
+                              >
+                                <span className="results-choice-row__icon" aria-hidden="true" />
+                                <span className="results-choice-row__label">{count.option}</span>
+                                <strong className="results-choice-row__percent">{percent}%</strong>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </article>
                   );
-                }
-
-                const maxCount = Math.max(...item.counts.map((count) => count.count), 0);
-
-                return (
-                  <article key={item.question.id} className="question-card question-card--studio question-card--results-overview">
-                    <div className="question-card__body">
-                      <h4>{item.question.title}</h4>
-                      <div className="results-choice-list">
-                        {item.counts.map((count) => {
-                          const percent = item.total > 0 ? Math.round((count.count / item.total) * 100) : 0;
-                          const emphasis = maxCount > 0 ? count.count / maxCount : 0;
-
-                          return (
-                            <div
-                              key={count.option}
-                              className={`results-choice-row${maxCount > 0 && count.count === maxCount ? " results-choice-row--top" : ""}`}
-                              style={{
-                                backgroundColor: `rgba(245, 142, 86, ${0.04 + emphasis * 0.18})`,
-                                borderColor: `rgba(245, 142, 86, ${0.14 + emphasis * 0.22})`,
-                              }}
-                            >
-                              <span className="results-choice-row__icon" aria-hidden="true" />
-                              <span className="results-choice-row__label">{count.option}</span>
-                              <strong className="results-choice-row__percent">{percent}%</strong>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                })}
+              </div>
+            )
           ) : selectedResponse ? (
             <div className="results-individual-shell">
               <div className="results-individual-shell__header">
@@ -644,11 +784,67 @@ export function SubmissionDetailPage() {
           ) : (
             <div className="results-placeholder">
               <strong>No responses yet</strong>
-              <p>When testers begin submitting feedback, each response will appear here.</p>
+              <p>When testers begin submitting feedback for this version, each response will appear here.</p>
             </div>
           )}
         </Surface>
       </div>
+
+      {showVersionCreator ? (
+        <div className="results-modal-backdrop" role="presentation" onClick={closeVersionCreator}>
+          <div className="results-modal results-modal--version-creator" role="dialog" aria-modal="true" aria-label="Change version" onClick={(event) => event.stopPropagation()}>
+            <div className="results-modal__header">
+              <div>
+                <h2>Change Version</h2>
+                <p>Create a new app version to group future feedback. Your current Test4Test questions stay the same until you edit them separately.</p>
+              </div>
+              <button type="button" className="icon-button" onClick={closeVersionCreator} aria-label="Close change version">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="form-stack form-stack--narrow results-version-form">
+              <label className="field">
+                <span>Version title</span>
+                <input
+                  value={nextVersionTitle}
+                  onChange={(event) => setNextVersionTitle(event.target.value)}
+                  placeholder={`version ${nextVersionNumber}`}
+                />
+              </label>
+              <label className="field">
+                <span>Version description</span>
+                <textarea
+                  rows={4}
+                  value={nextVersionDescription}
+                  onChange={(event) => setNextVersionDescription(event.target.value)}
+                  placeholder={defaultVersionDescription}
+                />
+              </label>
+              {versionCreateError ? (
+                <div className="callout callout--warning">
+                  <span>{versionCreateError}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="wizard-actions">
+              <button type="button" className="button button--secondary" onClick={closeVersionCreator} disabled={isCreatingVersion}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => { void handleCreateVersion(); }}
+                disabled={isCreatingVersion || !nextVersionTitle.trim()}
+              >
+                {isCreatingVersion ? <span className="button__spinner" aria-hidden="true" /> : null}
+                Create version
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showQuestionEditor ? (
         <div className="results-modal-backdrop" role="presentation" onClick={() => setShowQuestionEditor(false)}>
@@ -656,7 +852,7 @@ export function SubmissionDetailPage() {
             <div className="results-modal__header">
               <div>
                 <h2>Edit questions</h2>
-                <p>Changes here only affect future testers. Older responses stay attached to the version they answered.</p>
+                <p>Question edits update the current Test4Test questionnaire. They do not create a new app version, and past responses stay attached to what testers originally submitted.</p>
               </div>
               <button type="button" className="icon-button" onClick={() => setShowQuestionEditor(false)} aria-label="Close edit questions">
                 <X size={18} />
@@ -808,12 +1004,16 @@ export function SubmissionDetailPage() {
                 type="button"
                 className="button button--primary"
                 onClick={() => {
-                  void updateQuestionSet(submission.id, editMode, editQuestions);
+                  if (!activeQuestionSet) {
+                    return;
+                  }
+
+                  void updateQuestionSet(submission.id, activeQuestionSet.id, editMode, editQuestions);
                   setShowQuestionEditor(false);
                 }}
               >
                 <Save size={16} />
-                Save as next version
+                Save questions
               </button>
             </div>
           </div>
@@ -822,6 +1022,7 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
 
 
 

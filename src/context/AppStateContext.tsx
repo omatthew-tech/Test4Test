@@ -35,6 +35,7 @@ import {
   QuestionMode,
   Submission,
   SubmissionDraft,
+  SubmissionVersion,
   TestAnswer,
   TestResponse,
   User,
@@ -74,6 +75,16 @@ interface SubmissionRow {
   created_at: string;
 }
 
+interface SubmissionVersionRow {
+  id: string;
+  submission_id: string;
+  version_number: number;
+  title: string;
+  description: string | null;
+  created_at: string;
+  is_active: boolean;
+}
+
 interface QuestionSetVersionRow {
   id: string;
   submission_id: string;
@@ -87,6 +98,7 @@ interface QuestionSetVersionRow {
 interface TestResponseRow {
   id: string;
   submission_id: string;
+  submission_version_id?: string | null;
   tester_user_id: string;
   question_set_version_id: string;
   anonymous_label: string;
@@ -138,6 +150,7 @@ interface AppStateContextValue {
   ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
   createSubmission: (draft: SubmissionDraft, questions: Question[]) => Promise<string>;
   updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
+  createSubmissionVersion: (submissionId: string, title: string, description: string) => Promise<string>;
   completeTest: (
     submissionId: string,
     answers: TestAnswer[],
@@ -154,6 +167,7 @@ interface AppStateContextValue {
   ) => Promise<void>;
   updateQuestionSet: (
     submissionId: string,
+    questionSetVersionId: string,
     mode: QuestionMode,
     questions: Question[],
   ) => Promise<void>;
@@ -176,6 +190,7 @@ const emptyState: AppState = {
   currentUserId: null,
   users: [],
   submissions: [],
+  submissionVersions: [],
   questionSetVersions: [],
   responses: [],
   feedbackRatings: [],
@@ -301,6 +316,21 @@ function mapSubmission(row: SubmissionRow): Submission {
   };
 }
 
+function mapSubmissionVersion(row: SubmissionVersionRow): SubmissionVersion {
+  return {
+    id: row.id,
+    submissionId: row.submission_id,
+    versionNumber: row.version_number,
+    title: row.title,
+    description:
+      typeof row.description === "string" && row.description.trim()
+        ? row.description.trim()
+        : null,
+    createdAt: row.created_at,
+    isActive: row.is_active,
+  };
+}
+
 function mapQuestionSetVersion(row: QuestionSetVersionRow) {
   return {
     id: row.id,
@@ -317,6 +347,7 @@ function mapTestResponse(row: TestResponseRow): TestResponse {
   return {
     id: row.id,
     submissionId: row.submission_id,
+    submissionVersionId: row.submission_version_id ?? row.question_set_version_id,
     testerUserId: row.tester_user_id,
     questionSetVersionId: row.question_set_version_id,
     anonymousLabel: row.anonymous_label,
@@ -397,7 +428,7 @@ async function ensureAuthenticatedSession(
 }
 
 const latestSubmissionSchemaMessage =
-  "Your Supabase database is missing the latest submissions schema. Run the 20260331 migrations for product_types and access_links before creating submissions with multiple app links.";
+  "Your Supabase database is missing the latest submissions, questionnaires, or versioning schema. Run the latest Supabase migrations before editing submissions, questions, or versions.";
 const latestProfilePaymentSchemaMessage =
   "Your Supabase database is missing the latest payment methods schema. Run the 20260405 profile payment methods migration before saving payout details.";
 const PAYMENT_METHOD_MAX_LENGTH = 120;
@@ -482,9 +513,16 @@ function isMissingSubmissionSchemaError(message: string) {
   return (
     normalized.includes('column "access_links" of relation "submissions" does not exist') ||
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
+    normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
+    normalized.includes('relation "public.submission_versions" does not exist') ||
+    normalized.includes("submission_versions") ||
     normalized.includes("create_submission_with_questions") ||
+    normalized.includes("create_submission_version") ||
+    normalized.includes("update_question_set") ||
+    normalized.includes("submit_test_response") ||
     normalized.includes("p_product_types") ||
-    normalized.includes("p_access_links")
+    normalized.includes("p_access_links") ||
+    normalized.includes("p_question_set_version_id")
   );
 }
 
@@ -593,7 +631,30 @@ async function loadVisibleSubmissions(currentUserId: string | null) {
     );
 }
 
-async function loadActiveQuestionSets(submissionIds: string[]) {
+async function loadVisibleSubmissionVersions(submissionIds: string[]) {
+  if (submissionIds.length === 0) {
+    return [];
+  }
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("submission_versions")
+    .select("*")
+    .in("submission_id", submissionIds)
+    .order("version_number", { ascending: false });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as SubmissionVersionRow[]).map(mapSubmissionVersion);
+}
+
+async function loadVisibleQuestionSets(submissionIds: string[]) {
   if (submissionIds.length === 0) {
     return [];
   }
@@ -602,9 +663,8 @@ async function loadActiveQuestionSets(submissionIds: string[]) {
   const { data, error } = await supabase
     .from("question_set_versions")
     .select("*")
-    .eq("is_active", true)
     .in("submission_id", submissionIds)
-    .order("created_at", { ascending: false });
+    .order("version_number", { ascending: false });
 
   if (error) {
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -794,6 +854,35 @@ async function persistSubmissionDetails(submissionId: string, draft: SubmissionD
     throw new Error(error.message);
   }
 }
+
+async function persistCreateSubmissionVersion(
+  submissionId: string,
+  title: string,
+  description: string,
+) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before creating a version.",
+  );
+  const { data, error } = await supabase.rpc("create_submission_version", {
+    p_submission_id: submissionId,
+    p_title: title,
+    p_description: description,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  if (typeof data !== "string") {
+    throw new Error("The version could not be created.");
+  }
+
+  return data;
+}
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     ...emptyState,
@@ -836,6 +925,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           currentUserId,
           users: [currentProfile],
           submissions: [],
+          submissionVersions: [],
           questionSetVersions: [],
           responses: [],
           feedbackRatings: [],
@@ -848,7 +938,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
 
       const submissions = await loadVisibleSubmissions(currentUserId);
-      const questionSetVersions = await loadActiveQuestionSets(submissions.map((submission) => submission.id));
+      const submissionVersions = await loadVisibleSubmissionVersions(submissions.map((submission) => submission.id));
+      const questionSetVersions = await loadVisibleQuestionSets(submissions.map((submission) => submission.id));
       const ownedSubmissionIds = currentUserId
         ? submissions
             .filter((submission) => submission.userId === currentUserId)
@@ -866,6 +957,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         currentUserId,
         users: currentProfile ? [currentProfile] : [],
         submissions,
+        submissionVersions,
         questionSetVersions,
         responses,
         feedbackRatings,
@@ -1112,6 +1204,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await persistSubmissionDetails(submissionId, draft);
         await refreshState();
       },
+      async createSubmissionVersion(submissionId, title, description) {
+        const versionId = await persistCreateSubmissionVersion(submissionId, title, description);
+        await refreshState();
+        return versionId;
+      },
       async completeTest(submissionId, answers, durationSeconds) {
         if (!currentUser) {
           return { ok: false, message: "Verify your email before completing tests." };
@@ -1192,10 +1289,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         await refreshState();
       },
-      async updateQuestionSet(submissionId, mode, questions) {
+      async updateQuestionSet(submissionId, questionSetVersionId, mode, questions) {
         const supabase = requireSupabase();
         const { error } = await supabase.rpc("update_question_set", {
           p_submission_id: submissionId,
+          p_question_set_version_id: questionSetVersionId,
           p_mode: mode,
           p_questions: questions,
           p_estimated_minutes: estimateMinutes(questions),
@@ -1446,6 +1544,7 @@ export function useAppState() {
 
   return context;
 }
+
 
 
 
