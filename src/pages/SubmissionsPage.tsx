@@ -301,7 +301,7 @@ export function SubmissionsPage() {
 
   if (!currentUser) {
     return (
-      <AppShell title="Submissions" eyebrowLabel={null}>
+      <AppShell title="My Feedback" eyebrowLabel={null}>
         <div className="page-stack submissions-page">
           <Surface>
             <div className="empty-state">
@@ -316,16 +316,16 @@ export function SubmissionsPage() {
   }
 
   return (
-    <AppShell title="Submissions" eyebrowLabel={null}>
+    <AppShell title="My Feedback" eyebrowLabel={null}>
       <div className="page-stack submissions-page">
         <Surface className="earn-controls submissions-switcher">
-          <div className="results-toggle" role="tablist" aria-label="Submission view">
+          <div className="results-toggle" role="tablist" aria-label="Feedback view">
             <button
               type="button"
               className={`results-toggle__button${viewMode === "all" ? " results-toggle__button--active" : ""}`}
               onClick={() => setViewMode("all")}
             >
-              All Submissions
+              All Feedback
             </button>
             <button
               type="button"
@@ -471,6 +471,7 @@ function SubmissionFeedbackRow({
     </Surface>
   );
 }
+
 
 
 

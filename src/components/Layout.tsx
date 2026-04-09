@@ -5,8 +5,8 @@ import { getCreditBalance } from "../lib/selectors";
 const navItems = [
   { to: "/earn", label: "Earn" },
   { to: "/my-tests", label: "My Apps" },
-  { to: "/submit", label: "Submit" },
-  { to: "/submissions", label: "Submissions" },
+  { to: "/submit", label: "New App" },
+  { to: "/submissions", label: "My Feedback" },
 ];
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
@@ -112,3 +112,4 @@ export function Surface({
 }) {
   return <section className={`surface ${className}`.trim()}>{children}</section>;
 }
+

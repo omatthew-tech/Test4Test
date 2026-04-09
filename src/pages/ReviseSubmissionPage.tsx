@@ -502,7 +502,7 @@ export function ReviseSubmissionPage() {
               <strong>{completion.answered} / {completion.total} answered</strong>
             </div>
             <div className="inline-actions">
-              <button type="button" className="button button--secondary" onClick={() => navigate("/submissions")}>Back to Submissions</button>
+              <button type="button" className="button button--secondary" onClick={() => navigate("/submissions")}>Back to My Feedback</button>
               <button
                 type="button"
                 className="button button--primary"
@@ -541,7 +541,7 @@ export function ReviseSubmissionPage() {
                 </span>
                 <h2 id="submission-report-title">Report Sent!</h2>
                 <p id="submission-report-description">
-                  We&apos;re on it. Taking you back to Submissions now.
+                  We&apos;re on it. Taking you back to My Feedback now.
                 </p>
               </div>
             ) : (
