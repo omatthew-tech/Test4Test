@@ -6310,6 +6310,16 @@ body {
   border-radius: var(--radius-md);
 }
 
+.simple-start-card__row--resume {
+  grid-template-columns: 1fr;
+}
+
+.simple-start-card__resume-button {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
+
 .home-stage__steps {
   grid-area: steps;
   display: grid;
@@ -6641,6 +6651,7 @@ body {
   }
 
 }
+
 
 
 

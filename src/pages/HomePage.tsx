@@ -2,16 +2,22 @@ import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
+import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 
 export function HomePage() {
   const [productName, setProductName] = useState("");
+  const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
   const navigate = useNavigate();
 
   const startSubmission = () => {
     const query = productName.trim() ? `?productName=${encodeURIComponent(productName.trim())}` : "";
     navigate(`/submit${query}`);
+  };
+
+  const continueSubmission = () => {
+    navigate("/submit");
   };
 
   return (
@@ -30,28 +36,42 @@ export function HomePage() {
               <span />
             </div>
             <div className="simple-start-card">
-              <label className="simple-start-card__label" htmlFor="home-product-name">
-                What&apos;s the name of your web or mobile app?
-              </label>
-              <div className="simple-start-card__row">
-                <input
-                  id="home-product-name"
-                  value={productName}
-                  onChange={(event) => setProductName(event.target.value)}
-                  placeholder="Enter your web or mobile app name"
-                  aria-label="Web or mobile app name"
-                />
-                <button type="button" className="button button--primary" onClick={startSubmission}>
-                  Get started
-                  <ArrowRight size={16} />
-                </button>
-              </div>
+              <p className="simple-start-card__label">
+                {hasResumeSubmission
+                  ? "You have a saved submission in progress."
+                  : "What's the name of your web or mobile app?"}
+              </p>
+              {hasResumeSubmission ? (
+                <div className="simple-start-card__row simple-start-card__row--resume">
+                  <button
+                    type="button"
+                    className="button button--primary simple-start-card__resume-button"
+                    onClick={continueSubmission}
+                  >
+                    Continue submission
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="simple-start-card__row">
+                  <input
+                    id="home-product-name"
+                    value={productName}
+                    onChange={(event) => setProductName(event.target.value)}
+                    placeholder="Enter your web or mobile app name"
+                    aria-label="Web or mobile app name"
+                  />
+                  <button type="button" className="button button--primary" onClick={startSubmission}>
+                    Get started
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
           <section className="home-stage__steps" aria-label="Three steps">
             <div className="home-stage__steps-intro">
-
               <div className="simple-section__art" aria-hidden="true">
                 <img src={groupLogoPath} alt="" className="simple-section__logo" />
               </div>
@@ -86,3 +106,4 @@ export function HomePage() {
     </AppShell>
   );
 }
+
