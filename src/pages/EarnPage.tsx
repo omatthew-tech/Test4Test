@@ -13,11 +13,7 @@ import {
   Submission,
 } from "../types";
 
-function compareEarnSubmissions(first: Submission, second: Submission, sortMode: string) {
-  if (first.promoted !== second.promoted) {
-    return first.promoted ? -1 : 1;
-  }
-
+function compareEarnSubmissionsByMode(first: Submission, second: Submission, sortMode: string) {
   if (sortMode === "newest") {
     return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
   }
@@ -37,6 +33,48 @@ function compareEarnSubmissions(first: Submission, second: Submission, sortMode:
   return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
 }
 
+function getReputationScore(reputation: EarnSubmissionReputation | null | undefined) {
+  if (!reputation) {
+    return null;
+  }
+
+  return reputation.ownerTestBackRatePercent + reputation.ownerSatisfactionRatePercent;
+}
+
+function compareEarnSubmissions(
+  first: Submission,
+  second: Submission,
+  sortMode: string,
+  firstReputation: EarnSubmissionReputation | null | undefined,
+  secondReputation: EarnSubmissionReputation | null | undefined,
+) {
+  if (first.promoted !== second.promoted) {
+    return first.promoted ? -1 : 1;
+  }
+
+  if (sortMode === "recommended") {
+    const firstOwnerTestedYou = firstReputation?.ownerHasTestedYou === true;
+    const secondOwnerTestedYou = secondReputation?.ownerHasTestedYou === true;
+
+    if (firstOwnerTestedYou !== secondOwnerTestedYou) {
+      return firstOwnerTestedYou ? -1 : 1;
+    }
+
+    const firstScore = getReputationScore(firstReputation);
+    const secondScore = getReputationScore(secondReputation);
+
+    if (firstScore !== null && secondScore !== null && firstScore !== secondScore) {
+      return secondScore - firstScore;
+    }
+
+    if (firstScore !== secondScore) {
+      return secondScore === null ? -1 : 1;
+    }
+  }
+
+  return compareEarnSubmissionsByMode(first, second, sortMode);
+}
+
 export function EarnPage() {
   const [sortMode, setSortMode] = useState("recommended");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -53,10 +91,18 @@ export function EarnPage() {
       next = next.filter((item) => item.productTypes.includes(typeFilter as ProductType));
     }
 
-    next.sort((first, second) => compareEarnSubmissions(first, second, sortMode));
+    next.sort((first, second) =>
+      compareEarnSubmissions(
+        first,
+        second,
+        sortMode,
+        reputationBySubmissionId[first.id],
+        reputationBySubmissionId[second.id],
+      ),
+    );
 
     return next;
-  }, [available, sortMode, typeFilter]);
+  }, [available, reputationBySubmissionId, sortMode, typeFilter]);
 
   const visibleSubmissionIdsKey = useMemo(
     () => [...new Set(items.map((item) => item.id))].sort().join("|"),
