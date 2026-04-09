@@ -26,6 +26,13 @@ import {
   syncGeneralQuestionsProductName,
   validateAccessLink,
 } from "../lib/questions";
+import {
+  clearSubmitFlowResume,
+  getStoredOtpChallenge,
+  getSubmitFlowResume,
+  saveSubmitFlowResume,
+  SubmitFlowResumePhase,
+} from "../lib/pendingSubmission";
 import { wait } from "../lib/timing";
 import { ProductType, Question, SubmissionDraft } from "../types";
 
@@ -63,6 +70,109 @@ function createBlankQuestion(
   };
 }
 
+interface InitialSubmitFlowState {
+  flowPhase: SubmitFlowResumePhase;
+  currentStep: number;
+  submissionId: string | null;
+  email: string;
+  draft: SubmissionDraft;
+  generalQuestions: Question[];
+  customQuestions: Question[];
+  hasGeneratedGeneralQuestions: boolean;
+  aiQuestions: Question[];
+  aiQuestionStatus: AiQuestionStatus;
+  aiQuestionError: string;
+  aiQuestionNotice: string;
+  aiQuestionSourceKey: string | null;
+}
+
+function createDefaultDraft(productName: string): SubmissionDraft {
+  return {
+    productName,
+    productTypes: [],
+    description: "",
+    targetAudience: "",
+    instructions: "",
+    accessLinks: {},
+    questionMode: "general",
+  };
+}
+
+function clampWizardStep(step: number) {
+  return Math.min(Math.max(step, 0), steps.length - 1);
+}
+
+function getInitialSubmitFlowState(
+  initialProductName: string,
+  resumeVerifyEmail: boolean,
+  initialEmail: string,
+  initialSubmissionId: string | null,
+): InitialSubmitFlowState {
+  const resumeState = getSubmitFlowResume();
+  const challenge = getStoredOtpChallenge();
+  const defaultDraft = createDefaultDraft(initialProductName);
+  const defaultGeneralQuestions = buildStarterGeneralQuestions(initialProductName || "Your product");
+  const defaultCustomQuestionSet = defaultCustomQuestions(initialProductName || "Your product");
+
+  if (!resumeState && challenge?.submissionId) {
+    return {
+      flowPhase: resumeVerifyEmail ? "email" : "verify-code",
+      currentStep: steps.length,
+      submissionId: initialSubmissionId ?? challenge.submissionId,
+      email: initialEmail || challenge.email,
+      draft: defaultDraft,
+      generalQuestions: defaultGeneralQuestions,
+      customQuestions: defaultCustomQuestionSet,
+      hasGeneratedGeneralQuestions: false,
+      aiQuestions: [],
+      aiQuestionStatus: "idle",
+      aiQuestionError: "",
+      aiQuestionNotice: "",
+      aiQuestionSourceKey: null,
+    };
+  }
+
+  if (!resumeState) {
+    return {
+      flowPhase: resumeVerifyEmail ? "email" : "wizard",
+      currentStep: resumeVerifyEmail ? steps.length : 0,
+      submissionId: initialSubmissionId,
+      email: initialEmail,
+      draft: defaultDraft,
+      generalQuestions: defaultGeneralQuestions,
+      customQuestions: defaultCustomQuestionSet,
+      hasGeneratedGeneralQuestions: false,
+      aiQuestions: [],
+      aiQuestionStatus: "idle",
+      aiQuestionError: "",
+      aiQuestionNotice: "",
+      aiQuestionSourceKey: null,
+    };
+  }
+
+  const flowPhase = resumeVerifyEmail
+    ? "email"
+    : resumeState.phase === "verify-code" && !challenge?.submissionId
+      ? "email"
+      : resumeState.phase;
+
+  return {
+    flowPhase,
+    currentStep: flowPhase === "wizard" ? clampWizardStep(resumeState.currentStep) : steps.length,
+    submissionId: initialSubmissionId ?? challenge?.submissionId ?? resumeState.submissionId,
+    email: initialEmail || challenge?.email || resumeState.email,
+    draft: resumeState.draft,
+    generalQuestions: resumeState.generalQuestions,
+    customQuestions: resumeState.customQuestions,
+    hasGeneratedGeneralQuestions: resumeState.hasGeneratedGeneralQuestions,
+    aiQuestions: resumeState.aiQuestions,
+    aiQuestionStatus: resumeState.aiQuestionStatus,
+    aiQuestionError: resumeState.aiQuestionError,
+    aiQuestionNotice: resumeState.aiQuestionNotice,
+    aiQuestionSourceKey: resumeState.aiQuestionSourceKey,
+  };
+}
+
 export function SubmitFlowPage() {
   const [searchParams] = useSearchParams();
   const initialProductName = searchParams.get("productName") ?? "";
@@ -71,35 +181,40 @@ export function SubmitFlowPage() {
   const initialSubmissionId = searchParams.get("submissionId");
   const navigate = useNavigate();
   const { state, currentUser, createSubmission, requestOtp } = useAppState();
-  const [currentStep, setCurrentStep] = useState(resumeVerifyEmail ? steps.length : 0);
-  const [submissionId, setSubmissionId] = useState<string | null>(initialSubmissionId);
-  const [email, setEmail] = useState(initialEmail);
+  const initialStateRef = useRef<InitialSubmitFlowState | null>(null);
+
+  if (!initialStateRef.current) {
+    initialStateRef.current = getInitialSubmitFlowState(
+      initialProductName,
+      resumeVerifyEmail,
+      initialEmail,
+      initialSubmissionId,
+    );
+  }
+
+  const initialState = initialStateRef.current!;
+  const [flowPhase, setFlowPhase] = useState<SubmitFlowResumePhase>(initialState.flowPhase);
+  const [currentStep, setCurrentStep] = useState(initialState.currentStep);
+  const [submissionId, setSubmissionId] = useState<string | null>(initialState.submissionId);
+  const [email, setEmail] = useState(initialState.email);
   const [error, setError] = useState("");
   const [pendingScrollQuestionId, setPendingScrollQuestionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [draft, setDraft] = useState<SubmissionDraft>({
-    productName: initialProductName,
-    productTypes: [],
-    description: "",
-    targetAudience: "",
-    instructions: "",
-    accessLinks: {},
-    questionMode: "general",
-  });
-  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(() =>
-    buildStarterGeneralQuestions(initialProductName || "Your product"),
+  const [draft, setDraft] = useState<SubmissionDraft>(initialState.draft);
+  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(initialState.generalQuestions);
+  const [customQuestions, setCustomQuestions] = useState<Question[]>(initialState.customQuestions);
+  const [hasGeneratedGeneralQuestions, setHasGeneratedGeneralQuestions] = useState(
+    initialState.hasGeneratedGeneralQuestions,
   );
-  const [customQuestions, setCustomQuestions] = useState<Question[]>(() =>
-    defaultCustomQuestions(initialProductName || "Your product"),
+  const [aiQuestions, setAiQuestions] = useState<Question[]>(initialState.aiQuestions);
+  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>(initialState.aiQuestionStatus);
+  const [aiQuestionError, setAiQuestionError] = useState(initialState.aiQuestionError);
+  const [aiQuestionNotice, setAiQuestionNotice] = useState(initialState.aiQuestionNotice);
+  const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(
+    initialState.aiQuestionSourceKey,
   );
-  const [hasGeneratedGeneralQuestions, setHasGeneratedGeneralQuestions] = useState(false);
-  const [aiQuestions, setAiQuestions] = useState<Question[]>([]);
-  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>("idle");
-  const [aiQuestionError, setAiQuestionError] = useState("");
-  const [aiQuestionNotice, setAiQuestionNotice] = useState("");
-  const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(null);
 
   useEffect(() => {
     setGeneralQuestions((current) =>
@@ -205,6 +320,86 @@ export function SubmitFlowPage() {
       setAiQuestionNotice("");
     }
   }, [aiQuestionStatus, draft.questionMode, hasCurrentAiQuestions]);
+
+  const hasResumeData =
+    currentStep > 0 ||
+    flowPhase !== "wizard" ||
+    Boolean(submissionId) ||
+    Boolean(email.trim()) ||
+    Boolean(draft.productName.trim()) ||
+    Boolean(draft.description.trim()) ||
+    Boolean(draft.targetAudience.trim()) ||
+    Boolean(draft.instructions.trim()) ||
+    selectedProductTypes.length > 0 ||
+    orderedAccessLinks.length > 0 ||
+    draft.questionMode !== "general" ||
+    hasGeneratedGeneralQuestions ||
+    aiQuestions.length > 0;
+
+  useEffect(() => {
+    if (resumeVerifyEmail || flowPhase !== "verify-code") {
+      return;
+    }
+
+    const challenge = getStoredOtpChallenge();
+    const nextSubmissionId = submissionId ?? challenge?.submissionId ?? null;
+    const nextEmail = email.trim() || challenge?.email || "";
+
+    if (!challenge?.submissionId || !challenge.email || !nextSubmissionId || !nextEmail) {
+      setFlowPhase("email");
+      return;
+    }
+
+    navigate(
+      "/verify?email=" + encodeURIComponent(nextEmail) + "&submissionId=" + encodeURIComponent(nextSubmissionId),
+      { replace: true },
+    );
+  }, [email, flowPhase, navigate, resumeVerifyEmail, submissionId]);
+
+  useEffect(() => {
+    if (currentUser && currentStep === steps.length && submissionId) {
+      clearSubmitFlowResume();
+      return;
+    }
+
+    if (!hasResumeData) {
+      clearSubmitFlowResume();
+      return;
+    }
+
+    saveSubmitFlowResume({
+      phase: currentStep < steps.length ? "wizard" : flowPhase,
+      currentStep,
+      draft,
+      generalQuestions,
+      customQuestions,
+      aiQuestions,
+      hasGeneratedGeneralQuestions,
+      aiQuestionStatus: aiQuestionStatus === "loading" ? "idle" : aiQuestionStatus,
+      aiQuestionError,
+      aiQuestionNotice,
+      aiQuestionSourceKey,
+      submissionId,
+      email,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    aiQuestionError,
+    aiQuestionNotice,
+    aiQuestionSourceKey,
+    aiQuestionStatus,
+    aiQuestions,
+    currentStep,
+    currentUser,
+    customQuestions,
+    draft,
+    email,
+    flowPhase,
+    generalQuestions,
+    hasGeneratedGeneralQuestions,
+    hasResumeData,
+    submissionId,
+  ]);
 
   const refreshQuestions = () => {
     setError("");
@@ -339,13 +534,23 @@ export function SubmitFlowPage() {
     setPendingScrollQuestionId(null);
     setAiQuestionError("");
     setAiQuestionNotice("");
+    setFlowPhase("wizard");
     setDraft((current) => ({ ...current, questionMode: mode }));
   };
 
   const jumpToStep = (step: number) => {
     setError("");
     setPendingScrollQuestionId(null);
+    setFlowPhase("wizard");
     setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goBack = () => {
+    setError("");
+    setPendingScrollQuestionId(null);
+    setFlowPhase("wizard");
+    setCurrentStep((step) => Math.max(0, step - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -457,6 +662,7 @@ export function SubmitFlowPage() {
       try {
         const createdId = await createSubmission(draft, displayedQuestions);
         setSubmissionId(createdId);
+        setFlowPhase("email");
         setCurrentStep(steps.length);
       } catch (submissionError) {
         setError(
@@ -470,21 +676,27 @@ export function SubmitFlowPage() {
       return;
     }
 
+    setFlowPhase("wizard");
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   };
 
   const sendOtp = async () => {
-    if (!email.trim() || !submissionId) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail || !submissionId) {
       setError("Add an email so we can send the one-time code.");
       return;
     }
 
+    setError("");
+    setEmail(normalizedEmail);
     setIsSendingCode(true);
 
     try {
-      await Promise.all([requestOtp(email.trim(), submissionId), wait(5000)]);
+      await Promise.all([requestOtp(normalizedEmail, submissionId), wait(5000)]);
+      setFlowPhase("verify-code");
       navigate(
-        "/verify?email=" + encodeURIComponent(email.trim()) + "&submissionId=" + encodeURIComponent(submissionId),
+        "/verify?email=" + encodeURIComponent(normalizedEmail) + "&submissionId=" + encodeURIComponent(submissionId),
       );
     } catch (otpError) {
       setError(
@@ -952,7 +1164,7 @@ export function SubmitFlowPage() {
                   <button
                     type="button"
                     className="button button--secondary"
-                    onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
+                    onClick={goBack}
                     disabled={currentStep === 0 || isSubmitting}
                   >
                     Back
@@ -984,6 +1196,7 @@ export function SubmitFlowPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
+                    autoComplete="email"
                   />
                 </label>
                 <button
@@ -1020,16 +1233,4 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

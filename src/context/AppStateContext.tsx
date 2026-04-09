@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   ReactNode,
   useCallback,
@@ -12,6 +12,7 @@ import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { getPrimaryAccessLink, normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "../lib/format";
 import {
   clearPendingSubmission,
+  clearSubmitFlowResume,
   clearStoredOtpChallenge,
   createPendingSubmissionId,
   getPendingSubmission,
@@ -1194,6 +1195,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         let createdSubmissionId: string | null = null;
 
         if (challenge.submissionId) {
+          clearSubmitFlowResume();
           const pendingSubmission = getPendingSubmission(challenge.submissionId);
 
           if (pendingSubmission) {
@@ -1608,18 +1610,4 @@ export function useAppState() {
 
   return context;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

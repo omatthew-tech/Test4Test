@@ -4,16 +4,22 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
-import { wait } from "../lib/timing";
+import { getStoredOtpChallenge, getSubmitFlowResume, saveSubmitFlowResume } from "../lib/pendingSubmission";
 
 export function VerifyPage() {
   const [searchParams] = useSearchParams();
+  const storedChallenge = getStoredOtpChallenge();
+  const storedResume = getSubmitFlowResume();
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const email = searchParams.get("email") ?? "";
-  const submissionId = searchParams.get("submissionId") ?? undefined;
+  const email = searchParams.get("email") ?? storedChallenge?.email ?? storedResume?.email ?? "";
+  const submissionId =
+    searchParams.get("submissionId") ??
+    storedChallenge?.submissionId ??
+    storedResume?.submissionId ??
+    undefined;
   const navigate = useNavigate();
   const { currentUser, requestOtp, verifyOtp } = useAppState();
 
@@ -22,6 +28,20 @@ export function VerifyPage() {
       navigate(currentUser.banStatus === "banned" ? "/banned" : "/earn", { replace: true });
     }
   }, [currentUser, navigate]);
+
+  useEffect(() => {
+    if (!storedResume || !submissionId || !email) {
+      return;
+    }
+
+    saveSubmitFlowResume({
+      ...storedResume,
+      phase: "verify-code",
+      submissionId,
+      email,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [email, storedResume, submissionId]);
 
   const resend = async () => {
     if (!email) {
@@ -54,6 +74,24 @@ export function VerifyPage() {
     }
   };
 
+  const handleChangeEmail = () => {
+    if (storedResume) {
+      saveSubmitFlowResume({
+        ...storedResume,
+        phase: "email",
+        submissionId: submissionId ?? null,
+        email,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    navigate(
+      `/submit?phase=verify-email&email=${encodeURIComponent(email)}${
+        submissionId ? `&submissionId=${encodeURIComponent(submissionId)}` : ""
+      }`,
+    );
+  };
+
   return (
     <AppShell eyebrowLabel={null}>
       <VerificationFlowShell title="Verify your email" cardClassName="verify-panel">
@@ -61,13 +99,7 @@ export function VerifyPage() {
           type="button"
           className="button button--ghost verify-back-button"
           disabled={isSendingCode || isVerifying}
-          onClick={() =>
-            navigate(
-              `/submit?phase=verify-email&email=${encodeURIComponent(email)}${
-                submissionId ? `&submissionId=${encodeURIComponent(submissionId)}` : ""
-              }`,
-            )
-          }
+          onClick={handleChangeEmail}
         >
           <ArrowLeft size={16} />
           Change Email
@@ -86,6 +118,7 @@ export function VerifyPage() {
               onChange={(event) => setCode(event.target.value)}
               placeholder="123456"
               inputMode="numeric"
+              autoComplete="one-time-code"
             />
           </div>
         </label>
@@ -117,3 +150,5 @@ export function VerifyPage() {
     </AppShell>
   );
 }
+
+
