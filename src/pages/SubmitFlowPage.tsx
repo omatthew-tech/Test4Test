@@ -647,6 +647,9 @@ export function SubmitFlowPage() {
     return "";
   };
 
+  const isContinueDisabled =
+    isSubmitting || (currentStep === 3 && draft.questionMode === "ai" && !hasCurrentAiQuestions);
+
   const goNext = async () => {
     const nextError = validateCurrentStep();
     if (nextError) {
@@ -1173,7 +1176,7 @@ export function SubmitFlowPage() {
                     type="button"
                     className="button button--primary"
                     onClick={() => void goNext()}
-                    disabled={isSubmitting || (draft.questionMode === "ai" && !hasCurrentAiQuestions)}
+                    disabled={isContinueDisabled}
                   >
                     {currentStep === 4 ? "Submit my app" : "Continue"}
                     <ArrowRight size={16} />
@@ -1233,4 +1236,5 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
 

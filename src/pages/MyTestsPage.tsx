@@ -232,7 +232,7 @@ export function MyTestsPage() {
                         className="button button--secondary"
                         onClick={() => openEditTest(submission)}
                       >
-                        Edit test
+                        Edit app
                       </button>
                       <Link to={`/my-tests/${submission.id}`} className="button button--primary">
                         View results
@@ -253,12 +253,12 @@ export function MyTestsPage() {
             className="results-modal results-modal--edit-test"
             role="dialog"
             aria-modal="true"
-            aria-label="Edit test"
+            aria-label="Edit app"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="results-modal__header">
               <div>
-                <h2>Edit test</h2>
+                <h2>Edit app</h2>
               </div>
               <button
                 type="button"
@@ -380,4 +380,5 @@ export function MyTestsPage() {
     </AppShell>
   );
 }
+
 
