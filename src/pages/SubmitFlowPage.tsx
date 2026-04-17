@@ -965,11 +965,9 @@ export function SubmitFlowPage() {
 
                       {isRecordingOnlyMode ? (
                         <>
-                          <div className="callout callout--soft recording-setup-callout">
-                            <p>
-                              Testers will record their screen + voice while following your instructions.
-                            </p>
-                          </div>
+                          <p className="recording-setup-copy">
+                            This is a traditional unmoderated usability test where testers will record their screen and voice while using your app. Please ensure tester instruction are simple and easy to follow.
+                          </p>
                           <div className="question-list question-list--studio">
                             <div className="field recording-preview-field">
                               <div className="recording-preview-field__label">
@@ -1309,6 +1307,7 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
 
 
 

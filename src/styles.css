@@ -6741,6 +6741,12 @@ body {
   line-height: 1.55;
 }
 
+.recording-setup-copy {
+  margin: 0;
+  color: var(--color-ink-700);
+  line-height: 1.6;
+}
+
 .recording-setup-callout,
 .recording-test-callout,
 .recording-phase-card,
@@ -6922,6 +6928,7 @@ body {
     width: 100%;
   }
 }
+
 
 
 
