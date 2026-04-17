@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -31,6 +31,7 @@ import {
   getSubmissionResponsesForSubmissionVersion,
   getSubmissionVersions,
 } from "../lib/selectors";
+import { requestResponseRecordingUrl } from "../lib/recordings";
 import { requireSupabase } from "../lib/supabase";
 import { PaymentMethods, Question, QuestionMode } from "../types";
 
@@ -102,6 +103,18 @@ async function copyTextToClipboard(value: string) {
   }
 }
 
+function formatRecordingSize(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+
+  return `${bytes} B`;
+}
+
 export function SubmissionDetailPage() {
   const { submissionId = "" } = useParams();
   const {
@@ -144,6 +157,8 @@ export function SubmissionDetailPage() {
   const [tipProfileResponseId, setTipProfileResponseId] = useState<string | null>(null);
   const [tipError, setTipError] = useState("");
   const [copiedTipMethod, setCopiedTipMethod] = useState<TipMethodKey | null>(null);
+  const [recordingAction, setRecordingAction] = useState<"watch" | "download" | null>(null);
+  const [recordingActionError, setRecordingActionError] = useState("");
   const selectedResponseIdRef = useRef<string | null>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
 
@@ -284,6 +299,12 @@ export function SubmissionDetailPage() {
   const selectedRating = selectedResponse
     ? getResponseRating(state, selectedResponse.id, currentUser?.id ?? null)
     : null;
+  const selectedRecording = selectedResponse?.recording ?? null;
+  const recordingIsExpired =
+    !selectedRecording ||
+    Boolean(selectedRecording.deletedAt) ||
+    new Date(selectedRecording.expiresAt).getTime() <= Date.now();
+  const showRecordingPanel = submission?.requiresRecording === true || Boolean(selectedRecording);
 
   const handleCreateVersion = async () => {
     if (!submission) {
@@ -351,6 +372,8 @@ export function SubmissionDetailPage() {
     setTipProfileResponseId(null);
     setTipError("");
     setCopiedTipMethod(null);
+    setRecordingAction(null);
+    setRecordingActionError("");
 
     if (copyResetTimeoutRef.current !== null) {
       window.clearTimeout(copyResetTimeoutRef.current);
@@ -474,6 +497,42 @@ export function SubmissionDetailPage() {
     }, 1800);
   };
 
+  const handleRecordingAccess = async (mode: "watch" | "download") => {
+    if (!selectedResponse || !selectedRecording || recordingIsExpired) {
+      return;
+    }
+
+    const pendingWindow = typeof window !== "undefined"
+      ? window.open("", "_blank", "noopener,noreferrer")
+      : null;
+
+    setRecordingAction(mode);
+    setRecordingActionError("");
+
+    try {
+      const recordingUrl = await requestResponseRecordingUrl(
+        selectedResponse.id,
+        mode === "download",
+      );
+
+      if (pendingWindow && !pendingWindow.closed) {
+        pendingWindow.location.href = recordingUrl.url;
+      } else {
+        window.open(recordingUrl.url, "_blank", "noopener,noreferrer");
+      }
+    } catch (error) {
+      if (pendingWindow && !pendingWindow.closed) {
+        pendingWindow.close();
+      }
+
+      setRecordingActionError(
+        error instanceof Error ? error.message : "The recording could not be opened right now.",
+      );
+    } finally {
+      setRecordingAction(null);
+    }
+  };
+
   const refreshPreset = (mode: QuestionMode) => {
     if (!submission) {
       return;
@@ -494,6 +553,7 @@ export function SubmissionDetailPage() {
           targetAudience: submission.targetAudience,
           instructions: submission.instructions,
           accessLinks: submission.accessLinks,
+          requiresRecording: submission.requiresRecording,
           questionMode: mode,
         }),
       );
@@ -879,8 +939,58 @@ export function SubmissionDetailPage() {
                   )}
                 </div>
               ) : null}
+              {showRecordingPanel ? (
+                <div className="results-recording-panel">
+                  <div className="results-recording-panel__copy">
+                    <span className="test-session__label">Screen recording</span>
+                    {selectedRecording ? (
+                      <>
+                        <strong>{recordingIsExpired ? "Expired" : `Available until ${formatDateTime(selectedRecording.expiresAt)}`}</strong>
+                        <p>
+                          {recordingIsExpired
+                            ? "This recording has already been deleted or passed its 7-day retention window."
+                            : `${selectedRecording.fileName} • ${formatRecordingSize(selectedRecording.fileSizeBytes)}`}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <strong>No recording attached</strong>
+                        <p>This response does not have an available screen recording.</p>
+                      </>
+                    )}
+                  </div>
+                  {selectedRecording && !recordingIsExpired ? (
+                    <div className="results-recording-panel__actions">
+                      <button
+                        type="button"
+                        className="button button--secondary"
+                        onClick={() => { void handleRecordingAccess("watch"); }}
+                        disabled={recordingAction !== null}
+                      >
+                        {recordingAction === "watch" ? <span className="button__spinner" aria-hidden="true" /> : null}
+                        Watch recording
+                      </button>
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        onClick={() => { void handleRecordingAccess("download"); }}
+                        disabled={recordingAction !== null}
+                      >
+                        {recordingAction === "download" ? <span className="button__spinner" aria-hidden="true" /> : null}
+                        Download recording
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
-              <div className="answer-list">
+              {recordingActionError ? (
+                <div className="callout callout--warning">
+                  <span>{recordingActionError}</span>
+                </div>
+              ) : null}
+
+              <div className="answer-list"> 
                 {selectedResponse.answers.map((answer) => (
                   <article key={answer.questionId} className="answer-card">
                     <strong>{answer.questionTitle}</strong>
@@ -1181,6 +1291,16 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

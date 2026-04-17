@@ -38,6 +38,7 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
     targetAudience: submission.targetAudience,
     instructions: submission.instructions,
     accessLinks: { ...submission.accessLinks },
+    requiresRecording: submission.requiresRecording,
     questionMode: submission.questionMode,
   };
 }
@@ -361,6 +362,19 @@ export function MyTestsPage() {
                     placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
                   />
                 </label>
+                <div className="field field--checkbox field--recording-toggle">
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={editDraft.requiresRecording}
+                      onChange={(event) => updateEditDraft({ requiresRecording: event.target.checked })}
+                    />
+                    <span>Require testers to record their screen and voice</span>
+                  </label>
+                  <small>
+                    Recording uploads stay available for 7 days, then Test4Test deletes them automatically.
+                  </small>
+                </div>
               </div>
             </div>
 
@@ -380,5 +394,6 @@ export function MyTestsPage() {
     </AppShell>
   );
 }
+
 
 

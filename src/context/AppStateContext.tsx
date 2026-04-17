@@ -20,10 +20,10 @@ import {
   savePendingSubmission,
   storeOtpChallenge,
 } from "../lib/pendingSubmission";
-import { estimateMinutes } from "../lib/questions";
+import { estimateSubmissionMinutes } from "../lib/questions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { wait } from "../lib/timing";
-import { getCurrentUser } from "../lib/selectors";
+import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
 import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
 import {
   AppState,
@@ -39,6 +39,7 @@ import {
   SubmissionVersion,
   TestAnswer,
   TestResponse,
+  ResponseRecording,
   User,
 } from "../types";
 
@@ -66,6 +67,7 @@ interface SubmissionRow {
   access_links?: Submission["accessLinks"] | null;
   access_url: string;
   access_method: string;
+  requires_recording?: boolean | null;
   status: Submission["status"];
   question_mode: Submission["questionMode"];
   is_open_for_more_tests: boolean;
@@ -109,6 +111,14 @@ interface TestResponseRow {
   submitted_at: string;
   duration_seconds: number;
   answers: TestAnswer[];
+  recording_bucket?: string | null;
+  recording_path?: string | null;
+  recording_file_name?: string | null;
+  recording_mime_type?: string | null;
+  recording_file_size_bytes?: number | null;
+  recording_uploaded_at?: string | null;
+  recording_expires_at?: string | null;
+  recording_deleted_at?: string | null;
   internal_flags: string[];
 }
 
@@ -157,6 +167,7 @@ interface AppStateContextValue {
     submissionId: string,
     answers: TestAnswer[],
     durationSeconds: number,
+    recording?: ResponseRecording | null,
   ) => Promise<{ ok: boolean; message: string }>;
   reviseTestResponse: (
     responseId: string,
@@ -281,6 +292,31 @@ function normalizeQuestions(value: unknown) {
   });
 }
 
+function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
+  if (
+    !row.recording_bucket ||
+    !row.recording_path ||
+    !row.recording_file_name ||
+    !row.recording_mime_type ||
+    typeof row.recording_file_size_bytes !== "number" ||
+    !row.recording_uploaded_at ||
+    !row.recording_expires_at
+  ) {
+    return null;
+  }
+
+  return {
+    bucket: row.recording_bucket,
+    path: row.recording_path,
+    fileName: row.recording_file_name,
+    mimeType: row.recording_mime_type,
+    fileSizeBytes: row.recording_file_size_bytes,
+    uploadedAt: row.recording_uploaded_at,
+    expiresAt: row.recording_expires_at,
+    deletedAt: row.recording_deleted_at,
+  };
+}
+
 function mapSubmission(row: SubmissionRow): Submission {
   const accessLinks = normalizeAccessLinks(
     row.access_links && typeof row.access_links === "object"
@@ -306,6 +342,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
     accessLinks,
+    requiresRecording: row.requires_recording === true,
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
@@ -359,6 +396,7 @@ function mapTestResponse(row: TestResponseRow): TestResponse {
     submittedAt: row.submitted_at,
     durationSeconds: row.duration_seconds,
     answers: Array.isArray(row.answers) ? row.answers : [],
+    recording: mapResponseRecording(row),
     internalFlags: Array.isArray(row.internal_flags) ? row.internal_flags : [],
   };
 }
@@ -430,7 +468,7 @@ async function ensureAuthenticatedSession(
 }
 
 const latestSubmissionSchemaMessage =
-  "Your Supabase database is missing the latest submissions, questionnaires, or versioning schema. Run the latest Supabase migrations before editing submissions, questions, or versions.";
+  "Your Supabase database is missing the latest submissions, questionnaires, recording, or versioning schema. Run the latest Supabase migrations before editing submissions, questions, recordings, or versions.";
 const latestProfilePaymentSchemaMessage =
   "Your Supabase database is missing the latest payment methods schema. Run the 20260405 profile payment methods migration before saving payout details.";
 const PAYMENT_METHOD_MAX_LENGTH = 120;
@@ -515,17 +553,23 @@ function isMissingSubmissionSchemaError(message: string) {
   return (
     normalized.includes('column "access_links" of relation "submissions" does not exist') ||
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
+    normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
     normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
+    normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
+    normalized.includes('column "recording_path" of relation "test_responses" does not exist') ||
     normalized.includes('relation "public.submission_versions" does not exist') ||
-    normalized.includes("submission_versions") ||
-    normalized.includes("create_submission_with_questions") ||
-    normalized.includes("create_submission_version") ||
-    normalized.includes("delete_submission_version") ||
-    normalized.includes("update_question_set") ||
-    normalized.includes("submit_test_response") ||
-    normalized.includes("p_product_types") ||
-    normalized.includes("p_access_links") ||
-    normalized.includes("p_question_set_version_id")
+    normalized.includes('submission_versions') ||
+    normalized.includes('create_submission_with_questions') ||
+    normalized.includes('create_submission_version') ||
+    normalized.includes('delete_submission_version') ||
+    normalized.includes('update_question_set') ||
+    normalized.includes('submit_test_response') ||
+    normalized.includes('p_product_types') ||
+    normalized.includes('p_access_links') ||
+    normalized.includes('p_requires_recording') ||
+    normalized.includes('p_recording_bucket') ||
+    normalized.includes('p_recording_path') ||
+    normalized.includes('p_question_set_version_id')
   );
 }
 
@@ -786,9 +830,10 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
     p_target_audience: draft.targetAudience,
     p_instructions: draft.instructions,
     p_access_links: accessLinks,
+    p_requires_recording: draft.requiresRecording,
     p_question_mode: draft.questionMode,
     p_questions: questions,
-    p_estimated_minutes: estimateMinutes(questions),
+    p_estimated_minutes: estimateSubmissionMinutes(questions, draft.requiresRecording),
   });
 
   if (error) {
@@ -806,7 +851,11 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   return data;
 }
 
-async function persistSubmissionDetails(submissionId: string, draft: SubmissionDraft) {
+async function persistSubmissionDetails(
+  submissionId: string,
+  draft: SubmissionDraft,
+  estimatedMinutes: number,
+) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before updating your app.",
   );
@@ -844,6 +893,8 @@ async function persistSubmissionDetails(submissionId: string, draft: SubmissionD
       instructions: draft.instructions,
       access_url: primaryAccessLink.url,
       access_links: accessLinks,
+      requires_recording: draft.requiresRecording,
+      estimated_minutes: estimatedMinutes,
     })
     .eq("id", submissionId)
     .select("id")
@@ -1131,6 +1182,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         });
 
         if (error) {
+          if (isMissingSubmissionSchemaError(error.message)) {
+            return { ok: false, message: latestSubmissionSchemaMessage };
+          }
+
           return { ok: false, message: error.message };
         }
 
@@ -1232,7 +1287,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return createdId;
       },
       async updateSubmissionDetails(submissionId, draft) {
-        await persistSubmissionDetails(submissionId, draft);
+        const activeQuestionSet = getActiveQuestionSet(state, submissionId);
+        const estimatedMinutes = estimateSubmissionMinutes(
+          activeQuestionSet?.questions ?? [],
+          draft.requiresRecording,
+        );
+
+        await persistSubmissionDetails(submissionId, draft, estimatedMinutes);
         await refreshState();
       },
       async createSubmissionVersion(submissionId, title, description) {
@@ -1245,7 +1306,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return nextVersionId;
       },
-      async completeTest(submissionId, answers, durationSeconds) {
+      async completeTest(submissionId, answers, durationSeconds, recording) {
         if (!currentUser) {
           return { ok: false, message: "Verify your email before completing tests." };
         }
@@ -1255,9 +1316,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           p_submission_id: submissionId,
           p_answers: answers,
           p_duration_seconds: durationSeconds,
+          p_recording_bucket: recording?.bucket ?? null,
+          p_recording_path: recording?.path ?? null,
         });
 
         if (error) {
+          if (isMissingSubmissionSchemaError(error.message)) {
+            return { ok: false, message: latestSubmissionSchemaMessage };
+          }
+
           return { ok: false, message: error.message };
         }
 
@@ -1286,6 +1353,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         });
 
         if (error) {
+          if (isMissingSubmissionSchemaError(error.message)) {
+            return { ok: false, message: latestSubmissionSchemaMessage };
+          }
+
           return { ok: false, message: error.message };
         }
 
@@ -1357,12 +1428,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
       async updateQuestionSet(submissionId, questionSetVersionId, mode, questions) {
         const supabase = requireSupabase();
+        const submission = state.submissions.find((item) => item.id === submissionId);
         const { error } = await supabase.rpc("update_question_set", {
           p_submission_id: submissionId,
           p_question_set_version_id: questionSetVersionId,
           p_mode: mode,
           p_questions: questions,
-          p_estimated_minutes: estimateMinutes(questions),
+          p_estimated_minutes: estimateSubmissionMinutes(
+            questions,
+            submission?.requiresRecording === true,
+          ),
         });
 
         if (error) {
@@ -1400,6 +1475,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         );
 
         if (error) {
+          if (isMissingSubmissionSchemaError(error.message)) {
+            return { ok: false, message: latestSubmissionSchemaMessage };
+          }
+
           return { ok: false, message: error.message };
         }
 
@@ -1610,4 +1689,20 @@ export function useAppState() {
 
   return context;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

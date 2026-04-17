@@ -41,6 +41,10 @@ interface TestBackRateTransitionRow {
   new_test_back_rate_percent: number | null;
 }
 
+interface SentReminderDeliveryRow {
+  created_at: string;
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export const reminderTemplateKeys = [
@@ -258,6 +262,72 @@ async function loadFinalReminderRateTransition(
   };
 }
 
+async function loadSentReminderDelivery(
+  admin: SupabaseClient,
+  reminderId: string,
+  responseId: string,
+  templateKey: string,
+) {
+  const { data, error } = await admin
+    .from("email_delivery_logs")
+    .select("created_at")
+    .eq("reminder_sequence_id", reminderId)
+    .eq("related_response_id", responseId)
+    .eq("template_key", templateKey)
+    .eq("status", "sent")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data as SentReminderDeliveryRow | null) ?? null;
+}
+
+async function advanceReminderSequenceAfterSend(
+  admin: SupabaseClient,
+  reminder: ReminderSequenceRow,
+  sentAt: string,
+) {
+  const nextEmailsSent = reminder.emails_sent + 1;
+  const nextSendAt = new Date(new Date(sentAt).getTime() + DAY_IN_MS).toISOString();
+  const isFinalReminder = nextEmailsSent >= 3;
+  const { error } = await admin
+    .from("test_back_reminder_sequences")
+    .update(
+      isFinalReminder
+        ? {
+            emails_sent: nextEmailsSent,
+            last_sent_at: sentAt,
+            next_send_at: null,
+            status: "resolved",
+            resolved_reason: "sequence_complete",
+            resolved_at: sentAt,
+            affects_test_back_rate: true,
+            updated_at: sentAt,
+          }
+        : {
+            emails_sent: nextEmailsSent,
+            last_sent_at: sentAt,
+            next_send_at: nextSendAt,
+            updated_at: sentAt,
+          },
+    )
+    .eq("id", reminder.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    outcome: "sent" as const,
+    stage: nextEmailsSent,
+    final: isFinalReminder,
+  };
+}
+
 async function resolveReminderSequence(
   admin: SupabaseClient,
   reminderId: string,
@@ -315,6 +385,23 @@ export async function processReminderSequence(
   if (testedBack) {
     await resolveReminderSequence(admin, reminder.id, "resolved", "tested_back");
     return { outcome: "resolved" as const, reason: "tested_back" as const };
+  }
+
+  const sentDelivery = await loadSentReminderDelivery(
+    admin,
+    reminder.id,
+    reminder.latest_triggering_response_id,
+    templateKey,
+  );
+
+  if (sentDelivery) {
+    const replayResult = await advanceReminderSequenceAfterSend(admin, reminder, sentDelivery.created_at);
+
+    if (reminder.emails_sent === 0) {
+      await markResponseOwnerNotified(admin, reminder.latest_triggering_response_id, sentDelivery.created_at);
+    }
+
+    return replayResult;
   }
 
   const targetSubmission = await findTargetSubmission(admin, reminder.tester_user_id, reminder.owner_user_id);
@@ -408,43 +495,14 @@ export async function processReminderSequence(
   }
 
   const sentAt = new Date().toISOString();
-  const nextEmailsSent = reminder.emails_sent + 1;
-  const nextSendAt = new Date(Date.now() + DAY_IN_MS).toISOString();
-  const isFinalReminder = nextEmailsSent >= 3;
-  const { error: updateError } = await admin
-    .from("test_back_reminder_sequences")
-    .update(
-      isFinalReminder
-        ? {
-            emails_sent: nextEmailsSent,
-            last_sent_at: sentAt,
-            next_send_at: null,
-            status: "resolved",
-            resolved_reason: "sequence_complete",
-            resolved_at: sentAt,
-            affects_test_back_rate: true,
-            updated_at: sentAt,
-          }
-        : {
-            emails_sent: nextEmailsSent,
-            last_sent_at: sentAt,
-            next_send_at: nextSendAt,
-            updated_at: sentAt,
-          },
-    )
-    .eq("id", reminder.id);
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
+  const updateResult = await advanceReminderSequenceAfterSend(admin, reminder, sentAt);
 
   if (reminder.emails_sent === 0) {
     await markResponseOwnerNotified(admin, reminder.latest_triggering_response_id, sentAt);
   }
 
-  return {
-    outcome: "sent" as const,
-    stage: nextEmailsSent,
-    final: isFinalReminder,
-  };
+  return updateResult;
 }
+
+
+

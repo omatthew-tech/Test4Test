@@ -1,0 +1,26 @@
+const fs = require('fs');
+const path = 'src/pages/SubmitFlowPage.tsx';
+let text = fs.readFileSync(path, 'utf8');
+
+function replaceBetween(startMarker, endMarker, replacement, label) {
+  const start = text.indexOf(startMarker);
+  if (start === -1) throw new Error(`Missing start marker for ${label}`);
+  const end = text.indexOf(endMarker, start);
+  if (end === -1) throw new Error(`Missing end marker for ${label}`);
+  text = text.slice(0, start) + replacement + text.slice(end);
+}
+
+const step4Block = String.raw`                {currentStep === 3 ? (
+                  <div className="form-stack form-stack--question-studio">
+                    <div className="section-heading">
+                      <span className="eyebrow">Step 4</span>
+                      <h2>Set up your questions</h2>
+                    </div>
+                    <div className="question-studio">
+                      <div className="question-studio__header">
+                        <div className="question-mode-strip question-mode-strip--recording">
+                          <button
+                            type="button"
+                            className={
+                              \
+`;

@@ -70,6 +70,17 @@ export interface QuestionSetVersion {
   questions: Question[];
 }
 
+export interface ResponseRecording {
+  bucket: string;
+  path: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  uploadedAt: string;
+  expiresAt: string;
+  deletedAt?: string | null;
+}
+
 export interface Submission {
   id: string;
   userId: string | null;
@@ -79,6 +90,7 @@ export interface Submission {
   targetAudience: string;
   instructions: string;
   accessLinks: AccessLinks;
+  requiresRecording: boolean;
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;
@@ -139,6 +151,7 @@ export interface TestResponse {
   submittedAt: string;
   durationSeconds: number;
   answers: TestAnswer[];
+  recording: ResponseRecording | null;
   internalFlags: string[];
 }
 
@@ -210,5 +223,8 @@ export interface SubmissionDraft {
   targetAudience: string;
   instructions: string;
   accessLinks: AccessLinks;
+  requiresRecording: boolean;
   questionMode: QuestionMode;
 }
+
+

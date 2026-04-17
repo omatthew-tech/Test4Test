@@ -94,6 +94,7 @@ function createDefaultDraft(productName: string): SubmissionDraft {
     targetAudience: "",
     instructions: "",
     accessLinks: {},
+    requiresRecording: false,
     questionMode: "general",
   };
 }
@@ -202,6 +203,7 @@ export function SubmitFlowPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
+
   const [draft, setDraft] = useState<SubmissionDraft>(initialState.draft);
   const [generalQuestions, setGeneralQuestions] = useState<Question[]>(initialState.generalQuestions);
   const [customQuestions, setCustomQuestions] = useState<Question[]>(initialState.customQuestions);
@@ -216,11 +218,13 @@ export function SubmitFlowPage() {
     initialState.aiQuestionSourceKey,
   );
 
+
   useEffect(() => {
     setGeneralQuestions((current) =>
       syncGeneralQuestionsProductName(current, draft.productName || "Your product"),
     );
   }, [draft.productName]);
+
 
   useEffect(() => {
     if (!pendingScrollQuestionId) {
@@ -260,7 +264,17 @@ export function SubmitFlowPage() {
   const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
   const hasCurrentAiQuestions =
     aiQuestionSourceKey === aiQuestionDraftKey && aiQuestions.length > 0;
+  const isRecordingOnlyMode = draft.requiresRecording;
+  const questionSetupLabel = isRecordingOnlyMode
+    ? "Screen + voice recording"
+    : draft.questionMode === "ai"
+      ? "AI-generated questions"
+      : "Custom questions";
   const editableQuestions = useMemo(() => {
+    if (isRecordingOnlyMode) {
+      return [];
+    }
+
     if (draft.questionMode === "general") {
       return generalQuestions;
     }
@@ -274,14 +288,20 @@ export function SubmitFlowPage() {
     }
 
     return [];
-  }, [aiQuestions, customQuestions, draft.questionMode, generalQuestions, hasCurrentAiQuestions]);
+  }, [aiQuestions, customQuestions, draft.questionMode, generalQuestions, hasCurrentAiQuestions, isRecordingOnlyMode]);
   const isEditableQuestionMode =
-    draft.questionMode === "general" ||
-    draft.questionMode === "custom" ||
-    (draft.questionMode === "ai" && hasCurrentAiQuestions);
+    !isRecordingOnlyMode && (
+      draft.questionMode === "general" ||
+      draft.questionMode === "custom" ||
+      (draft.questionMode === "ai" && hasCurrentAiQuestions)
+    );
   const hasReachedEditableQuestionLimit = editableQuestions.length >= 10;
 
   const displayedQuestions = useMemo(() => {
+    if (isRecordingOnlyMode) {
+      return [];
+    }
+
     if (draft.questionMode === "general") {
       return generalQuestions;
     }
@@ -297,6 +317,7 @@ export function SubmitFlowPage() {
     draft.questionMode,
     generalQuestions,
     hasCurrentAiQuestions,
+    isRecordingOnlyMode,
   ]);
   const ownedSubmissionCount = useMemo(
     () =>
@@ -309,6 +330,7 @@ export function SubmitFlowPage() {
     !currentUser || ownedSubmissionCount <= 1
       ? "Congrats on submitting your first app! You're helping other founders, like yourself, make better apps."
       : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
+
 
   useEffect(() => {
     if (draft.questionMode !== "ai") {
@@ -535,7 +557,16 @@ export function SubmitFlowPage() {
     setAiQuestionError("");
     setAiQuestionNotice("");
     setFlowPhase("wizard");
-    setDraft((current) => ({ ...current, questionMode: mode }));
+    setDraft((current) => ({ ...current, questionMode: mode, requiresRecording: false }));
+  };
+
+  const setRecordingMode = () => {
+    setError("");
+    setPendingScrollQuestionId(null);
+    setAiQuestionError("");
+    setAiQuestionNotice("");
+    setFlowPhase("wizard");
+    setDraft((current) => ({ ...current, requiresRecording: true }));
   };
 
   const jumpToStep = (step: number) => {
@@ -611,7 +642,7 @@ export function SubmitFlowPage() {
       }
     }
 
-    if (currentStep === 3 && draft.questionMode === "ai") {
+    if (currentStep === 3 && !isRecordingOnlyMode && draft.questionMode === "ai") {
       if (aiQuestionStatus === "loading") {
         return "Wait for AI questions to finish generating.";
       }
@@ -623,7 +654,7 @@ export function SubmitFlowPage() {
       }
     }
 
-    if (currentStep === 3 && isEditableQuestionMode) {
+    if (currentStep === 3 && !isRecordingOnlyMode && isEditableQuestionMode) {
       const minimumQuestionCount = draft.questionMode === "ai" ? 5 : 2;
 
       if (
@@ -648,7 +679,7 @@ export function SubmitFlowPage() {
   };
 
   const isContinueDisabled =
-    isSubmitting || (currentStep === 3 && draft.questionMode === "ai" && !hasCurrentAiQuestions);
+    isSubmitting || (currentStep === 3 && !isRecordingOnlyMode && draft.questionMode === "ai" && !hasCurrentAiQuestions);
 
   const goNext = async () => {
     const nextError = validateCurrentStep();
@@ -663,7 +694,7 @@ export function SubmitFlowPage() {
       setIsSubmitting(true);
 
       try {
-        const createdId = await createSubmission(draft, displayedQuestions);
+        const createdId = await createSubmission(draft, isRecordingOnlyMode ? [] : displayedQuestions);
         setSubmissionId(createdId);
         setFlowPhase("email");
         setCurrentStep(steps.length);
@@ -761,7 +792,7 @@ export function SubmitFlowPage() {
                     </div>
                     <div className="wizard-preview__item">
                       <small>Question setup</small>
-                      <strong>{questionModeLabel(draft.questionMode)}</strong>
+                      <strong>{questionSetupLabel}</strong>
                     </div>
                   </div>
                 </div>
@@ -883,24 +914,32 @@ export function SubmitFlowPage() {
                     <div className="section-heading">
                       <span className="eyebrow">Step 4</span>
                       <h2>Set up your questions</h2>
-
                     </div>
                     <div className="question-studio">
                       <div className="question-studio__header">
-                        <div className="question-mode-strip">
-                          {[
-                            { value: "general", title: "Custom questions" },
-                            { value: "ai", title: "AI-generated questions" },
-                          ].map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              className={`question-mode-button${draft.questionMode === option.value ? " question-mode-button--active" : ""}`}
-                              onClick={() => setMode(option.value as SubmissionDraft["questionMode"])}
-                            >
-                              <span>{option.title}</span>
-                            </button>
-                          ))}
+                        <div className="question-mode-strip question-mode-strip--recording">
+                          <button
+                            type="button"
+                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode !== "ai" ? " question-mode-button--active" : ""}`}
+                            onClick={() => setMode("general")}
+                          >
+                            <span>Custom questions</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode === "ai" ? " question-mode-button--active" : ""}`}
+                            onClick={() => setMode("ai")}
+                          >
+                            <span>AI-generated questions</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`question-mode-button question-mode-button--recording${isRecordingOnlyMode ? " question-mode-button--active" : ""}`}
+                            onClick={setRecordingMode}
+                            aria-pressed={isRecordingOnlyMode}
+                          >
+                            <span>Screen + voice recording</span>
+                          </button>
                         </div>
                       </div>
 
@@ -924,150 +963,177 @@ export function SubmitFlowPage() {
                         </div>
                       ) : null}
 
-
-                      {aiQuestionNotice ? <div className="callout callout--soft">{aiQuestionNotice}</div> : null}
-                      {aiQuestionError ? <div className="callout callout--warning">{aiQuestionError}</div> : null}
-
-                      {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (
-                        <div className="question-studio__empty">
-                          <h4>Generate 5 tailored questions</h4>
-                          <p>
-                            We&apos;ll use your app name, platforms, links, description, and tester instructions
-                            to draft a focused question set.
-                          </p>
-                          <button
-                            type="button"
-                            className="button button--primary"
-                            onClick={generateQuestionSet}
-                            disabled={aiQuestionStatus === "loading"}
-                          >
-                            {aiQuestionStatus === "loading" ? (
-                              <span className="button__spinner" aria-hidden="true" />
-                            ) : (
-                              <Sparkles size={16} />
-                            )}
-                            {aiQuestionStatus === "loading" ? "Generating..." : "Generate Questions"}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="question-list question-list--studio">
-                          {displayedQuestions.map((question, index) => (
-                            <article
-                              key={question.id}
-                              ref={(element) => {
-                                questionCardRefs.current[question.id] = element;
-                              }}
-                              className="question-card question-card--studio"
-                            >
-                              {isEditableQuestionMode ? (
-                                <div className="question-card__topbar">
-                                  <div className="question-card__meta question-card__meta--editor">
-                                    <button
-                                      type="button"
-                                      className="icon-button"
-                                      onClick={() => removeQuestion(index)}
-                                      aria-label="Remove question"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : null}
-                              <div className="question-card__body">
-                                {isEditableQuestionMode ? (
-                                  <div className="question-card__prompt-row">
-                                    <AutoResizeTextarea
-                                      className="question-card__prompt-input"
-                                      value={question.title}
-                                      onChange={(event) => updateQuestion(index, { title: event.target.value })}
-                                      placeholder="Type your question here"
-                                    />
-                                  </div>
-                                ) : (
-                                  <h4>{question.title}</h4>
-                                )}
-                                {question.type === "multiple" ? (
-                                  isEditableQuestionMode ? (
-                                    <div className="option-list option-list--editor">
-                                      {(question.options ?? []).map((option, optionIndex) => (
-                                        <div key={`${question.id}-${optionIndex}`} className="option-input-row">
-                                          <span className="option-input-row__icon" aria-hidden="true" />
-                                          <input
-                                            className="option-input-row__input"
-                                            value={option}
-                                            onChange={(event) => {
-                                              const nextOptions = [...(question.options ?? [])];
-                                              nextOptions[optionIndex] = event.target.value;
-                                              updateQuestion(index, { options: nextOptions });
-                                            }}
-                                            placeholder={`Option ${optionIndex + 1}`}
-                                          />
-                                          <button
-                                            type="button"
-                                            className="option-input-row__remove"
-                                            onClick={() => {
-                                              const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
-                                              updateQuestion(index, { options: nextOptions });
-                                            }}
-                                            aria-label={`Remove option ${optionIndex + 1}`}
-                                            disabled={(question.options?.length ?? 0) <= 2}
-                                          >
-                                            <X size={16} strokeWidth={2} aria-hidden />
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="option-grid">
-                                      {(question.options ?? []).map((option) => (
-                                        <span key={`${question.id}-${option}`} className="option-pill">
-                                          {option}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )
-                                ) : (
-                                  <div className="question-card__response-preview">
-                                    <span>{isEditableQuestionMode ? "Written answer" : "Open response"}</span>
-                                    <p>Testers will leave written feedback here.</p>
-                                  </div>
-                                )}
+                      {isRecordingOnlyMode ? (
+                        <>
+                          <div className="callout callout--soft recording-setup-callout">
+                            <p>
+                              Testers will record their screen + voice while following your instructions.
+                            </p>
+                          </div>
+                          <div className="question-list question-list--studio">
+                            <div className="field recording-preview-field">
+                              <div className="recording-preview-field__label">
+                                <span>Tester Instructions</span>
                               </div>
-                              {isEditableQuestionMode && question.type === "multiple" ? (
-                                <div className="question-card__custom-actions">
-                                  {(question.options?.length ?? 0) < 6 ? (
-                                    <button
-                                      type="button"
-                                      className="button button--ghost"
-                                      onClick={() =>
-                                        updateQuestion(index, {
-                                          options: [
-                                            ...(question.options ?? []),
-                                            `Option ${(question.options?.length ?? 0) + 1}`,
-                                          ],
-                                        })
-                                      }
-                                    >
-                                      <Plus size={16} />
-                                      Add option
-                                    </button>
+                              <textarea
+                                rows={4}
+                                className="recording-preview-field__textarea"
+                                value={draft.instructions}
+                                onChange={(event) =>
+                                  setDraft((current) => ({ ...current, instructions: event.target.value }))
+                                }
+                                placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
+                              />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {aiQuestionNotice ? <div className="callout callout--soft">{aiQuestionNotice}</div> : null}
+                          {aiQuestionError ? <div className="callout callout--warning">{aiQuestionError}</div> : null}
+
+                          {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (
+                            <div className="question-studio__empty">
+                              <h4>Generate 5 tailored questions</h4>
+                              <p>
+                                We&apos;ll use your app name, platforms, links, description, and tester instructions
+                                to draft a focused question set.
+                              </p>
+                              <button
+                                type="button"
+                                className="button button--primary"
+                                onClick={generateQuestionSet}
+                                disabled={aiQuestionStatus === "loading"}
+                              >
+                                {aiQuestionStatus === "loading" ? (
+                                  <span className="button__spinner" aria-hidden="true" />
+                                ) : (
+                                  <Sparkles size={16} />
+                                )}
+                                {aiQuestionStatus === "loading" ? "Generating..." : "Generate Questions"}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="question-list question-list--studio">
+                              {displayedQuestions.map((question, index) => (
+                                <article
+                                  key={question.id}
+                                  ref={(element) => {
+                                    questionCardRefs.current[question.id] = element;
+                                  }}
+                                  className="question-card question-card--studio"
+                                >
+                                  {isEditableQuestionMode ? (
+                                    <div className="question-card__topbar">
+                                      <div className="question-card__meta question-card__meta--editor">
+                                        <button
+                                          type="button"
+                                          className="icon-button"
+                                          onClick={() => removeQuestion(index)}
+                                          aria-label="Remove question"
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      </div>
+                                    </div>
                                   ) : null}
-                                  <button
-                                    type="button"
-                                    className="button button--secondary question-card__duplicate-button"
-                                    onClick={() => duplicateQuestion(index)}
-                                    disabled={hasReachedEditableQuestionLimit}
-                                  >
-                                    Duplicate
-                                  </button>
-                                </div>
-                              ) : null}
-                            </article>
-                          ))}
-                        </div>
+                                  <div className="question-card__body">
+                                    {isEditableQuestionMode ? (
+                                      <div className="question-card__prompt-row">
+                                        <AutoResizeTextarea
+                                          className="question-card__prompt-input"
+                                          value={question.title}
+                                          onChange={(event) => updateQuestion(index, { title: event.target.value })}
+                                          placeholder="Type your question here"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <h4>{question.title}</h4>
+                                    )}
+                                    {question.type === "multiple" ? (
+                                      isEditableQuestionMode ? (
+                                        <div className="option-list option-list--editor">
+                                          {(question.options ?? []).map((option, optionIndex) => (
+                                            <div key={`${question.id}-${optionIndex}`} className="option-input-row">
+                                              <span className="option-input-row__icon" aria-hidden="true" />
+                                              <input
+                                                className="option-input-row__input"
+                                                value={option}
+                                                onChange={(event) => {
+                                                  const nextOptions = [...(question.options ?? [])];
+                                                  nextOptions[optionIndex] = event.target.value;
+                                                  updateQuestion(index, { options: nextOptions });
+                                                }}
+                                                placeholder={`Option ${optionIndex + 1}`}
+                                              />
+                                              <button
+                                                type="button"
+                                                className="option-input-row__remove"
+                                                onClick={() => {
+                                                  const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
+                                                  updateQuestion(index, { options: nextOptions });
+                                                }}
+                                                aria-label={`Remove option ${optionIndex + 1}`}
+                                                disabled={(question.options?.length ?? 0) <= 2}
+                                              >
+                                                <X size={16} strokeWidth={2} aria-hidden />
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="option-grid">
+                                          {(question.options ?? []).map((option) => (
+                                            <span key={`${question.id}-${option}`} className="option-pill">
+                                              {option}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )
+                                    ) : (
+                                      <div className="question-card__response-preview">
+                                        <span>{isEditableQuestionMode ? "Written answer" : "Open response"}</span>
+                                        <p>Testers will leave written feedback here.</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {isEditableQuestionMode && question.type === "multiple" ? (
+                                    <div className="question-card__custom-actions">
+                                      {(question.options?.length ?? 0) < 6 ? (
+                                        <button
+                                          type="button"
+                                          className="button button--ghost"
+                                          onClick={() =>
+                                            updateQuestion(index, {
+                                              options: [
+                                                ...(question.options ?? []),
+                                                `Option ${(question.options?.length ?? 0) + 1}`,
+                                              ],
+                                            })
+                                          }
+                                        >
+                                          <Plus size={16} />
+                                          Add option
+                                        </button>
+                                      ) : null}
+                                      <button
+                                        type="button"
+                                        className="button button--secondary question-card__duplicate-button"
+                                        onClick={() => duplicateQuestion(index)}
+                                        disabled={hasReachedEditableQuestionLimit}
+                                      >
+                                        Duplicate
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                </article>
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
 
-                      {isEditableQuestionMode ? (
+                      {!isRecordingOnlyMode && isEditableQuestionMode ? (
                         <div className="question-studio__footer">
                           <div className="inline-actions inline-actions--compact">
                             <button
@@ -1120,10 +1186,10 @@ export function SubmitFlowPage() {
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Platforms</span>
                               {draft.productTypes.length > 0 ? (
-                        <strong>{productTypesLabel(draft.productTypes)}</strong>
-                      ) : (
-                        <strong>Select at least one platform</strong>
-                      )}
+                                <strong>{productTypesLabel(draft.productTypes)}</strong>
+                              ) : (
+                                <strong>Select at least one platform</strong>
+                              )}
                             </span>
                             <ArrowRight size={16} />
                           </button>
@@ -1141,8 +1207,15 @@ export function SubmitFlowPage() {
                           </button>
                           <button type="button" className="review-edit-row" onClick={() => jumpToStep(3)}>
                             <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Question type</span>
-                              <strong>{questionTypeLabel(draft.questionMode)}</strong>
+                              <span className="review-edit-row__label">Question setup</span>
+                              <strong>{questionSetupLabel}</strong>
+                            </span>
+                            <ArrowRight size={16} />
+                          </button>
+                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(3)}>
+                            <span className="review-edit-row__copy">
+                              <span className="review-edit-row__label">Recording</span>
+                              <strong>{isRecordingOnlyMode ? "Screen + voice recording" : "Questionnaire only"}</strong>
                             </span>
                             <ArrowRight size={16} />
                           </button>
@@ -1236,5 +1309,26 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

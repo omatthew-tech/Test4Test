@@ -8,11 +8,7 @@ import {
   renderEmailTemplate,
   sendEmail,
 } from "../_shared/email-system.ts";
-import {
-  loadPendingReminderForPair,
-  processReminderSequence,
-  reminderTemplateKeys,
-} from "../_shared/test-back-reminders.ts";
+import { loadPendingReminderForPair } from "../_shared/test-back-reminders.ts";
 
 interface NotificationRequest {
   responseId?: string;
@@ -37,6 +33,31 @@ interface ProfileRow {
   id: string;
   email: string;
   display_name: string;
+}
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+async function advanceReminderAfterNewFeedback(
+  admin: ReturnType<typeof createAdminClient>,
+  reminderId: string,
+  notifiedAt: string,
+) {
+  const nextSendAt = new Date(new Date(notifiedAt).getTime() + DAY_IN_MS).toISOString();
+  const { error } = await admin
+    .from("test_back_reminder_sequences")
+    .update({
+      emails_sent: 1,
+      last_sent_at: notifiedAt,
+      next_send_at: nextSendAt,
+      updated_at: notifiedAt,
+    })
+    .eq("id", reminderId)
+    .eq("status", "pending")
+    .eq("emails_sent", 0);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 Deno.serve(async (request) => {
@@ -132,22 +153,6 @@ Deno.serve(async (request) => {
     responseRecord.tester_user_id,
   );
 
-  if (reminder && reminder.status === "pending" && reminder.emails_sent === 0) {
-    try {
-      const reminderTemplates = await loadEmailTemplates(admin, [...reminderTemplateKeys]);
-      const reminderResult = await processReminderSequence(admin, env, reminder, reminderTemplates);
-
-      if (reminderResult.outcome === "sent") {
-        return json({ ok: true, message: "Notification sent." });
-      }
-    } catch (error) {
-      return json(
-        { error: error instanceof Error ? error.message : "Failed to send reminder notification." },
-        502,
-      );
-    }
-  }
-
   const templateMap = await loadEmailTemplates(admin, ["new_feedback"]);
   const template = templateMap.get("new_feedback");
 
@@ -212,6 +217,17 @@ Deno.serve(async (request) => {
 
   if (updateError) {
     return json({ error: updateError.message }, 500);
+  }
+
+  if (reminder && reminder.status === "pending" && reminder.emails_sent === 0) {
+    try {
+      await advanceReminderAfterNewFeedback(admin, reminder.id, notifiedAt);
+    } catch (error) {
+      return json(
+        { error: error instanceof Error ? error.message : "Failed to schedule reminder follow-up." },
+        500,
+      );
+    }
   }
 
   return json({ ok: true, message: "Notification sent." });

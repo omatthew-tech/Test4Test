@@ -233,10 +233,18 @@ function EarnRow({
             {productTypesBadges(submission.productTypes).map((badge) => (
               <span key={`${submission.id}-${badge}`} className="pill pill--accent">{badge}</span>
             ))}
+            {submission.requiresRecording ? (
+              <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
+            ) : null}
           </div>
           <div className="earn-row__head">
             <h3>{submission.productName}</h3>
             <p>{submission.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
+            {submission.requiresRecording ? (
+              <p className="earn-row__recording-note">
+                Screen + voice recording required. Record locally during the session, then upload the video after testing.
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="earn-row__aside">
@@ -268,3 +276,4 @@ function EarnRow({
     </Surface>
   );
 }
+

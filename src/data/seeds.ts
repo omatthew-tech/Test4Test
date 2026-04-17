@@ -76,6 +76,7 @@ const paletteQuestions = withIds(
     accessLinks: {
       website: "https://palettepilot.app",
     },
+    requiresRecording: false,
     questionMode: "ai",
   }),
   "palette",
@@ -95,6 +96,7 @@ const submissions: Submission[] = [
     accessLinks: {
       ios: "https://testflight.apple.com/join/sprouthabit",
     },
+    requiresRecording: false,
     status: "live",
     questionMode: "general",
     isOpenForMoreTests: true,
@@ -116,6 +118,7 @@ const submissions: Submission[] = [
     accessLinks: {
       website: "https://palettepilot.app",
     },
+    requiresRecording: false,
     status: "live",
     questionMode: "ai",
     isOpenForMoreTests: true,
@@ -137,6 +140,7 @@ const submissions: Submission[] = [
     accessLinks: {
       website: "https://pocketpantry.app",
     },
+    requiresRecording: false,
     status: "live",
     questionMode: "custom",
     isOpenForMoreTests: true,
@@ -159,6 +163,7 @@ const submissions: Submission[] = [
       ios: "https://apps.apple.com/app/trailmixer/id1234567890",
       android: "https://play.google.com/store/apps/details?id=app.trailmixer",
     },
+    requiresRecording: false,
     status: "live",
     questionMode: "general",
     isOpenForMoreTests: true,
@@ -280,6 +285,7 @@ const responses: TestResponse[] = [
     creditAwarded: true,
     submittedAt: "2026-03-25T13:20:00.000Z",
     durationSeconds: 372,
+    recording: null,
     internalFlags: [],
     answers: [
       answerMultiple(paletteQuestions[0], 2),
@@ -307,6 +313,7 @@ const responses: TestResponse[] = [
     creditAwarded: true,
     submittedAt: "2026-03-25T16:05:00.000Z",
     durationSeconds: 410,
+    recording: null,
     internalFlags: [],
     answers: [
       answerMultiple(pantryQuestions[0], 2),
@@ -334,6 +341,7 @@ const responses: TestResponse[] = [
     creditAwarded: false,
     submittedAt: "2026-03-25T18:10:00.000Z",
     durationSeconds: 94,
+    recording: null,
     internalFlags: ["Very short answers", "Likely rushed completion"],
     answers: [
       answerMultiple(trailQuestions[0], 1),
