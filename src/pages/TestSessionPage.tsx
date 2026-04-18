@@ -1074,10 +1074,14 @@ export function TestSessionPage() {
       !initialRecordingSessionRef.current.recording
     ) {
       hasHandledRecordingRecoveryRef.current = true;
-      setRecordingPhase("return_and_submit");
-      setNativeRecoveryUploadEnabled(true);
+      setRecordingPhase("preflight");
+      setNativeRecoveryUploadEnabled(false);
+      setScreenShareStatus("idle");
+      setNativeCaptureConfirmed(false);
+      setNativeRecordingBlob(null);
+      stopDisplayPreviewStream();
       setMessage(
-        "Your active browser recording could not reconnect after this page reloaded. Upload a saved backup if you have one, or start a new recording.",
+        "The previous browser recording was interrupted when this page reloaded. Enable screen sharing again, then start a new test recording.",
       );
     }
   }, [isNativeDesktopRecording, isRecordingTest]);
@@ -1271,14 +1275,22 @@ export function TestSessionPage() {
       setScreenShareStatus("active");
       setNativeCaptureConfirmed(true);
 
+      const pipWindowPromise = openRecordingPipWindow();
       const launched = launchSelectedWebsite();
-      void openRecordingPipWindow();
 
       if (!launched) {
         setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
       } else {
         setMessage("Recording live. Your microphone is connected and screen sharing is active.");
       }
+
+      void pipWindowPromise.then((opened) => {
+        if (!opened) {
+          setMessage(
+            "Recording live. Keep this Test4Test tab open to finish recording, or return here and click Show floating recorder.",
+          );
+        }
+      });
     } catch (error) {
       if (mediaRecorderRef.current?.state !== "recording") {
         const previewStream = microphoneStreamRef.current;
