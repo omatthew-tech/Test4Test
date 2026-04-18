@@ -44,6 +44,15 @@ interface PermissionsPolicyDocument extends Document {
   };
 }
 
+interface DocumentPictureInPictureController {
+  requestWindow: (options?: { width?: number; height?: number }) => Promise<Window>;
+  window?: Window | null;
+}
+
+interface WindowWithDocumentPictureInPicture extends Window {
+  documentPictureInPicture?: DocumentPictureInPictureController;
+}
+
 function buildAnswer(question: Question, value: string): TestAnswer {
   return question.type === "multiple"
     ? {
@@ -214,6 +223,7 @@ export function TestSessionPage() {
   const displayStreamRef = useRef<MediaStream | null>(null);
   const microphoneStreamRef = useRef<MediaStream | null>(null);
   const combinedStreamRef = useRef<MediaStream | null>(null);
+  const recordingPipWindowRef = useRef<Window | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const nativeStopReasonRef = useRef<NativeStopReason>("user-finished");
   const submission = state.submissions.find((item) => item.id === submissionId);
@@ -419,6 +429,220 @@ export function TestSessionPage() {
     displayStreamRef.current = null;
   };
 
+  const closeRecordingPipWindow = () => {
+    const pipWindow = recordingPipWindowRef.current;
+    recordingPipWindowRef.current = null;
+
+    if (!pipWindow || pipWindow.closed) {
+      return;
+    }
+
+    try {
+      pipWindow.close();
+    } catch {
+      // The browser owns PiP window lifecycle; closing can fail during teardown.
+    }
+  };
+
+  const renderRecordingPipWindow = () => {
+    const pipWindow = recordingPipWindowRef.current;
+
+    if (!pipWindow || pipWindow.closed) {
+      recordingPipWindowRef.current = null;
+      return;
+    }
+
+    const { document: pipDocument } = pipWindow;
+    pipDocument.title = "Recording live";
+
+    if (!pipDocument.getElementById("recording-pip-styles")) {
+      const style = pipDocument.createElement("style");
+      style.id = "recording-pip-styles";
+      style.textContent = `
+        :root {
+          color-scheme: light;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        html,
+        body {
+          width: 100%;
+          min-height: 100%;
+          margin: 0;
+          overflow: hidden;
+          background: #fffaf5;
+          color: #201813;
+        }
+
+        body {
+          padding: 14px;
+        }
+
+        .recording-pip {
+          display: flex;
+          min-height: calc(100vh - 28px);
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 16px;
+          border: 1px solid rgba(245, 142, 86, 0.28);
+          border-radius: 22px;
+          background:
+            radial-gradient(circle at top right, rgba(245, 142, 86, 0.18), transparent 34%),
+            #fffdfb;
+          box-shadow: 0 18px 34px rgba(33, 24, 17, 0.16);
+        }
+
+        .recording-pip__top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+
+        .recording-pip__badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+        }
+
+        .recording-pip__dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+          background: #f06a3f;
+          box-shadow: 0 0 0 7px rgba(240, 106, 63, 0.15);
+        }
+
+        .recording-pip__timer {
+          color: #8a5c3f;
+          font-variant-numeric: tabular-nums;
+          font-weight: 800;
+        }
+
+        .recording-pip__text {
+          margin: 0;
+          color: #65584f;
+          font-size: 0.9rem;
+          line-height: 1.45;
+        }
+
+        .recording-pip__status {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .recording-pip__pill {
+          display: inline-flex;
+          align-items: center;
+          min-height: 30px;
+          padding: 0 11px;
+          border-radius: 999px;
+          background: rgba(235, 238, 242, 0.95);
+          color: #6f7782;
+          font-size: 0.82rem;
+          font-weight: 700;
+        }
+
+        .recording-pip__pill--ok {
+          background: rgba(255, 241, 230, 0.95);
+          color: #8a5c3f;
+        }
+
+        .recording-pip__button {
+          width: 100%;
+          min-height: 42px;
+          border: 0;
+          border-radius: 999px;
+          background: #f58e56;
+          color: #201813;
+          cursor: pointer;
+          font: inherit;
+          font-weight: 800;
+          box-shadow: 0 10px 24px rgba(245, 142, 86, 0.28);
+        }
+
+        .recording-pip__button:hover {
+          background: #f67e42;
+        }
+      `;
+      pipDocument.head.append(style);
+    }
+
+    let root = pipDocument.getElementById("recording-pip-root");
+
+    if (!root) {
+      root = pipDocument.createElement("div");
+      root.id = "recording-pip-root";
+      pipDocument.body.replaceChildren(root);
+    }
+
+    root.innerHTML = `
+      <section class="recording-pip" aria-label="Test4Test recording control">
+        <div class="recording-pip__top">
+          <div class="recording-pip__badge">
+            <span class="recording-pip__dot" aria-hidden="true"></span>
+            <span>Recording live</span>
+          </div>
+          <strong class="recording-pip__timer">${formatElapsedDuration(liveElapsedSeconds)}</strong>
+        </div>
+        <p class="recording-pip__text">You can move this window while you test. Click finish when you are done.</p>
+        <div class="recording-pip__status">
+          <span class="recording-pip__pill${microphoneStatus === "ready" ? " recording-pip__pill--ok" : ""}">
+            Mic ${microphoneStatus === "ready" ? "connected" : "not ready"}
+          </span>
+          <span class="recording-pip__pill${screenShareStatus === "active" ? " recording-pip__pill--ok" : ""}">
+            Screen ${screenShareStatus === "active" ? "sharing" : "not shared"}
+          </span>
+        </div>
+        <button id="recording-pip-finish" class="recording-pip__button" type="button">Finish recording</button>
+      </section>
+    `;
+
+    pipDocument
+      .getElementById("recording-pip-finish")
+      ?.addEventListener("click", () => stopNativeRecording(), { once: true });
+  };
+
+  const openRecordingPipWindow = async () => {
+    const documentPictureInPicture = (window as WindowWithDocumentPictureInPicture).documentPictureInPicture;
+
+    if (typeof documentPictureInPicture?.requestWindow !== "function") {
+      return false;
+    }
+
+    const existingWindow = recordingPipWindowRef.current;
+
+    if (existingWindow && !existingWindow.closed) {
+      renderRecordingPipWindow();
+      return true;
+    }
+
+    try {
+      const pipWindow = await documentPictureInPicture.requestWindow({
+        width: 300,
+        height: 224,
+      });
+      recordingPipWindowRef.current = pipWindow;
+      pipWindow.addEventListener("pagehide", () => {
+        if (recordingPipWindowRef.current === pipWindow) {
+          recordingPipWindowRef.current = null;
+        }
+      });
+      renderRecordingPipWindow();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const cleanupActiveCaptureStreams = () => {
     stopMicrophoneMeter();
     const tracks = new Set<MediaStreamTrack>();
@@ -540,6 +764,7 @@ export function TestSessionPage() {
           nativeStopReasonRef.current = "share-ended";
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
+          closeRecordingPipWindow();
           mediaRecorderRef.current.stop();
           return;
         }
@@ -719,6 +944,7 @@ export function TestSessionPage() {
 
   const stopNativeRecording = () => {
     const recorder = mediaRecorderRef.current;
+    closeRecordingPipWindow();
 
     if (!recorder || recorder.state === "inactive") {
       setRecordingPhase("return_and_submit");
@@ -816,6 +1042,22 @@ export function TestSessionPage() {
   }, [isNativeDesktopRecording, liveRecordingStartedAt]);
 
   useEffect(() => {
+    if (!isNativeDesktopRecording || recordingPhase !== "recording_live") {
+      closeRecordingPipWindow();
+      return;
+    }
+
+    renderRecordingPipWindow();
+  }, [
+    isNativeDesktopRecording,
+    liveElapsedSeconds,
+    microphoneStatus,
+    nativeCaptureConfirmed,
+    recordingPhase,
+    screenShareStatus,
+  ]);
+
+  useEffect(() => {
     if (
       !isRecordingTest ||
       !isNativeDesktopRecording ||
@@ -853,6 +1095,7 @@ export function TestSessionPage() {
         }
       }
 
+      closeRecordingPipWindow();
       cleanupActiveCaptureStreams();
     };
   }, []);
@@ -1010,6 +1253,7 @@ export function TestSessionPage() {
           nativeStopReasonRef.current = "share-ended";
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
+          closeRecordingPipWindow();
           mediaRecorderRef.current.stop();
           return;
         }
@@ -1028,6 +1272,7 @@ export function TestSessionPage() {
       setNativeCaptureConfirmed(true);
 
       const launched = launchSelectedWebsite();
+      void openRecordingPipWindow();
 
       if (!launched) {
         setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
@@ -1380,6 +1625,21 @@ export function TestSessionPage() {
                         {isNativeDesktopRecording ? "Open website again" : recordingInstructions.launchButtonLabel}
                         <ExternalLink size={16} />
                       </a>
+                    ) : null}
+                    {isNativeDesktopRecording ? (
+                      <button
+                        type="button"
+                        className="button button--secondary"
+                        onClick={() => {
+                          void openRecordingPipWindow().then((opened) => {
+                            if (!opened) {
+                              setMessage("Your browser did not allow the movable recording control. Keep this Test4Test tab open to finish recording.");
+                            }
+                          });
+                        }}
+                      >
+                        Show floating recorder
+                      </button>
                     ) : null}
                     <button
                       type="button"
