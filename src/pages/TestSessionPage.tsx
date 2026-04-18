@@ -35,6 +35,15 @@ interface MicrophoneOption {
   label: string;
 }
 
+interface PermissionsPolicyDocument extends Document {
+  permissionsPolicy?: {
+    allowsFeature?: (feature: string) => boolean;
+  };
+  featurePolicy?: {
+    allowsFeature?: (feature: string) => boolean;
+  };
+}
+
 function buildAnswer(question: Question, value: string): TestAnswer {
   return question.type === "multiple"
     ? {
@@ -94,6 +103,15 @@ function getMediaPermissionMessage(error: unknown) {
 }
 
 function getMicrophonePermissionMessage(error: unknown) {
+  const policyDocument = document as PermissionsPolicyDocument;
+  const microphoneBlockedByPolicy =
+    policyDocument.permissionsPolicy?.allowsFeature?.("microphone") === false ||
+    policyDocument.featurePolicy?.allowsFeature?.("microphone") === false;
+
+  if (microphoneBlockedByPolicy) {
+    return "Microphone access is blocked by this site's browser permissions policy. Refresh after the latest deploy and try again.";
+  }
+
   if (!(error instanceof DOMException)) {
     return "Allow microphone access so you can choose a microphone before starting the test.";
   }
@@ -393,9 +411,21 @@ export function TestSessionPage() {
     setMicrophoneLevel(0);
   };
 
+  const stopDisplayPreviewStream = () => {
+    displayStreamRef.current?.getVideoTracks().forEach((track) => {
+      track.onended = null;
+    });
+    displayStreamRef.current?.getTracks().forEach((track) => track.stop());
+    displayStreamRef.current = null;
+  };
+
   const cleanupActiveCaptureStreams = () => {
     stopMicrophoneMeter();
     const tracks = new Set<MediaStreamTrack>();
+
+    displayStreamRef.current?.getVideoTracks().forEach((track) => {
+      track.onended = null;
+    });
 
     for (const stream of [displayStreamRef.current, microphoneStreamRef.current, combinedStreamRef.current]) {
       stream?.getTracks().forEach((track) => tracks.add(track));
@@ -464,12 +494,83 @@ export function TestSessionPage() {
     }
   };
 
-  const launchSelectedWebsite = (preOpenedWindow?: Window | null) => {
+  const prepareScreenSharePreview = async () => {
+    if (!isNativeDesktopRecording) {
+      return false;
+    }
+
+    if (!selectedLink || selectedLink.productType !== "website") {
+      setMessage("Choose the website you're about to test before enabling screen sharing.");
+      return false;
+    }
+
+    if (microphoneStatus !== "ready" || !microphoneStreamRef.current) {
+      setMessage("Enable your microphone before you share your screen.");
+      return false;
+    }
+
+    setScreenShareStatus("requesting");
+    setNativeCaptureConfirmed(false);
+    setPopupBlocked(false);
+    setMessage("");
+
+    stopDisplayPreviewStream();
+
+    try {
+      const displayCaptureOptions = {
+        audio: false,
+        video: true,
+        selfBrowserSurface: "exclude",
+        preferCurrentTab: false,
+        surfaceSwitching: "include",
+        monitorTypeSurfaces: "include",
+      } as unknown as DisplayMediaStreamOptions;
+      const displayStream = await navigator.mediaDevices.getDisplayMedia(displayCaptureOptions);
+      const activeVideoTrack = displayStream.getVideoTracks()[0] ?? null;
+
+      if (!activeVideoTrack) {
+        displayStream.getTracks().forEach((track) => track.stop());
+        setScreenShareStatus("error");
+        setMessage("The browser did not return a shareable screen. Try again.");
+        return false;
+      }
+
+      activeVideoTrack.onended = () => {
+        if (mediaRecorderRef.current?.state === "recording") {
+          nativeStopReasonRef.current = "share-ended";
+          setScreenShareStatus("ended");
+          setNativeCaptureConfirmed(false);
+          mediaRecorderRef.current.stop();
+          return;
+        }
+
+        if (displayStreamRef.current === displayStream) {
+          displayStreamRef.current = null;
+        }
+
+        setScreenShareStatus("ended");
+        setNativeCaptureConfirmed(false);
+        setMessage("Screen sharing stopped. Enable it again before you start the test.");
+      };
+
+      displayStreamRef.current = displayStream;
+      setScreenShareStatus("active");
+      setMessage("Screen sharing is ready. Click Start test when you're ready to begin recording.");
+      return true;
+    } catch (error) {
+      setScreenShareStatus("error");
+      setNativeCaptureConfirmed(false);
+      setMessage(getMediaPermissionMessage(error));
+      return false;
+    }
+  };
+
+  const launchSelectedWebsite = () => {
     if (!selectedLink || selectedLink.productType !== "website") {
       return false;
     }
 
-    const openedWindow = preOpenedWindow ?? window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
+    const openedWindow = window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
 
     if (!openedWindow) {
       setPopupBlocked(true);
@@ -599,6 +700,7 @@ export function TestSessionPage() {
   };
 
   const resetNativeDesktopFlow = () => {
+    cleanupActiveCaptureStreams();
     setRecordingPhase("preflight");
     setLiveRecordingStartedAt(null);
     setLiveElapsedSeconds(0);
@@ -608,6 +710,8 @@ export function TestSessionPage() {
     setPopupBlocked(false);
     setScreenShareStatus("idle");
     setNativeCaptureConfirmed(false);
+    setAvailableMicrophones([]);
+    setSelectedMicrophoneId("");
     setMicrophoneStatus("idle");
     setMicrophoneError("");
     setMessage("");
@@ -680,20 +784,6 @@ export function TestSessionPage() {
   }, [accessLinks, chosenProductType, isRecordingTest]);
 
   useEffect(() => {
-    if (!isNativeDesktopRecording || recordingPhase !== "preflight") {
-      if (mediaRecorderRef.current?.state !== "recording") {
-        stopMicrophoneMeter();
-        setMicrophoneLevel(0);
-      }
-      return;
-    }
-
-    if (microphoneStatus === "idle" && !microphoneStreamRef.current) {
-      void prepareMicrophonePreview(selectedMicrophoneId || undefined);
-    }
-  }, [isNativeDesktopRecording, microphoneStatus, recordingPhase, selectedMicrophoneId]);
-
-  useEffect(() => {
     if (isNativeDesktopRecording) {
       return;
     }
@@ -702,11 +792,13 @@ export function TestSessionPage() {
       return;
     }
 
+    stopDisplayPreviewStream();
     stopMicrophonePreviewStream();
     setAvailableMicrophones([]);
     setSelectedMicrophoneId("");
     setMicrophoneStatus("idle");
     setMicrophoneError("");
+    setScreenShareStatus("idle");
   }, [isNativeDesktopRecording]);
 
   useEffect(() => {
@@ -835,49 +927,44 @@ export function TestSessionPage() {
       return;
     }
 
+    if (microphoneStatus !== "ready" || !microphoneStreamRef.current) {
+      setMessage("Enable your microphone before starting the test.");
+      return;
+    }
+
+    if (screenShareStatus !== "active" || !displayStreamRef.current) {
+      setMessage("Enable screen sharing before starting the test.");
+      return;
+    }
+
     setPopupBlocked(false);
     setNativeRecoveryUploadEnabled(false);
     setNativeUploadError("");
     setNativeRecordingBlob(null);
-    setScreenShareStatus("requesting");
     setNativeCaptureConfirmed(false);
     setMessage("");
 
-    const preOpenedWindow = window.open("", "_blank");
-    let displayStream: MediaStream | null = null;
-
     try {
-      const microphoneReady =
-        microphoneStreamRef.current && microphoneStatus === "ready"
-          ? true
-          : await prepareMicrophonePreview(selectedMicrophoneId || undefined);
+      const displayStream = displayStreamRef.current;
+      const previewMicrophoneStream = microphoneStreamRef.current;
+      const activeVideoTrack = displayStream.getVideoTracks()[0] ?? null;
 
-      if (!microphoneReady || !microphoneStreamRef.current) {
-        preOpenedWindow?.close();
+      if (!activeVideoTrack || activeVideoTrack.readyState !== "live") {
+        setScreenShareStatus("ended");
+        setMessage("Screen sharing is no longer active. Enable it again before starting the test.");
         return;
       }
 
-      const displayCaptureOptions = {
-        audio: false,
-        video: true,
-        selfBrowserSurface: "exclude",
-        preferCurrentTab: false,
-        surfaceSwitching: "include",
-        monitorTypeSurfaces: "include",
-      } as unknown as DisplayMediaStreamOptions;
-      displayStream = await navigator.mediaDevices.getDisplayMedia(displayCaptureOptions);
       stopMicrophoneMeter();
       const combinedStream = new MediaStream([
         ...displayStream.getVideoTracks(),
-        ...microphoneStreamRef.current.getAudioTracks(),
+        ...previewMicrophoneStream.getAudioTracks(),
       ]);
       const preferredMimeType = getPreferredMediaRecorderMimeType();
       const recorder = preferredMimeType
         ? new MediaRecorder(combinedStream, { mimeType: preferredMimeType })
         : new MediaRecorder(combinedStream);
-      const activeVideoTrack = displayStream.getVideoTracks()[0] ?? null;
 
-      displayStreamRef.current = displayStream;
       combinedStreamRef.current = combinedStream;
       mediaRecorderRef.current = recorder;
       recordingChunksRef.current = [];
@@ -918,21 +1005,29 @@ export function TestSessionPage() {
         void finalizeNativeRecording(finalBlob, chunkMimeType);
       };
 
-      activeVideoTrack?.addEventListener("ended", () => {
+      activeVideoTrack.onended = () => {
         if (mediaRecorderRef.current?.state === "recording") {
           nativeStopReasonRef.current = "share-ended";
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
           mediaRecorderRef.current.stop();
+          return;
         }
-      }, { once: true });
+
+        if (displayStreamRef.current === displayStream) {
+          displayStreamRef.current = null;
+        }
+
+        setScreenShareStatus("ended");
+        setNativeCaptureConfirmed(false);
+      };
 
       recorder.start(1000);
       setRecordingPhase("recording_live");
       setScreenShareStatus("active");
       setNativeCaptureConfirmed(true);
 
-      const launched = launchSelectedWebsite(preOpenedWindow);
+      const launched = launchSelectedWebsite();
 
       if (!launched) {
         setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
@@ -940,8 +1035,6 @@ export function TestSessionPage() {
         setMessage("Recording live. Your microphone is connected and screen sharing is active.");
       }
     } catch (error) {
-      preOpenedWindow?.close();
-      displayStream?.getTracks().forEach((track) => track.stop());
       if (mediaRecorderRef.current?.state !== "recording") {
         const previewStream = microphoneStreamRef.current;
 
@@ -953,9 +1046,8 @@ export function TestSessionPage() {
         }
       }
 
-      setScreenShareStatus("error");
+      setScreenShareStatus(displayStreamRef.current ? "active" : "error");
       setNativeCaptureConfirmed(false);
-      displayStreamRef.current = null;
       combinedStreamRef.current = null;
       mediaRecorderRef.current = null;
       setLiveRecordingStartedAt(null);
@@ -1151,14 +1243,30 @@ export function TestSessionPage() {
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
                             <strong>Enable screen sharing</strong>
+                            <div className="recording-microphone-actions">
+                              <button
+                                type="button"
+                                className="button button--secondary button--small"
+                                onClick={() => { void prepareScreenSharePreview(); }}
+                                disabled={microphoneStatus !== "ready" || screenShareStatus === "requesting"}
+                              >
+                                {screenShareStatus === "active"
+                                  ? "Share screen again"
+                                  : screenShareStatus === "requesting"
+                                    ? "Waiting for screen share..."
+                                    : "Enable screen sharing"}
+                              </button>
+                            </div>
                             <small className={`helper-text ${screenShareStatus === "active" ? "helper-text--success" : screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
                               {screenShareStatus === "active"
-                                ? "Screen sharing is active."
+                                ? "Screen sharing is active. Keep this tab open, then click Start test."
                                 : screenShareStatus === "requesting"
-                                  ? "Chrome or Edge is asking you to share your screen."
+                                  ? "Chrome or Edge is asking what you want to share."
                                   : screenShareStatus === "error"
-                                    ? "Screen sharing did not start. Click Start test to try again."
-                                    : "You&apos;ll be prompted for this right after your microphone is ready."}
+                                    ? "Screen sharing did not start. Try again."
+                                    : screenShareStatus === "ended"
+                                      ? "Screen sharing stopped. Enable it again before starting."
+                                      : "Choose Entire screen or Window so the new test tab is included."}
                             </small>
                           </div>
                         </div>
@@ -1167,8 +1275,8 @@ export function TestSessionPage() {
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong>Think out loud. Share as much feedback as possible (good and bad)</strong>
-                            <small className="helper-text">Once recording starts, the test opens in a new tab and the floating recorder stays available here.</small>
+                            <strong>Start test</strong>
+                            <small className="helper-text">When your microphone and screen are ready, Start test opens the website in a new tab and begins recording right away.</small>
                           </div>
                         </div>
                       </div>
@@ -1177,7 +1285,9 @@ export function TestSessionPage() {
                         <span>
                           {nativeCaptureConfirmed
                             ? "We can confirm screen sharing is active and your selected microphone is connected."
-                            : "Enable your microphone first, then Start test to share your screen and begin recording."}
+                            : screenShareStatus === "active"
+                              ? "Screen sharing is ready. Click Start test to open the website and begin recording."
+                              : "Enable your microphone, then share your screen before you start the test."}
                         </span>
                       </div>
                     </div>
@@ -1232,7 +1342,7 @@ export function TestSessionPage() {
                           handleManualRecordingStart();
                         }
                       }}
-                      disabled={isNativeDesktopRecording && microphoneStatus !== "ready"}
+                      disabled={isNativeDesktopRecording && (microphoneStatus !== "ready" || screenShareStatus !== "active")}
                     >
                       {isNativeDesktopRecording ? "Start test" : "I&apos;m recording and ready to test"}
                     </button>
