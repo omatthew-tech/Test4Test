@@ -6868,11 +6868,35 @@ body {
 }
 
 .recording-phase-card__actions,
+.recording-upload-card__actions,
 .results-recording-panel__actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.recording-phase-card__timer {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 244, 234, 0.9);
+  color: #8a5c3f;
+}
+
+.recording-phase-card__timer strong {
+  font-size: 1.1rem;
+  color: var(--color-ink-900);
+}
+
+.recording-phase-card__timer span {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
 }
 
 .recording-upload-card__field {
@@ -6913,11 +6937,32 @@ body {
   font-size: 1rem;
 }
 
+.recording-questionless-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(221, 212, 204, 0.9);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.recording-questionless-note strong {
+  color: var(--color-ink-900);
+}
+
+.recording-questionless-note p {
+  margin: 0;
+  color: var(--color-ink-700);
+  line-height: 1.6;
+}
+
 @media (max-width: 760px) {
   .recording-setup-callout,
   .recording-test-callout,
   .results-recording-panel,
   .recording-phase-card__actions,
+  .recording-upload-card__actions,
   .results-recording-panel__actions {
     flex-direction: column;
     align-items: stretch;

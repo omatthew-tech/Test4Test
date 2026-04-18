@@ -491,75 +491,109 @@ grant execute on function public.list_stale_test_response_recording_drafts(integ
 grant execute on function public.create_submission_with_questions(text, text[], text, text, text, jsonb, boolean, text, jsonb, integer) to authenticated;
 grant execute on function public.submit_test_response(uuid, jsonb, integer, text, text) to authenticated;
 
-create extension if not exists pg_net;
-create extension if not exists pg_cron;
-create extension if not exists vault;
-
 create or replace function public.enqueue_cleanup_response_recordings()
 returns bigint
 language plpgsql
 security definer
-set search_path = public, vault
+set search_path = public
 as $$
-declare
-  v_project_url text;
-  v_anon_key text;
-  v_cleanup_secret text;
 begin
-  select decrypted_secret
-  into v_project_url
-  from vault.decrypted_secrets
-  where name = 'project_url'
-  order by created_at desc
-  limit 1;
-
-  select decrypted_secret
-  into v_anon_key
-  from vault.decrypted_secrets
-  where name = 'anon_key'
-  order by created_at desc
-  limit 1;
-
-  select decrypted_secret
-  into v_cleanup_secret
-  from vault.decrypted_secrets
-  where name = 'recording_cleanup_secret'
-  order by created_at desc
-  limit 1;
-
-  if coalesce(v_project_url, '') = '' or coalesce(v_anon_key, '') = '' or coalesce(v_cleanup_secret, '') = '' then
-    raise notice 'Skipping recording cleanup trigger because Vault secrets project_url, anon_key, or recording_cleanup_secret are missing.';
-    return null;
-  end if;
-
-  return net.http_post(
-    url := rtrim(v_project_url, '/') || '/functions/v1/cleanup-response-recordings',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || v_anon_key,
-      'x-recording-cleanup-secret', v_cleanup_secret
-    ),
-    body := jsonb_build_object(
-      'source', 'pg_cron',
-      'triggered_at', timezone('utc', now())
-    ),
-    timeout_milliseconds := 10000
-  );
+  raise notice 'Skipping recording cleanup trigger because pg_net, pg_cron, or vault is unavailable in this database.';
+  return null;
 end;
 $$;
 
 do $$
-begin
-  if not exists (
+declare
+  v_has_pg_net boolean := exists (
     select 1
-    from cron.job
-    where jobname = 'cleanup-response-recordings-hourly'
-  ) then
-    perform cron.schedule(
-      'cleanup-response-recordings-hourly',
-      '0 * * * *',
-      $job$select public.enqueue_cleanup_response_recordings();$job$
-    );
+    from pg_available_extensions
+    where name = 'pg_net'
+  );
+  v_has_pg_cron boolean := exists (
+    select 1
+    from pg_available_extensions
+    where name = 'pg_cron'
+  );
+  v_has_vault boolean := exists (
+    select 1
+    from pg_available_extensions
+    where name = 'vault'
+  );
+begin
+  if v_has_pg_net and v_has_pg_cron and v_has_vault then
+    create extension if not exists pg_net;
+    create extension if not exists pg_cron;
+    create extension if not exists vault;
+
+    execute $fn$
+      create or replace function public.enqueue_cleanup_response_recordings()
+      returns bigint
+      language plpgsql
+      security definer
+      set search_path = public, vault
+      as $inner$
+      declare
+        v_project_url text;
+        v_anon_key text;
+        v_cleanup_secret text;
+      begin
+        select decrypted_secret
+        into v_project_url
+        from vault.decrypted_secrets
+        where name = 'project_url'
+        order by created_at desc
+        limit 1;
+
+        select decrypted_secret
+        into v_anon_key
+        from vault.decrypted_secrets
+        where name = 'anon_key'
+        order by created_at desc
+        limit 1;
+
+        select decrypted_secret
+        into v_cleanup_secret
+        from vault.decrypted_secrets
+        where name = 'recording_cleanup_secret'
+        order by created_at desc
+        limit 1;
+
+        if coalesce(v_project_url, '') = '' or coalesce(v_anon_key, '') = '' or coalesce(v_cleanup_secret, '') = '' then
+          raise notice 'Skipping recording cleanup trigger because Vault secrets project_url, anon_key, or recording_cleanup_secret are missing.';
+          return null;
+        end if;
+
+        return net.http_post(
+          url := rtrim(v_project_url, '/') || '/functions/v1/cleanup-response-recordings',
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'Authorization', 'Bearer ' || v_anon_key,
+            'x-recording-cleanup-secret', v_cleanup_secret
+          ),
+          body := jsonb_build_object(
+            'source', 'pg_cron',
+            'triggered_at', timezone('utc', now())
+          ),
+          timeout_milliseconds := 10000
+        );
+      end;
+      $inner$;
+    $fn$;
+
+    if not exists (
+      select 1
+      from cron.job
+      where jobname = 'cleanup-response-recordings-hourly'
+    ) then
+      perform cron.schedule(
+        'cleanup-response-recordings-hourly',
+        '0 * * * *',
+        $job$select public.enqueue_cleanup_response_recordings();$job$
+      );
+    end if;
+  else
+    raise notice 'Skipping recording cleanup automation because pg_net, pg_cron, or vault is unavailable in this database.';
   end if;
 end;
 $$;

@@ -12,16 +12,23 @@ import { useAppState } from "../context/AppStateContext";
 import { formatDateTime, getOrderedAccessLinks, productTypeLabel } from "../lib/format";
 import {
   clearRecordingTestSession,
+  createGeneratedRecordingFileName,
   createRecordingSessionId,
+  downloadRecordingBackup,
+  getPreferredMediaRecorderMimeType,
   loadRecordingTestSession,
   RECORDING_ACCEPT_ATTRIBUTE,
+  resolveRecordingExperience,
   saveRecordingTestSession,
   type RecordingTestPhase,
+  uploadGeneratedRecordingDraft,
   uploadRecordingDraft,
   validateRecordingFile,
 } from "../lib/recordings";
 import { getActiveQuestionSet } from "../lib/selectors";
 import { ProductType, Question, ResponseRecording, TestAnswer } from "../types";
+
+type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
 
 function buildAnswer(question: Question, value: string): TestAnswer {
   return question.type === "multiple"
@@ -49,6 +56,36 @@ function formatRecordingSize(bytes: number) {
   }
 
   return `${bytes} B`;
+}
+
+function formatElapsedDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function getMediaPermissionMessage(error: unknown) {
+  if (!(error instanceof DOMException)) {
+    return "The browser could not start screen and voice recording. Try again in desktop Chrome or Edge.";
+  }
+
+  if (error.name === "NotAllowedError") {
+    return "Allow microphone and screen-sharing access to start the recording.";
+  }
+
+  if (error.name === "NotFoundError") {
+    return "No microphone or shareable screen source was found for this browser session.";
+  }
+
+  if (error.name === "NotReadableError") {
+    return "The screen share or microphone is unavailable right now. Close other recording tools and try again.";
+  }
+
+  if (error.name === "InvalidStateError") {
+    return "Click the start button again from this page to begin recording.";
+  }
+
+  return "The browser could not start screen and voice recording. Try again in desktop Chrome or Edge.";
 }
 
 function getRecordingInstructions(productType: ProductType) {
@@ -89,7 +126,7 @@ function getRecordingInstructions(productType: ProductType) {
       return {
         title: "Desktop / web recording",
         intro:
-          "Use your computer's built-in screen recorder or browser-friendly recorder, and make sure your microphone is capturing your voice before you start.",
+          "Use your computer's built-in screen recorder or another desktop recorder, and make sure your microphone is capturing your voice before you start.",
         steps: [
           "Close extra tabs and confirm you have enough disk space before you begin.",
           "Start recording your full screen or browser window with microphone audio enabled.",
@@ -124,6 +161,14 @@ export function TestSessionPage() {
   const navigate = useNavigate();
   const { state, currentUser, completeTest } = useAppState();
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
+  const hasHandledRecordingRecoveryRef = useRef(false);
+  const isUnmountingRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const displayStreamRef = useRef<MediaStream | null>(null);
+  const microphoneStreamRef = useRef<MediaStream | null>(null);
+  const combinedStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const nativeStopReasonRef = useRef<NativeStopReason>("user-finished");
   const submission = state.submissions.find((item) => item.id === submissionId);
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
   const accessLinks = useMemo(
@@ -152,6 +197,15 @@ export function TestSessionPage() {
     () => initialRecordingSessionRef.current?.sessionId ?? createRecordingSessionId(),
   );
   const [startedAt] = useState(() => Date.now());
+  const [liveRecordingStartedAt, setLiveRecordingStartedAt] = useState<number | null>(null);
+  const [liveElapsedSeconds, setLiveElapsedSeconds] = useState(0);
+  const [nativeRecordingBlob, setNativeRecordingBlob] = useState<Blob | null>(null);
+  const [nativeRecordingMimeType, setNativeRecordingMimeType] = useState(
+    () => getPreferredMediaRecorderMimeType() || "video/webm",
+  );
+  const [nativeUploadError, setNativeUploadError] = useState("");
+  const [nativeRecoveryUploadEnabled, setNativeRecoveryUploadEnabled] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   const selectedLink = useMemo(() => {
     if (!isRecordingTest) {
@@ -165,14 +219,37 @@ export function TestSessionPage() {
     return accessLinks.find((link) => link.productType === chosenProductType) ?? null;
   }, [accessLinks, chosenProductType, isRecordingTest]);
 
-  const recordingInstructions = getRecordingInstructions(selectedLink?.productType ?? chosenProductType ?? "website");
+  const selectedProductType = selectedLink?.productType ?? chosenProductType ?? defaultProductType ?? null;
+  const recordingExperience = useMemo(
+    () => resolveRecordingExperience(selectedProductType),
+    [selectedProductType],
+  );
+  const isNativeDesktopRecording =
+    isRecordingTest &&
+    selectedProductType === "website" &&
+    recordingExperience.mode === "native-desktop";
+  const recordingInstructions = getRecordingInstructions(selectedProductType ?? "website");
   const testerInstructions = submission?.instructions.trim()
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
+  const hasQuestions = (questionSet?.questions.length ?? 0) > 0;
+  const nativeBackupFileName = useMemo(
+    () => createGeneratedRecordingFileName(recordingSessionId, nativeRecordingMimeType),
+    [nativeRecordingMimeType, recordingSessionId],
+  );
 
   const completion = useMemo(() => {
     if (!questionSet) {
       return { answered: 0, total: 0, canSubmit: false, shortParagraphs: 0 };
+    }
+
+    if (questionSet.questions.length === 0) {
+      return {
+        answered: 0,
+        total: 0,
+        canSubmit: isRecordingTest,
+        shortParagraphs: 0,
+      };
     }
 
     const answered = questionSet.questions.filter((question) => {
@@ -190,7 +267,182 @@ export function TestSessionPage() {
       canSubmit: answered === questionSet.questions.length && shortParagraphs === 0,
       shortParagraphs,
     };
-  }, [answers, questionSet]);
+  }, [answers, isRecordingTest, questionSet]);
+
+  const submitDisabled =
+    isSubmitting ||
+    !completion.canSubmit ||
+    (isRecordingTest && !uploadedRecording);
+
+  const cleanupActiveCaptureStreams = () => {
+    const tracks = new Set<MediaStreamTrack>();
+
+    for (const stream of [displayStreamRef.current, microphoneStreamRef.current, combinedStreamRef.current]) {
+      stream?.getTracks().forEach((track) => tracks.add(track));
+    }
+
+    tracks.forEach((track) => track.stop());
+    displayStreamRef.current = null;
+    microphoneStreamRef.current = null;
+    combinedStreamRef.current = null;
+    mediaRecorderRef.current = null;
+  };
+
+  const launchSelectedWebsite = (preOpenedWindow?: Window | null) => {
+    if (!selectedLink || selectedLink.productType !== "website") {
+      return false;
+    }
+
+    const openedWindow = preOpenedWindow ?? window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
+
+    if (!openedWindow) {
+      setPopupBlocked(true);
+      return false;
+    }
+
+    try {
+      openedWindow.opener = null;
+    } catch {
+      // Some browsers lock down opener assignment.
+    }
+
+    try {
+      openedWindow.location.href = selectedLink.normalizedUrl;
+      setPopupBlocked(false);
+      return true;
+    } catch {
+      setPopupBlocked(true);
+      return false;
+    }
+  };
+
+  const uploadManualRecordingFile = async (file: File, successMessage: string) => {
+    if (!currentUser) {
+      setMessage("Verify your email before uploading a recording.");
+      return false;
+    }
+
+    const validation = validateRecordingFile(file);
+
+    if (!validation.ok) {
+      setNativeUploadError("");
+      setMessage(validation.message);
+      return false;
+    }
+
+    setIsUploadingRecording(true);
+    setNativeUploadError("");
+    setMessage("");
+
+    try {
+      const nextRecording = await uploadRecordingDraft(
+        currentUser.id,
+        recordingSessionId,
+        file,
+        uploadedRecording,
+      );
+      setUploadedRecording(nextRecording);
+      setNativeRecoveryUploadEnabled(false);
+      setRecordingPhase("return_and_submit");
+      setMessage(successMessage);
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The recording could not be uploaded.");
+      return false;
+    } finally {
+      setIsUploadingRecording(false);
+    }
+  };
+
+  const finalizeNativeRecording = async (blob: Blob, mimeType: string) => {
+    const resolvedMimeType = mimeType || getPreferredMediaRecorderMimeType() || "video/webm";
+    const generatedFile = new File(
+      [blob],
+      createGeneratedRecordingFileName(recordingSessionId, resolvedMimeType),
+      {
+        type: resolvedMimeType,
+        lastModified: Date.now(),
+      },
+    );
+    const validation = validateRecordingFile(generatedFile);
+
+    setNativeRecordingBlob(blob);
+    setNativeRecordingMimeType(resolvedMimeType);
+
+    if (!validation.ok) {
+      setRecordingPhase("return_and_submit");
+      setNativeUploadError(validation.message);
+      setMessage(validation.message);
+      return;
+    }
+
+    if (!currentUser) {
+      setRecordingPhase("return_and_submit");
+      setNativeUploadError("Verify your email before the browser recording can upload.");
+      setMessage("Verify your email before the browser recording can upload.");
+      return;
+    }
+
+    setRecordingPhase("uploading_recording");
+    setIsUploadingRecording(true);
+    setNativeUploadError("");
+    setMessage("");
+
+    try {
+      const nextRecording = await uploadGeneratedRecordingDraft(
+        currentUser.id,
+        recordingSessionId,
+        blob,
+        resolvedMimeType,
+        uploadedRecording,
+      );
+      setUploadedRecording(nextRecording);
+      setNativeRecordingBlob(null);
+      setNativeRecoveryUploadEnabled(false);
+      setRecordingPhase("return_and_submit");
+      setMessage(
+        nativeStopReasonRef.current === "share-ended"
+          ? "Screen sharing ended, and the recording captured so far has been uploaded."
+          : "Recording uploaded. Submit when you're ready.",
+      );
+    } catch (error) {
+      setRecordingPhase("return_and_submit");
+      setNativeUploadError(
+        error instanceof Error
+          ? error.message
+          : "The recording could not be uploaded automatically.",
+      );
+      setMessage("The browser recording is ready. Retry the upload or download a backup copy.");
+    } finally {
+      setIsUploadingRecording(false);
+    }
+  };
+
+  const resetNativeDesktopFlow = () => {
+    setRecordingPhase("preflight");
+    setLiveRecordingStartedAt(null);
+    setLiveElapsedSeconds(0);
+    setNativeRecordingBlob(null);
+    setNativeUploadError("");
+    setNativeRecoveryUploadEnabled(false);
+    setPopupBlocked(false);
+    setMessage("");
+  };
+
+  const stopNativeRecording = () => {
+    const recorder = mediaRecorderRef.current;
+
+    if (!recorder || recorder.state === "inactive") {
+      setRecordingPhase("return_and_submit");
+      setNativeRecoveryUploadEnabled(true);
+      setMessage("The browser recording is no longer active. Upload a saved backup if you have one, or start again.");
+      return;
+    }
+
+    nativeStopReasonRef.current = "user-finished";
+    setRecordingPhase("uploading_recording");
+    recorder.stop();
+  };
 
   useEffect(() => {
     if (!isRecordingTest) {
@@ -241,6 +493,62 @@ export function TestSessionPage() {
     }
   }, [accessLinks, chosenProductType, isRecordingTest]);
 
+  useEffect(() => {
+    if (!isNativeDesktopRecording || !liveRecordingStartedAt) {
+      setLiveElapsedSeconds(0);
+      return;
+    }
+
+    setLiveElapsedSeconds(Math.max(0, Math.round((Date.now() - liveRecordingStartedAt) / 1000)));
+    const intervalId = window.setInterval(() => {
+      setLiveElapsedSeconds(Math.max(0, Math.round((Date.now() - liveRecordingStartedAt) / 1000)));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isNativeDesktopRecording, liveRecordingStartedAt]);
+
+  useEffect(() => {
+    if (
+      !isRecordingTest ||
+      !isNativeDesktopRecording ||
+      hasHandledRecordingRecoveryRef.current ||
+      !initialRecordingSessionRef.current
+    ) {
+      return;
+    }
+
+    const initialPhase = initialRecordingSessionRef.current.phase;
+
+    if (
+      (initialPhase === "recording_live" || initialPhase === "uploading_recording") &&
+      !initialRecordingSessionRef.current.recording
+    ) {
+      hasHandledRecordingRecoveryRef.current = true;
+      setRecordingPhase("return_and_submit");
+      setNativeRecoveryUploadEnabled(true);
+      setMessage(
+        "Your active browser recording could not reconnect after this page reloaded. Upload a saved backup if you have one, or start a new recording.",
+      );
+    }
+  }, [isNativeDesktopRecording, isRecordingTest]);
+
+  useEffect(() => {
+    return () => {
+      isUnmountingRef.current = true;
+      nativeStopReasonRef.current = "unmounted";
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {
+          // Ignore teardown races while navigating away.
+        }
+      }
+
+      cleanupActiveCaptureStreams();
+    };
+  }, []);
+
   if (!submission || !questionSet) {
     return (
       <AppShell title="Test session" description="The test you're looking for could not be loaded.">
@@ -248,11 +556,6 @@ export function TestSessionPage() {
       </AppShell>
     );
   }
-
-  const submitDisabled =
-    !completion.canSubmit ||
-    isSubmitting ||
-    (isRecordingTest && !uploadedRecording);
 
   const submit = async () => {
     if (isRecordingTest && !uploadedRecording) {
@@ -286,7 +589,7 @@ export function TestSessionPage() {
     }
   };
 
-  const handleRecordingStart = () => {
+  const handleManualRecordingStart = () => {
     if (!selectedLink && accessLinks.length > 0) {
       setMessage("Choose the platform you're about to test before continuing.");
       return;
@@ -298,10 +601,118 @@ export function TestSessionPage() {
     }
 
     setMessage("");
-    setRecordingPhase("launched");
+    setRecordingPhase("recording_live");
 
     if (selectedLink?.productType === "website") {
       window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleNativeRecordingStart = async () => {
+    if (!selectedLink || selectedLink.productType !== "website") {
+      setMessage("Choose the website you're about to test before continuing.");
+      return;
+    }
+
+    if (!currentUser) {
+      setMessage("Verify your email before starting a recording test.");
+      return;
+    }
+
+    setPopupBlocked(false);
+    setNativeRecoveryUploadEnabled(false);
+    setNativeUploadError("");
+    setNativeRecordingBlob(null);
+    setMessage("");
+
+    const preOpenedWindow = window.open("", "_blank");
+    let microphoneStream: MediaStream | null = null;
+    let displayStream: MediaStream | null = null;
+
+    try {
+      microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const displayCaptureOptions = {
+        audio: false,
+        video: true,
+        selfBrowserSurface: "exclude",
+        preferCurrentTab: false,
+        surfaceSwitching: "include",
+        monitorTypeSurfaces: "include",
+      } as unknown as DisplayMediaStreamOptions;
+      displayStream = await navigator.mediaDevices.getDisplayMedia(displayCaptureOptions);
+      const combinedStream = new MediaStream([
+        ...displayStream.getVideoTracks(),
+        ...microphoneStream.getAudioTracks(),
+      ]);
+      const preferredMimeType = getPreferredMediaRecorderMimeType();
+      const recorder = preferredMimeType
+        ? new MediaRecorder(combinedStream, { mimeType: preferredMimeType })
+        : new MediaRecorder(combinedStream);
+      const activeVideoTrack = displayStream.getVideoTracks()[0] ?? null;
+
+      microphoneStreamRef.current = microphoneStream;
+      displayStreamRef.current = displayStream;
+      combinedStreamRef.current = combinedStream;
+      mediaRecorderRef.current = recorder;
+      recordingChunksRef.current = [];
+      nativeStopReasonRef.current = "user-finished";
+      setLiveRecordingStartedAt(Date.now());
+      setNativeRecordingMimeType(recorder.mimeType || preferredMimeType || "video/webm");
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (isUnmountingRef.current || nativeStopReasonRef.current === "unmounted") {
+          recordingChunksRef.current = [];
+          setLiveRecordingStartedAt(null);
+          cleanupActiveCaptureStreams();
+          return;
+        }
+
+        const chunkMimeType = recorder.mimeType || preferredMimeType || "video/webm";
+        const finalBlob = new Blob(recordingChunksRef.current, { type: chunkMimeType });
+        recordingChunksRef.current = [];
+        setLiveRecordingStartedAt(null);
+        cleanupActiveCaptureStreams();
+
+        if (finalBlob.size === 0) {
+          setRecordingPhase("return_and_submit");
+          setNativeRecoveryUploadEnabled(true);
+          setNativeUploadError("The browser did not capture a recording. Start again or upload a saved backup file.");
+          setMessage("The browser did not capture a recording. Start again or upload a saved backup file.");
+          return;
+        }
+
+        void finalizeNativeRecording(finalBlob, chunkMimeType);
+      };
+
+      activeVideoTrack?.addEventListener("ended", () => {
+        if (mediaRecorderRef.current?.state === "recording") {
+          nativeStopReasonRef.current = "share-ended";
+          mediaRecorderRef.current.stop();
+        }
+      }, { once: true });
+
+      recorder.start(1000);
+      setRecordingPhase("recording_live");
+
+      const launched = launchSelectedWebsite(preOpenedWindow);
+
+      if (!launched) {
+        setMessage("Recording started. If the website did not open automatically, use the button below to open it in a new tab.");
+      }
+    } catch (error) {
+      preOpenedWindow?.close();
+      microphoneStream?.getTracks().forEach((track) => track.stop());
+      displayStream?.getTracks().forEach((track) => track.stop());
+      cleanupActiveCaptureStreams();
+      setLiveRecordingStartedAt(null);
+      setRecordingPhase("preflight");
+      setMessage(getMediaPermissionMessage(error));
     }
   };
 
@@ -313,38 +724,25 @@ export function TestSessionPage() {
       return;
     }
 
-    if (!currentUser) {
-      setMessage("Verify your email before uploading a recording.");
-      return;
-    }
-
-    const validation = validateRecordingFile(file);
-
-    if (!validation.ok) {
-      setMessage(validation.message);
-      return;
-    }
-
-    setIsUploadingRecording(true);
-    setMessage("");
-
-    try {
-      const nextRecording = await uploadRecordingDraft(
-        currentUser.id,
-        recordingSessionId,
-        file,
-        uploadedRecording,
-      );
-      setUploadedRecording(nextRecording);
-      setMessage("Recording uploaded. Finish the questionnaire and submit when you're ready.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The recording could not be uploaded.");
-    } finally {
-      setIsUploadingRecording(false);
-    }
+    await uploadManualRecordingFile(file, "Recording uploaded. Submit when you're ready.");
   };
 
   const showReturnAndSubmit = !isRecordingTest || recordingPhase === "return_and_submit";
+  const progressLabel = hasQuestions
+    ? `${completion.answered} / ${completion.total} answered`
+    : isRecordingTest
+      ? "Recording-only test"
+      : "Ready to submit";
+  const recordingStatusCopy = uploadedRecording
+    ? "Recording uploaded and ready."
+    : isNativeDesktopRecording
+      ? "Finish the browser recording and let it upload to unlock submit."
+      : "Upload the recording to unlock final submit.";
+  const shouldShowManualRecoveryUpload =
+    isNativeDesktopRecording &&
+    nativeRecoveryUploadEnabled &&
+    !uploadedRecording &&
+    !nativeRecordingBlob;
 
   return (
     <AppShell eyebrowLabel={null}>
@@ -353,7 +751,9 @@ export function TestSessionPage() {
           <h1>{`Test ${submission.productName}`}</h1>
           <p>
             {isRecordingTest
-              ? "This is a recording test. Record your screen and voice during the session, then come back here to upload the video and submit your answers."
+              ? isNativeDesktopRecording
+                ? "This is a recording test. Desktop Chrome or Edge will open the browser's native share picker, record your screen and voice, and upload the video automatically when you finish."
+                : "This is a recording test. Record your screen and voice during the session, then come back here to upload the video and submit your answers."
               : "Open the app in a new tab, keep this questionnaire here, and leave thoughtful answers that are actually useful to the person who submitted it."}
           </p>
         </div>
@@ -392,11 +792,13 @@ export function TestSessionPage() {
             <>
               <div className="callout callout--soft recording-test-callout">
                 <div className="recording-test-callout__copy">
-                  <span className="recording-test-callout__eyebrow">Recording required</span>
-                  <strong>This session needs a screen and voice recording.</strong>
-                  <p>
-                    Make sure you have enough storage space before you begin. Test4Test keeps uploaded recordings for 7 days, then deletes them automatically.
-                  </p>
+                  <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                  <strong>
+                    {isNativeDesktopRecording
+                      ? "This session can use the browser's built-in recorder."
+                      : "This session needs a screen and voice recording."}
+                  </strong>
+                  <p>{recordingExperience.reason}</p>
                 </div>
                 <Mic size={20} aria-hidden="true" />
               </div>
@@ -432,57 +834,114 @@ export function TestSessionPage() {
                     </div>
                   ) : null}
 
-                  <div className="recording-guidance">
-                    <div className="recording-guidance__intro">
-                      <h2>{recordingInstructions.title}</h2>
-                      <p>{recordingInstructions.intro}</p>
-                    </div>
-                    <ol className="recording-guidance__steps">
-                      {recordingInstructions.steps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
-                  </div>
+                  {isNativeDesktopRecording ? (
+                    <>
+                      <div className="recording-guidance">
+                        <div className="recording-guidance__intro">
+                          <h2>Start with the browser&apos;s native picker</h2>
+                          <p>Chrome or Edge will ask for microphone access and then open the built-in share picker.</p>
+                        </div>
+                        <ol className="recording-guidance__steps">
+                          <li>Choose Entire screen or a browser window, not a single tab.</li>
+                          <li>Allow microphone access so your voice is captured with the recording.</li>
+                          <li>The website opens in a new tab after recording begins, so keep this Test4Test tab open.</li>
+                          <li>Return here when you are done testing and click the finish button to upload automatically.</li>
+                        </ol>
+                      </div>
 
-                  <div className="recording-guidance">
-                    <div className="recording-guidance__intro">
-                      <h2>Think out loud while you test</h2>
-                      <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
-                    </div>
-                    <ul className="recording-tips">
-                      {thinkAloudTips.map((tip) => (
-                        <li key={tip}>{tip}</li>
-                      ))}
-                    </ul>
-                  </div>
+                      <div className="recording-guidance">
+                        <div className="recording-guidance__intro">
+                          <h2>Think out loud while you test</h2>
+                          <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
+                        </div>
+                        <ul className="recording-tips">
+                          {thinkAloudTips.map((tip) => (
+                            <li key={tip}>{tip}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="recording-guidance">
+                        <div className="recording-guidance__intro">
+                          <h2>{recordingInstructions.title}</h2>
+                          <p>{recordingInstructions.intro}</p>
+                        </div>
+                        <ol className="recording-guidance__steps">
+                          {recordingInstructions.steps.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
 
-                  <label className="checkbox-row recording-attestation">
-                    <input
-                      type="checkbox"
-                      checked={confirmedRecording}
-                      onChange={(event) => setConfirmedRecording(event.target.checked)}
-                    />
-                    <span>I have started a screen recording with microphone audio for this session.</span>
-                  </label>
+                      <div className="recording-guidance">
+                        <div className="recording-guidance__intro">
+                          <h2>Think out loud while you test</h2>
+                          <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
+                        </div>
+                        <ul className="recording-tips">
+                          {thinkAloudTips.map((tip) => (
+                            <li key={tip}>{tip}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <label className="checkbox-row recording-attestation">
+                        <input
+                          type="checkbox"
+                          checked={confirmedRecording}
+                          onChange={(event) => setConfirmedRecording(event.target.checked)}
+                        />
+                        <span>I have started a screen recording with microphone audio for this session.</span>
+                      </label>
+                    </>
+                  )}
 
                   <div className="wizard-actions">
                     <button type="button" className="button button--secondary" onClick={() => navigate("/earn")}>
                       Back to Earn
                     </button>
-                    <button type="button" className="button button--primary" onClick={handleRecordingStart}>
-                      I&apos;m recording and ready to test
+                    <button
+                      type="button"
+                      className="button button--primary"
+                      onClick={() => {
+                        if (isNativeDesktopRecording) {
+                          void handleNativeRecordingStart();
+                        } else {
+                          handleManualRecordingStart();
+                        }
+                      }}
+                    >
+                      {isNativeDesktopRecording ? "Start screen + voice recording" : "I&apos;m recording and ready to test"}
                     </button>
                   </div>
                 </div>
               ) : null}
 
-              {recordingPhase === "launched" ? (
+              {recordingPhase === "recording_live" ? (
                 <div className="recording-phase-card">
                   <div className="recording-phase-card__copy">
-                    <span className="test-session__label">Testing in progress</span>
-                    <h2>{recordingInstructions.launchTitle}</h2>
-                    <p>{recordingInstructions.launchBody}</p>
-                    <p>Return to this page when you are finished testing so you can stop recording, upload the video, and submit your answers.</p>
+                    <span className="test-session__label">
+                      {isNativeDesktopRecording ? "Recording in progress" : "Testing in progress"}
+                    </span>
+                    <h2>{isNativeDesktopRecording ? "Testing in a new tab" : recordingInstructions.launchTitle}</h2>
+                    <p>
+                      {isNativeDesktopRecording
+                        ? "The browser's recording indicator should stay visible while you test. Keep this tab open and return here when you are ready to finish."
+                        : recordingInstructions.launchBody}
+                    </p>
+                    <p>
+                      {isNativeDesktopRecording
+                        ? "When you return, click the finish button so Test4Test can stop the recording and upload it automatically."
+                        : "Return to this page when you are finished testing so you can stop recording, upload the video, and submit your answers."}
+                    </p>
+                    {isNativeDesktopRecording ? (
+                      <div className="recording-phase-card__timer">
+                        <strong>{formatElapsedDuration(liveElapsedSeconds)}</strong>
+                        <span>elapsed</span>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="recording-phase-card__actions inline-actions">
                     {selectedLink ? (
@@ -492,7 +951,7 @@ export function TestSessionPage() {
                         rel="noreferrer"
                         className="button button--secondary"
                       >
-                        {recordingInstructions.launchButtonLabel}
+                        {isNativeDesktopRecording ? "Open website again" : recordingInstructions.launchButtonLabel}
                         <ExternalLink size={16} />
                       </a>
                     ) : null}
@@ -500,12 +959,35 @@ export function TestSessionPage() {
                       type="button"
                       className="button button--primary"
                       onClick={() => {
-                        setRecordingPhase("return_and_submit");
-                        setMessage("Stop your recording, upload the video, then finish the questionnaire.");
+                        if (isNativeDesktopRecording) {
+                          stopNativeRecording();
+                        } else {
+                          setRecordingPhase("return_and_submit");
+                          setMessage("Stop your recording, upload the video, then finish the questionnaire.");
+                        }
                       }}
                     >
                       I&apos;m finished testing
                     </button>
+                  </div>
+                  {popupBlocked ? (
+                    <div className="callout callout--warning">
+                      <span>The website did not open automatically. Use the button above to open it in a new tab.</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {recordingPhase === "uploading_recording" ? (
+                <div className="recording-upload-card">
+                  <div className="recording-upload-card__copy">
+                    <span className="test-session__label">Uploading recording</span>
+                    <h2>Uploading your browser recording</h2>
+                    <p>Stay on this page while Test4Test saves the screen recording automatically.</p>
+                  </div>
+                  <div className="callout callout--soft">
+                    <span className="button__spinner" aria-hidden="true" />
+                    <span>Uploading recording...</span>
                   </div>
                 </div>
               ) : null}
@@ -514,23 +996,29 @@ export function TestSessionPage() {
                 <div className="recording-upload-card">
                   <div className="recording-upload-card__copy">
                     <span className="test-session__label">Return and submit</span>
-                    <h2>Stop your recording and upload the video</h2>
+                    <h2>{isNativeDesktopRecording ? "Review the recording and submit" : "Stop your recording and upload the video"}</h2>
                     <p>
-                      Upload the recording from your computer or phone, then complete the questionnaire below. Final submit stays locked until the video upload succeeds.
+                      {isNativeDesktopRecording
+                        ? "Once the recording is uploaded, final submit unlocks here. If the automatic upload fails, retry it or download a backup copy."
+                        : "Upload the recording from your computer or phone, then complete the questionnaire below. Final submit stays locked until the video upload succeeds."}
                     </p>
                   </div>
-                  <label className="field recording-upload-card__field">
-                    <span>Screen recording upload</span>
-                    <input
-                      type="file"
-                      accept={RECORDING_ACCEPT_ATTRIBUTE}
-                      onChange={handleRecordingUpload}
-                      disabled={isUploadingRecording}
-                    />
-                    <small className="helper-text">
-                      Accepted: MP4, MOV, or WEBM up to 500 MB.
-                    </small>
-                  </label>
+
+                  {!isNativeDesktopRecording ? (
+                    <label className="field recording-upload-card__field">
+                      <span>Screen recording upload</span>
+                      <input
+                        type="file"
+                        accept={RECORDING_ACCEPT_ATTRIBUTE}
+                        onChange={handleRecordingUpload}
+                        disabled={isUploadingRecording}
+                      />
+                      <small className="helper-text">
+                        Accepted: MP4, MOV, or WEBM up to 500 MB.
+                      </small>
+                    </label>
+                  ) : null}
+
                   {uploadedRecording ? (
                     <div className="recording-upload-card__meta">
                       <strong>{uploadedRecording.fileName}</strong>
@@ -538,11 +1026,58 @@ export function TestSessionPage() {
                       <span>{`Available until ${formatDateTime(uploadedRecording.expiresAt)}`}</span>
                     </div>
                   ) : null}
-                  {isUploadingRecording ? (
-                    <div className="callout callout--soft">
-                      <span className="button__spinner" aria-hidden="true" />
-                      <span>Uploading recording...</span>
+
+                  {isNativeDesktopRecording && !uploadedRecording && nativeRecordingBlob ? (
+                    <div className="recording-upload-card__actions inline-actions">
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        onClick={() => { void finalizeNativeRecording(nativeRecordingBlob, nativeRecordingMimeType); }}
+                        disabled={isUploadingRecording}
+                      >
+                        Retry upload
+                      </button>
+                      <button
+                        type="button"
+                        className="button button--secondary"
+                        onClick={() => downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName)}
+                      >
+                        Download backup
+                      </button>
+                      <button
+                        type="button"
+                        className="button button--ghost"
+                        onClick={resetNativeDesktopFlow}
+                      >
+                        Start a new recording
+                      </button>
                     </div>
+                  ) : null}
+
+                  {shouldShowManualRecoveryUpload ? (
+                    <>
+                      <label className="field recording-upload-card__field">
+                        <span>Upload a saved backup file</span>
+                        <input
+                          type="file"
+                          accept={RECORDING_ACCEPT_ATTRIBUTE}
+                          onChange={handleRecordingUpload}
+                          disabled={isUploadingRecording}
+                        />
+                        <small className="helper-text">
+                          Use this only if you already saved a local backup recording.
+                        </small>
+                      </label>
+                      <div className="recording-upload-card__actions inline-actions">
+                        <button
+                          type="button"
+                          className="button button--secondary"
+                          onClick={resetNativeDesktopFlow}
+                        >
+                          Start a new recording
+                        </button>
+                      </div>
+                    </>
                   ) : null}
                 </div>
               ) : null}
@@ -551,51 +1086,62 @@ export function TestSessionPage() {
 
           {showReturnAndSubmit ? (
             <>
-              <div className="question-list test-session__questions">
-                {questionSet.questions.map((question) => (
-                  <article key={question.id} className="question-card question-card--spacious">
-                    <div className="test-session__question-body">
-                      <h3>{question.sortOrder}. {question.title}</h3>
-                      {question.type === "multiple" ? (
-                        <div className="radio-list">
-                          {(question.options ?? []).map((option) => (
-                            <label key={option} className={`radio-card${answers[question.id] === option ? " radio-card--active" : ""}`}>
-                              <input
-                                className="radio-card__control"
-                                type="radio"
-                                name={question.id}
-                                checked={answers[question.id] === option}
-                                onChange={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
-                              />
-                              <span>{option}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <label className="field">
-                          <textarea
-                            rows={5}
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
-                            placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
-                          />
-                          <small className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}>
-                            {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters
-                          </small>
-                        </label>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
+              {hasQuestions ? (
+                <div className="question-list test-session__questions">
+                  {questionSet.questions.map((question) => (
+                    <article key={question.id} className="question-card question-card--spacious">
+                      <div className="test-session__question-body">
+                        <h3>{question.sortOrder}. {question.title}</h3>
+                        {question.type === "multiple" ? (
+                          <div className="radio-list">
+                            {(question.options ?? []).map((option) => (
+                              <label key={option} className={`radio-card${answers[question.id] === option ? " radio-card--active" : ""}`}>
+                                <input
+                                  className="radio-card__control"
+                                  type="radio"
+                                  name={question.id}
+                                  checked={answers[question.id] === option}
+                                  onChange={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                                />
+                                <span>{option}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <label className="field">
+                            <textarea
+                              rows={5}
+                              value={answers[question.id] ?? ""}
+                              onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+                              placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
+                            />
+                            <small className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}>
+                              {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters
+                            </small>
+                          </label>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : isRecordingTest ? (
+                <div className="recording-questionless-note">
+                  <strong>No written questionnaire for this test.</strong>
+                  <p>Once the recording is ready, you can submit this test from the footer below.</p>
+                </div>
+              ) : null}
 
-              {message ? <div className="callout callout--soft">{message}</div> : null}
+              {message ? (
+                <div className={`callout ${nativeUploadError ? "callout--warning" : "callout--soft"}`}>
+                  <span>{message}</span>
+                </div>
+              ) : null}
 
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
                 <div className="test-session__progress">
-                  <strong>{completion.answered} / {completion.total} answered</strong>
+                  <strong>{progressLabel}</strong>
                   {isRecordingTest ? (
-                    <span>{uploadedRecording ? "Recording uploaded and ready." : "Upload the recording to unlock final submit."}</span>
+                    <span>{recordingStatusCopy}</span>
                   ) : null}
                 </div>
                 <div className="inline-actions">
