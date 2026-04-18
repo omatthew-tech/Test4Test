@@ -30,6 +30,11 @@ import { ProductType, Question, ResponseRecording, TestAnswer } from "../types";
 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
 
+interface MicrophoneOption {
+  deviceId: string;
+  label: string;
+}
+
 function buildAnswer(question: Question, value: string): TestAnswer {
   return question.type === "multiple"
     ? {
@@ -86,6 +91,26 @@ function getMediaPermissionMessage(error: unknown) {
   }
 
   return "The browser could not start screen and voice recording. Try again in desktop Chrome or Edge.";
+}
+
+function getMicrophonePermissionMessage(error: unknown) {
+  if (!(error instanceof DOMException)) {
+    return "Allow microphone access so you can choose a microphone before starting the test.";
+  }
+
+  if (error.name === "NotAllowedError") {
+    return "Allow microphone access so you can choose a microphone before starting the test.";
+  }
+
+  if (error.name === "NotFoundError") {
+    return "No microphone was found for this browser session.";
+  }
+
+  if (error.name === "NotReadableError") {
+    return "The selected microphone is unavailable right now. Close other apps using it and try again.";
+  }
+
+  return "Allow microphone access so you can choose a microphone before starting the test.";
 }
 
 function getRecordingInstructions(productType: ProductType) {
@@ -163,6 +188,10 @@ export function TestSessionPage() {
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
+  const microphoneAudioContextRef = useRef<AudioContext | null>(null);
+  const microphoneMeterFrameRef = useRef<number | null>(null);
+  const microphoneAnalyserRef = useRef<AnalyserNode | null>(null);
+  const microphoneLevelDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const displayStreamRef = useRef<MediaStream | null>(null);
   const microphoneStreamRef = useRef<MediaStream | null>(null);
@@ -206,6 +235,11 @@ export function TestSessionPage() {
   const [nativeUploadError, setNativeUploadError] = useState("");
   const [nativeRecoveryUploadEnabled, setNativeRecoveryUploadEnabled] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [availableMicrophones, setAvailableMicrophones] = useState<MicrophoneOption[]>([]);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
+  const [microphoneStatus, setMicrophoneStatus] = useState<"idle" | "requesting" | "ready" | "error">("idle");
+  const [microphoneError, setMicrophoneError] = useState("");
+  const [microphoneLevel, setMicrophoneLevel] = useState(0);
 
   const selectedLink = useMemo(() => {
     if (!isRecordingTest) {
@@ -237,6 +271,20 @@ export function TestSessionPage() {
     () => createGeneratedRecordingFileName(recordingSessionId, nativeRecordingMimeType),
     [nativeRecordingMimeType, recordingSessionId],
   );
+  const microphoneBarHeights = useMemo(() => {
+    const baseHeights = [10, 14, 18, 14, 10];
+
+    if (microphoneStatus !== "ready") {
+      return baseHeights;
+    }
+
+    const weightedLevel = Math.max(0, Math.min(1, microphoneLevel));
+    const weights = [0.6, 0.82, 1, 0.82, 0.6];
+
+    return baseHeights.map((baseHeight, index) =>
+      Math.max(6, Math.round(baseHeight * (0.45 + weightedLevel * 1.9 * weights[index]))),
+    );
+  }, [microphoneLevel, microphoneStatus]);
 
   const completion = useMemo(() => {
     if (!questionSet) {
@@ -274,7 +322,77 @@ export function TestSessionPage() {
     !completion.canSubmit ||
     (isRecordingTest && !uploadedRecording);
 
+  const stopMicrophoneMeter = () => {
+    if (microphoneMeterFrameRef.current !== null) {
+      window.cancelAnimationFrame(microphoneMeterFrameRef.current);
+      microphoneMeterFrameRef.current = null;
+    }
+
+    microphoneAnalyserRef.current = null;
+    microphoneLevelDataRef.current = null;
+
+    if (microphoneAudioContextRef.current) {
+      void microphoneAudioContextRef.current.close().catch(() => undefined);
+      microphoneAudioContextRef.current = null;
+    }
+  };
+
+  const startMicrophoneMeter = (stream: MediaStream) => {
+    stopMicrophoneMeter();
+
+    if (typeof window === "undefined" || typeof window.AudioContext === "undefined") {
+      setMicrophoneLevel(0);
+      return;
+    }
+
+    const audioContext = new window.AudioContext();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.8;
+
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+
+    const data = new Uint8Array(analyser.fftSize);
+    microphoneAudioContextRef.current = audioContext;
+    microphoneAnalyserRef.current = analyser;
+    microphoneLevelDataRef.current = data;
+
+    const updateMeter = () => {
+      const nextAnalyser = microphoneAnalyserRef.current;
+      const nextData = microphoneLevelDataRef.current;
+
+      if (!nextAnalyser || !nextData) {
+        return;
+      }
+
+      nextAnalyser.getByteTimeDomainData(nextData);
+
+      let sumSquares = 0;
+
+      for (let index = 0; index < nextData.length; index += 1) {
+        const normalizedSample = (nextData[index] - 128) / 128;
+        sumSquares += normalizedSample * normalizedSample;
+      }
+
+      const rms = Math.sqrt(sumSquares / nextData.length);
+      const nextLevel = Math.min(1, rms * 8);
+      setMicrophoneLevel((currentLevel) => currentLevel * 0.65 + nextLevel * 0.35);
+      microphoneMeterFrameRef.current = window.requestAnimationFrame(updateMeter);
+    };
+
+    microphoneMeterFrameRef.current = window.requestAnimationFrame(updateMeter);
+  };
+
+  const stopMicrophonePreviewStream = () => {
+    stopMicrophoneMeter();
+    microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+    microphoneStreamRef.current = null;
+    setMicrophoneLevel(0);
+  };
+
   const cleanupActiveCaptureStreams = () => {
+    stopMicrophoneMeter();
     const tracks = new Set<MediaStreamTrack>();
 
     for (const stream of [displayStreamRef.current, microphoneStreamRef.current, combinedStreamRef.current]) {
@@ -286,6 +404,62 @@ export function TestSessionPage() {
     microphoneStreamRef.current = null;
     combinedStreamRef.current = null;
     mediaRecorderRef.current = null;
+  };
+
+  const prepareMicrophonePreview = async (deviceId?: string) => {
+    if (!isNativeDesktopRecording) {
+      return false;
+    }
+
+    setMicrophoneStatus("requesting");
+    setMicrophoneError("");
+    setMessage("");
+
+    if (mediaRecorderRef.current?.state !== "recording") {
+      stopMicrophonePreviewStream();
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(
+        deviceId
+          ? {
+              audio: {
+                deviceId: { exact: deviceId },
+              },
+            }
+          : {
+              audio: true,
+            },
+      );
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const microphoneDevices = devices
+        .filter((device) => device.kind === "audioinput")
+        .map((device, index) => ({
+          deviceId: device.deviceId,
+          label: device.label || `Microphone ${index + 1}`,
+        }));
+      const activeTrackDeviceId = stream.getAudioTracks()[0]?.getSettings().deviceId ?? "";
+      const nextSelectedMicrophoneId =
+        deviceId && microphoneDevices.some((device) => device.deviceId === deviceId)
+          ? deviceId
+          : activeTrackDeviceId && microphoneDevices.some((device) => device.deviceId === activeTrackDeviceId)
+            ? activeTrackDeviceId
+            : microphoneDevices[0]?.deviceId ?? "";
+
+      microphoneStreamRef.current = stream;
+      setAvailableMicrophones(microphoneDevices);
+      setSelectedMicrophoneId(nextSelectedMicrophoneId);
+      setMicrophoneStatus("ready");
+      setMicrophoneError("");
+      startMicrophoneMeter(stream);
+      return true;
+    } catch (error) {
+      stopMicrophonePreviewStream();
+      setMicrophoneStatus("error");
+      setMicrophoneError(getMicrophonePermissionMessage(error));
+      setMessage(getMicrophonePermissionMessage(error));
+      return false;
+    }
   };
 
   const launchSelectedWebsite = (preOpenedWindow?: Window | null) => {
@@ -426,6 +600,8 @@ export function TestSessionPage() {
     setNativeUploadError("");
     setNativeRecoveryUploadEnabled(false);
     setPopupBlocked(false);
+    setMicrophoneStatus("idle");
+    setMicrophoneError("");
     setMessage("");
   };
 
@@ -492,6 +668,36 @@ export function TestSessionPage() {
       setChosenProductType(accessLinks.length === 1 ? accessLinks[0].productType : null);
     }
   }, [accessLinks, chosenProductType, isRecordingTest]);
+
+  useEffect(() => {
+    if (!isNativeDesktopRecording || recordingPhase !== "preflight") {
+      if (mediaRecorderRef.current?.state !== "recording") {
+        stopMicrophoneMeter();
+        setMicrophoneLevel(0);
+      }
+      return;
+    }
+
+    if (microphoneStatus === "idle" && !microphoneStreamRef.current) {
+      void prepareMicrophonePreview(selectedMicrophoneId || undefined);
+    }
+  }, [isNativeDesktopRecording, microphoneStatus, recordingPhase, selectedMicrophoneId]);
+
+  useEffect(() => {
+    if (isNativeDesktopRecording) {
+      return;
+    }
+
+    if (mediaRecorderRef.current?.state === "recording") {
+      return;
+    }
+
+    stopMicrophonePreviewStream();
+    setAvailableMicrophones([]);
+    setSelectedMicrophoneId("");
+    setMicrophoneStatus("idle");
+    setMicrophoneError("");
+  }, [isNativeDesktopRecording]);
 
   useEffect(() => {
     if (!isNativeDesktopRecording || !liveRecordingStartedAt) {
@@ -626,11 +832,19 @@ export function TestSessionPage() {
     setMessage("");
 
     const preOpenedWindow = window.open("", "_blank");
-    let microphoneStream: MediaStream | null = null;
     let displayStream: MediaStream | null = null;
 
     try {
-      microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const microphoneReady =
+        microphoneStreamRef.current && microphoneStatus === "ready"
+          ? true
+          : await prepareMicrophonePreview(selectedMicrophoneId || undefined);
+
+      if (!microphoneReady || !microphoneStreamRef.current) {
+        preOpenedWindow?.close();
+        return;
+      }
+
       const displayCaptureOptions = {
         audio: false,
         video: true,
@@ -640,9 +854,10 @@ export function TestSessionPage() {
         monitorTypeSurfaces: "include",
       } as unknown as DisplayMediaStreamOptions;
       displayStream = await navigator.mediaDevices.getDisplayMedia(displayCaptureOptions);
+      stopMicrophoneMeter();
       const combinedStream = new MediaStream([
         ...displayStream.getVideoTracks(),
-        ...microphoneStream.getAudioTracks(),
+        ...microphoneStreamRef.current.getAudioTracks(),
       ]);
       const preferredMimeType = getPreferredMediaRecorderMimeType();
       const recorder = preferredMimeType
@@ -650,7 +865,6 @@ export function TestSessionPage() {
         : new MediaRecorder(combinedStream);
       const activeVideoTrack = displayStream.getVideoTracks()[0] ?? null;
 
-      microphoneStreamRef.current = microphoneStream;
       displayStreamRef.current = displayStream;
       combinedStreamRef.current = combinedStream;
       mediaRecorderRef.current = recorder;
@@ -707,9 +921,21 @@ export function TestSessionPage() {
       }
     } catch (error) {
       preOpenedWindow?.close();
-      microphoneStream?.getTracks().forEach((track) => track.stop());
       displayStream?.getTracks().forEach((track) => track.stop());
-      cleanupActiveCaptureStreams();
+      if (mediaRecorderRef.current?.state !== "recording") {
+        const previewStream = microphoneStreamRef.current;
+
+        if (previewStream) {
+          startMicrophoneMeter(previewStream);
+          setMicrophoneStatus("ready");
+        } else {
+          setMicrophoneStatus("idle");
+        }
+      }
+
+      displayStreamRef.current = null;
+      combinedStreamRef.current = null;
+      mediaRecorderRef.current = null;
       setLiveRecordingStartedAt(null);
       setRecordingPhase("preflight");
       setMessage(getMediaPermissionMessage(error));
@@ -790,18 +1016,16 @@ export function TestSessionPage() {
 
           {isRecordingTest ? (
             <>
-              <div className="callout callout--soft recording-test-callout">
-                <div className="recording-test-callout__copy">
-                  <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
-                  <strong>
-                    {isNativeDesktopRecording
-                      ? "This session can use the browser's built-in recorder."
-                      : "This session needs a screen and voice recording."}
-                  </strong>
-                  <p>{recordingExperience.reason}</p>
+              {!isNativeDesktopRecording ? (
+                <div className="callout callout--soft recording-test-callout">
+                  <div className="recording-test-callout__copy">
+                    <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                    <strong>This session needs a screen and voice recording.</strong>
+                    <p>{recordingExperience.reason}</p>
+                  </div>
+                  <Mic size={20} aria-hidden="true" />
                 </div>
-                <Mic size={20} aria-hidden="true" />
-              </div>
+              ) : null}
 
               {recordingPhase === "preflight" ? (
                 <div className="recording-phase-stack">
@@ -835,32 +1059,84 @@ export function TestSessionPage() {
                   ) : null}
 
                   {isNativeDesktopRecording ? (
-                    <>
-                      <div className="recording-guidance">
-                        <div className="recording-guidance__intro">
-                          <h2>Start with the browser&apos;s native picker</h2>
-                          <p>Chrome or Edge will ask for microphone access and then open the built-in share picker.</p>
+                    <div className="recording-quickstart">
+                      <div className="recording-quickstart__step">
+                        <span className="recording-quickstart__number">1.</span>
+                        <div className="recording-quickstart__content">
+                          <div className="recording-quickstart__copy">
+                            <strong>Enable microphone access</strong>
+                            <div className="recording-microphone-setup">
+                              {availableMicrophones.length > 0 ? (
+                                <label className="recording-microphone-select">
+                                  <span>Select microphone</span>
+                                  <select
+                                    value={selectedMicrophoneId}
+                                    onChange={(event) => {
+                                      const nextMicrophoneId = event.target.value;
+                                      setSelectedMicrophoneId(nextMicrophoneId);
+                                      void prepareMicrophonePreview(nextMicrophoneId);
+                                    }}
+                                    disabled={microphoneStatus === "requesting"}
+                                  >
+                                    {availableMicrophones.map((microphone) => (
+                                      <option key={microphone.deviceId} value={microphone.deviceId}>
+                                        {microphone.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                              ) : null}
+                              <div className="recording-microphone-actions">
+                                <button
+                                  type="button"
+                                  className="button button--secondary button--small"
+                                  onClick={() => { void prepareMicrophonePreview(selectedMicrophoneId || undefined); }}
+                                  disabled={microphoneStatus === "requesting"}
+                                >
+                                  {microphoneStatus === "ready"
+                                    ? "Change microphone"
+                                    : microphoneStatus === "requesting"
+                                      ? "Checking microphone..."
+                                      : "Enable microphone"}
+                                </button>
+                                {microphoneError ? (
+                                  <small className="helper-text helper-text--warning">{microphoneError}</small>
+                                ) : microphoneStatus === "ready" ? (
+                                  <small className="helper-text helper-text--success">Microphone ready</small>
+                                ) : (
+                                  <small className="helper-text">Choose the microphone you want to use for this test.</small>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            className={`recording-mic-indicator${microphoneStatus === "ready" ? " recording-mic-indicator--active" : " recording-mic-indicator--inactive"}`}
+                            role="img"
+                            aria-label={
+                              microphoneStatus === "ready"
+                                ? "Voice activity level for the selected microphone"
+                                : "Microphone activity is inactive until microphone access is enabled"
+                            }
+                          >
+                            {microphoneBarHeights.map((height, index) => (
+                              <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
+                            ))}
+                          </div>
                         </div>
-                        <ol className="recording-guidance__steps">
-                          <li>Choose Entire screen or a browser window, not a single tab.</li>
-                          <li>Allow microphone access so your voice is captured with the recording.</li>
-                          <li>The website opens in a new tab after recording begins, so keep this Test4Test tab open.</li>
-                          <li>Return here when you are done testing and click the finish button to upload automatically.</li>
-                        </ol>
                       </div>
-
-                      <div className="recording-guidance">
-                        <div className="recording-guidance__intro">
-                          <h2>Think out loud while you test</h2>
-                          <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
+                      <div className="recording-quickstart__step">
+                        <span className="recording-quickstart__number">2.</span>
+                        <div className="recording-quickstart__content">
+                          <strong>Enable screen sharing</strong>
                         </div>
-                        <ul className="recording-tips">
-                          {thinkAloudTips.map((tip) => (
-                            <li key={tip}>{tip}</li>
-                          ))}
-                        </ul>
                       </div>
-                    </>
+                      <div className="recording-quickstart__step">
+                        <span className="recording-quickstart__number">3.</span>
+                        <div className="recording-quickstart__content">
+                          <strong>Think out loud. Share as much feedback as possible (good and bad)</strong>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="recording-guidance">
@@ -912,8 +1188,9 @@ export function TestSessionPage() {
                           handleManualRecordingStart();
                         }
                       }}
+                      disabled={isNativeDesktopRecording && microphoneStatus !== "ready"}
                     >
-                      {isNativeDesktopRecording ? "Start screen + voice recording" : "I&apos;m recording and ready to test"}
+                      {isNativeDesktopRecording ? "Start test" : "I&apos;m recording and ready to test"}
                     </button>
                   </div>
                 </div>

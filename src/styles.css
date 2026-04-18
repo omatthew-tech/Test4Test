@@ -6824,6 +6824,113 @@ body {
   background: rgba(255, 255, 255, 0.84);
 }
 
+.recording-quickstart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(221, 212, 204, 0.9);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.recording-quickstart__step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.recording-quickstart__number {
+  width: 30px;
+  flex: 0 0 30px;
+  color: #9b6641;
+  font-weight: 700;
+}
+
+.recording-quickstart__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.recording-quickstart__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.recording-quickstart__content strong {
+  color: var(--color-ink-900);
+  line-height: 1.5;
+}
+
+.recording-microphone-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recording-microphone-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recording-microphone-select span {
+  font-size: 0.85rem;
+  color: var(--color-ink-700);
+}
+
+.recording-microphone-select select {
+  min-height: 44px;
+  min-width: 260px;
+}
+
+.recording-microphone-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.recording-mic-indicator {
+  display: inline-flex;
+  align-items: end;
+  gap: 4px;
+  min-width: 74px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  transition: background 160ms ease;
+}
+
+.recording-mic-indicator span {
+  width: 5px;
+  border-radius: 999px;
+  transition: height 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+
+.recording-mic-indicator--inactive {
+  background: rgba(235, 238, 242, 0.95);
+}
+
+.recording-mic-indicator--inactive span {
+  background: #b8c0cc;
+  opacity: 0.9;
+}
+
+.recording-mic-indicator--active {
+  background: rgba(255, 244, 234, 0.9);
+}
+
+.recording-mic-indicator--active span {
+  background: #f58e56;
+  opacity: 1;
+}
+
 .recording-guidance__intro {
   display: flex;
   flex-direction: column;
@@ -6966,6 +7073,20 @@ body {
   .results-recording-panel__actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .recording-quickstart__step,
+  .recording-quickstart__content {
+    align-items: flex-start;
+  }
+
+  .recording-quickstart__content {
+    flex-direction: column;
+  }
+
+  .recording-microphone-select select {
+    min-width: 0;
+    width: 100%;
   }
 
   .checkbox-row,
