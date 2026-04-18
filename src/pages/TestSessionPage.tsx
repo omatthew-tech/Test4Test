@@ -235,6 +235,8 @@ export function TestSessionPage() {
   const [nativeUploadError, setNativeUploadError] = useState("");
   const [nativeRecoveryUploadEnabled, setNativeRecoveryUploadEnabled] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [screenShareStatus, setScreenShareStatus] = useState<"idle" | "requesting" | "active" | "error" | "ended">("idle");
+  const [nativeCaptureConfirmed, setNativeCaptureConfirmed] = useState(false);
   const [availableMicrophones, setAvailableMicrophones] = useState<MicrophoneOption[]>([]);
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
   const [microphoneStatus, setMicrophoneStatus] = useState<"idle" | "requesting" | "ready" | "error">("idle");
@@ -574,6 +576,8 @@ export function TestSessionPage() {
       setNativeRecordingBlob(null);
       setNativeRecoveryUploadEnabled(false);
       setRecordingPhase("return_and_submit");
+      setScreenShareStatus("ended");
+      setNativeCaptureConfirmed(false);
       setMessage(
         nativeStopReasonRef.current === "share-ended"
           ? "Screen sharing ended, and the recording captured so far has been uploaded."
@@ -581,6 +585,8 @@ export function TestSessionPage() {
       );
     } catch (error) {
       setRecordingPhase("return_and_submit");
+      setScreenShareStatus("ended");
+      setNativeCaptureConfirmed(false);
       setNativeUploadError(
         error instanceof Error
           ? error.message
@@ -600,6 +606,8 @@ export function TestSessionPage() {
     setNativeUploadError("");
     setNativeRecoveryUploadEnabled(false);
     setPopupBlocked(false);
+    setScreenShareStatus("idle");
+    setNativeCaptureConfirmed(false);
     setMicrophoneStatus("idle");
     setMicrophoneError("");
     setMessage("");
@@ -611,6 +619,8 @@ export function TestSessionPage() {
     if (!recorder || recorder.state === "inactive") {
       setRecordingPhase("return_and_submit");
       setNativeRecoveryUploadEnabled(true);
+      setScreenShareStatus("ended");
+      setNativeCaptureConfirmed(false);
       setMessage("The browser recording is no longer active. Upload a saved backup if you have one, or start again.");
       return;
     }
@@ -829,6 +839,8 @@ export function TestSessionPage() {
     setNativeRecoveryUploadEnabled(false);
     setNativeUploadError("");
     setNativeRecordingBlob(null);
+    setScreenShareStatus("requesting");
+    setNativeCaptureConfirmed(false);
     setMessage("");
 
     const preOpenedWindow = window.open("", "_blank");
@@ -896,6 +908,8 @@ export function TestSessionPage() {
         if (finalBlob.size === 0) {
           setRecordingPhase("return_and_submit");
           setNativeRecoveryUploadEnabled(true);
+          setScreenShareStatus("ended");
+          setNativeCaptureConfirmed(false);
           setNativeUploadError("The browser did not capture a recording. Start again or upload a saved backup file.");
           setMessage("The browser did not capture a recording. Start again or upload a saved backup file.");
           return;
@@ -907,17 +921,23 @@ export function TestSessionPage() {
       activeVideoTrack?.addEventListener("ended", () => {
         if (mediaRecorderRef.current?.state === "recording") {
           nativeStopReasonRef.current = "share-ended";
+          setScreenShareStatus("ended");
+          setNativeCaptureConfirmed(false);
           mediaRecorderRef.current.stop();
         }
       }, { once: true });
 
       recorder.start(1000);
       setRecordingPhase("recording_live");
+      setScreenShareStatus("active");
+      setNativeCaptureConfirmed(true);
 
       const launched = launchSelectedWebsite(preOpenedWindow);
 
       if (!launched) {
-        setMessage("Recording started. If the website did not open automatically, use the button below to open it in a new tab.");
+        setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
+      } else {
+        setMessage("Recording live. Your microphone is connected and screen sharing is active.");
       }
     } catch (error) {
       preOpenedWindow?.close();
@@ -933,6 +953,8 @@ export function TestSessionPage() {
         }
       }
 
+      setScreenShareStatus("error");
+      setNativeCaptureConfirmed(false);
       displayStreamRef.current = null;
       combinedStreamRef.current = null;
       mediaRecorderRef.current = null;
@@ -1102,7 +1124,7 @@ export function TestSessionPage() {
                                 {microphoneError ? (
                                   <small className="helper-text helper-text--warning">{microphoneError}</small>
                                 ) : microphoneStatus === "ready" ? (
-                                  <small className="helper-text helper-text--success">Microphone ready</small>
+                                  <small className="helper-text helper-text--success">Microphone ready and responding to your voice</small>
                                 ) : (
                                   <small className="helper-text">Choose the microphone you want to use for this test.</small>
                                 )}
@@ -1127,14 +1149,36 @@ export function TestSessionPage() {
                       <div className="recording-quickstart__step">
                         <span className="recording-quickstart__number">2.</span>
                         <div className="recording-quickstart__content">
-                          <strong>Enable screen sharing</strong>
+                          <div className="recording-quickstart__copy">
+                            <strong>Enable screen sharing</strong>
+                            <small className={`helper-text ${screenShareStatus === "active" ? "helper-text--success" : screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
+                              {screenShareStatus === "active"
+                                ? "Screen sharing is active."
+                                : screenShareStatus === "requesting"
+                                  ? "Chrome or Edge is asking you to share your screen."
+                                  : screenShareStatus === "error"
+                                    ? "Screen sharing did not start. Click Start test to try again."
+                                    : "You&apos;ll be prompted for this right after your microphone is ready."}
+                            </small>
+                          </div>
                         </div>
                       </div>
                       <div className="recording-quickstart__step">
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
-                          <strong>Think out loud. Share as much feedback as possible (good and bad)</strong>
+                          <div className="recording-quickstart__copy">
+                            <strong>Think out loud. Share as much feedback as possible (good and bad)</strong>
+                            <small className="helper-text">Once recording starts, the test opens in a new tab and the floating recorder stays available here.</small>
+                          </div>
                         </div>
+                      </div>
+                      <div className={`recording-status-summary${nativeCaptureConfirmed ? " recording-status-summary--live" : ""}`}>
+                        <strong>{nativeCaptureConfirmed ? "Recording confirmed" : "Ready to start"}</strong>
+                        <span>
+                          {nativeCaptureConfirmed
+                            ? "We can confirm screen sharing is active and your selected microphone is connected."
+                            : "Enable your microphone first, then Start test to share your screen and begin recording."}
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -1199,19 +1243,14 @@ export function TestSessionPage() {
               {recordingPhase === "recording_live" ? (
                 <div className="recording-phase-card">
                   <div className="recording-phase-card__copy">
-                    <span className="test-session__label">
-                      {isNativeDesktopRecording ? "Recording in progress" : "Testing in progress"}
-                    </span>
-                    <h2>{isNativeDesktopRecording ? "Testing in a new tab" : recordingInstructions.launchTitle}</h2>
+                    <span className="test-session__label">{isNativeDesktopRecording ? "Recording live" : "Testing in progress"}</span>
+                    <h2>{isNativeDesktopRecording ? "Your test is recording" : recordingInstructions.launchTitle}</h2>
                     <p>
                       {isNativeDesktopRecording
-                        ? "The browser's recording indicator should stay visible while you test. Keep this tab open and return here when you are ready to finish."
+                        ? nativeCaptureConfirmed
+                          ? "We confirmed that screen sharing is active and your selected microphone is connected. Test in the other tab, then use the floating recorder to finish."
+                          : "Test in the other tab, then come back here when you are ready to finish."
                         : recordingInstructions.launchBody}
-                    </p>
-                    <p>
-                      {isNativeDesktopRecording
-                        ? "When you return, click the finish button so Test4Test can stop the recording and upload it automatically."
-                        : "Return to this page when you are finished testing so you can stop recording, upload the video, and submit your answers."}
                     </p>
                     {isNativeDesktopRecording ? (
                       <div className="recording-phase-card__timer">
@@ -1436,6 +1475,35 @@ export function TestSessionPage() {
           ) : null}
         </Surface>
       </div>
+
+      {isNativeDesktopRecording && recordingPhase === "recording_live" ? (
+        <div className="recording-floating-box" role="status" aria-live="polite">
+          <div className="recording-floating-box__top">
+            <div className="recording-floating-box__badge">
+              <span className="recording-floating-box__dot" aria-hidden="true" />
+              <span>Recording live</span>
+            </div>
+            <strong>{formatElapsedDuration(liveElapsedSeconds)}</strong>
+          </div>
+          <div className="recording-floating-box__status">
+            <span className={`recording-floating-box__pill${microphoneStatus === "ready" ? " recording-floating-box__pill--ok" : ""}`}>
+              Mic {microphoneStatus === "ready" ? "connected" : "not ready"}
+            </span>
+            <span className={`recording-floating-box__pill${screenShareStatus === "active" ? " recording-floating-box__pill--ok" : ""}`}>
+              Screen {screenShareStatus === "active" ? "sharing" : "not shared"}
+            </span>
+          </div>
+          <div className="recording-floating-box__actions">
+            <button
+              type="button"
+              className="button button--primary button--small"
+              onClick={stopNativeRecording}
+            >
+              Finish recording
+            </button>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }
