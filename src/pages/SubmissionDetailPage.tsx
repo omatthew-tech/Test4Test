@@ -159,6 +159,8 @@ export function SubmissionDetailPage() {
   const [copiedTipMethod, setCopiedTipMethod] = useState<TipMethodKey | null>(null);
   const [recordingAction, setRecordingAction] = useState<"watch" | "download" | null>(null);
   const [recordingActionError, setRecordingActionError] = useState("");
+  const [recordingPreviewUrl, setRecordingPreviewUrl] = useState("");
+  const [recordingPreviewFileName, setRecordingPreviewFileName] = useState("");
   const selectedResponseIdRef = useRef<string | null>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
 
@@ -305,6 +307,7 @@ export function SubmissionDetailPage() {
     Boolean(selectedRecording.deletedAt) ||
     new Date(selectedRecording.expiresAt).getTime() <= Date.now();
   const showRecordingPanel = submission?.requiresRecording === true || Boolean(selectedRecording);
+  const isRecordingResults = submission?.requiresRecording === true;
 
   const handleCreateVersion = async () => {
     if (!submission) {
@@ -321,7 +324,7 @@ export function SubmissionDetailPage() {
         nextVersionDescription,
       );
       setSelectedVersionId(versionId);
-      setResponseView("all");
+      setResponseView(submission.requiresRecording ? "individual" : "all");
       setSelectedResponseIndex(0);
       setShowVersionCreator(false);
     } catch (error) {
@@ -348,7 +351,7 @@ export function SubmissionDetailPage() {
           ? nextVersionId
           : selectedVersion?.id ?? nextVersionId,
       );
-      setResponseView("all");
+      setResponseView(submission.requiresRecording ? "individual" : "all");
       setSelectedResponseIndex(0);
       setShowVersionDeleteConfirm(false);
       setVersionPendingDeleteId(null);
@@ -366,6 +369,12 @@ export function SubmissionDetailPage() {
   }, [selectedResponse?.id]);
 
   useEffect(() => {
+    if (isRecordingResults && responseView !== "individual") {
+      setResponseView("individual");
+    }
+  }, [isRecordingResults, responseView]);
+
+  useEffect(() => {
     setShowTipPanel(false);
     setIsLoadingTipProfile(false);
     setTipProfile(null);
@@ -374,12 +383,59 @@ export function SubmissionDetailPage() {
     setCopiedTipMethod(null);
     setRecordingAction(null);
     setRecordingActionError("");
+    setRecordingPreviewUrl("");
+    setRecordingPreviewFileName("");
 
     if (copyResetTimeoutRef.current !== null) {
       window.clearTimeout(copyResetTimeoutRef.current);
       copyResetTimeoutRef.current = null;
     }
   }, [selectedResponse?.id]);
+
+  useEffect(() => {
+    if (!selectedResponse || !selectedRecording || recordingIsExpired) {
+      setRecordingPreviewUrl("");
+      setRecordingPreviewFileName("");
+      return;
+    }
+
+    let cancelled = false;
+    const responseId = selectedResponse.id;
+
+    setRecordingAction("watch");
+    setRecordingActionError("");
+
+    void requestResponseRecordingUrl(responseId).then((recordingUrl) => {
+      if (cancelled || selectedResponseIdRef.current !== responseId) {
+        return;
+      }
+
+      setRecordingPreviewUrl(recordingUrl.url);
+      setRecordingPreviewFileName(recordingUrl.fileName);
+    }).catch((error) => {
+      if (cancelled || selectedResponseIdRef.current !== responseId) {
+        return;
+      }
+
+      setRecordingActionError(
+        error instanceof Error ? error.message : "The recording could not be loaded right now.",
+      );
+    }).finally(() => {
+      if (!cancelled && selectedResponseIdRef.current === responseId) {
+        setRecordingAction(null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    recordingIsExpired,
+    selectedRecording?.deletedAt,
+    selectedRecording?.expiresAt,
+    selectedRecording?.path,
+    selectedResponse,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -502,7 +558,7 @@ export function SubmissionDetailPage() {
       return;
     }
 
-    const pendingWindow = typeof window !== "undefined"
+    const pendingWindow = mode === "download" && typeof window !== "undefined"
       ? window.open("", "_blank", "noopener,noreferrer")
       : null;
 
@@ -514,6 +570,12 @@ export function SubmissionDetailPage() {
         selectedResponse.id,
         mode === "download",
       );
+
+      if (mode === "watch") {
+        setRecordingPreviewUrl(recordingUrl.url);
+        setRecordingPreviewFileName(recordingUrl.fileName);
+        return;
+      }
 
       if (pendingWindow && !pendingWindow.closed) {
         pendingWindow.location.href = recordingUrl.url;
@@ -733,25 +795,29 @@ export function SubmissionDetailPage() {
             <button type="button" className="button button--secondary" onClick={openVersionCreator}>
               New Version
             </button>
-            <div className="results-toggle" role="tablist" aria-label="Response view">
-              <button
-                type="button"
-                className={`results-toggle__button${responseView === "all" ? " results-toggle__button--active" : ""}`}
-                onClick={() => setResponseView("all")}
-              >
-                All Responses
+            {isRecordingResults ? null : (
+              <div className="results-toggle" role="tablist" aria-label="Response view">
+                <button
+                  type="button"
+                  className={`results-toggle__button${responseView === "all" ? " results-toggle__button--active" : ""}`}
+                  onClick={() => setResponseView("all")}
+                >
+                  All Responses
+                </button>
+                <button
+                  type="button"
+                  className={`results-toggle__button${responseView === "individual" ? " results-toggle__button--active" : ""}`}
+                  onClick={() => setResponseView("individual")}
+                >
+                  Individual Responses
+                </button>
+              </div>
+            )}
+            {submission.requiresRecording ? null : (
+              <button type="button" className="button button--secondary" onClick={openQuestionEditor}>
+                Edit questions
               </button>
-              <button
-                type="button"
-                className={`results-toggle__button${responseView === "individual" ? " results-toggle__button--active" : ""}`}
-                onClick={() => setResponseView("individual")}
-              >
-                Individual Responses
-              </button>
-            </div>
-            <button type="button" className="button button--secondary" onClick={openQuestionEditor}>
-              Edit questions
-            </button>
+            )}
           </div>
 
           {responseView === "all" ? (
@@ -942,11 +1008,10 @@ export function SubmissionDetailPage() {
               {showRecordingPanel ? (
                 <div className="results-recording-panel">
                   <div className="results-recording-panel__copy">
-                    <span className="test-session__label">Screen recording</span>
                     {selectedRecording ? (
                       <>
                         <strong>{recordingIsExpired ? "Expired" : `Available until ${formatDateTime(selectedRecording.expiresAt)}`}</strong>
-                        <p>
+                        <p className={recordingIsExpired ? undefined : "results-recording-panel__file-meta"}>
                           {recordingIsExpired
                             ? "This recording has already been deleted or passed its 7-day retention window."
                             : `${selectedRecording.fileName} • ${formatRecordingSize(selectedRecording.fileSizeBytes)}`}
@@ -960,26 +1025,49 @@ export function SubmissionDetailPage() {
                     )}
                   </div>
                   {selectedRecording && !recordingIsExpired ? (
-                    <div className="results-recording-panel__actions">
-                      <button
-                        type="button"
-                        className="button button--secondary"
-                        onClick={() => { void handleRecordingAccess("watch"); }}
-                        disabled={recordingAction !== null}
-                      >
-                        {recordingAction === "watch" ? <span className="button__spinner" aria-hidden="true" /> : null}
-                        Watch recording
-                      </button>
-                      <button
-                        type="button"
-                        className="button button--primary"
-                        onClick={() => { void handleRecordingAccess("download"); }}
-                        disabled={recordingAction !== null}
-                      >
-                        {recordingAction === "download" ? <span className="button__spinner" aria-hidden="true" /> : null}
-                        Download recording
-                      </button>
-                    </div>
+                    <>
+                      <div className="results-recording-player">
+                        {recordingPreviewUrl ? (
+                          <video
+                            src={recordingPreviewUrl}
+                            title={recordingPreviewFileName || selectedRecording.fileName}
+                            controls
+                            preload="metadata"
+                          >
+                            Your browser does not support embedded video playback.
+                          </video>
+                        ) : recordingAction === "watch" ? (
+                          <div className="results-recording-player__loading" aria-live="polite">
+                            <span className="button__spinner" aria-hidden="true" />
+                            <span>Loading recording...</span>
+                          </div>
+                        ) : (
+                          <div className="results-recording-player__loading" aria-live="polite">
+                            <span>Recording preview unavailable. Refresh the video link to try again.</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="results-recording-panel__actions">
+                        <button
+                          type="button"
+                          className="button button--secondary"
+                          onClick={() => { void handleRecordingAccess("watch"); }}
+                          disabled={recordingAction !== null}
+                        >
+                          {recordingAction === "watch" ? <span className="button__spinner" aria-hidden="true" /> : <RefreshCcw size={16} aria-hidden="true" />}
+                          {recordingPreviewUrl ? "Refresh video" : "Load video"}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button--primary"
+                          onClick={() => { void handleRecordingAccess("download"); }}
+                          disabled={recordingAction !== null}
+                        >
+                          {recordingAction === "download" ? <span className="button__spinner" aria-hidden="true" /> : null}
+                          Download recording
+                        </button>
+                      </div>
+                    </>
                   ) : null}
                 </div>
               ) : null}

@@ -5200,6 +5200,10 @@ body {
   justify-self: end;
 }
 
+.results-section__header--responses > :only-child {
+  justify-self: start;
+}
+
 .results-toggle {
   display: inline-flex;
   align-items: center;
@@ -7117,14 +7121,42 @@ body {
 
 .results-recording-panel {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 18px;
   padding: 18px;
 }
 
 .results-recording-panel__copy strong {
   font-size: 1rem;
+}
+
+.results-recording-panel__file-meta {
+  display: none;
+}
+
+.results-recording-player {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(221, 212, 204, 0.9);
+  background: #14100d;
+}
+
+.results-recording-player video {
+  display: block;
+  width: 100%;
+  max-height: min(64vh, 520px);
+  background: #14100d;
+}
+
+.results-recording-player__loading {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .recording-questionless-note {

@@ -1,5 +1,5 @@
 import { ProductType, ResponseRecording } from "../types";
-import { requireSupabase } from "./supabase";
+import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const RECORDING_STORAGE_DAYS = 7;
@@ -37,10 +37,12 @@ export interface RecordingTestSessionState {
 }
 
 interface RecordingAccessResponse {
+  ok?: boolean;
   url?: string;
   fileName?: string;
   expiresInSeconds?: number;
   error?: string;
+  message?: string;
 }
 
 interface NavigatorWithUserAgentData extends Navigator {
@@ -360,22 +362,40 @@ export function downloadRecordingBackup(blob: Blob, fileName: string) {
 }
 
 export async function requestResponseRecordingUrl(responseId: string, download = false) {
-  const supabase = requireSupabase();
-  const { data, error } = await supabase.functions.invoke("get-response-recording-access", {
-    body: {
-      responseId,
-      download,
-    },
-  });
-
-  if (error) {
-    throw new Error(error.message);
+  if (!responseId || !supabaseUrl || !supabasePublishableKey) {
+    throw new Error("Recording playback is not available in the current environment.");
   }
 
-  const payload = (data ?? {}) as RecordingAccessResponse;
+  const supabase = requireSupabase();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
-  if (!payload.url) {
-    throw new Error(payload.error ?? "Recording is not available right now.");
+  if (sessionError || !session?.access_token) {
+    throw new Error("Sign in again to view this recording.");
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/get-response-recording-access`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: supabasePublishableKey,
+    },
+    body: JSON.stringify({
+      responseId,
+      download,
+    }),
+  });
+  const payload = (await response.json().catch(() => null)) as RecordingAccessResponse | null;
+
+  if (!response.ok || !payload?.url) {
+    throw new Error(
+      payload?.error ??
+        payload?.message ??
+        "Recording is not available right now.",
+    );
   }
 
   return {
