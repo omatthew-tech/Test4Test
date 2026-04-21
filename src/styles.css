@@ -158,6 +158,17 @@ textarea {
   border-color: var(--color-line-200);
 }
 
+.button--danger {
+  background: rgba(255, 255, 255, 0.92);
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.34);
+}
+
+.button--danger:hover:not(:disabled) {
+  border-color: rgba(180, 35, 24, 0.68);
+  background: rgba(255, 245, 244, 0.96);
+}
+
 .button--full {
   width: 100%;
 }
@@ -7038,9 +7049,19 @@ body {
 
 .recording-upload-card__meta {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px 14px;
   color: var(--color-ink-700);
+}
+
+.recording-upload-card__meta-copy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-width: 0;
 }
 
 .earn-row__recording-tag {

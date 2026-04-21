@@ -5,6 +5,7 @@ import {
   Mic,
   Monitor,
   Smartphone,
+  Trash2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
@@ -14,6 +15,7 @@ import {
   clearRecordingTestSession,
   createGeneratedRecordingFileName,
   createRecordingSessionId,
+  deleteRecordingDraft,
   downloadRecordingBackup,
   getPreferredMediaRecorderMimeType,
   loadRecordingTestSession,
@@ -238,6 +240,7 @@ export function TestSessionPage() {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingRecording, setIsUploadingRecording] = useState(false);
+  const [isDeletingRecording, setIsDeletingRecording] = useState(false);
   const [recordingPhase, setRecordingPhase] = useState<RecordingTestPhase>(
     initialRecordingSessionRef.current?.phase ?? "preflight",
   );
@@ -349,6 +352,7 @@ export function TestSessionPage() {
 
   const submitDisabled =
     isSubmitting ||
+    isDeletingRecording ||
     !completion.canSubmit ||
     (isRecordingTest && !uploadedRecording);
 
@@ -1324,6 +1328,46 @@ export function TestSessionPage() {
     await uploadManualRecordingFile(file, "Recording uploaded. Submit when you're ready.");
   };
 
+  const handleDeleteUploadedRecording = async () => {
+    if (!uploadedRecording) {
+      return;
+    }
+
+    if (!currentUser) {
+      setMessage("Verify your email before deleting a recording.");
+      return;
+    }
+
+    setIsDeletingRecording(true);
+    setNativeUploadError("");
+    setMessage("");
+
+    try {
+      await deleteRecordingDraft(uploadedRecording);
+      cleanupActiveCaptureStreams();
+      setUploadedRecording(null);
+      setNativeRecordingBlob(null);
+      setNativeUploadError("");
+      setNativeRecoveryUploadEnabled(false);
+      setConfirmedRecording(false);
+      setRecordingPhase("preflight");
+      setLiveRecordingStartedAt(null);
+      setLiveElapsedSeconds(0);
+      setPopupBlocked(false);
+      setScreenShareStatus("idle");
+      setNativeCaptureConfirmed(false);
+      setAvailableMicrophones([]);
+      setSelectedMicrophoneId("");
+      setMicrophoneStatus("idle");
+      setMicrophoneError("");
+      setMessage("Recording deleted. Start a new recording when you're ready.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The recording could not be deleted.");
+    } finally {
+      setIsDeletingRecording(false);
+    }
+  };
+
   const showReturnAndSubmit = !isRecordingTest || recordingPhase === "return_and_submit";
   const progressLabel = hasQuestions
     ? `${completion.answered} / ${completion.total} answered`
@@ -1719,9 +1763,24 @@ export function TestSessionPage() {
 
                   {uploadedRecording ? (
                     <div className="recording-upload-card__meta">
-                      <strong>{uploadedRecording.fileName}</strong>
-                      <span>{formatRecordingSize(uploadedRecording.fileSizeBytes)}</span>
-                      <span>{`Available until ${formatDateTime(uploadedRecording.expiresAt)}`}</span>
+                      <div className="recording-upload-card__meta-copy">
+                        <strong>{uploadedRecording.fileName}</strong>
+                        <span>{formatRecordingSize(uploadedRecording.fileSizeBytes)}</span>
+                        <span>{`Available until ${formatDateTime(uploadedRecording.expiresAt)}`}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="button button--danger button--small"
+                        onClick={() => { void handleDeleteUploadedRecording(); }}
+                        disabled={isDeletingRecording || isUploadingRecording || isSubmitting}
+                      >
+                        {isDeletingRecording ? (
+                          <span className="button__spinner" aria-hidden="true" />
+                        ) : (
+                          <Trash2 size={15} aria-hidden="true" />
+                        )}
+                        {isDeletingRecording ? "Deleting..." : "Delete and re-record"}
+                      </button>
                     </div>
                   ) : null}
 

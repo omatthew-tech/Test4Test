@@ -330,6 +330,19 @@ export async function uploadGeneratedRecordingDraft(
   return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording);
 }
 
+export async function deleteRecordingDraft(recording?: ResponseRecording | null) {
+  if (!recording?.path || recording.bucket !== RECORDING_BUCKET_ID) {
+    return;
+  }
+
+  const supabase = requireSupabase();
+  const { error } = await supabase.storage.from(RECORDING_BUCKET_ID).remove([recording.path]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export function downloadRecordingBackup(blob: Blob, fileName: string) {
   if (typeof window === "undefined" || typeof document === "undefined") {
     return;
