@@ -5,6 +5,7 @@ import { AppShell, Surface } from "../components/Layout";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
+const formHolderLogoPath = "/branding/rasberry-form-holder-transparent.png";
 
 export function HomePage() {
   const [productName, setProductName] = useState("");
@@ -35,6 +36,12 @@ export function HomePage() {
               <span />
               <span />
             </div>
+            <img
+              src={formHolderLogoPath}
+              alt=""
+              className="home-stage__form-holder"
+              aria-hidden="true"
+            />
             <div className="simple-start-card">
               <p className="simple-start-card__label">
                 {hasResumeSubmission

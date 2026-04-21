@@ -6228,6 +6228,7 @@ body {
 
 .home-stage__copy {
   grid-area: copy;
+  z-index: 2;
   max-width: 700px;
   display: flex;
   align-items: flex-start;
@@ -6246,16 +6247,40 @@ body {
 .home-stage__start {
   grid-area: start;
   position: relative;
+  --form-holder-width: clamp(124px, 10.2vw, 152px);
+  --form-holder-left: clamp(-82px, -5vw, -58px);
+  --form-holder-top: 56%;
+  --form-holder-tilt: -2deg;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   min-width: 0;
-  padding: 18px 0 0 24px;
+  min-height: 340px;
+  padding: 48px 0 36px 24px;
+  isolation: isolate;
+}
+
+.home-stage__form-holder {
+  position: absolute;
+  left: var(--form-holder-left);
+  top: var(--form-holder-top);
+  width: var(--form-holder-width);
+  aspect-ratio: 1118 / 1280;
+  transform: translateY(-50%) rotate(var(--form-holder-tilt));
+  pointer-events: none;
+  user-select: none;
+}
+
+.home-stage__form-holder {
+  z-index: 1;
+  height: auto;
+  filter: drop-shadow(0 18px 24px rgba(117, 40, 62, 0.16));
 }
 
 .home-stage__start-shell {
   position: absolute;
   inset: 44px 12px -10px 0;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -6279,7 +6304,7 @@ body {
 
 .simple-start-card {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(100%, 430px);
   margin-left: auto;
   display: flex;
@@ -6516,12 +6541,16 @@ body {
   }
 
   .home-stage__start {
+    --form-holder-width: clamp(124px, 18vw, 152px);
+    --form-holder-left: min(280px, calc(100% - var(--form-holder-width) - 58px));
+    --form-holder-top: 50%;
     justify-content: flex-start;
-    padding: 0;
+    min-height: 360px;
+    padding: 78px 0 32px;
   }
 
   .home-stage__start-shell {
-    inset: 38px 24px -8px 0;
+    inset: 96px 24px -8px 0;
   }
 
   .simple-start-card {
@@ -6584,6 +6613,18 @@ body {
     padding: 21px;
     border-radius: 22px;
     box-shadow: none;
+  }
+
+  .home-stage__start {
+    --form-holder-width: clamp(94px, 26.4vw, 124px);
+    --form-holder-left: calc(50% - (var(--form-holder-width) / 2) - 24px);
+    --form-holder-top: 0;
+    min-height: 0;
+    padding: 96px 0 0;
+  }
+
+  .home-stage__form-holder {
+    transform: rotate(var(--form-holder-tilt));
   }
 
   .simple-start-card__row {
