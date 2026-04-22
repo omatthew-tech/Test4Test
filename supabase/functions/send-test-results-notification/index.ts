@@ -11,6 +11,7 @@ import {
 
 interface NotificationRequest {
   responseId?: string;
+  source?: string;
 }
 
 interface ResponseRow {
@@ -22,6 +23,10 @@ interface ResponseRow {
   credit_awarded: boolean;
 }
 
+function getSuppliedInternalSecret(request: Request) {
+  return request.headers.get("x-reminder-secret")?.trim() ?? "";
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -31,6 +36,11 @@ Deno.serve(async (request) => {
     return json({ error: "Method not allowed." }, 405);
   }
 
+  const expectedInternalSecret = Deno.env.get("TEST_BACK_REMINDER_CRON_SECRET")?.trim() ?? "";
+  const suppliedInternalSecret = getSuppliedInternalSecret(request);
+  const isInternalRequest =
+    Boolean(expectedInternalSecret) && suppliedInternalSecret === expectedInternalSecret;
+
   let env;
 
   try {
@@ -39,21 +49,27 @@ Deno.serve(async (request) => {
     return json({ error: error instanceof Error ? error.message : "Notification setup is incomplete." }, 500);
   }
 
-  const authHeader = request.headers.get("Authorization") ?? "";
-  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  if (!accessToken) {
-    return json({ error: "Unauthorized." }, 401);
-  }
-
   const admin = createAdminClient(env);
-  const {
-    data: { user },
-    error: userError,
-  } = await admin.auth.getUser(accessToken);
+  let authenticatedUserId: string | null = null;
 
-  if (userError || !user) {
-    return json({ error: userError?.message ?? "Unauthorized." }, 401);
+  if (!isInternalRequest) {
+    const authHeader = request.headers.get("Authorization") ?? "";
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+    if (!accessToken) {
+      return json({ error: "Unauthorized." }, 401);
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await admin.auth.getUser(accessToken);
+
+    if (userError || !user) {
+      return json({ error: userError?.message ?? "Unauthorized." }, 401);
+    }
+
+    authenticatedUserId = user.id;
   }
 
   const payload = (await request.json().catch(() => ({}))) as NotificationRequest;
@@ -75,7 +91,7 @@ Deno.serve(async (request) => {
 
   const responseRecord = responseRow as ResponseRow;
 
-  if (responseRecord.tester_user_id !== user.id) {
+  if (!isInternalRequest && responseRecord.tester_user_id !== authenticatedUserId) {
     return json({ error: "You do not have permission to send this notification." }, 403);
   }
 

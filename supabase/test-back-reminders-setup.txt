@@ -56,20 +56,24 @@ Use the same `TEST_BACK_REMINDER_CRON_SECRET` value again in Step 4 when you sav
 
 Step 3: Deploy the functions
 ----------------------------
-The feedback notification function remains user-authenticated:
+The feedback notification function accepts either a signed-in tester JWT or the private reminder secret used by the database trigger:
 
-npx supabase functions deploy send-test-results-notification --project-ref lteimepkxuiupbcsbcpz
+npx supabase functions deploy send-test-results-notification --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
 
 The scheduled reminder processor should be deployed without JWT verification because it uses the reminder secret header instead:
 
 npx supabase functions deploy send-test-back-reminders --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
 
-Step 4: Create the hourly schedule
+Step 4: Create the immediate feedback trigger and hourly schedule
 ----------------------------------
 Before running the SQL below, make sure `pg_cron` and `pg_net` are enabled in Database -> Extensions.
 Supabase Vault is used for the schedule secrets via `vault.create_secret(...)`.
 
-In the Supabase SQL Editor, run this once:
+In the Supabase SQL Editor, run the trigger migration once:
+
+  C:\Projects\LIKE4LIKE\supabase\migrations\20260422_enqueue_new_feedback_notification.sql
+
+Then run this schedule setup once:
 
 select vault.create_secret('https://lteimepkxuiupbcsbcpz.supabase.co', 'project_url');
 select vault.create_secret('your_long_random_secret', 'test_back_reminder_cron_secret');

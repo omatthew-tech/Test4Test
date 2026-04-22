@@ -22,13 +22,16 @@ Quick summary
   - APP_BASE_URL
   - TEST_BACK_REMINDER_CRON_SECRET
 - Deploy:
-  - send-test-results-notification
+  - send-test-results-notification --no-verify-jwt
   - send-test-back-reminders --no-verify-jwt
 - Create the hourly pg_cron schedule from the full setup guide.
+- Install the immediate feedback trigger:
+  - supabase/migrations/20260422_enqueue_new_feedback_notification.sql
 
 Important behavior changes
 --------------------------
 - The owner email now comes only from approved feedback, not flagged feedback.
+- New feedback emails are enqueued by a database trigger, so they do not depend only on the tester's browser staying open after submit.
 - Test-back reminder copy is editable in `public.email_templates`.
 - Reminder delivery history is logged in `public.email_delivery_logs`.
 - The public Test-back Rate now drops when the final reminder is sent, not immediately when a new owed test-back is created.
