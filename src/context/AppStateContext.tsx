@@ -971,22 +971,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const loadIdRef = useRef(0);
+  const hasCompletedInitialLoadRef = useRef(false);
   const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
   const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(new Map());
 
   const refreshState = useCallback(async (authUserOverride?: SupabaseAuthUser | null) => {
     const loadId = ++loadIdRef.current;
+    const shouldShowLoading = !hasCompletedInitialLoadRef.current;
 
     if (!hasSupabaseConfig) {
       setState({
         ...emptyState,
         otpChallenge: getStoredOtpChallenge(),
       });
+      hasCompletedInitialLoadRef.current = true;
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    if (shouldShowLoading) {
+      setIsLoading(true);
+    }
 
     try {
       const supabase = requireSupabase();
@@ -1059,6 +1064,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       });
     } finally {
       if (loadId === loadIdRef.current) {
+        hasCompletedInitialLoadRef.current = true;
         setIsLoading(false);
       }
     }

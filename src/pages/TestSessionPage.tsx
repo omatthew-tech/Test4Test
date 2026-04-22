@@ -448,6 +448,14 @@ export function TestSessionPage() {
     }
   };
 
+  const focusTestSessionWindow = () => {
+    try {
+      window.focus();
+    } catch {
+      // Browser focus behavior is best-effort, especially across tabs.
+    }
+  };
+
   const renderRecordingPipWindow = () => {
     const pipWindow = recordingPipWindowRef.current;
 
@@ -612,7 +620,7 @@ export function TestSessionPage() {
 
     pipDocument
       .getElementById("recording-pip-finish")
-      ?.addEventListener("click", () => stopNativeRecording(), { once: true });
+      ?.addEventListener("click", () => stopNativeRecording({ focusTestPage: true }), { once: true });
   };
 
   const openRecordingPipWindow = async () => {
@@ -747,7 +755,9 @@ export function TestSessionPage() {
     try {
       const displayCaptureOptions = {
         audio: false,
-        video: true,
+        video: {
+          displaySurface: "monitor",
+        },
         selfBrowserSurface: "exclude",
         preferCurrentTab: false,
         surfaceSwitching: "include",
@@ -794,17 +804,31 @@ export function TestSessionPage() {
     }
   };
 
-  const launchSelectedWebsite = () => {
-    if (!selectedLink || selectedLink.productType !== "website") {
-      return false;
+  const focusOpenedWebsiteWindow = (openedWindow: Window | null) => {
+    if (!openedWindow || openedWindow.closed) {
+      return;
     }
 
-    const openedWindow = window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
+    try {
+      openedWindow.focus();
+    } catch {
+      // Browser focus behavior is intentionally user-agent controlled.
+    }
+  };
+
+  const launchSelectedWebsite = () => {
+    if (!selectedLink || selectedLink.productType !== "website") {
+      return { launched: false, openedWindow: null };
+    }
+
+    const openedWindow = window.open(selectedLink.normalizedUrl, "_blank");
 
     if (!openedWindow) {
       setPopupBlocked(true);
-      return false;
+      return { launched: false, openedWindow: null };
     }
+
+    focusOpenedWebsiteWindow(openedWindow);
 
     try {
       openedWindow.opener = null;
@@ -813,12 +837,14 @@ export function TestSessionPage() {
     }
 
     try {
-      openedWindow.location.href = selectedLink.normalizedUrl;
+      window.setTimeout(() => {
+        focusOpenedWebsiteWindow(openedWindow);
+      }, 0);
       setPopupBlocked(false);
-      return true;
+      return { launched: true, openedWindow };
     } catch {
       setPopupBlocked(true);
-      return false;
+      return { launched: false, openedWindow: null };
     }
   };
 
@@ -946,7 +972,13 @@ export function TestSessionPage() {
     setMessage("");
   };
 
-  const stopNativeRecording = () => {
+  const stopNativeRecording = (options?: { focusTestPage?: boolean }) => {
+    if (options?.focusTestPage) {
+      focusTestSessionWindow();
+      window.setTimeout(focusTestSessionWindow, 100);
+      window.setTimeout(focusTestSessionWindow, 350);
+    }
+
     const recorder = mediaRecorderRef.current;
     closeRecordingPipWindow();
 
@@ -1163,7 +1195,7 @@ export function TestSessionPage() {
     setRecordingPhase("recording_live");
 
     if (selectedLink?.productType === "website") {
-      window.open(selectedLink.normalizedUrl, "_blank", "noopener,noreferrer");
+      launchSelectedWebsite();
     }
   };
 
@@ -1280,7 +1312,12 @@ export function TestSessionPage() {
       setNativeCaptureConfirmed(true);
 
       const pipWindowPromise = openRecordingPipWindow();
-      const launched = launchSelectedWebsite();
+      const { launched, openedWindow } = launchSelectedWebsite();
+
+      if (launched) {
+        window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 150);
+        window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 500);
+      }
 
       if (!launched) {
         setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
@@ -1289,6 +1326,11 @@ export function TestSessionPage() {
       }
 
       void pipWindowPromise.then((opened) => {
+        if (launched) {
+          window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 0);
+          window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 300);
+        }
+
         if (!opened) {
           setMessage(
             "Recording live. Keep this Test4Test tab open to finish recording, or return here and click Show floating recorder.",
@@ -1916,35 +1958,6 @@ export function TestSessionPage() {
           ) : null}
         </Surface>
       </div>
-
-      {isNativeDesktopRecording && recordingPhase === "recording_live" ? (
-        <div className="recording-floating-box" role="status" aria-live="polite">
-          <div className="recording-floating-box__top">
-            <div className="recording-floating-box__badge">
-              <span className="recording-floating-box__dot" aria-hidden="true" />
-              <span>Recording live</span>
-            </div>
-            <strong>{formatElapsedDuration(liveElapsedSeconds)}</strong>
-          </div>
-          <div className="recording-floating-box__status">
-            <span className={`recording-floating-box__pill${microphoneStatus === "ready" ? " recording-floating-box__pill--ok" : ""}`}>
-              Mic {microphoneStatus === "ready" ? "connected" : "not ready"}
-            </span>
-            <span className={`recording-floating-box__pill${screenShareStatus === "active" ? " recording-floating-box__pill--ok" : ""}`}>
-              Screen {screenShareStatus === "active" ? "sharing" : "not shared"}
-            </span>
-          </div>
-          <div className="recording-floating-box__actions">
-            <button
-              type="button"
-              className="button button--primary button--small"
-              onClick={stopNativeRecording}
-            >
-              Finish recording
-            </button>
-          </div>
-        </div>
-      ) : null}
     </AppShell>
   );
 }
