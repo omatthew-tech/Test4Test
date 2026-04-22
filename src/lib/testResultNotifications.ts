@@ -23,6 +23,7 @@ export async function notifySubmissionOwnerAboutNewResult(responseId: string) {
 
     const response = await fetch(`${supabaseUrl}/functions/v1/send-test-results-notification`, {
       method: "POST",
+      keepalive: true,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,

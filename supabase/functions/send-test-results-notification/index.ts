@@ -4,8 +4,10 @@ import {
   getEmailEnvironment,
   json,
 } from "../_shared/email-system.ts";
-import { sendNewFeedbackNotification } from "../_shared/new-feedback-notifications.ts";
-import { loadPendingReminderForPair } from "../_shared/test-back-reminders.ts";
+import {
+  processNewFeedbackNotificationForResponse,
+  type NewFeedbackResponseRow,
+} from "../_shared/new-feedback-notifications.ts";
 
 interface NotificationRequest {
   responseId?: string;
@@ -18,43 +20,6 @@ interface ResponseRow {
   owner_notified_at: string | null;
   status: string;
   credit_awarded: boolean;
-}
-
-interface SubmissionRow {
-  id: string;
-  product_name: string;
-  user_id: string;
-}
-
-interface ProfileRow {
-  id: string;
-  email: string;
-  display_name: string;
-}
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-async function advanceReminderAfterNewFeedback(
-  admin: ReturnType<typeof createAdminClient>,
-  reminderId: string,
-  notifiedAt: string,
-) {
-  const nextSendAt = new Date(new Date(notifiedAt).getTime() + DAY_IN_MS).toISOString();
-  const { error } = await admin
-    .from("test_back_reminder_sequences")
-    .update({
-      emails_sent: 1,
-      last_sent_at: notifiedAt,
-      next_send_at: nextSendAt,
-      updated_at: notifiedAt,
-    })
-    .eq("id", reminderId)
-    .eq("status", "pending")
-    .eq("emails_sent", 0);
-
-  if (error) {
-    throw new Error(error.message);
-  }
 }
 
 Deno.serve(async (request) => {
@@ -122,73 +87,17 @@ Deno.serve(async (request) => {
     return json({ ok: true, skipped: true, message: "Notification will send after the response is approved." });
   }
 
-  const { data: submission, error: submissionError } = await admin
-    .from("submissions")
-    .select("id, product_name, user_id")
-    .eq("id", responseRecord.submission_id)
-    .single();
-
-  if (submissionError || !submission) {
-    return json({ error: submissionError?.message ?? "Submission not found." }, 404);
-  }
-
-  const submissionRecord = submission as SubmissionRow;
-  const { data: owner, error: ownerError } = await admin
-    .from("profiles")
-    .select("id, email, display_name")
-    .eq("id", submissionRecord.user_id)
-    .single();
-
-  if (ownerError || !owner) {
-    return json({ error: ownerError?.message ?? "Submission owner not found." }, 404);
-  }
-
-  const ownerRecord = owner as ProfileRow;
-  const reminder = await loadPendingReminderForPair(
-    admin,
-    submissionRecord.user_id,
-    responseRecord.tester_user_id,
-  );
-
-  const feedbackUrl = `${env.appBaseUrl}/my-tests/${submissionRecord.id}`;
-
   try {
-    await sendNewFeedbackNotification(admin, env, {
-      ownerUserId: ownerRecord.id,
-      ownerEmail: ownerRecord.email,
-      ownerDisplayName: ownerRecord.display_name,
-      ownerProductName: submissionRecord.product_name,
-      testerUserId: responseRecord.tester_user_id,
-      responseId: responseRecord.id,
-      submissionId: submissionRecord.id,
-      feedbackUrl,
-    });
+    await processNewFeedbackNotificationForResponse(
+      admin,
+      env,
+      responseRecord as NewFeedbackResponseRow,
+    );
   } catch (error) {
     return json(
       { error: error instanceof Error ? error.message : "Failed to send feedback notification." },
       502,
     );
-  }
-
-  const notifiedAt = new Date().toISOString();
-  const { error: updateError } = await admin
-    .from("test_responses")
-    .update({ owner_notified_at: notifiedAt })
-    .eq("id", responseRecord.id);
-
-  if (updateError) {
-    return json({ error: updateError.message }, 500);
-  }
-
-  if (reminder && reminder.status === "pending" && reminder.emails_sent === 0) {
-    try {
-      await advanceReminderAfterNewFeedback(admin, reminder.id, notifiedAt);
-    } catch (error) {
-      return json(
-        { error: error instanceof Error ? error.message : "Failed to schedule reminder follow-up." },
-        500,
-      );
-    }
   }
 
   return json({ ok: true, message: "Notification sent." });

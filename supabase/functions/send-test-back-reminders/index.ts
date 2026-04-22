@@ -6,6 +6,11 @@ import {
   loadEmailTemplates,
 } from "../_shared/email-system.ts";
 import {
+  loadUnnotifiedNewFeedbackResponses,
+  newFeedbackTemplateKey,
+  processNewFeedbackNotificationForResponse,
+} from "../_shared/new-feedback-notifications.ts";
+import {
   loadDueReminderSequences,
   processReminderSequence,
   reminderTemplateKeys,
@@ -13,6 +18,8 @@ import {
 
 interface ReminderRunRequest {
   limit?: number;
+  feedbackLimit?: number;
+  feedbackLookbackHours?: number;
 }
 
 function getSuppliedSecret(request: Request) {
@@ -57,18 +64,51 @@ Deno.serve(async (request) => {
 
   const payload = (await request.json().catch(() => ({}))) as ReminderRunRequest;
   const limit = typeof payload.limit === "number" ? payload.limit : 25;
+  const feedbackLimit = typeof payload.feedbackLimit === "number" ? payload.feedbackLimit : limit;
+  const feedbackLookbackHours =
+    typeof payload.feedbackLookbackHours === "number" ? payload.feedbackLookbackHours : 24 * 7;
 
   const admin = createAdminClient(env);
+  const unnotifiedFeedbackResponses = await loadUnnotifiedNewFeedbackResponses(
+    admin,
+    feedbackLimit,
+    feedbackLookbackHours,
+  );
   const dueReminders = await loadDueReminderSequences(admin, limit);
+  const feedbackTemplateMap =
+    unnotifiedFeedbackResponses.length > 0
+      ? await loadEmailTemplates(admin, [newFeedbackTemplateKey])
+      : new Map();
   const templateMap =
     dueReminders.length > 0
       ? await loadEmailTemplates(admin, [...reminderTemplateKeys])
       : new Map();
 
   const errors: string[] = [];
+  let feedbackSent = 0;
+  let feedbackSkipped = 0;
   let sent = 0;
   let resolved = 0;
   let cancelled = 0;
+
+  for (const response of unnotifiedFeedbackResponses) {
+    try {
+      const result = await processNewFeedbackNotificationForResponse(
+        admin,
+        env,
+        response,
+        feedbackTemplateMap,
+      );
+
+      if (result.outcome === "sent") {
+        feedbackSent += 1;
+      } else {
+        feedbackSkipped += 1;
+      }
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Failed to process a feedback notification.");
+    }
+  }
 
   for (const reminder of dueReminders) {
     try {
@@ -88,7 +128,11 @@ Deno.serve(async (request) => {
 
   return json({
     ok: errors.length === 0,
-    processed: dueReminders.length,
+    processed: dueReminders.length + unnotifiedFeedbackResponses.length,
+    feedbackProcessed: unnotifiedFeedbackResponses.length,
+    feedbackSent,
+    feedbackSkipped,
+    remindersProcessed: dueReminders.length,
     sent,
     resolved,
     cancelled,
