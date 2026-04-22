@@ -3,11 +3,8 @@ import {
   createAdminClient,
   getEmailEnvironment,
   json,
-  loadEmailTemplates,
-  logEmailDelivery,
-  renderEmailTemplate,
-  sendEmail,
 } from "../_shared/email-system.ts";
+import { sendNewFeedbackNotification } from "../_shared/new-feedback-notifications.ts";
 import { loadPendingReminderForPair } from "../_shared/test-back-reminders.ts";
 
 interface NotificationRequest {
@@ -153,56 +150,20 @@ Deno.serve(async (request) => {
     responseRecord.tester_user_id,
   );
 
-  const templateMap = await loadEmailTemplates(admin, ["new_feedback"]);
-  const template = templateMap.get("new_feedback");
-
-  if (!template) {
-    return json({ error: "Missing email template: new_feedback" }, 500);
-  }
-
   const feedbackUrl = `${env.appBaseUrl}/my-tests/${submissionRecord.id}`;
-  const rendered = renderEmailTemplate(template, {
-    ownerDisplayName: ownerRecord.display_name,
-    ownerProductName: submissionRecord.product_name,
-    feedbackUrl,
-  });
 
   try {
-    const sendResult = await sendEmail(env, {
-      to: ownerRecord.email,
-      subject: rendered.subject,
-      textBody: rendered.textBody,
-      htmlBody: rendered.htmlBody,
-    });
-
-    await logEmailDelivery(admin, {
-      templateKey: "new_feedback",
-      recipientUserId: ownerRecord.id,
-      recipientEmail: ownerRecord.email,
-      relatedResponseId: responseRecord.id,
-      relatedSubmissionId: submissionRecord.id,
-      subject: rendered.subject,
-      status: "sent",
-      providerMessageId: sendResult.providerMessageId,
-      metadata: {
-        testerUserId: responseRecord.tester_user_id,
-      },
+    await sendNewFeedbackNotification(admin, env, {
+      ownerUserId: ownerRecord.id,
+      ownerEmail: ownerRecord.email,
+      ownerDisplayName: ownerRecord.display_name,
+      ownerProductName: submissionRecord.product_name,
+      testerUserId: responseRecord.tester_user_id,
+      responseId: responseRecord.id,
+      submissionId: submissionRecord.id,
+      feedbackUrl,
     });
   } catch (error) {
-    await logEmailDelivery(admin, {
-      templateKey: "new_feedback",
-      recipientUserId: ownerRecord.id,
-      recipientEmail: ownerRecord.email,
-      relatedResponseId: responseRecord.id,
-      relatedSubmissionId: submissionRecord.id,
-      subject: rendered.subject,
-      status: "failed",
-      errorMessage: error instanceof Error ? error.message : "Failed to send feedback notification.",
-      metadata: {
-        testerUserId: responseRecord.tester_user_id,
-      },
-    }).catch(() => undefined);
-
     return json(
       { error: error instanceof Error ? error.message : "Failed to send feedback notification." },
       502,

@@ -25,14 +25,10 @@ export function EmailPreviewPage() {
         <Surface className="email-card">
           <span className="eyebrow">Plain feedback email</span>
           <h2>New feedback for {ownerProductName}</h2>
-          <p>Hello,</p>
-          <p>Someone just tested your app and your feedback is ready to review.</p>
-          <ul className="check-list">
-            <li>Open the response summary to spot patterns quickly</li>
-            <li>Read the full raw responses when you need detail</li>
-            <li>Rate the quality of each response after you review it</li>
-          </ul>
-          <button type="button" className="button button--primary">View feedback</button>
+          <p>Someone just tested <strong>{ownerProductName}</strong>.</p>
+          <p>Your feedback is ready to view.</p>
+          <button type="button" className="button button--primary">View Feedback</button>
+          <p>Or open this link directly: https://test4test.io/my-tests/example</p>
         </Surface>
 
         <Surface className="email-card">

@@ -84,23 +84,22 @@ values
     'Sent when fresh approved feedback is ready and no reciprocal test-back reminder is needed.',
     'New feedback for {{ownerProductName}}',
     $new_feedback_text$
-Hi {{ownerDisplayName}},
-
 Someone just tested {{ownerProductName}}.
 
-Your feedback is ready to review:
+Your feedback is ready to view.
+
+View Feedback:
 {{feedbackUrl}}
 
-Open the response summary to spot patterns quickly, then dig into the raw responses when you want the full story.
+Or open this link directly: {{feedbackUrl}}
 $new_feedback_text$,
     $new_feedback_html$
 <div style="font-family: Arial, sans-serif; color: #231f1c; line-height: 1.6;">
-  <p>Hi {{ownerDisplayName}},</p>
   <p>Someone just tested <strong>{{ownerProductName}}</strong>.</p>
-  <p>Your feedback is ready to review.</p>
+  <p>Your feedback is ready to view.</p>
   <p>
     <a href="{{feedbackUrl}}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #f58e56; color: #fffaf6; text-decoration: none; font-weight: 600;">
-      View feedback
+      View Feedback
     </a>
   </p>
   <p style="margin-top: 18px; color: #6f655d;">
