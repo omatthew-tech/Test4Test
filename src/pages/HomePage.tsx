@@ -5,7 +5,7 @@ import { AppShell } from "../components/Layout";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
-const formHolderLogoPath = "/branding/test4test-raspberry-signup-form.png";
+const formHolderLogoPath = "/branding/test4test-raspberry-no-thumb.png";
 
 const heroHighlights = [
   { label: "Real user feedback", Icon: Link2 },
@@ -117,12 +117,6 @@ export function HomePage() {
               src={formHolderLogoPath}
               alt=""
               className="home-hero__mascot home-hero__mascot--hand"
-              aria-hidden="true"
-            />
-            <img
-              src={formHolderLogoPath}
-              alt=""
-              className="home-hero__mascot home-hero__mascot--thumb"
               aria-hidden="true"
             />
           </div>
