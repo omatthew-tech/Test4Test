@@ -6332,8 +6332,8 @@ body {
 }
 
 .home-hero__mascot--thumb {
-  z-index: 4;
-  clip-path: polygon(80% 39%, 88% 36%, 95% 38%, 99% 43%, 97% 48%, 91% 50%, 84% 48%, 79% 44%);
+  z-index: 5;
+  clip-path: polygon(76% 36%, 88% 33%, 100% 36%, 104% 42%, 102% 49%, 94% 53%, 82% 50%, 75% 44%);
   filter: none;
 }
 
