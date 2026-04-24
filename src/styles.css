@@ -6327,7 +6327,7 @@ body {
 
 .home-hero__mascot--hand {
   z-index: 4;
-  clip-path: inset(40% 0 34% 0);
+  clip-path: polygon(31% 48%, 45% 47%, 58% 48%, 69% 43%, 78% 48%, 99% 49%, 100% 59%, 78% 63%, 63% 61%, 48% 57%, 35% 53%);
   filter: none;
 }
 
@@ -6349,7 +6349,7 @@ body {
 
 @media (min-width: 1500px) {
   .home-hero__mascot {
-    left: -132px;
+    left: -76px;
     top: 47%;
     width: 253px;
   }
