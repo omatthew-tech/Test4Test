@@ -1,0 +1,1007 @@
+const VERY_UNLIKELY_SCALE = [
+	"Very unlikely",
+	"Unlikely",
+	"Neither likely nor unlikely",
+	"Likely",
+	"Very likely"
+];
+const EXTENT_SCALE = [
+	"Not at all",
+	"Slightly",
+	"Moderately",
+	"Very",
+	"Extremely"
+];
+const EASY_SCALE = [
+	"Very difficult",
+	"Difficult",
+	"Neither easy nor difficult",
+	"Easy",
+	"Very easy"
+];
+const SUPPORT_SCALE = [
+	"None at all",
+	"A little",
+	"A moderate amount",
+	"A lot",
+	"A great deal"
+];
+const INTEGRATED_SCALE = [
+	"Not at all integrated",
+	"Slightly integrated",
+	"Moderately integrated",
+	"Very integrated",
+	"Completely integrated"
+];
+const SPEED_SCALE = [
+	"Very slowly",
+	"Slowly",
+	"Neither slowly nor quickly",
+	"Quickly",
+	"Very quickly"
+];
+const CUMBERSOME_SCALE = [
+	"Not at all cumbersome",
+	"Slightly cumbersome",
+	"Moderately cumbersome",
+	"Very cumbersome",
+	"Extremely cumbersome"
+];
+const CONFIDENT_SCALE = [
+	"Not at all confident",
+	"Slightly confident",
+	"Moderately confident",
+	"Very confident",
+	"Extremely confident"
+];
+const WELL_SCALE = [
+	"Not at all well",
+	"Slightly well",
+	"Moderately well",
+	"Very well",
+	"Extremely well"
+];
+const SATISFIED_SCALE = [
+	"Very dissatisfied",
+	"Dissatisfied",
+	"Neither satisfied nor dissatisfied",
+	"Satisfied",
+	"Very satisfied"
+];
+const EFFECTIVELY_SCALE = [
+	"Not at all effectively",
+	"Slightly effectively",
+	"Moderately effectively",
+	"Very effectively",
+	"Extremely effectively"
+];
+const COMFORTABLE_SCALE = [
+	"Very uncomfortable",
+	"Uncomfortable",
+	"Neither comfortable nor uncomfortable",
+	"Comfortable",
+	"Very comfortable"
+];
+const CLEARLY_SCALE = [
+	"Not at all clearly",
+	"Slightly clearly",
+	"Moderately clearly",
+	"Very clearly",
+	"Extremely clearly"
+];
+const EASILY_SCALE = [
+	"Not at all easily",
+	"Slightly easily",
+	"Moderately easily",
+	"Very easily",
+	"Extremely easily"
+];
+const CLEAR_SCALE = [
+	"Very unclear",
+	"Unclear",
+	"Neither clear nor unclear",
+	"Clear",
+	"Very clear"
+];
+const EFFECTIVE_SCALE = [
+	"Not at all effective",
+	"Slightly effective",
+	"Moderately effective",
+	"Very effective",
+	"Extremely effective"
+];
+const ATTRACTIVE_SCALE = [
+	"Not at all attractive",
+	"Slightly attractive",
+	"Moderately attractive",
+	"Very attractive",
+	"Extremely attractive"
+];
+const VERY_MUCH_SCALE = [
+	"Not at all",
+	"Slightly",
+	"Moderately",
+	"Very much",
+	"Extremely"
+];
+const CREDIBLE_SCALE = [
+	"Not at all credible",
+	"Slightly credible",
+	"Moderately credible",
+	"Very credible",
+	"Extremely credible"
+];
+const TRUSTWORTHY_SCALE = [
+	"Not at all trustworthy",
+	"Slightly trustworthy",
+	"Moderately trustworthy",
+	"Very trustworthy",
+	"Extremely trustworthy"
+];
+const RECOMMEND_SCALE = [
+	"Very unlikely",
+	"Unlikely",
+	"Neither likely nor unlikely",
+	"Likely",
+	"Very likely"
+];
+const LOW_HIGH_SCALE = [
+	"Very low",
+	"Low",
+	"Moderate",
+	"High",
+	"Very high"
+];
+const PRESSURE_SCALE = [
+	"Not at all",
+	"Slightly",
+	"Moderately",
+	"Very",
+	"Extremely"
+];
+const SUCCESS_SCALE = [
+	"Not at all successful",
+	"Slightly successful",
+	"Moderately successful",
+	"Very successful",
+	"Completely successful"
+];
+const TRUST_SCALE = [
+	"Not at all",
+	"Slightly",
+	"Moderately",
+	"Very much",
+	"Completely"
+];
+const SAFE_SCALE = [
+	"Not at all safe",
+	"Slightly safe",
+	"Moderately safe",
+	"Very safe",
+	"Extremely safe"
+];
+const VALUE_SCALE = [
+	"Very poor",
+	"Poor",
+	"Fair",
+	"Good",
+	"Excellent"
+];
+const VALUE_FOR_EFFORT_SCALE = [
+	"Very poor value",
+	"Poor value",
+	"Fair value",
+	"Good value",
+	"Excellent value"
+];
+const EXPECTATION_SCALE = [
+	"Much worse than expected",
+	"Worse than expected",
+	"About as expected",
+	"Better than expected",
+	"Much better than expected"
+];
+const IDEAL_SCALE = [
+	"Not at all close",
+	"Slightly close",
+	"Moderately close",
+	"Very close",
+	"Extremely close"
+];
+const PROFESSIONAL_SCALE = [
+	"Not at all professional",
+	"Slightly professional",
+	"Moderately professional",
+	"Very professional",
+	"Extremely professional"
+];
+const COMPETENT_SCALE = [
+	"Not at all competent",
+	"Slightly competent",
+	"Moderately competent",
+	"Very competent",
+	"Extremely competent"
+];
+const RELIABLY_SCALE = [
+	"Not at all reliably",
+	"Slightly reliably",
+	"Moderately reliably",
+	"Very reliably",
+	"Extremely reliably"
+];
+const TRANSPARENT_SCALE = [
+	"Not at all transparent",
+	"Slightly transparent",
+	"Moderately transparent",
+	"Very transparent",
+	"Extremely transparent"
+];
+const PREDICTABLY_SCALE = [
+	"Not at all predictably",
+	"Slightly predictably",
+	"Moderately predictably",
+	"Very predictably",
+	"Extremely predictably"
+];
+const WILLING_SCALE = [
+	"Very unwilling",
+	"Unwilling",
+	"Neither willing nor unwilling",
+	"Willing",
+	"Very willing"
+];
+const NEUTRAL_SUPPORTIVE_SCALE = [
+	"Obstructive",
+	"Somewhat obstructive",
+	"Neutral",
+	"Somewhat supportive",
+	"Supportive"
+];
+const NEUTRAL_EASY_SCALE = [
+	"Complicated",
+	"Somewhat complicated",
+	"Neutral",
+	"Somewhat easy",
+	"Easy"
+];
+const NEUTRAL_EFFICIENT_SCALE = [
+	"Inefficient",
+	"Somewhat inefficient",
+	"Neutral",
+	"Somewhat efficient",
+	"Efficient"
+];
+const NEUTRAL_CLEAR_SCALE = [
+	"Confusing",
+	"Somewhat confusing",
+	"Neutral",
+	"Somewhat clear",
+	"Clear"
+];
+const NEUTRAL_EXCITING_SCALE = [
+	"Boring",
+	"Somewhat boring",
+	"Neutral",
+	"Somewhat exciting",
+	"Exciting"
+];
+const NEUTRAL_INTERESTING_SCALE = [
+	"Uninteresting",
+	"Somewhat uninteresting",
+	"Neutral",
+	"Somewhat interesting",
+	"Interesting"
+];
+const NEUTRAL_INVENTIVE_SCALE = [
+	"Conventional",
+	"Somewhat conventional",
+	"Neutral",
+	"Somewhat inventive",
+	"Inventive"
+];
+const NEUTRAL_LEADING_EDGE_SCALE = [
+	"Usual",
+	"Somewhat usual",
+	"Neutral",
+	"Somewhat leading-edge",
+	"Leading-edge"
+];
+const NEUTRAL_TECHNICAL_SCALE = [
+	"Human",
+	"Somewhat human",
+	"Neutral",
+	"Somewhat technical",
+	"Technical"
+];
+const NEUTRAL_CONNECTIVE_SCALE = [
+	"Isolating",
+	"Somewhat isolating",
+	"Neutral",
+	"Somewhat connective",
+	"Connective"
+];
+const NEUTRAL_PLEASANT_SCALE = [
+	"Unpleasant",
+	"Somewhat unpleasant",
+	"Neutral",
+	"Somewhat pleasant",
+	"Pleasant"
+];
+const NEUTRAL_SIMPLE_SCALE = [
+	"Complicated",
+	"Somewhat complicated",
+	"Neutral",
+	"Somewhat simple",
+	"Simple"
+];
+const NEUTRAL_PROFESSIONAL_SCALE = [
+	"Unprofessional",
+	"Somewhat unprofessional",
+	"Neutral",
+	"Somewhat professional",
+	"Professional"
+];
+const NEUTRAL_ATTRACTIVE_SCALE = [
+	"Unattractive",
+	"Somewhat unattractive",
+	"Neutral",
+	"Somewhat attractive",
+	"Attractive"
+];
+const NEUTRAL_PRACTICAL_SCALE = [
+	"Impractical",
+	"Somewhat impractical",
+	"Neutral",
+	"Somewhat practical",
+	"Practical"
+];
+const NEUTRAL_LIKEABLE_SCALE = [
+	"Disagreeable",
+	"Somewhat disagreeable",
+	"Neutral",
+	"Somewhat likeable",
+	"Likeable"
+];
+const NEUTRAL_STRAIGHTFORWARD_SCALE = [
+	"Cumbersome",
+	"Somewhat cumbersome",
+	"Neutral",
+	"Somewhat straightforward",
+	"Straightforward"
+];
+const GENERAL_PARAGRAPH_QUESTION_PROMPTS = `
+1. What was your first impression of this product?
+2. What do you think this product is mainly for?
+3. What kinds of things do you think you can do here?
+4. How do you think someone like you would use this product?
+5. What would you do next if you were using this on your own?
+6. What part of the page or screen drew your attention first, and why?
+7. What, if anything, felt unclear the first time you looked at this?
+8. What words, labels, or messages stood out to you right away?
+9. What were you expecting to find when you opened this?
+10. What did this product seem to expect you to do first?
+11. What about the design or layout shaped your first impression?
+12. What about the content or language shaped your first impression?
+13. What seemed most useful at first glance?
+14. What seemed least useful at first glance?
+15. What made you feel that this product was or was not relevant to you?
+16. Where would you go to complete the task you had in mind?
+17. How did you decide where to go first?
+18. What made you choose that option instead of another one?
+19. What did you expect to find when you selected that label, menu, or link?
+20. What did you expect that label, menu, or heading to mean?
+21. What would you expect to find under that section or category?
+22. What label or wording would make this easier to understand?
+23. Which labels or categories felt too vague, and why?
+24. Which labels or categories felt clear, and why?
+25. What parts of the navigation felt intuitive to you?
+26. What parts of the navigation felt hard to predict?
+27. How did you try to find information when you were not sure where to go?
+28. What, if anything, made browsing easier than searching here?
+29. What, if anything, made searching easier than browsing here?
+30. What would make it easier to know where you are and where to go next?
+31. How did that task go for you?
+32. What part of the task felt easiest?
+33. What part of the task felt hardest?
+34. What, if anything, was confusing during the task?
+35. What, if anything, was frustrating during the task?
+36. At what point did you feel unsure about what to do next?
+37. What were you expecting to happen at that moment?
+38. What happened instead of what you expected?
+39. What slowed you down, if anything?
+40. What helped you keep moving through the task?
+41. What did you try when your first approach did not work?
+42. What made a step feel harder or easier than you expected?
+43. What made this task feel more complicated or simpler than it needed to be?
+44. What part of the process felt smooth or natural?
+45. What part of the process felt awkward or unnecessary?
+46. What did the information on this page or screen mean to you?
+47. What words or phrases were easiest to understand?
+48. What words or phrases were hardest to understand?
+49. What messages or instructions felt helpful?
+50. What messages or instructions felt unhelpful?
+51. What information felt clear and complete?
+52. What information felt incomplete or missing context?
+53. What information felt too technical, too vague, or too dense?
+54. What information helped you decide what to do next?
+55. What information did you ignore, and why?
+56. What information felt most useful to you?
+57. What information felt least useful to you?
+58. What would make this page or screen more useful?
+59. How could the wording be improved to make this easier to use?
+60. What would you rewrite, shorten, or explain differently?
+61. What is your impression of the look and feel of this product?
+62. What do you think about the overall design and layout?
+63. What do you think about how the content is presented visually?
+64. What did you notice about the balance between text and visual elements?
+65. What visual elements helped you understand what to do?
+66. What visual elements distracted or confused you?
+67. What did you think about the images, illustrations, icons, or media here?
+68. What made this feel clean or cluttered to you?
+69. What made this feel professional or unprofessional to you?
+70. What made this feel modern, dated, serious, friendly, or something else?
+71. What would you change about the visual presentation first?
+72. What should stay exactly as it is in the visual presentation?
+73. In what ways did this product work the way you expected, or not?
+74. What made you trust or distrust this product?
+75. What made the information here feel credible or not credible?
+76. What made the product feel reliable or unreliable?
+77. What made you feel confident or uncertain while using it?
+78. What, if anything, made you hesitate before taking action?
+79. What concerns, if any, did you have about accuracy, privacy, or safety?
+80. What did any privacy, security, or confidentiality language mean to you?
+81. How, if at all, did using this product affect your trust in it?
+82. What would make you more comfortable relying on this product?
+83. What made the product feel honest and transparent, or not?
+84. What would help you feel more confident that your information is handled well?
+85. What did you like best about this product?
+86. What did you like least about this product?
+87. What should be improved first?
+88. How would you improve it?
+89. What feels missing from this product?
+90. What would you add to make this more useful?
+91. How does this compare with the way you usually do this today?
+92. How does this compare with other products you use for similar tasks?
+93. Tell me about a recent time this product worked especially well for you.
+94. What made that experience work well?
+95. Tell me about a recent time this product worked poorly for you.
+96. What made that experience work poorly?
+97. What would make you want to use this again?
+98. What would make you stop using this?
+99. Is there anything else you would like to share about this experience?
+`.trim().split("\n").map((line) => line.replace(/^\d+\.\s*/, "").trim());
+export const GENERAL_DEFAULT_TEMPLATE_IDS = ["q033"];
+export const GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS = ["gp001", "gp087"];
+export const GENERAL_PARAGRAPH_QUESTION_BANK = GENERAL_PARAGRAPH_QUESTION_PROMPTS.map((prompt, index) => ({
+	id: `gp${String(index + 1).padStart(3, "0")}`,
+	prompt
+}));
+export const GENERAL_QUESTION_BANK = [
+	{
+		id: "q001",
+		prompt: "How likely are you to want to use this product frequently?",
+		options: VERY_UNLIKELY_SCALE
+	},
+	{
+		id: "q002",
+		prompt: "To what extent did this product feel more complex than it needed to be?",
+		options: EXTENT_SCALE
+	},
+	{
+		id: "q003",
+		prompt: "How easy was this product to use?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q004",
+		prompt: "How much support from a technical person would you need to use this product well?",
+		options: SUPPORT_SCALE
+	},
+	{
+		id: "q005",
+		prompt: "How well integrated did the different parts of this product feel?",
+		options: INTEGRATED_SCALE
+	},
+	{
+		id: "q006",
+		prompt: "To what extent did this product feel inconsistent?",
+		options: EXTENT_SCALE
+	},
+	{
+		id: "q007",
+		prompt: "How quickly do you think most people would learn to use this product?",
+		options: SPEED_SCALE
+	},
+	{
+		id: "q008",
+		prompt: "How cumbersome did this product feel to use?",
+		options: CUMBERSOME_SCALE
+	},
+	{
+		id: "q009",
+		prompt: "How confident did you feel while using this product?",
+		options: CONFIDENT_SCALE
+	},
+	{
+		id: "q010",
+		prompt: "How much did you need to learn before you could get going with this product?",
+		options: SUPPORT_SCALE
+	},
+	{
+		id: "q011",
+		prompt: "How well do this product's capabilities meet your requirements?",
+		options: WELL_SCALE
+	},
+	{
+		id: "q012",
+		prompt: "How easy is this product to use?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q013",
+		prompt: "Overall, how easy or difficult was this task?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q014",
+		prompt: "How satisfied were you with how easy it was to complete this task?",
+		options: SATISFIED_SCALE
+	},
+	{
+		id: "q015",
+		prompt: "How satisfied were you with the amount of time it took to complete this task?",
+		options: SATISFIED_SCALE
+	},
+	{
+		id: "q016",
+		prompt: "How satisfied were you with the help and information available while completing this task?",
+		options: SATISFIED_SCALE
+	},
+	{
+		id: "q017",
+		prompt: "How effectively could you complete what you needed to do with this product?",
+		options: EFFECTIVELY_SCALE
+	},
+	{
+		id: "q018",
+		prompt: "How quickly could you complete what you needed to do with this product?",
+		options: SPEED_SCALE
+	},
+	{
+		id: "q019",
+		prompt: "How efficiently could you complete what you needed to do with this product?",
+		options: [
+			"Not at all efficiently",
+			"Slightly efficiently",
+			"Moderately efficiently",
+			"Very efficiently",
+			"Extremely efficiently"
+		]
+	},
+	{
+		id: "q020",
+		prompt: "How comfortable did you feel using this product?",
+		options: COMFORTABLE_SCALE
+	},
+	{
+		id: "q021",
+		prompt: "How easy was it to learn to use this product?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q022",
+		prompt: "How quickly could you become productive with this product?",
+		options: SPEED_SCALE
+	},
+	{
+		id: "q023",
+		prompt: "How clearly did error messages tell you how to fix problems?",
+		options: CLEARLY_SCALE
+	},
+	{
+		id: "q024",
+		prompt: "How easily and quickly could you recover when you made a mistake?",
+		options: EASILY_SCALE
+	},
+	{
+		id: "q025",
+		prompt: "How clear was the information provided by the product?",
+		options: CLEAR_SCALE
+	},
+	{
+		id: "q026",
+		prompt: "How easy was it to find the information you needed?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q027",
+		prompt: "How effective was the information the product gave you in helping you complete tasks?",
+		options: EFFECTIVE_SCALE
+	},
+	{
+		id: "q028",
+		prompt: "How well did the product organize information in a way that made sense?",
+		options: WELL_SCALE
+	},
+	{
+		id: "q029",
+		prompt: "How pleasant was the interface of this product?",
+		options: [
+			"Very unpleasant",
+			"Unpleasant",
+			"Neither pleasant nor unpleasant",
+			"Pleasant",
+			"Very pleasant"
+		]
+	},
+	{
+		id: "q030",
+		prompt: "How much did you like using this product's interface?",
+		options: VERY_MUCH_SCALE
+	},
+	{
+		id: "q031",
+		prompt: "How well does this product have the functions and capabilities you expect it to have?",
+		options: WELL_SCALE
+	},
+	{
+		id: "q032",
+		prompt: "How easy is this product to use?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q033",
+		prompt: "How easy is it to navigate within this product?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q034",
+		prompt: "How credible is the information or content in this product?",
+		options: CREDIBLE_SCALE
+	},
+	{
+		id: "q035",
+		prompt: "How trustworthy is the information or content in this product?",
+		options: TRUSTWORTHY_SCALE
+	},
+	{
+		id: "q036",
+		prompt: "How attractive do you find this product?",
+		options: ATTRACTIVE_SCALE
+	},
+	{
+		id: "q037",
+		prompt: "How clean and simple is this product's presentation?",
+		options: [
+			"Not at all clean and simple",
+			"Slightly clean and simple",
+			"Moderately clean and simple",
+			"Very clean and simple",
+			"Extremely clean and simple"
+		]
+	},
+	{
+		id: "q038",
+		prompt: "How likely are you to use this product again in the future?",
+		options: VERY_UNLIKELY_SCALE
+	},
+	{
+		id: "q039",
+		prompt: "How likely are you to recommend this product to a friend or colleague?",
+		options: RECOMMEND_SCALE
+	},
+	{
+		id: "q040",
+		prompt: "How would you rate this product on a scale from obstructive to supportive?",
+		options: NEUTRAL_SUPPORTIVE_SCALE
+	},
+	{
+		id: "q041",
+		prompt: "How would you rate this product on a scale from complicated to easy?",
+		options: NEUTRAL_EASY_SCALE
+	},
+	{
+		id: "q042",
+		prompt: "How would you rate this product on a scale from inefficient to efficient?",
+		options: NEUTRAL_EFFICIENT_SCALE
+	},
+	{
+		id: "q043",
+		prompt: "How would you rate this product on a scale from confusing to clear?",
+		options: NEUTRAL_CLEAR_SCALE
+	},
+	{
+		id: "q044",
+		prompt: "How would you rate this product on a scale from boring to exciting?",
+		options: NEUTRAL_EXCITING_SCALE
+	},
+	{
+		id: "q045",
+		prompt: "How would you rate this product on a scale from not interesting to interesting?",
+		options: NEUTRAL_INTERESTING_SCALE
+	},
+	{
+		id: "q046",
+		prompt: "How would you rate this product on a scale from conventional to inventive?",
+		options: NEUTRAL_INVENTIVE_SCALE
+	},
+	{
+		id: "q047",
+		prompt: "How would you rate this product on a scale from usual to leading-edge?",
+		options: NEUTRAL_LEADING_EDGE_SCALE
+	},
+	{
+		id: "q048",
+		prompt: "How would you rate this product on a scale from human to technical?",
+		options: NEUTRAL_TECHNICAL_SCALE
+	},
+	{
+		id: "q049",
+		prompt: "How would you rate this product on a scale from isolating to connective?",
+		options: NEUTRAL_CONNECTIVE_SCALE
+	},
+	{
+		id: "q050",
+		prompt: "How would you rate this product on a scale from unpleasant to pleasant?",
+		options: NEUTRAL_PLEASANT_SCALE
+	},
+	{
+		id: "q051",
+		prompt: "How would you rate this product on a scale from conventional to inventive?",
+		options: NEUTRAL_INVENTIVE_SCALE
+	},
+	{
+		id: "q052",
+		prompt: "How would you rate this product on a scale from complicated to simple?",
+		options: NEUTRAL_SIMPLE_SCALE
+	},
+	{
+		id: "q053",
+		prompt: "How would you rate this product on a scale from unprofessional to professional?",
+		options: NEUTRAL_PROFESSIONAL_SCALE
+	},
+	{
+		id: "q054",
+		prompt: "How would you rate this product on a scale from ugly to attractive?",
+		options: NEUTRAL_ATTRACTIVE_SCALE
+	},
+	{
+		id: "q055",
+		prompt: "How would you rate this product on a scale from impractical to practical?",
+		options: NEUTRAL_PRACTICAL_SCALE
+	},
+	{
+		id: "q056",
+		prompt: "How would you rate this product on a scale from disagreeable to likeable?",
+		options: NEUTRAL_LIKEABLE_SCALE
+	},
+	{
+		id: "q057",
+		prompt: "How would you rate this product on a scale from cumbersome to straightforward?",
+		options: NEUTRAL_STRAIGHTFORWARD_SCALE
+	},
+	{
+		id: "q058",
+		prompt: "How mentally demanding was using this product for the task you just completed?",
+		options: LOW_HIGH_SCALE
+	},
+	{
+		id: "q059",
+		prompt: "How physically demanding was it to use this product for the task you just completed?",
+		options: LOW_HIGH_SCALE
+	},
+	{
+		id: "q060",
+		prompt: "How rushed or time-pressured did you feel while using this product?",
+		options: PRESSURE_SCALE
+	},
+	{
+		id: "q061",
+		prompt: "How successful were you in accomplishing what you wanted to do?",
+		options: SUCCESS_SCALE
+	},
+	{
+		id: "q062",
+		prompt: "How hard did you have to work to accomplish that level of performance?",
+		options: LOW_HIGH_SCALE
+	},
+	{
+		id: "q063",
+		prompt: "How frustrated, stressed, or annoyed did you feel while using this product?",
+		options: PRESSURE_SCALE
+	},
+	{
+		id: "q064",
+		prompt: "How much do you trust this product?",
+		options: TRUST_SCALE
+	},
+	{
+		id: "q065",
+		prompt: "How competent do you believe this product is at helping you do what you need to do?",
+		options: COMPETENT_SCALE
+	},
+	{
+		id: "q066",
+		prompt: "How reliably do you believe this product behaves?",
+		options: RELIABLY_SCALE
+	},
+	{
+		id: "q067",
+		prompt: "To what extent do you believe this product acts in your best interest?",
+		options: TRUST_SCALE
+	},
+	{
+		id: "q068",
+		prompt: "To what extent do you believe this product handles your information honestly and responsibly?",
+		options: TRUST_SCALE
+	},
+	{
+		id: "q069",
+		prompt: "To what extent do you believe this product keeps its promises?",
+		options: TRUST_SCALE
+	},
+	{
+		id: "q070",
+		prompt: "How safe do you feel relying on this product?",
+		options: SAFE_SCALE
+	},
+	{
+		id: "q071",
+		prompt: "How comfortable are you depending on this product for important tasks?",
+		options: COMFORTABLE_SCALE
+	},
+	{
+		id: "q072",
+		prompt: "How transparent is this product about what it is doing?",
+		options: TRANSPARENT_SCALE
+	},
+	{
+		id: "q073",
+		prompt: "How predictably does this product behave?",
+		options: PREDICTABLY_SCALE
+	},
+	{
+		id: "q074",
+		prompt: "How well do you believe this product helps protect you from avoidable problems?",
+		options: WELL_SCALE
+	},
+	{
+		id: "q075",
+		prompt: "How willing would you be to rely on this product again?",
+		options: WILLING_SCALE
+	},
+	{
+		id: "q076",
+		prompt: "How much does using this product help you accomplish tasks more quickly?",
+		options: VERY_MUCH_SCALE
+	},
+	{
+		id: "q077",
+		prompt: "How much does using this product improve your performance?",
+		options: VERY_MUCH_SCALE
+	},
+	{
+		id: "q078",
+		prompt: "How much does using this product increase your productivity?",
+		options: VERY_MUCH_SCALE
+	},
+	{
+		id: "q079",
+		prompt: "How much does using this product enhance your effectiveness?",
+		options: VERY_MUCH_SCALE
+	},
+	{
+		id: "q080",
+		prompt: "Overall, how useful do you find this product?",
+		options: [
+			"Not at all useful",
+			"Slightly useful",
+			"Moderately useful",
+			"Very useful",
+			"Extremely useful"
+		]
+	},
+	{
+		id: "q081",
+		prompt: "How easy is it for you to learn to use this product?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q082",
+		prompt: "How clear and understandable is your interaction with this product?",
+		options: CLEAR_SCALE
+	},
+	{
+		id: "q083",
+		prompt: "How easy is it for you to get this product to do what you want it to do?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q084",
+		prompt: "How likely are you to use this product in the future?",
+		options: VERY_UNLIKELY_SCALE
+	},
+	{
+		id: "q085",
+		prompt: "How much does everything in this product feel like it goes together?",
+		options: TRUST_SCALE
+	},
+	{
+		id: "q086",
+		prompt: "How pleasantly varied is the layout of this product?",
+		options: EXTENT_SCALE
+	},
+	{
+		id: "q087",
+		prompt: "How attractive is this product's color composition?",
+		options: ATTRACTIVE_SCALE
+	},
+	{
+		id: "q088",
+		prompt: "How professionally designed does this layout appear?",
+		options: PROFESSIONAL_SCALE
+	},
+	{
+		id: "q089",
+		prompt: "Overall, how satisfied are you with this product?",
+		options: SATISFIED_SCALE
+	},
+	{
+		id: "q090",
+		prompt: "Compared with your expectations, how well did this product perform?",
+		options: EXPECTATION_SCALE
+	},
+	{
+		id: "q091",
+		prompt: "Compared with your ideal product for this kind of task, how close is this product to ideal?",
+		options: IDEAL_SCALE
+	},
+	{
+		id: "q092",
+		prompt: "Given the value you get, how would you rate this product overall?",
+		options: VALUE_SCALE
+	},
+	{
+		id: "q093",
+		prompt: "Given the quality of this product, how would you rate what it asks of you in time, effort, or cost?",
+		options: VALUE_FOR_EFFORT_SCALE
+	},
+	{
+		id: "q094",
+		prompt: "How likely are you to choose this product again for a similar need?",
+		options: VERY_UNLIKELY_SCALE
+	},
+	{
+		id: "q095",
+		prompt: "How easy is this product to use?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q096",
+		prompt: "How useful is the information or content in this product?",
+		options: [
+			"Not at all useful",
+			"Slightly useful",
+			"Moderately useful",
+			"Very useful",
+			"Extremely useful"
+		]
+	},
+	{
+		id: "q097",
+		prompt: "How clear is the information or content in this product?",
+		options: CLEAR_SCALE
+	},
+	{
+		id: "q098",
+		prompt: "How easy is the overall process or workflow in this product?",
+		options: EASY_SCALE
+	},
+	{
+		id: "q099",
+		prompt: "How confident are you that this product will do a good job for you in the future?",
+		options: CONFIDENT_SCALE
+	}
+];
+
+//# sourceMappingURL=data:application/json;base64,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QUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwwQkFBMEI7Q0FDOUI7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSxzQkFBc0I7Q0FDMUI7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSx5QkFBeUI7Q0FDN0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSw0QkFBNEI7Q0FDaEM7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwwQkFBMEI7Q0FDOUI7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSw2QkFBNkI7Q0FDakM7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwwQkFBMEI7Q0FDOUI7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwyQkFBMkI7Q0FDL0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSx5QkFBeUI7Q0FDN0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSx1QkFBdUI7Q0FDM0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSw2QkFBNkI7Q0FDakM7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwyQkFBMkI7Q0FDL0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSwwQkFBMEI7Q0FDOUI7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSx5QkFBeUI7Q0FDN0I7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBQ0QsTUFBTSxnQ0FBZ0M7Q0FDcEM7Q0FDQTtDQUNBO0NBQ0E7Q0FDQTtDQUNEO0FBRUQsTUFBTSxxQ0FBcUM7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7RUFxR3hDLE1BQU0sQ0FDTixNQUFNLEtBQUssQ0FDWCxLQUFLLFNBQVMsS0FB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RUFBRSxJQUFJO0VBQVEsUUFBUTtFQUE0RCxTQUFTO0VBQWE7Q0FDeEc7RUFBRSxJQUFJO0VBQVEsUUFBUTtFQUFnRSxTQUFTO0VBQVk7Q0FDM0c7RUFBRSxJQUFJO0VBQVEsUUFBUTtFQUFxRixTQUFTO0VBQWlCO0NBQ3RJIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbImdlbmVyYWxRdWVzdGlvbkJhbmsudHMiXSwidmVyc2lvbiI6Mywic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGludGVyZmFjZSBHZW5lcmFsUXVlc3Rpb25UZW1wbGF0ZSB7XG4gIGlkOiBzdHJpbmc7XG4gIHByb21wdDogc3RyaW5nO1xuICBvcHRpb25zOiByZWFkb25seSBzdHJpbmdbXTtcbn1cblxuZXhwb3J0IGludGVyZmFjZSBHZW5lcmFsUGFyYWdyYXBoUXVlc3Rpb25UZW1wbGF0ZSB7XG4gIGlkOiBzdHJpbmc7XG4gIHByb21wdDogc3RyaW5nO1xufVxuXG5jb25zdCBWRVJZX1VOTElLRUxZX1NDQUxFID0gW1xuICBcIlZlcnkgdW5saWtlbHlcIixcbiAgXCJVbmxpa2VseVwiLFxuICBcIk5laXRoZXIgbGlrZWx5IG5vciB1bmxpa2VseVwiLFxuICBcIkxpa2VseVwiLFxuICBcIlZlcnkgbGlrZWx5XCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBFWFRFTlRfU0NBTEUgPSBbXCJOb3QgYXQgYWxsXCIsIFwiU2xpZ2h0bHlcIiwgXCJNb2RlcmF0ZWx5XCIsIFwiVmVyeVwiLCBcIkV4dHJlbWVseVwiXSBhcyBjb25zdDtcblxuY29uc3QgRUFTWV9TQ0FMRSA9IFtcbiAgXCJWZXJ5IGRpZmZpY3VsdFwiLFxuICBcIkRpZmZpY3VsdFwiLFxuICBcIk5laXRoZXIgZWFzeSBub3IgZGlmZmljdWx0XCIsXG4gIFwiRWFzeVwiLFxuICBcIlZlcnkgZWFzeVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgU1VQUE9SVF9TQ0FMRSA9IFtcbiAgXCJOb25lIGF0IGFsbFwiLFxuICBcIkEgbGl0dGxlXCIsXG4gIFwiQSBtb2RlcmF0ZSBhbW91bnRcIixcbiAgXCJBIGxvdFwiLFxuICBcIkEgZ3JlYXQgZGVhbFwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgSU5URUdSQVRFRF9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGludGVncmF0ZWRcIixcbiAgXCJTbGlnaHRseSBpbnRlZ3JhdGVkXCIsXG4gIFwiTW9kZXJhdGVseSBpbnRlZ3JhdGVkXCIsXG4gIFwiVmVyeSBpbnRlZ3JhdGVkXCIsXG4gIFwiQ29tcGxldGVseSBpbnRlZ3JhdGVkXCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBTUEVFRF9TQ0FMRSA9IFtcbiAgXCJWZXJ5IHNsb3dseVwiLFxuICBcIlNsb3dseVwiLFxuICBcIk5laXRoZXIgc2xvd2x5IG5vciBxdWlja2x5XCIsXG4gIFwiUXVpY2tseVwiLFxuICBcIlZlcnkgcXVpY2tseVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgQ1VNQkVSU09NRV9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGN1bWJlcnNvbWVcIixcbiAgXCJTbGlnaHRseSBjdW1iZXJzb21lXCIsXG4gIFwiTW9kZXJhdGVseSBjdW1iZXJzb21lXCIsXG4gIFwiVmVyeSBjdW1iZXJzb21lXCIsXG4gIFwiRXh0cmVtZWx5IGN1bWJlcnNvbWVcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IENPTkZJREVOVF9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGNvbmZpZGVudFwiLFxuICBcIlNsaWdodGx5IGNvbmZpZGVudFwiLFxuICBcIk1vZGVyYXRlbHkgY29uZmlkZW50XCIsXG4gIFwiVmVyeSBjb25maWRlbnRcIixcbiAgXCJFeHRyZW1lbHkgY29uZmlkZW50XCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBXRUxMX1NDQUxFID0gW1xuICBcIk5vdCBhdCBhbGwgd2VsbFwiLFxuICBcIlNsaWdodGx5IHdlbGxcIixcbiAgXCJNb2RlcmF0ZWx5IHdlbGxcIixcbiAgXCJWZXJ5IHdlbGxcIixcbiAgXCJFeHRyZW1lbHkgd2VsbFwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgU0FUSVNGSUVEX1NDQUxFID0gW1xuICBcIlZlcnkgZGlzc2F0aXNmaWVkXCIsXG4gIFwiRGlzc2F0aXNmaWVkXCIsXG4gIFwiTmVpdGhlciBzYXRpc2ZpZWQgbm9yIGRpc3NhdGlzZmllZFwiLFxuICBcIlNhdGlzZmllZFwiLFxuICBcIlZlcnkgc2F0aXNmaWVkXCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBFRkZFQ1RJVkVMWV9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGVmZmVjdGl2ZWx5XCIsXG4gIFwiU2xpZ2h0bHkgZWZmZWN0aXZlbHlcIixcbiAgXCJNb2RlcmF0ZWx5IGVmZmVjdGl2ZWx5XCIsXG4gIFwiVmVyeSBlZmZlY3RpdmVseVwiLFxuICBcIkV4dHJlbWVseSBlZmZlY3RpdmVseVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgQ09NRk9SVEFCTEVfU0NBTEUgPSBbXG4gIFwiVmVyeSB1bmNvbWZvcnRhYmxlXCIsXG4gIFwiVW5jb21mb3J0YWJsZVwiLFxuICBcIk5laXRoZXIgY29tZm9ydGFibGUgbm9yIHVuY29tZm9ydGFibGVcIixcbiAgXCJDb21mb3J0YWJsZVwiLFxuICBcIlZlcnkgY29tZm9ydGFibGVcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IENMRUFSTFlfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCBjbGVhcmx5XCIsXG4gIFwiU2xpZ2h0bHkgY2xlYXJseVwiLFxuICBcIk1vZGVyYXRlbHkgY2xlYXJseVwiLFxuICBcIlZlcnkgY2xlYXJseVwiLFxuICBcIkV4dHJlbWVseSBjbGVhcmx5XCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBFQVNJTFlfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCBlYXNpbHlcIixcbiAgXCJTbGlnaHRseSBlYXNpbHlcIixcbiAgXCJNb2RlcmF0ZWx5IGVhc2lseVwiLFxuICBcIlZlcnkgZWFzaWx5XCIsXG4gIFwiRXh0cmVtZWx5IGVhc2lseVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgQ0xFQVJfU0NBTEUgPSBbXG4gIFwiVmVyeSB1bmNsZWFyXCIsXG4gIFwiVW5jbGVhclwiLFxuICBcIk5laXRoZXIgY2xlYXIgbm9yIHVuY2xlYXJcIixcbiAgXCJDbGVhclwiLFxuICBcIlZlcnkgY2xlYXJcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IEVGRkVDVElWRV9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGVmZmVjdGl2ZVwiLFxuICBcIlNsaWdodGx5IGVmZmVjdGl2ZVwiLFxuICBcIk1vZGVyYXRlbHkgZWZmZWN0aXZlXCIsXG4gIFwiVmVyeSBlZmZlY3RpdmVcIixcbiAgXCJFeHRyZW1lbHkgZWZmZWN0aXZlXCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBBVFRSQUNUSVZFX1NDQUxFID0gW1xuICBcIk5vdCBhdCBhbGwgYXR0cmFjdGl2ZVwiLFxuICBcIlNsaWdodGx5IGF0dHJhY3RpdmVcIixcbiAgXCJNb2RlcmF0ZWx5IGF0dHJhY3RpdmVcIixcbiAgXCJWZXJ5IGF0dHJhY3RpdmVcIixcbiAgXCJFeHRyZW1lbHkgYXR0cmFjdGl2ZVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgVkVSWV9NVUNIX1NDQUxFID0gW1wiTm90IGF0IGFsbFwiLCBcIlNsaWdodGx5XCIsIFwiTW9kZXJhdGVseVwiLCBcIlZlcnkgbXVjaFwiLCBcIkV4dHJlbWVseVwiXSBhcyBjb25zdDtcblxuY29uc3QgQ1JFRElCTEVfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCBjcmVkaWJsZVwiLFxuICBcIlNsaWdodGx5IGNyZWRpYmxlXCIsXG4gIFwiTW9kZXJhdGVseSBjcmVkaWJsZVwiLFxuICBcIlZlcnkgY3JlZGlibGVcIixcbiAgXCJFeHRyZW1lbHkgY3JlZGlibGVcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IFRSVVNUV09SVEhZX1NDQUxFID0gW1xuICBcIk5vdCBhdCBhbGwgdHJ1c3R3b3J0aHlcIixcbiAgXCJTbGlnaHRseSB0cnVzdHdvcnRoeVwiLFxuICBcIk1vZGVyYXRlbHkgdHJ1c3R3b3J0aHlcIixcbiAgXCJWZXJ5IHRydXN0d29ydGh5XCIsXG4gIFwiRXh0cmVtZWx5IHRydXN0d29ydGh5XCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBSRUNPTU1FTkRfU0NBTEUgPSBbXG4gIFwiVmVyeSB1bmxpa2VseVwiLFxuICBcIlVubGlrZWx5XCIsXG4gIFwiTmVpdGhlciBsaWtlbHkgbm9yIHVubGlrZWx5XCIsXG4gIFwiTGlrZWx5XCIsXG4gIFwiVmVyeSBsaWtlbHlcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IExPV19ISUdIX1NDQUxFID0gW1xuICBcIlZlcnkgbG93XCIsXG4gIFwiTG93XCIsXG4gIFwiTW9kZXJhdGVcIixcbiAgXCJIaWdoXCIsXG4gIFwiVmVyeSBoaWdoXCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBQUkVTU1VSRV9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsXCIsXG4gIFwiU2xpZ2h0bHlcIixcbiAgXCJNb2RlcmF0ZWx5XCIsXG4gIFwiVmVyeVwiLFxuICBcIkV4dHJlbWVseVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgU1VDQ0VTU19TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIHN1Y2Nlc3NmdWxcIixcbiAgXCJTbGlnaHRseSBzdWNjZXNzZnVsXCIsXG4gIFwiTW9kZXJhdGVseSBzdWNjZXNzZnVsXCIsXG4gIFwiVmVyeSBzdWNjZXNzZnVsXCIsXG4gIFwiQ29tcGxldGVseSBzdWNjZXNzZnVsXCIsXG5dIGFzIGNvbnN0O1xuXG5jb25zdCBUUlVTVF9TQ0FMRSA9IFtcIk5vdCBhdCBhbGxcIiwgXCJTbGlnaHRseVwiLCBcIk1vZGVyYXRlbHlcIiwgXCJWZXJ5IG11Y2hcIiwgXCJDb21wbGV0ZWx5XCJdIGFzIGNvbnN0O1xuXG5jb25zdCBTQUZFX1NDQUxFID0gW1xuICBcIk5vdCBhdCBhbGwgc2FmZVwiLFxuICBcIlNsaWdodGx5IHNhZmVcIixcbiAgXCJNb2RlcmF0ZWx5IHNhZmVcIixcbiAgXCJWZXJ5IHNhZmVcIixcbiAgXCJFeHRyZW1lbHkgc2FmZVwiLFxuXSBhcyBjb25zdDtcblxuY29uc3QgVkFMVUVfU0NBTEUgPSBbXCJWZXJ5IHBvb3JcIiwgXCJQb29yXCIsIFwiRmFpclwiLCBcIkdvb2RcIiwgXCJFeGNlbGxlbnRcIl0gYXMgY29uc3Q7XG5jb25zdCBWQUxVRV9GT1JfRUZGT1JUX1NDQUxFID0gW1wiVmVyeSBwb29yIHZhbHVlXCIsIFwiUG9vciB2YWx1ZVwiLCBcIkZhaXIgdmFsdWVcIiwgXCJHb29kIHZhbHVlXCIsIFwiRXhjZWxsZW50IHZhbHVlXCJdIGFzIGNvbnN0O1xuY29uc3QgRVhQRUNUQVRJT05fU0NBTEUgPSBbXG4gIFwiTXVjaCB3b3JzZSB0aGFuIGV4cGVjdGVkXCIsXG4gIFwiV29yc2UgdGhhbiBleHBlY3RlZFwiLFxuICBcIkFib3V0IGFzIGV4cGVjdGVkXCIsXG4gIFwiQmV0dGVyIHRoYW4gZXhwZWN0ZWRcIixcbiAgXCJNdWNoIGJldHRlciB0aGFuIGV4cGVjdGVkXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgSURFQUxfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCBjbG9zZVwiLFxuICBcIlNsaWdodGx5IGNsb3NlXCIsXG4gIFwiTW9kZXJhdGVseSBjbG9zZVwiLFxuICBcIlZlcnkgY2xvc2VcIixcbiAgXCJFeHRyZW1lbHkgY2xvc2VcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBQUk9GRVNTSU9OQUxfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCBwcm9mZXNzaW9uYWxcIixcbiAgXCJTbGlnaHRseSBwcm9mZXNzaW9uYWxcIixcbiAgXCJNb2RlcmF0ZWx5IHByb2Zlc3Npb25hbFwiLFxuICBcIlZlcnkgcHJvZmVzc2lvbmFsXCIsXG4gIFwiRXh0cmVtZWx5IHByb2Zlc3Npb25hbFwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IENPTVBFVEVOVF9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIGNvbXBldGVudFwiLFxuICBcIlNsaWdodGx5IGNvbXBldGVudFwiLFxuICBcIk1vZGVyYXRlbHkgY29tcGV0ZW50XCIsXG4gIFwiVmVyeSBjb21wZXRlbnRcIixcbiAgXCJFeHRyZW1lbHkgY29tcGV0ZW50XCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgUkVMSUFCTFlfU0NBTEUgPSBbXG4gIFwiTm90IGF0IGFsbCByZWxpYWJseVwiLFxuICBcIlNsaWdodGx5IHJlbGlhYmx5XCIsXG4gIFwiTW9kZXJhdGVseSByZWxpYWJseVwiLFxuICBcIlZlcnkgcmVsaWFibHlcIixcbiAgXCJFeHRyZW1lbHkgcmVsaWFibHlcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBUUkFOU1BBUkVOVF9TQ0FMRSA9IFtcbiAgXCJOb3QgYXQgYWxsIHRyYW5zcGFyZW50XCIsXG4gIFwiU2xpZ2h0bHkgdHJhbnNwYXJlbnRcIixcbiAgXCJNb2RlcmF0ZWx5IHRyYW5zcGFyZW50XCIsXG4gIFwiVmVyeSB0cmFuc3BhcmVudFwiLFxuICBcIkV4dHJlbWVseSB0cmFuc3BhcmVudFwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IFBSRURJQ1RBQkxZX1NDQUxFID0gW1xuICBcIk5vdCBhdCBhbGwgcHJlZGljdGFibHlcIixcbiAgXCJTbGlnaHRseSBwcmVkaWN0YWJseVwiLFxuICBcIk1vZGVyYXRlbHkgcHJlZGljdGFibHlcIixcbiAgXCJWZXJ5IHByZWRpY3RhYmx5XCIsXG4gIFwiRXh0cmVtZWx5IHByZWRpY3RhYmx5XCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgV0lMTElOR19TQ0FMRSA9IFtcbiAgXCJWZXJ5IHVud2lsbGluZ1wiLFxuICBcIlVud2lsbGluZ1wiLFxuICBcIk5laXRoZXIgd2lsbGluZyBub3IgdW53aWxsaW5nXCIsXG4gIFwiV2lsbGluZ1wiLFxuICBcIlZlcnkgd2lsbGluZ1wiLFxuXSBhcyBjb25zdDtcbmNvbnN0IE5FVVRSQUxfU1VQUE9SVElWRV9TQ0FMRSA9IFtcbiAgXCJPYnN0cnVjdGl2ZVwiLFxuICBcIlNvbWV3aGF0IG9ic3RydWN0aXZlXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IHN1cHBvcnRpdmVcIixcbiAgXCJTdXBwb3J0aXZlXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9FQVNZX1NDQUxFID0gW1xuICBcIkNvbXBsaWNhdGVkXCIsXG4gIFwiU29tZXdoYXQgY29tcGxpY2F0ZWRcIixcbiAgXCJOZXV0cmFsXCIsXG4gIFwiU29tZXdoYXQgZWFzeVwiLFxuICBcIkVhc3lcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX0VGRklDSUVOVF9TQ0FMRSA9IFtcbiAgXCJJbmVmZmljaWVudFwiLFxuICBcIlNvbWV3aGF0IGluZWZmaWNpZW50XCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IGVmZmljaWVudFwiLFxuICBcIkVmZmljaWVudFwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IE5FVVRSQUxfQ0xFQVJfU0NBTEUgPSBbXG4gIFwiQ29uZnVzaW5nXCIsXG4gIFwiU29tZXdoYXQgY29uZnVzaW5nXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IGNsZWFyXCIsXG4gIFwiQ2xlYXJcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX0VYQ0lUSU5HX1NDQUxFID0gW1xuICBcIkJvcmluZ1wiLFxuICBcIlNvbWV3aGF0IGJvcmluZ1wiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCBleGNpdGluZ1wiLFxuICBcIkV4Y2l0aW5nXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9JTlRFUkVTVElOR19TQ0FMRSA9IFtcbiAgXCJVbmludGVyZXN0aW5nXCIsXG4gIFwiU29tZXdoYXQgdW5pbnRlcmVzdGluZ1wiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCBpbnRlcmVzdGluZ1wiLFxuICBcIkludGVyZXN0aW5nXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9JTlZFTlRJVkVfU0NBTEUgPSBbXG4gIFwiQ29udmVudGlvbmFsXCIsXG4gIFwiU29tZXdoYXQgY29udmVudGlvbmFsXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IGludmVudGl2ZVwiLFxuICBcIkludmVudGl2ZVwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IE5FVVRSQUxfTEVBRElOR19FREdFX1NDQUxFID0gW1xuICBcIlVzdWFsXCIsXG4gIFwiU29tZXdoYXQgdXN1YWxcIixcbiAgXCJOZXV0cmFsXCIsXG4gIFwiU29tZXdoYXQgbGVhZGluZy1lZGdlXCIsXG4gIFwiTGVhZGluZy1lZGdlXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9URUNITklDQUxfU0NBTEUgPSBbXG4gIFwiSHVtYW5cIixcbiAgXCJTb21ld2hhdCBodW1hblwiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCB0ZWNobmljYWxcIixcbiAgXCJUZWNobmljYWxcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX0NPTk5FQ1RJVkVfU0NBTEUgPSBbXG4gIFwiSXNvbGF0aW5nXCIsXG4gIFwiU29tZXdoYXQgaXNvbGF0aW5nXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IGNvbm5lY3RpdmVcIixcbiAgXCJDb25uZWN0aXZlXCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9QTEVBU0FOVF9TQ0FMRSA9IFtcbiAgXCJVbnBsZWFzYW50XCIsXG4gIFwiU29tZXdoYXQgdW5wbGVhc2FudFwiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCBwbGVhc2FudFwiLFxuICBcIlBsZWFzYW50XCIsXG5dIGFzIGNvbnN0O1xuY29uc3QgTkVVVFJBTF9TSU1QTEVfU0NBTEUgPSBbXG4gIFwiQ29tcGxpY2F0ZWRcIixcbiAgXCJTb21ld2hhdCBjb21wbGljYXRlZFwiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCBzaW1wbGVcIixcbiAgXCJTaW1wbGVcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX1BST0ZFU1NJT05BTF9TQ0FMRSA9IFtcbiAgXCJVbnByb2Zlc3Npb25hbFwiLFxuICBcIlNvbWV3aGF0IHVucHJvZmVzc2lvbmFsXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IHByb2Zlc3Npb25hbFwiLFxuICBcIlByb2Zlc3Npb25hbFwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IE5FVVRSQUxfQVRUUkFDVElWRV9TQ0FMRSA9IFtcbiAgXCJVbmF0dHJhY3RpdmVcIixcbiAgXCJTb21ld2hhdCB1bmF0dHJhY3RpdmVcIixcbiAgXCJOZXV0cmFsXCIsXG4gIFwiU29tZXdoYXQgYXR0cmFjdGl2ZVwiLFxuICBcIkF0dHJhY3RpdmVcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX1BSQUNUSUNBTF9TQ0FMRSA9IFtcbiAgXCJJbXByYWN0aWNhbFwiLFxuICBcIlNvbWV3aGF0IGltcHJhY3RpY2FsXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IHByYWN0aWNhbFwiLFxuICBcIlByYWN0aWNhbFwiLFxuXSBhcyBjb25zdDtcbmNvbnN0IE5FVVRSQUxfTElLRUFCTEVfU0NBTEUgPSBbXG4gIFwiRGlzYWdyZWVhYmxlXCIsXG4gIFwiU29tZXdoYXQgZGlzYWdyZWVhYmxlXCIsXG4gIFwiTmV1dHJhbFwiLFxuICBcIlNvbWV3aGF0IGxpa2VhYmxlXCIsXG4gIFwiTGlrZWFibGVcIixcbl0gYXMgY29uc3Q7XG5jb25zdCBORVVUUkFMX1NUUkFJR0hURk9SV0FSRF9TQ0FMRSA9IFtcbiAgXCJDdW1iZXJzb21lXCIsXG4gIFwiU29tZXdoYXQgY3VtYmVyc29tZVwiLFxuICBcIk5ldXRyYWxcIixcbiAgXCJTb21ld2hhdCBzdHJhaWdodGZvcndhcmRcIixcbiAgXCJTdHJhaWdodGZvcndhcmRcIixcbl0gYXMgY29uc3Q7XG5cbmNvbnN0IEdFTkVSQUxfUEFSQUdSQVBIX1FVRVNUSU9OX1BST01QVFMgPSBgXG4xLiBXaGF0IHdhcyB5b3VyIGZpcnN0IGltcHJlc3Npb24gb2YgdGhpcyBwcm9kdWN0P1xuMi4gV2hhdCBkbyB5b3UgdGhpbmsgdGhpcyBwcm9kdWN0IGlzIG1haW5seSBmb3I/XG4zLiBXaGF0IGtpbmRzIG9mIHRoaW5ncyBkbyB5b3UgdGhpbmsgeW91IGNhbiBkbyBoZXJlP1xuNC4gSG93IGRvIHlvdSB0aGluayBzb21lb25lIGxpa2UgeW91IHdvdWxkIHVzZSB0aGlzIHByb2R1Y3Q/XG41LiBXaGF0IHdvdWxkIHlvdSBkbyBuZXh0IGlmIHlvdSB3ZXJlIHVzaW5nIHRoaXMgb24geW91ciBvd24/XG42LiBXaGF0IHBhcnQgb2YgdGhlIHBhZ2Ugb3Igc2NyZWVuIGRyZXcgeW91ciBhdHRlbnRpb24gZmlyc3QsIGFuZCB3aHk/XG43LiBXaGF0LCBpZiBhbnl0aGluZywgZmVsdCB1bmNsZWFyIHRoZSBmaXJzdCB0aW1lIHlvdSBsb29rZWQgYXQgdGhpcz9cbjguIFdoYXQgd29yZHMsIGxhYmVscywgb3IgbWVzc2FnZXMgc3Rvb2Qgb3V0IHRvIHlvdSByaWdodCBhd2F5P1xuOS4gV2hhdCB3ZXJlIHlvdSBleHBlY3RpbmcgdG8gZmluZCB3aGVuIHlvdSBvcGVuZWQgdGhpcz9cbjEwLiBXaGF0IGRpZCB0aGlzIHByb2R1Y3Qgc2VlbSB0byBleHBlY3QgeW91IHRvIGRvIGZpcnN0P1xuMTEuIFdoYXQgYWJvdXQgdGhlIGRlc2lnbiBvciBsYXlvdXQgc2hhcGVkIHlvdXIgZmlyc3QgaW1wcmVzc2lvbj9cbjEyLiBXaGF0IGFib3V0IHRoZSBjb250ZW50IG9yIGxhbmd1YWdlIHNoYXBlZCB5b3VyIGZpcnN0IGltcHJlc3Npb24/XG4xMy4gV2hhdCBzZWVtZWQgbW9zdCB1c2VmdWwgYXQgZmlyc3QgZ2xhbmNlP1xuMTQuIFdoYXQgc2VlbWVkIGxlYXN0IHVzZWZ1bCBhdCBmaXJzdCBnbGFuY2U/XG4xNS4gV2hhdCBtYWRlIHlvdSBmZWVsIHRoYXQgdGhpcyBwcm9kdWN0IHdhcyBvciB3YXMgbm90IHJlbGV2YW50IHRvIHlvdT9cbjE2LiBXaGVyZSB3b3VsZCB5b3UgZ28gdG8gY29tcGxldGUgdGhlIHRhc2sgeW91IGhhZCBpbiBtaW5kP1xuMTcuIEhvdyBkaWQgeW91IGRlY2lkZSB3aGVyZSB0byBnbyBmaXJzdD9cbjE4LiBXaGF0IG1hZGUgeW91IGNob29zZSB0aGF0IG9wdGlvbiBpbnN0ZWFkIG9mIGFub3RoZXIgb25lP1xuMTkuIFdoYXQgZGlkIHlvdSBleHBlY3QgdG8gZmluZCB3aGVuIHlvdSBzZWxlY3RlZCB0aGF0IGxhYmVsLCBtZW51LCBvciBsaW5rP1xuMjAuIFdoYXQgZGlkIHlvdSBleHBlY3QgdGhhdCBsYWJlbCwgbWVudSwgb3IgaGVhZGluZyB0byBtZWFuP1xuMjEuIFdoYXQgd291bGQgeW91IGV4cGVjdCB0byBmaW5kIHVuZGVyIHRoYXQgc2VjdGlvbiBvciBjYXRlZ29yeT9cbjIyLiBXaGF0IGxhYmVsIG9yIHdvcmRpbmcgd291bGQgbWFrZSB0aGlzIGVhc2llciB0byB1bmRlcnN0YW5kP1xuMjMuIFdoaWNoIGxhYmVscyBvciBjYXRlZ29yaWVzIGZlbHQgdG9vIHZhZ3VlLCBhbmQgd2h5P1xuMjQuIFdoaWNoIGxhYmVscyBvciBjYXRlZ29yaWVzIGZlbHQgY2xlYXIsIGFuZCB3aHk/XG4yNS4gV2hhdCBwYXJ0cyBvZiB0aGUgbmF2aWdhdGlvbiBmZWx0IGludHVpdGl2ZSB0byB5b3U/XG4yNi4gV2hhdCBwYXJ0cyBvZiB0aGUgbmF2aWdhdGlvbiBmZWx0IGhhcmQgdG8gcHJlZGljdD9cbjI3LiBIb3cgZGlkIHlvdSB0cnkgdG8gZmluZCBpbmZvcm1hdGlvbiB3aGVuIHlvdSB3ZXJlIG5vdCBzdXJlIHdoZXJlIHRvIGdvP1xuMjguIFdoYXQsIGlmIGFueXRoaW5nLCBtYWRlIGJyb3dzaW5nIGVhc2llciB0aGFuIHNlYXJjaGluZyBoZXJlP1xuMjkuIFdoYXQsIGlmIGFueXRoaW5nLCBtYWRlIHNlYXJjaGluZyBlYXNpZXIgdGhhbiBicm93c2luZyBoZXJlP1xuMzAuIFdoYXQgd291bGQgbWFrZSBpdCBlYXNpZXIgdG8ga25vdyB3aGVyZSB5b3UgYXJlIGFuZCB3aGVyZSB0byBnbyBuZXh0P1xuMzEuIEhvdyBkaWQgdGhhdCB0YXNrIGdvIGZvciB5b3U/XG4zMi4gV2hhdCBwYXJ0IG9mIHRoZSB0YXNrIGZlbHQgZWFzaWVzdD9cbjMzLiBXaGF0IHBhcnQgb2YgdGhlIHRhc2sgZmVsdCBoYXJkZXN0P1xuMzQuIFdoYXQsIGlmIGFueXRoaW5nLCB3YXMgY29uZnVzaW5nIGR1cmluZyB0aGUgdGFzaz9cbjM1LiBXaGF0LCBpZiBhbnl0aGluZywgd2FzIGZydXN0cmF0aW5nIGR1cmluZyB0aGUgdGFzaz9cbjM2LiBBdCB3aGF0IHBvaW50IGRpZCB5b3UgZmVlbCB1bnN1cmUgYWJvdXQgd2hhdCB0byBkbyBuZXh0P1xuMzcuIFdoYXQgd2VyZSB5b3UgZXhwZWN0aW5nIHRvIGhhcHBlbiBhdCB0aGF0IG1vbWVudD9cbjM4LiBXaGF0IGhhcHBlbmVkIGluc3RlYWQgb2Ygd2hhdCB5b3UgZXhwZWN0ZWQ/XG4zOS4gV2hhdCBzbG93ZWQgeW91IGRvd24sIGlmIGFueXRoaW5nP1xuNDAuIFdoYXQgaGVscGVkIHlvdSBrZWVwIG1vdmluZyB0aHJvdWdoIHRoZSB0YXNrP1xuNDEuIFdoYXQgZGlkIHlvdSB0cnkgd2hlbiB5b3VyIGZpcnN0IGFwcHJvYWNoIGRpZCBub3Qgd29yaz9cbjQyLiBXaGF0IG1hZGUgYSBzdGVwIGZlZWwgaGFyZGVyIG9yIGVhc2llciB0aGFuIHlvdSBleHBlY3RlZD9cbjQzLiBXaGF0IG1hZGUgdGhpcyB0YXNrIGZlZWwgbW9yZSBjb21wbGljYXRlZCBvciBzaW1wbGVyIHRoYW4gaXQgbmVlZGVkIHRvIGJlP1xuNDQuIFdoYXQgcGFydCBvZiB0aGUgcHJvY2VzcyBmZWx0IHNtb290aCBvciBuYXR1cmFsP1xuNDUuIFdoYXQgcGFydCBvZiB0aGUgcHJvY2VzcyBmZWx0IGF3a3dhcmQgb3IgdW5uZWNlc3Nhcnk/XG40Ni4gV2hhdCBkaWQgdGhlIGluZm9ybWF0aW9uIG9uIHRoaXMgcGFnZSBvciBzY3JlZW4gbWVhbiB0byB5b3U/XG40Ny4gV2hhdCB3b3JkcyBvciBwaHJhc2VzIHdlcmUgZWFzaWVzdCB0byB1bmRlcnN0YW5kP1xuNDguIFdoYXQgd29yZHMgb3IgcGhyYXNlcyB3ZXJlIGhhcmRlc3QgdG8gdW5kZXJzdGFuZD9cbjQ5LiBXaGF0IG1lc3NhZ2VzIG9yIGluc3RydWN0aW9ucyBmZWx0IGhlbHBmdWw/XG41MC4gV2hhdCBtZXNzYWdlcyBvciBpbnN0cnVjdGlvbnMgZmVsdCB1bmhlbHBmdWw/XG41MS4gV2hhdCBpbmZvcm1hdGlvbiBmZWx0IGNsZWFyIGFuZCBjb21wbGV0ZT9cbjUyLiBXaGF0IGluZm9ybWF0aW9uIGZlbHQgaW5jb21wbGV0ZSBvciBtaXNzaW5nIGNvbnRleHQ/XG41My4gV2hhdCBpbmZvcm1hdGlvbiBmZWx0IHRvbyB0ZWNobmljYWwsIHRvbyB2YWd1ZSwgb3IgdG9vIGRlbnNlP1xuNTQuIFdoYXQgaW5mb3JtYXRpb24gaGVscGVkIHlvdSBkZWNpZGUgd2hhdCB0byBkbyBuZXh0P1xuNTUuIFdoYXQgaW5mb3JtYXRpb24gZGlkIHlvdSBpZ25vcmUsIGFuZCB3aHk/XG41Ni4gV2hhdCBpbmZvcm1hdGlvbiBmZWx0IG1vc3QgdXNlZnVsIHRvIHlvdT9cbjU3LiBXaGF0IGluZm9ybWF0aW9uIGZlbHQgbGVhc3QgdXNlZnVsIHRvIHlvdT9cbjU4LiBXaGF0IHdvdWxkIG1ha2UgdGhpcyBwYWdlIG9yIHNjcmVlbiBtb3JlIHVzZWZ1bD9cbjU5LiBIb3cgY291bGQgdGhlIHdvcmRpbmcgYmUgaW1wcm92ZWQgdG8gbWFrZSB0aGlzIGVhc2llciB0byB1c2U/XG42MC4gV2hhdCB3b3VsZCB5b3UgcmV3cml0ZSwgc2hvcnRlbiwgb3IgZXhwbGFpbiBkaWZmZXJlbnRseT9cbjYxLiBXaGF0IGlzIHlvdXIgaW1wcmVzc2lvbiBvZiB0aGUgbG9vayBhbmQgZmVlbCBvZiB0aGlzIHByb2R1Y3Q/XG42Mi4gV2hhdCBkbyB5b3UgdGhpbmsgYWJvdXQgdGhlIG92ZXJhbGwgZGVzaWduIGFuZCBsYXlvdXQ/XG42My4gV2hhdCBkbyB5b3UgdGhpbmsgYWJvdXQgaG93IHRoZSBjb250ZW50IGlzIHByZXNlbnRlZCB2aXN1YWxseT9cbjY0LiBXaGF0IGRpZCB5b3Ugbm90aWNlIGFib3V0IHRoZSBiYWxhbmNlIGJldHdlZW4gdGV4dCBhbmQgdmlzdWFsIGVsZW1lbnRzP1xuNjUuIFdoYXQgdmlzdWFsIGVsZW1lbnRzIGhlbHBlZCB5b3UgdW5kZXJzdGFuZCB3aGF0IHRvIGRvP1xuNjYuIFdoYXQgdmlzdWFsIGVsZW1lbnRzIGRpc3RyYWN0ZWQgb3IgY29uZnVzZWQgeW91P1xuNjcuIFdoYXQgZGlkIHlvdSB0aGluayBhYm91dCB0aGUgaW1hZ2VzLCBpbGx1c3RyYXRpb25zLCBpY29ucywgb3IgbWVkaWEgaGVyZT9cbjY4LiBXaGF0IG1hZGUgdGhpcyBmZWVsIGNsZWFuIG9yIGNsdXR0ZXJlZCB0byB5b3U/XG42OS4gV2hhdCBtYWRlIHRoaXMgZmVlbCBwcm9mZXNzaW9uYWwgb3IgdW5wcm9mZXNzaW9uYWwgdG8geW91P1xuNzAuIFdoYXQgbWFkZSB0aGlzIGZlZWwgbW9kZXJuLCBkYXRlZCwgc2VyaW91cywgZnJpZW5kbHksIG9yIHNvbWV0aGluZyBlbHNlP1xuNzEuIFdoYXQgd291bGQgeW91IGNoYW5nZSBhYm91dCB0aGUgdmlzdWFsIHByZXNlbnRhdGlvbiBmaXJzdD9cbjcyLiBXaGF0IHNob3VsZCBzdGF5IGV4YWN0bHkgYXMgaXQgaXMgaW4gdGhlIHZpc3VhbCBwcmVzZW50YXRpb24/XG43My4gSW4gd2hhdCB3YXlzIGRpZCB0aGlzIHByb2R1Y3Qgd29yayB0aGUgd2F5IHlvdSBleHBlY3RlZCwgb3Igbm90P1xuNzQuIFdoYXQgbWFkZSB5b3UgdHJ1c3Qgb3IgZGlzdHJ1c3QgdGhpcyBwcm9kdWN0P1xuNzUuIFdoYXQgbWFkZSB0aGUgaW5mb3JtYXRpb24gaGVyZSBmZWVsIGNyZWRpYmxlIG9yIG5vdCBjcmVkaWJsZT9cbjc2LiBXaGF0IG1hZGUgdGhlIHByb2R1Y3QgZmVlbCByZWxpYWJsZSBvciB1bnJlbGlhYmxlP1xuNzcuIFdoYXQgbWFkZSB5b3UgZmVlbCBjb25maWRlbnQgb3IgdW5jZXJ0YWluIHdoaWxlIHVzaW5nIGl0P1xuNzguIFdoYXQsIGlmIGFueXRoaW5nLCBtYWRlIHlvdSBoZXNpdGF0ZSBiZWZvcmUgdGFraW5nIGFjdGlvbj9cbjc5LiBXaGF0IGNvbmNlcm5zLCBpZiBhbnksIGRpZCB5b3UgaGF2ZSBhYm91dCBhY2N1cmFjeSwgcHJpdmFjeSwgb3Igc2FmZXR5P1xuODAuIFdoYXQgZGlkIGFueSBwcml2YWN5LCBzZWN1cml0eSwgb3IgY29uZmlkZW50aWFsaXR5IGxhbmd1YWdlIG1lYW4gdG8geW91P1xuODEuIEhvdywgaWYgYXQgYWxsLCBkaWQgdXNpbmcgdGhpcyBwcm9kdWN0IGFmZmVjdCB5b3VyIHRydXN0IGluIGl0P1xuODIuIFdoYXQgd291bGQgbWFrZSB5b3UgbW9yZSBjb21mb3J0YWJsZSByZWx5aW5nIG9uIHRoaXMgcHJvZHVjdD9cbjgzLiBXaGF0IG1hZGUgdGhlIHByb2R1Y3QgZmVlbCBob25lc3QgYW5kIHRyYW5zcGFyZW50LCBvciBub3Q/XG44NC4gV2hhdCB3b3VsZCBoZWxwIHlvdSBmZWVsIG1vcmUgY29uZmlkZW50IHRoYXQgeW91ciBpbmZvcm1hdGlvbiBpcyBoYW5kbGVkIHdlbGw/XG44NS4gV2hhdCBkaWQgeW91IGxpa2UgYmVzdCBhYm91dCB0aGlzIHByb2R1Y3Q/XG44Ni4gV2hhdCBkaWQgeW91IGxpa2UgbGVhc3QgYWJvdXQgdGhpcyBwcm9kdWN0P1xuODcuIFdoYXQgc2hvdWxkIGJlIGltcHJvdmVkIGZpcnN0P1xuODguIEhvdyB3b3VsZCB5b3UgaW1wcm92ZSBpdD9cbjg5LiBXaGF0IGZlZWxzIG1pc3NpbmcgZnJvbSB0aGlzIHByb2R1Y3Q/XG45MC4gV2hhdCB3b3VsZCB5b3UgYWRkIHRvIG1ha2UgdGhpcyBtb3JlIHVzZWZ1bD9cbjkxLiBIb3cgZG9lcyB0aGlzIGNvbXBhcmUgd2l0aCB0aGUgd2F5IHlvdSB1c3VhbGx5IGRvIHRoaXMgdG9kYXk/XG45Mi4gSG93IGRvZXMgdGhpcyBjb21wYXJlIHdpdGggb3RoZXIgcHJvZHVjdHMgeW91IHVzZSBmb3Igc2ltaWxhciB0YXNrcz9cbjkzLiBUZWxsIG1lIGFib3V0IGEgcmVjZW50IHRpbWUgdGhpcyBwcm9kdWN0IHdvcmtlZCBlc3BlY2lhbGx5IHdlbGwgZm9yIHlvdS5cbjk0LiBXaGF0IG1hZGUgdGhhdCBleHBlcmllbmNlIHdvcmsgd2VsbD9cbjk1LiBUZWxsIG1lIGFib3V0IGEgcmVjZW50IHRpbWUgdGhpcyBwcm9kdWN0IHdvcmtlZCBwb29ybHkgZm9yIHlvdS5cbjk2LiBXaGF0IG1hZGUgdGhhdCBleHBlcmllbmNlIHdvcmsgcG9vcmx5P1xuOTcuIFdoYXQgd291bGQgbWFrZSB5b3Ugd2FudCB0byB1c2UgdGhpcyBhZ2Fpbj9cbjk4LiBXaGF0IHdvdWxkIG1ha2UgeW91IHN0b3AgdXNpbmcgdGhpcz9cbjk5LiBJcyB0aGVyZSBhbnl0aGluZyBlbHNlIHlvdSB3b3VsZCBsaWtlIHRvIHNoYXJlIGFib3V0IHRoaXMgZXhwZXJpZW5jZT9cbmBcbiAgLnRyaW0oKVxuICAuc3BsaXQoXCJcXG5cIilcbiAgLm1hcCgobGluZSkgPT4gbGluZS5yZXBsYWNlKC9eXFxkK1xcLlxccyovLCBcIlwiKS50cmltKCkpO1xuXG5leHBvcnQgY29uc3QgR0VORVJBTF9ERUZBVUxUX1RFTVBMQVRFX0lEUyA9IFtcInEwMzNcIl0gYXMgY29uc3Q7XG5leHBvcnQgY29uc3QgR0VORVJBTF9ERUZBVUxUX1BBUkFHUkFQSF9URU1QTEFURV9JRFMgPSBbXCJncDAwMVwiLCBcImdwMDg3XCJdIGFzIGNvbnN0O1xuXG5leHBvcnQgY29uc3QgR0VORVJBTF9QQVJBR1JBUEhfUVVFU1RJT05fQkFOSzogcmVhZG9ubHkgR2VuZXJhbFBhcmFncmFwaFF1ZXN0aW9uVGVtcGxhdGVbXSA9XG4gIEdFTkVSQUxfUEFSQUdSQVBIX1FVRVNUSU9OX1BST01QVFMubWFwKChwcm9tcHQsIGluZGV4KSA9PiAoe1xuICAgIGlkOiBgZ3Ake1N0cmluZyhpbmRleCArIDEpLnBhZFN0YXJ0KDMsIFwiMFwiKX1gLFxuICAgIHByb21wdCxcbiAgfSkpO1xuXG5leHBvcnQgY29uc3QgR0VORVJBTF9RVUVTVElPTl9CQU5LOiByZWFkb25seSBHZW5lcmFsUXVlc3Rpb25UZW1wbGF0ZVtdID0gW1xuICB7IGlkOiBcInEwMDFcIiwgcHJvbXB0OiBcIkhvdyBsaWtlbHkgYXJlIHlvdSB0byB3YW50IHRvIHVzZSB0aGlzIHByb2R1Y3QgZnJlcXVlbnRseT9cIiwgb3B0aW9uczogVkVSWV9VTkxJS0VMWV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMDJcIiwgcHJvbXB0OiBcIlRvIHdoYXQgZXh0ZW50IGRpZCB0aGlzIHByb2R1Y3QgZmVlbCBtb3JlIGNvbXBsZXggdGhhbiBpdCBuZWVkZWQgdG8gYmU/XCIsIG9wdGlvbnM6IEVYVEVOVF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMDNcIiwgcHJvbXB0OiBcIkhvdyBlYXN5IHdhcyB0aGlzIHByb2R1Y3QgdG8gdXNlP1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAwNFwiLCBwcm9tcHQ6IFwiSG93IG11Y2ggc3VwcG9ydCBmcm9tIGEgdGVjaG5pY2FsIHBlcnNvbiB3b3VsZCB5b3UgbmVlZCB0byB1c2UgdGhpcyBwcm9kdWN0IHdlbGw/XCIsIG9wdGlvbnM6IFNVUFBPUlRfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDA1XCIsIHByb21wdDogXCJIb3cgd2VsbCBpbnRlZ3JhdGVkIGRpZCB0aGUgZGlmZmVyZW50IHBhcnRzIG9mIHRoaXMgcHJvZHVjdCBmZWVsP1wiLCBvcHRpb25zOiBJTlRFR1JBVEVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAwNlwiLCBwcm9tcHQ6IFwiVG8gd2hhdCBleHRlbnQgZGlkIHRoaXMgcHJvZHVjdCBmZWVsIGluY29uc2lzdGVudD9cIiwgb3B0aW9uczogRVhURU5UX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAwN1wiLCBwcm9tcHQ6IFwiSG93IHF1aWNrbHkgZG8geW91IHRoaW5rIG1vc3QgcGVvcGxlIHdvdWxkIGxlYXJuIHRvIHVzZSB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFNQRUVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAwOFwiLCBwcm9tcHQ6IFwiSG93IGN1bWJlcnNvbWUgZGlkIHRoaXMgcHJvZHVjdCBmZWVsIHRvIHVzZT9cIiwgb3B0aW9uczogQ1VNQkVSU09NRV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMDlcIiwgcHJvbXB0OiBcIkhvdyBjb25maWRlbnQgZGlkIHlvdSBmZWVsIHdoaWxlIHVzaW5nIHRoaXMgcHJvZHVjdD9cIiwgb3B0aW9uczogQ09ORklERU5UX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxMFwiLCBwcm9tcHQ6IFwiSG93IG11Y2ggZGlkIHlvdSBuZWVkIHRvIGxlYXJuIGJlZm9yZSB5b3UgY291bGQgZ2V0IGdvaW5nIHdpdGggdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBTVVBQT1JUX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxMVwiLCBwcm9tcHQ6IFwiSG93IHdlbGwgZG8gdGhpcyBwcm9kdWN0J3MgY2FwYWJpbGl0aWVzIG1lZXQgeW91ciByZXF1aXJlbWVudHM/XCIsIG9wdGlvbnM6IFdFTExfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDEyXCIsIHByb21wdDogXCJIb3cgZWFzeSBpcyB0aGlzIHByb2R1Y3QgdG8gdXNlP1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxM1wiLCBwcm9tcHQ6IFwiT3ZlcmFsbCwgaG93IGVhc3kgb3IgZGlmZmljdWx0IHdhcyB0aGlzIHRhc2s/XCIsIG9wdGlvbnM6IEVBU1lfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDE0XCIsIHByb21wdDogXCJIb3cgc2F0aXNmaWVkIHdlcmUgeW91IHdpdGggaG93IGVhc3kgaXQgd2FzIHRvIGNvbXBsZXRlIHRoaXMgdGFzaz9cIiwgb3B0aW9uczogU0FUSVNGSUVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxNVwiLCBwcm9tcHQ6IFwiSG93IHNhdGlzZmllZCB3ZXJlIHlvdSB3aXRoIHRoZSBhbW91bnQgb2YgdGltZSBpdCB0b29rIHRvIGNvbXBsZXRlIHRoaXMgdGFzaz9cIiwgb3B0aW9uczogU0FUSVNGSUVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxNlwiLCBwcm9tcHQ6IFwiSG93IHNhdGlzZmllZCB3ZXJlIHlvdSB3aXRoIHRoZSBoZWxwIGFuZCBpbmZvcm1hdGlvbiBhdmFpbGFibGUgd2hpbGUgY29tcGxldGluZyB0aGlzIHRhc2s/XCIsIG9wdGlvbnM6IFNBVElTRklFRF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMTdcIiwgcHJvbXB0OiBcIkhvdyBlZmZlY3RpdmVseSBjb3VsZCB5b3UgY29tcGxldGUgd2hhdCB5b3UgbmVlZGVkIHRvIGRvIHdpdGggdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBFRkZFQ1RJVkVMWV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMThcIiwgcHJvbXB0OiBcIkhvdyBxdWlja2x5IGNvdWxkIHlvdSBjb21wbGV0ZSB3aGF0IHlvdSBuZWVkZWQgdG8gZG8gd2l0aCB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFNQRUVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAxOVwiLCBwcm9tcHQ6IFwiSG93IGVmZmljaWVudGx5IGNvdWxkIHlvdSBjb21wbGV0ZSB3aGF0IHlvdSBuZWVkZWQgdG8gZG8gd2l0aCB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFtcIk5vdCBhdCBhbGwgZWZmaWNpZW50bHlcIiwgXCJTbGlnaHRseSBlZmZpY2llbnRseVwiLCBcIk1vZGVyYXRlbHkgZWZmaWNpZW50bHlcIiwgXCJWZXJ5IGVmZmljaWVudGx5XCIsIFwiRXh0cmVtZWx5IGVmZmljaWVudGx5XCJdIH0sXG4gIHsgaWQ6IFwicTAyMFwiLCBwcm9tcHQ6IFwiSG93IGNvbWZvcnRhYmxlIGRpZCB5b3UgZmVlbCB1c2luZyB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IENPTUZPUlRBQkxFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAyMVwiLCBwcm9tcHQ6IFwiSG93IGVhc3kgd2FzIGl0IHRvIGxlYXJuIHRvIHVzZSB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IEVBU1lfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDIyXCIsIHByb21wdDogXCJIb3cgcXVpY2tseSBjb3VsZCB5b3UgYmVjb21lIHByb2R1Y3RpdmUgd2l0aCB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFNQRUVEX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAyM1wiLCBwcm9tcHQ6IFwiSG93IGNsZWFybHkgZGlkIGVycm9yIG1lc3NhZ2VzIHRlbGwgeW91IGhvdyB0byBmaXggcHJvYmxlbXM/XCIsIG9wdGlvbnM6IENMRUFSTFlfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDI0XCIsIHByb21wdDogXCJIb3cgZWFzaWx5IGFuZCBxdWlja2x5IGNvdWxkIHlvdSByZWNvdmVyIHdoZW4geW91IG1hZGUgYSBtaXN0YWtlP1wiLCBvcHRpb25zOiBFQVNJTFlfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDI1XCIsIHByb21wdDogXCJIb3cgY2xlYXIgd2FzIHRoZSBpbmZvcm1hdGlvbiBwcm92aWRlZCBieSB0aGUgcHJvZHVjdD9cIiwgb3B0aW9uczogQ0xFQVJfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDI2XCIsIHByb21wdDogXCJIb3cgZWFzeSB3YXMgaXQgdG8gZmluZCB0aGUgaW5mb3JtYXRpb24geW91IG5lZWRlZD9cIiwgb3B0aW9uczogRUFTWV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMjdcIiwgcHJvbXB0OiBcIkhvdyBlZmZlY3RpdmUgd2FzIHRoZSBpbmZvcm1hdGlvbiB0aGUgcHJvZHVjdCBnYXZlIHlvdSBpbiBoZWxwaW5nIHlvdSBjb21wbGV0ZSB0YXNrcz9cIiwgb3B0aW9uczogRUZGRUNUSVZFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAyOFwiLCBwcm9tcHQ6IFwiSG93IHdlbGwgZGlkIHRoZSBwcm9kdWN0IG9yZ2FuaXplIGluZm9ybWF0aW9uIGluIGEgd2F5IHRoYXQgbWFkZSBzZW5zZT9cIiwgb3B0aW9uczogV0VMTF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMjlcIiwgcHJvbXB0OiBcIkhvdyBwbGVhc2FudCB3YXMgdGhlIGludGVyZmFjZSBvZiB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFtcIlZlcnkgdW5wbGVhc2FudFwiLCBcIlVucGxlYXNhbnRcIiwgXCJOZWl0aGVyIHBsZWFzYW50IG5vciB1bnBsZWFzYW50XCIsIFwiUGxlYXNhbnRcIiwgXCJWZXJ5IHBsZWFzYW50XCJdIH0sXG4gIHsgaWQ6IFwicTAzMFwiLCBwcm9tcHQ6IFwiSG93IG11Y2ggZGlkIHlvdSBsaWtlIHVzaW5nIHRoaXMgcHJvZHVjdCdzIGludGVyZmFjZT9cIiwgb3B0aW9uczogVkVSWV9NVUNIX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAzMVwiLCBwcm9tcHQ6IFwiSG93IHdlbGwgZG9lcyB0aGlzIHByb2R1Y3QgaGF2ZSB0aGUgZnVuY3Rpb25zIGFuZCBjYXBhYmlsaXRpZXMgeW91IGV4cGVjdCBpdCB0byBoYXZlP1wiLCBvcHRpb25zOiBXRUxMX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAzMlwiLCBwcm9tcHQ6IFwiSG93IGVhc3kgaXMgdGhpcyBwcm9kdWN0IHRvIHVzZT9cIiwgb3B0aW9uczogRUFTWV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMzNcIiwgcHJvbXB0OiBcIkhvdyBlYXN5IGlzIGl0IHRvIG5hdmlnYXRlIHdpdGhpbiB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IEVBU1lfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDM0XCIsIHByb21wdDogXCJIb3cgY3JlZGlibGUgaXMgdGhlIGluZm9ybWF0aW9uIG9yIGNvbnRlbnQgaW4gdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBDUkVESUJMRV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwMzVcIiwgcHJvbXB0OiBcIkhvdyB0cnVzdHdvcnRoeSBpcyB0aGUgaW5mb3JtYXRpb24gb3IgY29udGVudCBpbiB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFRSVVNUV09SVEhZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAzNlwiLCBwcm9tcHQ6IFwiSG93IGF0dHJhY3RpdmUgZG8geW91IGZpbmQgdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBBVFRSQUNUSVZFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAzN1wiLCBwcm9tcHQ6IFwiSG93IGNsZWFuIGFuZCBzaW1wbGUgaXMgdGhpcyBwcm9kdWN0J3MgcHJlc2VudGF0aW9uP1wiLCBvcHRpb25zOiBbXCJOb3QgYXQgYWxsIGNsZWFuIGFuZCBzaW1wbGVcIiwgXCJTbGlnaHRseSBjbGVhbiBhbmQgc2ltcGxlXCIsIFwiTW9kZXJhdGVseSBjbGVhbiBhbmQgc2ltcGxlXCIsIFwiVmVyeSBjbGVhbiBhbmQgc2ltcGxlXCIsIFwiRXh0cmVtZWx5IGNsZWFuIGFuZCBzaW1wbGVcIl0gfSxcbiAgeyBpZDogXCJxMDM4XCIsIHByb21wdDogXCJIb3cgbGlrZWx5IGFyZSB5b3UgdG8gdXNlIHRoaXMgcHJvZHVjdCBhZ2FpbiBpbiB0aGUgZnV0dXJlP1wiLCBvcHRpb25zOiBWRVJZX1VOTElLRUxZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTAzOVwiLCBwcm9tcHQ6IFwiSG93IGxpa2VseSBhcmUgeW91IHRvIHJlY29tbWVuZCB0aGlzIHByb2R1Y3QgdG8gYSBmcmllbmQgb3IgY29sbGVhZ3VlP1wiLCBvcHRpb25zOiBSRUNPTU1FTkRfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDQwXCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSBvYnN0cnVjdGl2ZSB0byBzdXBwb3J0aXZlP1wiLCBvcHRpb25zOiBORVVUUkFMX1NVUFBPUlRJVkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDQxXCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSBjb21wbGljYXRlZCB0byBlYXN5P1wiLCBvcHRpb25zOiBORVVUUkFMX0VBU1lfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDQyXCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSBpbmVmZmljaWVudCB0byBlZmZpY2llbnQ/XCIsIG9wdGlvbnM6IE5FVVRSQUxfRUZGSUNJRU5UX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA0M1wiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gY29uZnVzaW5nIHRvIGNsZWFyP1wiLCBvcHRpb25zOiBORVVUUkFMX0NMRUFSX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA0NFwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gYm9yaW5nIHRvIGV4Y2l0aW5nP1wiLCBvcHRpb25zOiBORVVUUkFMX0VYQ0lUSU5HX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA0NVwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gbm90IGludGVyZXN0aW5nIHRvIGludGVyZXN0aW5nP1wiLCBvcHRpb25zOiBORVVUUkFMX0lOVEVSRVNUSU5HX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA0NlwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gY29udmVudGlvbmFsIHRvIGludmVudGl2ZT9cIiwgb3B0aW9uczogTkVVVFJBTF9JTlZFTlRJVkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDQ3XCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSB1c3VhbCB0byBsZWFkaW5nLWVkZ2U/XCIsIG9wdGlvbnM6IE5FVVRSQUxfTEVBRElOR19FREdFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA0OFwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gaHVtYW4gdG8gdGVjaG5pY2FsP1wiLCBvcHRpb25zOiBORVVUUkFMX1RFQ0hOSUNBTF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNDlcIiwgcHJvbXB0OiBcIkhvdyB3b3VsZCB5b3UgcmF0ZSB0aGlzIHByb2R1Y3Qgb24gYSBzY2FsZSBmcm9tIGlzb2xhdGluZyB0byBjb25uZWN0aXZlP1wiLCBvcHRpb25zOiBORVVUUkFMX0NPTk5FQ1RJVkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDUwXCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSB1bnBsZWFzYW50IHRvIHBsZWFzYW50P1wiLCBvcHRpb25zOiBORVVUUkFMX1BMRUFTQU5UX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA1MVwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gY29udmVudGlvbmFsIHRvIGludmVudGl2ZT9cIiwgb3B0aW9uczogTkVVVFJBTF9JTlZFTlRJVkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDUyXCIsIHByb21wdDogXCJIb3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG9uIGEgc2NhbGUgZnJvbSBjb21wbGljYXRlZCB0byBzaW1wbGU/XCIsIG9wdGlvbnM6IE5FVVRSQUxfU0lNUExFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA1M1wiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gdW5wcm9mZXNzaW9uYWwgdG8gcHJvZmVzc2lvbmFsP1wiLCBvcHRpb25zOiBORVVUUkFMX1BST0ZFU1NJT05BTF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNTRcIiwgcHJvbXB0OiBcIkhvdyB3b3VsZCB5b3UgcmF0ZSB0aGlzIHByb2R1Y3Qgb24gYSBzY2FsZSBmcm9tIHVnbHkgdG8gYXR0cmFjdGl2ZT9cIiwgb3B0aW9uczogTkVVVFJBTF9BVFRSQUNUSVZFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA1NVwiLCBwcm9tcHQ6IFwiSG93IHdvdWxkIHlvdSByYXRlIHRoaXMgcHJvZHVjdCBvbiBhIHNjYWxlIGZyb20gaW1wcmFjdGljYWwgdG8gcHJhY3RpY2FsP1wiLCBvcHRpb25zOiBORVVUUkFMX1BSQUNUSUNBTF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNTZcIiwgcHJvbXB0OiBcIkhvdyB3b3VsZCB5b3UgcmF0ZSB0aGlzIHByb2R1Y3Qgb24gYSBzY2FsZSBmcm9tIGRpc2FncmVlYWJsZSB0byBsaWtlYWJsZT9cIiwgb3B0aW9uczogTkVVVFJBTF9MSUtFQUJMRV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNTdcIiwgcHJvbXB0OiBcIkhvdyB3b3VsZCB5b3UgcmF0ZSB0aGlzIHByb2R1Y3Qgb24gYSBzY2FsZSBmcm9tIGN1bWJlcnNvbWUgdG8gc3RyYWlnaHRmb3J3YXJkP1wiLCBvcHRpb25zOiBORVVUUkFMX1NUUkFJR0hURk9SV0FSRF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNThcIiwgcHJvbXB0OiBcIkhvdyBtZW50YWxseSBkZW1hbmRpbmcgd2FzIHVzaW5nIHRoaXMgcHJvZHVjdCBmb3IgdGhlIHRhc2sgeW91IGp1c3QgY29tcGxldGVkP1wiLCBvcHRpb25zOiBMT1dfSElHSF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNTlcIiwgcHJvbXB0OiBcIkhvdyBwaHlzaWNhbGx5IGRlbWFuZGluZyB3YXMgaXQgdG8gdXNlIHRoaXMgcHJvZHVjdCBmb3IgdGhlIHRhc2sgeW91IGp1c3QgY29tcGxldGVkP1wiLCBvcHRpb25zOiBMT1dfSElHSF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNjBcIiwgcHJvbXB0OiBcIkhvdyBydXNoZWQgb3IgdGltZS1wcmVzc3VyZWQgZGlkIHlvdSBmZWVsIHdoaWxlIHVzaW5nIHRoaXMgcHJvZHVjdD9cIiwgb3B0aW9uczogUFJFU1NVUkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDYxXCIsIHByb21wdDogXCJIb3cgc3VjY2Vzc2Z1bCB3ZXJlIHlvdSBpbiBhY2NvbXBsaXNoaW5nIHdoYXQgeW91IHdhbnRlZCB0byBkbz9cIiwgb3B0aW9uczogU1VDQ0VTU19TQ0FMRSB9LFxuICB7IGlkOiBcInEwNjJcIiwgcHJvbXB0OiBcIkhvdyBoYXJkIGRpZCB5b3UgaGF2ZSB0byB3b3JrIHRvIGFjY29tcGxpc2ggdGhhdCBsZXZlbCBvZiBwZXJmb3JtYW5jZT9cIiwgb3B0aW9uczogTE9XX0hJR0hfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDYzXCIsIHByb21wdDogXCJIb3cgZnJ1c3RyYXRlZCwgc3RyZXNzZWQsIG9yIGFubm95ZWQgZGlkIHlvdSBmZWVsIHdoaWxlIHVzaW5nIHRoaXMgcHJvZHVjdD9cIiwgb3B0aW9uczogUFJFU1NVUkVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDY0XCIsIHByb21wdDogXCJIb3cgbXVjaCBkbyB5b3UgdHJ1c3QgdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBUUlVTVF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNjVcIiwgcHJvbXB0OiBcIkhvdyBjb21wZXRlbnQgZG8geW91IGJlbGlldmUgdGhpcyBwcm9kdWN0IGlzIGF0IGhlbHBpbmcgeW91IGRvIHdoYXQgeW91IG5lZWQgdG8gZG8/XCIsIG9wdGlvbnM6IENPTVBFVEVOVF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNjZcIiwgcHJvbXB0OiBcIkhvdyByZWxpYWJseSBkbyB5b3UgYmVsaWV2ZSB0aGlzIHByb2R1Y3QgYmVoYXZlcz9cIiwgb3B0aW9uczogUkVMSUFCTFlfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDY3XCIsIHByb21wdDogXCJUbyB3aGF0IGV4dGVudCBkbyB5b3UgYmVsaWV2ZSB0aGlzIHByb2R1Y3QgYWN0cyBpbiB5b3VyIGJlc3QgaW50ZXJlc3Q/XCIsIG9wdGlvbnM6IFRSVVNUX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA2OFwiLCBwcm9tcHQ6IFwiVG8gd2hhdCBleHRlbnQgZG8geW91IGJlbGlldmUgdGhpcyBwcm9kdWN0IGhhbmRsZXMgeW91ciBpbmZvcm1hdGlvbiBob25lc3RseSBhbmQgcmVzcG9uc2libHk/XCIsIG9wdGlvbnM6IFRSVVNUX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA2OVwiLCBwcm9tcHQ6IFwiVG8gd2hhdCBleHRlbnQgZG8geW91IGJlbGlldmUgdGhpcyBwcm9kdWN0IGtlZXBzIGl0cyBwcm9taXNlcz9cIiwgb3B0aW9uczogVFJVU1RfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDcwXCIsIHByb21wdDogXCJIb3cgc2FmZSBkbyB5b3UgZmVlbCByZWx5aW5nIG9uIHRoaXMgcHJvZHVjdD9cIiwgb3B0aW9uczogU0FGRV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwNzFcIiwgcHJvbXB0OiBcIkhvdyBjb21mb3J0YWJsZSBhcmUgeW91IGRlcGVuZGluZyBvbiB0aGlzIHByb2R1Y3QgZm9yIGltcG9ydGFudCB0YXNrcz9cIiwgb3B0aW9uczogQ09NRk9SVEFCTEVfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDcyXCIsIHByb21wdDogXCJIb3cgdHJhbnNwYXJlbnQgaXMgdGhpcyBwcm9kdWN0IGFib3V0IHdoYXQgaXQgaXMgZG9pbmc/XCIsIG9wdGlvbnM6IFRSQU5TUEFSRU5UX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA3M1wiLCBwcm9tcHQ6IFwiSG93IHByZWRpY3RhYmx5IGRvZXMgdGhpcyBwcm9kdWN0IGJlaGF2ZT9cIiwgb3B0aW9uczogUFJFRElDVEFCTFlfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDc0XCIsIHByb21wdDogXCJIb3cgd2VsbCBkbyB5b3UgYmVsaWV2ZSB0aGlzIHByb2R1Y3QgaGVscHMgcHJvdGVjdCB5b3UgZnJvbSBhdm9pZGFibGUgcHJvYmxlbXM/XCIsIG9wdGlvbnM6IFdFTExfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDc1XCIsIHByb21wdDogXCJIb3cgd2lsbGluZyB3b3VsZCB5b3UgYmUgdG8gcmVseSBvbiB0aGlzIHByb2R1Y3QgYWdhaW4/XCIsIG9wdGlvbnM6IFdJTExJTkdfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDc2XCIsIHByb21wdDogXCJIb3cgbXVjaCBkb2VzIHVzaW5nIHRoaXMgcHJvZHVjdCBoZWxwIHlvdSBhY2NvbXBsaXNoIHRhc2tzIG1vcmUgcXVpY2tseT9cIiwgb3B0aW9uczogVkVSWV9NVUNIX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA3N1wiLCBwcm9tcHQ6IFwiSG93IG11Y2ggZG9lcyB1c2luZyB0aGlzIHByb2R1Y3QgaW1wcm92ZSB5b3VyIHBlcmZvcm1hbmNlP1wiLCBvcHRpb25zOiBWRVJZX01VQ0hfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDc4XCIsIHByb21wdDogXCJIb3cgbXVjaCBkb2VzIHVzaW5nIHRoaXMgcHJvZHVjdCBpbmNyZWFzZSB5b3VyIHByb2R1Y3Rpdml0eT9cIiwgb3B0aW9uczogVkVSWV9NVUNIX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA3OVwiLCBwcm9tcHQ6IFwiSG93IG11Y2ggZG9lcyB1c2luZyB0aGlzIHByb2R1Y3QgZW5oYW5jZSB5b3VyIGVmZmVjdGl2ZW5lc3M/XCIsIG9wdGlvbnM6IFZFUllfTVVDSF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwODBcIiwgcHJvbXB0OiBcIk92ZXJhbGwsIGhvdyB1c2VmdWwgZG8geW91IGZpbmQgdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBbXCJOb3QgYXQgYWxsIHVzZWZ1bFwiLCBcIlNsaWdodGx5IHVzZWZ1bFwiLCBcIk1vZGVyYXRlbHkgdXNlZnVsXCIsIFwiVmVyeSB1c2VmdWxcIiwgXCJFeHRyZW1lbHkgdXNlZnVsXCJdIH0sXG4gIHsgaWQ6IFwicTA4MVwiLCBwcm9tcHQ6IFwiSG93IGVhc3kgaXMgaXQgZm9yIHlvdSB0byBsZWFybiB0byB1c2UgdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA4MlwiLCBwcm9tcHQ6IFwiSG93IGNsZWFyIGFuZCB1bmRlcnN0YW5kYWJsZSBpcyB5b3VyIGludGVyYWN0aW9uIHdpdGggdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBDTEVBUl9TQ0FMRSB9LFxuICB7IGlkOiBcInEwODNcIiwgcHJvbXB0OiBcIkhvdyBlYXN5IGlzIGl0IGZvciB5b3UgdG8gZ2V0IHRoaXMgcHJvZHVjdCB0byBkbyB3aGF0IHlvdSB3YW50IGl0IHRvIGRvP1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA4NFwiLCBwcm9tcHQ6IFwiSG93IGxpa2VseSBhcmUgeW91IHRvIHVzZSB0aGlzIHByb2R1Y3QgaW4gdGhlIGZ1dHVyZT9cIiwgb3B0aW9uczogVkVSWV9VTkxJS0VMWV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwODVcIiwgcHJvbXB0OiBcIkhvdyBtdWNoIGRvZXMgZXZlcnl0aGluZyBpbiB0aGlzIHByb2R1Y3QgZmVlbCBsaWtlIGl0IGdvZXMgdG9nZXRoZXI/XCIsIG9wdGlvbnM6IFRSVVNUX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA4NlwiLCBwcm9tcHQ6IFwiSG93IHBsZWFzYW50bHkgdmFyaWVkIGlzIHRoZSBsYXlvdXQgb2YgdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBFWFRFTlRfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDg3XCIsIHByb21wdDogXCJIb3cgYXR0cmFjdGl2ZSBpcyB0aGlzIHByb2R1Y3QncyBjb2xvciBjb21wb3NpdGlvbj9cIiwgb3B0aW9uczogQVRUUkFDVElWRV9TQ0FMRSB9LFxuICB7IGlkOiBcInEwODhcIiwgcHJvbXB0OiBcIkhvdyBwcm9mZXNzaW9uYWxseSBkZXNpZ25lZCBkb2VzIHRoaXMgbGF5b3V0IGFwcGVhcj9cIiwgb3B0aW9uczogUFJPRkVTU0lPTkFMX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA4OVwiLCBwcm9tcHQ6IFwiT3ZlcmFsbCwgaG93IHNhdGlzZmllZCBhcmUgeW91IHdpdGggdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBTQVRJU0ZJRURfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDkwXCIsIHByb21wdDogXCJDb21wYXJlZCB3aXRoIHlvdXIgZXhwZWN0YXRpb25zLCBob3cgd2VsbCBkaWQgdGhpcyBwcm9kdWN0IHBlcmZvcm0/XCIsIG9wdGlvbnM6IEVYUEVDVEFUSU9OX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA5MVwiLCBwcm9tcHQ6IFwiQ29tcGFyZWQgd2l0aCB5b3VyIGlkZWFsIHByb2R1Y3QgZm9yIHRoaXMga2luZCBvZiB0YXNrLCBob3cgY2xvc2UgaXMgdGhpcyBwcm9kdWN0IHRvIGlkZWFsP1wiLCBvcHRpb25zOiBJREVBTF9TQ0FMRSB9LFxuICB7IGlkOiBcInEwOTJcIiwgcHJvbXB0OiBcIkdpdmVuIHRoZSB2YWx1ZSB5b3UgZ2V0LCBob3cgd291bGQgeW91IHJhdGUgdGhpcyBwcm9kdWN0IG92ZXJhbGw/XCIsIG9wdGlvbnM6IFZBTFVFX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA5M1wiLCBwcm9tcHQ6IFwiR2l2ZW4gdGhlIHF1YWxpdHkgb2YgdGhpcyBwcm9kdWN0LCBob3cgd291bGQgeW91IHJhdGUgd2hhdCBpdCBhc2tzIG9mIHlvdSBpbiB0aW1lLCBlZmZvcnQsIG9yIGNvc3Q/XCIsIG9wdGlvbnM6IFZBTFVFX0ZPUl9FRkZPUlRfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDk0XCIsIHByb21wdDogXCJIb3cgbGlrZWx5IGFyZSB5b3UgdG8gY2hvb3NlIHRoaXMgcHJvZHVjdCBhZ2FpbiBmb3IgYSBzaW1pbGFyIG5lZWQ/XCIsIG9wdGlvbnM6IFZFUllfVU5MSUtFTFlfU0NBTEUgfSxcbiAgeyBpZDogXCJxMDk1XCIsIHByb21wdDogXCJIb3cgZWFzeSBpcyB0aGlzIHByb2R1Y3QgdG8gdXNlP1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA5NlwiLCBwcm9tcHQ6IFwiSG93IHVzZWZ1bCBpcyB0aGUgaW5mb3JtYXRpb24gb3IgY29udGVudCBpbiB0aGlzIHByb2R1Y3Q/XCIsIG9wdGlvbnM6IFtcIk5vdCBhdCBhbGwgdXNlZnVsXCIsIFwiU2xpZ2h0bHkgdXNlZnVsXCIsIFwiTW9kZXJhdGVseSB1c2VmdWxcIiwgXCJWZXJ5IHVzZWZ1bFwiLCBcIkV4dHJlbWVseSB1c2VmdWxcIl0gfSxcbiAgeyBpZDogXCJxMDk3XCIsIHByb21wdDogXCJIb3cgY2xlYXIgaXMgdGhlIGluZm9ybWF0aW9uIG9yIGNvbnRlbnQgaW4gdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBDTEVBUl9TQ0FMRSB9LFxuICB7IGlkOiBcInEwOThcIiwgcHJvbXB0OiBcIkhvdyBlYXN5IGlzIHRoZSBvdmVyYWxsIHByb2Nlc3Mgb3Igd29ya2Zsb3cgaW4gdGhpcyBwcm9kdWN0P1wiLCBvcHRpb25zOiBFQVNZX1NDQUxFIH0sXG4gIHsgaWQ6IFwicTA5OVwiLCBwcm9tcHQ6IFwiSG93IGNvbmZpZGVudCBhcmUgeW91IHRoYXQgdGhpcyBwcm9kdWN0IHdpbGwgZG8gYSBnb29kIGpvYiBmb3IgeW91IGluIHRoZSBmdXR1cmU/XCIsIG9wdGlvbnM6IENPTkZJREVOVF9TQ0FMRSB9LFxuXSBhcyBjb25zdDtcclxuIl19

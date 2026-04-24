@@ -1,11 +1,32 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Link2, Sparkles, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppShell, Surface } from "../components/Layout";
+import { AppShell } from "../components/Layout";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
-const formHolderLogoPath = "/branding/rasberry-form-holder-transparent.png";
+const formHolderLogoPath = "/branding/test4test-raspberry-signup-form.png";
+
+const heroHighlights = [
+  { label: "Real user feedback", Icon: Link2 },
+  { label: "Improve with insights", Icon: Sparkles },
+  { label: "Test with confidence", Icon: UsersRound },
+];
+
+const processSteps = [
+  {
+    title: "Submit",
+    body: "Add your app name, live link, and questions, or let AI generate them for you.",
+  },
+  {
+    title: "Test",
+    body: "Review apps from other users and earn credits for your app.",
+  },
+  {
+    title: "Review",
+    body: "Monitor your app's feedback with detailed summaries and raw responses.",
+  },
+];
 
 export function HomePage() {
   const [productName, setProductName] = useState("");
@@ -24,25 +45,37 @@ export function HomePage() {
   return (
     <AppShell variant="marketing">
       <div className="home-page">
-        <Surface className="home-stage">
-          <div className="home-stage__copy">
-            <h1>
+        <section className="home-hero" aria-labelledby="home-hero-title">
+          <div className="home-hero__copy">
+            <h1 id="home-hero-title">
               Get <span className="text-accent">FREE</span> user testing on your web or mobile app
             </h1>
+            <span className="home-hero__swoosh" aria-hidden="true" />
+
+            <div className="home-hero__features" aria-label="Platform highlights">
+              {heroHighlights.map(({ label, Icon }) => (
+                <div className="home-feature" key={label}>
+                  <span className="home-feature__icon">
+                    <Icon size={24} strokeWidth={2.35} aria-hidden="true" />
+                  </span>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="home-stage__start">
-            <div className="home-stage__start-shell" aria-hidden="true">
+          <div className="home-hero__visual">
+            <div className="home-hero__device" aria-hidden="true">
               <span />
               <span />
             </div>
             <img
               src={formHolderLogoPath}
               alt=""
-              className="home-stage__form-holder"
+              className="home-hero__mascot home-hero__mascot--back"
               aria-hidden="true"
             />
-            <div className="simple-start-card">
+            <div className="simple-start-card home-hero__start-card">
               <p className="simple-start-card__label">
                 {hasResumeSubmission
                   ? "You have a saved submission in progress."
@@ -65,7 +98,12 @@ export function HomePage() {
                     id="home-product-name"
                     value={productName}
                     onChange={(event) => setProductName(event.target.value)}
-                    placeholder="Enter your web or mobile app name"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        startSubmission();
+                      }
+                    }}
+                    placeholder="Enter your web or mobile app"
                     aria-label="Web or mobile app name"
                   />
                   <button type="button" className="button button--primary" onClick={startSubmission}>
@@ -75,40 +113,38 @@ export function HomePage() {
                 </div>
               )}
             </div>
+            <img
+              src={formHolderLogoPath}
+              alt=""
+              className="home-hero__mascot home-hero__mascot--hand"
+              aria-hidden="true"
+            />
+          </div>
+        </section>
+
+        <section className="home-process" aria-labelledby="home-process-title">
+          <div className="home-process__header">
+            <span className="eyebrow">How it works</span>
+            <h2 id="home-process-title">Three simple steps to better product feedback</h2>
           </div>
 
-          <section className="home-stage__steps" aria-label="Three steps">
-            <div className="home-stage__steps-intro">
-              <div className="simple-section__art" aria-hidden="true">
-                <img src={groupLogoPath} alt="" className="simple-section__logo" />
-              </div>
+          <div className="home-process__body">
+            <div className="home-process__art" aria-hidden="true">
+              <img src={groupLogoPath} alt="" className="home-process__logo" />
             </div>
-
             <div className="simple-steps">
-              <article className="simple-step">
-                <div className="simple-step__heading">
-                  <span className="simple-step__number">1</span>
-                  <h3>Submit</h3>
-                </div>
-                <p>Add your app name, live link, and questions, or let AI generate them for you.</p>
-              </article>
-              <article className="simple-step">
-                <div className="simple-step__heading">
-                  <span className="simple-step__number">2</span>
-                  <h3>Test</h3>
-                </div>
-                <p>Review apps from other users and earn credits for your app</p>
-              </article>
-              <article className="simple-step">
-                <div className="simple-step__heading">
-                  <span className="simple-step__number">3</span>
-                  <h3>Review</h3>
-                </div>
-                <p>Monitor your app's feedback with detailed summaries and raw responses</p>
-              </article>
+              {processSteps.map(({ title, body }, index) => (
+                <article className="simple-step" key={title}>
+                  <div className="simple-step__heading">
+                    <span className="simple-step__number">{index + 1}</span>
+                    <h3>{title}</h3>
+                  </div>
+                  <p>{body}</p>
+                </article>
+              ))}
             </div>
-          </section>
-        </Surface>
+          </div>
+        </section>
       </div>
     </AppShell>
   );

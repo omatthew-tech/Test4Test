@@ -1,0 +1,371 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/App.tsx");import { BrowserRouter, Navigate, Route, Routes } from "/node_modules/.vite/deps/react-router-dom.js?v=27fd4ff5";
+import { AppStateProvider, useAppState } from "/src/context/AppStateContext.tsx";
+import { BannedPage } from "/src/pages/BannedPage.tsx";
+import { EarnPage } from "/src/pages/EarnPage.tsx";
+import { HomePage } from "/src/pages/HomePage.tsx?t=1776998018197";
+import { MyTestsPage } from "/src/pages/MyTestsPage.tsx";
+import { ProfilePage } from "/src/pages/ProfilePage.tsx";
+import { ReviseSubmissionPage } from "/src/pages/ReviseSubmissionPage.tsx";
+import { SignInPage } from "/src/pages/SignInPage.tsx";
+import { SubmissionDetailPage } from "/src/pages/SubmissionDetailPage.tsx";
+import { SubmissionsPage } from "/src/pages/SubmissionsPage.tsx";
+import { SubmitFlowPage } from "/src/pages/SubmitFlowPage.tsx";
+import { TestSessionPage } from "/src/pages/TestSessionPage.tsx";
+import { TestSuccessPage } from "/src/pages/TestSuccessPage.tsx";
+import { VerifyPage } from "/src/pages/VerifyPage.tsx";
+var _jsxFileName = "C:/Projects/LIKE4LIKE/src/App.tsx";
+import __vite__cjsImport15_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=8f476a7a"; const _jsxDEV = __vite__cjsImport15_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$(), _s2 = $RefreshSig$(), _s3 = $RefreshSig$();
+function RootPage() {
+	_s();
+	const { currentUser, isLoading } = useAppState();
+	if (isLoading) {
+		return null;
+	}
+	if (currentUser?.banStatus === "banned") {
+		return /* @__PURE__ */ _jsxDEV(Navigate, {
+			to: "/banned",
+			replace: true
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 26,
+			columnNumber: 12
+		}, this);
+	}
+	return currentUser ? /* @__PURE__ */ _jsxDEV(Navigate, {
+		to: "/earn",
+		replace: true
+	}, void 0, false, {
+		fileName: _jsxFileName,
+		lineNumber: 29,
+		columnNumber: 24
+	}, this) : /* @__PURE__ */ _jsxDEV(HomePage, {}, void 0, false, {
+		fileName: _jsxFileName,
+		lineNumber: 29,
+		columnNumber: 58
+	}, this);
+}
+_s(RootPage, "mzp5/4zPN+p+LKYuntM8riUcaNA=", false, function() {
+	return [useAppState];
+});
+_c = RootPage;
+function BanRedirectRoute({ children }) {
+	_s2();
+	const { currentUser, isLoading } = useAppState();
+	if (isLoading) {
+		return null;
+	}
+	if (currentUser?.banStatus === "banned") {
+		return /* @__PURE__ */ _jsxDEV(Navigate, {
+			to: "/banned",
+			replace: true
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 40,
+			columnNumber: 12
+		}, this);
+	}
+	return children;
+}
+_s2(BanRedirectRoute, "mzp5/4zPN+p+LKYuntM8riUcaNA=", false, function() {
+	return [useAppState];
+});
+_c2 = BanRedirectRoute;
+function BannedOnlyRoute({ children }) {
+	_s3();
+	const { currentUser, isLoading } = useAppState();
+	if (isLoading) {
+		return null;
+	}
+	if (!currentUser) {
+		return /* @__PURE__ */ _jsxDEV(Navigate, {
+			to: "/sign-in",
+			replace: true
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 54,
+			columnNumber: 12
+		}, this);
+	}
+	if (currentUser.banStatus !== "banned") {
+		return /* @__PURE__ */ _jsxDEV(Navigate, {
+			to: "/earn",
+			replace: true
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 58,
+			columnNumber: 12
+		}, this);
+	}
+	return children;
+}
+_s3(BannedOnlyRoute, "mzp5/4zPN+p+LKYuntM8riUcaNA=", false, function() {
+	return [useAppState];
+});
+_c3 = BannedOnlyRoute;
+export default function App() {
+	return /* @__PURE__ */ _jsxDEV(AppStateProvider, { children: /* @__PURE__ */ _jsxDEV(BrowserRouter, { children: /* @__PURE__ */ _jsxDEV(Routes, { children: [
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/",
+			element: /* @__PURE__ */ _jsxDEV(RootPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 69,
+				columnNumber: 36
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 69,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/sign-in",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(SignInPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 70,
+				columnNumber: 61
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 70,
+				columnNumber: 43
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 70,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/submit",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(SubmitFlowPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 71,
+				columnNumber: 60
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 71,
+				columnNumber: 42
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 71,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/verify",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(VerifyPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 72,
+				columnNumber: 60
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 72,
+				columnNumber: 42
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 72,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/earn",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(EarnPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 73,
+				columnNumber: 58
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 73,
+				columnNumber: 40
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 73,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/test/:submissionId",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(TestSessionPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 74,
+				columnNumber: 72
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 74,
+				columnNumber: 54
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 74,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/test/:submissionId/success",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(TestSuccessPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 75,
+				columnNumber: 80
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 75,
+				columnNumber: 62
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 75,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/my-tests",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(MyTestsPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 76,
+				columnNumber: 62
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 76,
+				columnNumber: 44
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 76,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/my-tests/:submissionId",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(SubmissionDetailPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 77,
+				columnNumber: 76
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 77,
+				columnNumber: 58
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 77,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/submissions",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(SubmissionsPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 78,
+				columnNumber: 65
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 78,
+				columnNumber: 47
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 78,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/submissions/:responseId/revise",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(ReviseSubmissionPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 79,
+				columnNumber: 84
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 79,
+				columnNumber: 66
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 79,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/profile",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(ProfilePage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 80,
+				columnNumber: 61
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 80,
+				columnNumber: 43
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 80,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "/banned",
+			element: /* @__PURE__ */ _jsxDEV(BannedOnlyRoute, { children: /* @__PURE__ */ _jsxDEV(BannedPage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 81,
+				columnNumber: 59
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 81,
+				columnNumber: 42
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 81,
+			columnNumber: 11
+		}, this),
+		/* @__PURE__ */ _jsxDEV(Route, {
+			path: "*",
+			element: /* @__PURE__ */ _jsxDEV(BanRedirectRoute, { children: /* @__PURE__ */ _jsxDEV(HomePage, {}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 82,
+				columnNumber: 54
+			}, this) }, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 82,
+				columnNumber: 36
+			}, this)
+		}, void 0, false, {
+			fileName: _jsxFileName,
+			lineNumber: 82,
+			columnNumber: 11
+		}, this)
+	] }, void 0, true, {
+		fileName: _jsxFileName,
+		lineNumber: 68,
+		columnNumber: 9
+	}, this) }, void 0, false, {
+		fileName: _jsxFileName,
+		lineNumber: 67,
+		columnNumber: 7
+	}, this) }, void 0, false, {
+		fileName: _jsxFileName,
+		lineNumber: 66,
+		columnNumber: 5
+	}, this);
+}
+_c4 = App;
+var _c, _c2, _c3, _c4;
+$RefreshReg$(_c, "RootPage");
+$RefreshReg$(_c2, "BanRedirectRoute");
+$RefreshReg$(_c3, "BannedOnlyRoute");
+$RefreshReg$(_c4, "App");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
+import * as __vite_react_currentExports from "/src/App.tsx?t=1776998018197";
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+
+  const currentExports = __vite_react_currentExports;
+  queueMicrotask(() => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Projects/LIKE4LIKE/src/App.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Projects/LIKE4LIKE/src/App.tsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) { return RefreshRuntime.register(type, "C:/Projects/LIKE4LIKE/src/App.tsx" + ' ' + id); }
+function $RefreshSig$() { return RefreshRuntime.createSignatureFunctionForTransform(); }
+
+//# sourceMappingURL=data:application/json;base64,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d0JBQUMsa0JBQUQsWUFBa0Isd0JBQUMsc0JBQUQsRUFBd0I7Ozs7YUFBbUI7Ozs7O0dBQUk7Ozs7O0VBQ2hILHdCQUFDLE9BQUQ7R0FBTyxNQUFLO0dBQWUsU0FBUyx3QkFBQyxrQkFBRCxZQUFrQix3QkFBQyxpQkFBRCxFQUFtQjs7OzthQUFtQjs7Ozs7R0FBSTs7Ozs7RUFDaEcsd0JBQUMsT0FBRDtHQUFPLE1BQUs7R0FBa0MsU0FBUyx3QkFBQyxrQkFBRCxZQUFrQix3QkFBQyxzQkFBRCxFQUF3Qjs7OzthQUFtQjs7Ozs7R0FBSTs7Ozs7RUFDeEgsd0JBQUMsT0FBRDtHQUFPLE1BQUs7R0FBVyxTQUFTLHdCQUFDLGtCQUFELFlBQWtCLHdCQUFDLGFBQUQsRUFBZTs7OzthQUFtQjs7Ozs7R0FBSTs7Ozs7RUFDeEYsd0JBQUMsT0FBRDtHQUFPLE1BQUs7R0FBVSxTQUFTLHdCQUFDLGlCQUFELFlBQWlCLHdCQUFDLFlBQUQsRUFBYzs7OzthQUFrQjs7Ozs7R0FBSTs7Ozs7RUFDcEYsd0JBQUMsT0FBRDtHQUFPLE1BQUs7R0FBSSxTQUFTLHdCQUFDLGtCQUFELFlBQWtCLHdCQUFDLFVBQUQsRUFBWTs7OzthQUFtQjs7Ozs7R0FBSTs7Ozs7RUFDdkU7Ozs7V0FDSzs7OztXQUNDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkFwcC50c3giXSwidmVyc2lvbiI6Mywic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHR5cGUgeyBSZWFjdEVsZW1lbnQgfSBmcm9tIFwicmVhY3RcIjtcbmltcG9ydCB7IEJyb3dzZXJSb3V0ZXIsIE5hdmlnYXRlLCBSb3V0ZSwgUm91dGVzIH0gZnJvbSBcInJlYWN0LXJvdXRlci1kb21cIjtcbmltcG9ydCB7IEFwcFN0YXRlUHJvdmlkZXIsIHVzZUFwcFN0YXRlIH0gZnJvbSBcIi4vY29udGV4dC9BcHBTdGF0ZUNvbnRleHRcIjtcbmltcG9ydCB7IEJhbm5lZFBhZ2UgfSBmcm9tIFwiLi9wYWdlcy9CYW5uZWRQYWdlXCI7XG5pbXBvcnQgeyBFYXJuUGFnZSB9IGZyb20gXCIuL3BhZ2VzL0Vhcm5QYWdlXCI7XG5pbXBvcnQgeyBIb21lUGFnZSB9IGZyb20gXCIuL3BhZ2VzL0hvbWVQYWdlXCI7XG5pbXBvcnQgeyBNeVRlc3RzUGFnZSB9IGZyb20gXCIuL3BhZ2VzL015VGVzdHNQYWdlXCI7XG5pbXBvcnQgeyBQcm9maWxlUGFnZSB9IGZyb20gXCIuL3BhZ2VzL1Byb2ZpbGVQYWdlXCI7XG5pbXBvcnQgeyBSZXZpc2VTdWJtaXNzaW9uUGFnZSB9IGZyb20gXCIuL3BhZ2VzL1JldmlzZVN1Ym1pc3Npb25QYWdlXCI7XG5pbXBvcnQgeyBTaWduSW5QYWdlIH0gZnJvbSBcIi4vcGFnZXMvU2lnbkluUGFnZVwiO1xuaW1wb3J0IHsgU3VibWlzc2lvbkRldGFpbFBhZ2UgfSBmcm9tIFwiLi9wYWdlcy9TdWJtaXNzaW9uRGV0YWlsUGFnZVwiO1xuaW1wb3J0IHsgU3VibWlzc2lvbnNQYWdlIH0gZnJvbSBcIi4vcGFnZXMvU3VibWlzc2lvbnNQYWdlXCI7XG5pbXBvcnQgeyBTdWJtaXRGbG93UGFnZSB9IGZyb20gXCIuL3BhZ2VzL1N1Ym1pdEZsb3dQYWdlXCI7XG5pbXBvcnQgeyBUZXN0U2Vzc2lvblBhZ2UgfSBmcm9tIFwiLi9wYWdlcy9UZXN0U2Vzc2lvblBhZ2VcIjtcbmltcG9ydCB7IFRlc3RTdWNjZXNzUGFnZSB9IGZyb20gXCIuL3BhZ2VzL1Rlc3RTdWNjZXNzUGFnZVwiO1xuaW1wb3J0IHsgVmVyaWZ5UGFnZSB9IGZyb20gXCIuL3BhZ2VzL1ZlcmlmeVBhZ2VcIjtcblxuZnVuY3Rpb24gUm9vdFBhZ2UoKSB7XG4gIGNvbnN0IHsgY3VycmVudFVzZXIsIGlzTG9hZGluZyB9ID0gdXNlQXBwU3RhdGUoKTtcblxuICBpZiAoaXNMb2FkaW5nKSB7XG4gICAgcmV0dXJuIG51bGw7XG4gIH1cblxuICBpZiAoY3VycmVudFVzZXI/LmJhblN0YXR1cyA9PT0gXCJiYW5uZWRcIikge1xuICAgIHJldHVybiA8TmF2aWdhdGUgdG89XCIvYmFubmVkXCIgcmVwbGFjZSAvPjtcbiAgfVxuXG4gIHJldHVybiBjdXJyZW50VXNlciA/IDxOYXZpZ2F0ZSB0bz1cIi9lYXJuXCIgcmVwbGFjZSAvPiA6IDxIb21lUGFnZSAvPjtcbn1cblxuZnVuY3Rpb24gQmFuUmVkaXJlY3RSb3V0ZSh7IGNoaWxkcmVuIH06IHsgY2hpbGRyZW46IFJlYWN0RWxlbWVudCB9KSB7XG4gIGNvbnN0IHsgY3VycmVudFVzZXIsIGlzTG9hZGluZyB9ID0gdXNlQXBwU3RhdGUoKTtcblxuICBpZiAoaXNMb2FkaW5nKSB7XG4gICAgcmV0dXJuIG51bGw7XG4gIH1cblxuICBpZiAoY3VycmVudFVzZXI/LmJhblN0YXR1cyA9PT0gXCJiYW5uZWRcIikge1xuICAgIHJldHVybiA8TmF2aWdhdGUgdG89XCIvYmFubmVkXCIgcmVwbGFjZSAvPjtcbiAgfVxuXG4gIHJldHVybiBjaGlsZHJlbjtcbn1cblxuZnVuY3Rpb24gQmFubmVkT25seVJvdXRlKHsgY2hpbGRyZW4gfTogeyBjaGlsZHJlbjogUmVhY3RFbGVtZW50IH0pIHtcbiAgY29uc3QgeyBjdXJyZW50VXNlciwgaXNMb2FkaW5nIH0gPSB1c2VBcHBTdGF0ZSgpO1xuXG4gIGlmIChpc0xvYWRpbmcpIHtcbiAgICByZXR1cm4gbnVsbDtcbiAgfVxuXG4gIGlmICghY3VycmVudFVzZXIpIHtcbiAgICByZXR1cm4gPE5hdmlnYXRlIHRvPVwiL3NpZ24taW5cIiByZXBsYWNlIC8+O1xuICB9XG5cbiAgaWYgKGN1cnJlbnRVc2VyLmJhblN0YXR1cyAhPT0gXCJiYW5uZWRcIikge1xuICAgIHJldHVybiA8TmF2aWdhdGUgdG89XCIvZWFyblwiIHJlcGxhY2UgLz47XG4gIH1cblxuICByZXR1cm4gY2hpbGRyZW47XG59XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEFwcCgpIHtcbiAgcmV0dXJuIChcbiAgICA8QXBwU3RhdGVQcm92aWRlcj5cbiAgICAgIDxCcm93c2VyUm91dGVyPlxuICAgICAgICA8Um91dGVzPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL1wiIGVsZW1lbnQ9ezxSb290UGFnZSAvPn0gLz5cbiAgICAgICAgICA8Um91dGUgcGF0aD1cIi9zaWduLWluXCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFNpZ25JblBhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL3N1Ym1pdFwiIGVsZW1lbnQ9ezxCYW5SZWRpcmVjdFJvdXRlPjxTdWJtaXRGbG93UGFnZSAvPjwvQmFuUmVkaXJlY3RSb3V0ZT59IC8+XG4gICAgICAgICAgPFJvdXRlIHBhdGg9XCIvdmVyaWZ5XCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFZlcmlmeVBhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL2Vhcm5cIiBlbGVtZW50PXs8QmFuUmVkaXJlY3RSb3V0ZT48RWFyblBhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL3Rlc3QvOnN1Ym1pc3Npb25JZFwiIGVsZW1lbnQ9ezxCYW5SZWRpcmVjdFJvdXRlPjxUZXN0U2Vzc2lvblBhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL3Rlc3QvOnN1Ym1pc3Npb25JZC9zdWNjZXNzXCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFRlc3RTdWNjZXNzUGFnZSAvPjwvQmFuUmVkaXJlY3RSb3V0ZT59IC8+XG4gICAgICAgICAgPFJvdXRlIHBhdGg9XCIvbXktdGVzdHNcIiBlbGVtZW50PXs8QmFuUmVkaXJlY3RSb3V0ZT48TXlUZXN0c1BhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL215LXRlc3RzLzpzdWJtaXNzaW9uSWRcIiBlbGVtZW50PXs8QmFuUmVkaXJlY3RSb3V0ZT48U3VibWlzc2lvbkRldGFpbFBhZ2UgLz48L0JhblJlZGlyZWN0Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiL3N1Ym1pc3Npb25zXCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFN1Ym1pc3Npb25zUGFnZSAvPjwvQmFuUmVkaXJlY3RSb3V0ZT59IC8+XG4gICAgICAgICAgPFJvdXRlIHBhdGg9XCIvc3VibWlzc2lvbnMvOnJlc3BvbnNlSWQvcmV2aXNlXCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFJldmlzZVN1Ym1pc3Npb25QYWdlIC8+PC9CYW5SZWRpcmVjdFJvdXRlPn0gLz5cbiAgICAgICAgICA8Um91dGUgcGF0aD1cIi9wcm9maWxlXCIgZWxlbWVudD17PEJhblJlZGlyZWN0Um91dGU+PFByb2ZpbGVQYWdlIC8+PC9CYW5SZWRpcmVjdFJvdXRlPn0gLz5cbiAgICAgICAgICA8Um91dGUgcGF0aD1cIi9iYW5uZWRcIiBlbGVtZW50PXs8QmFubmVkT25seVJvdXRlPjxCYW5uZWRQYWdlIC8+PC9CYW5uZWRPbmx5Um91dGU+fSAvPlxuICAgICAgICAgIDxSb3V0ZSBwYXRoPVwiKlwiIGVsZW1lbnQ9ezxCYW5SZWRpcmVjdFJvdXRlPjxIb21lUGFnZSAvPjwvQmFuUmVkaXJlY3RSb3V0ZT59IC8+XG4gICAgICAgIDwvUm91dGVzPlxuICAgICAgPC9Ccm93c2VyUm91dGVyPlxuICAgIDwvQXBwU3RhdGVQcm92aWRlcj5cbiAgKTtcbn0iXX0=
