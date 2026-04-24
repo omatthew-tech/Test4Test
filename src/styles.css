@@ -6272,6 +6272,11 @@ body {
 }
 
 .home-hero__visual {
+  --mascot-left: -108px;
+  --mascot-top: 44%;
+  --mascot-width: clamp(260px, 19.5vw, 300px);
+  --mascot-transform: translateY(-42%) rotate(-2deg);
+
   position: relative;
   display: flex;
   justify-content: flex-end;
@@ -6309,26 +6314,30 @@ body {
   transform: rotate(3deg);
 }
 
-.home-hero__mascot {
+.home-hero__mascot-body,
+.home-hero__mascot-arm {
   position: absolute;
-  left: -108px;
-  top: 44%;
-  width: clamp(260px, 19.5vw, 300px);
+  left: var(--mascot-left);
+  top: var(--mascot-top);
+  width: var(--mascot-width);
   height: auto;
-  transform: translateY(-42%) rotate(-2deg);
+  transform: var(--mascot-transform);
   pointer-events: none;
   user-select: none;
+}
+
+.home-hero__mascot-body {
+  z-index: 10;
   filter: drop-shadow(0 24px 32px rgba(117, 40, 62, 0.18));
 }
 
-.home-hero__mascot--back {
-  z-index: 2;
+.home-hero__mascot-arm {
+  z-index: 40;
+  filter: none;
 }
 
-.home-hero__mascot--hand {
-  z-index: 5;
-  clip-path: polygon(24% 46%, 44% 44%, 60% 45%, 70% 41%, 83% 42%, 104% 43%, 104% 58%, 94% 60%, 88% 69%, 68% 68%, 50% 63%, 33% 58%, 24% 53%);
-  filter: none;
+.simple-start-card.home-hero__start-card {
+  z-index: 30;
 }
 
 .simple-start-card {
@@ -6348,10 +6357,10 @@ body {
 }
 
 @media (min-width: 1500px) {
-  .home-hero__mascot {
-    left: -74px;
-    top: 47%;
-    width: 253px;
+  .home-hero__visual {
+    --mascot-left: -74px;
+    --mascot-top: 47%;
+    --mascot-width: 253px;
   }
 
   .home-hero__start-card {
@@ -6559,9 +6568,9 @@ body {
     inset: 34px 72px 40px 112px;
   }
 
-  .home-hero__mascot {
-    left: calc(50% - 360px);
-    width: clamp(270px, 28vw, 315px);
+  .home-hero__visual {
+    --mascot-left: calc(50% - 360px);
+    --mascot-width: clamp(270px, 28vw, 315px);
   }
 
   .home-process__body {
@@ -6596,9 +6605,9 @@ body {
     inset: 56px 0 28px 76px;
   }
 
-  .home-hero__mascot {
-    left: 0;
-    width: 260px;
+  .home-hero__visual {
+    --mascot-left: 0;
+    --mascot-width: 260px;
   }
 
   .simple-start-card {
@@ -6688,14 +6697,14 @@ body {
     display: none;
   }
 
-  .home-hero__mascot {
-    left: 50%;
-    top: 0;
-    width: 138px;
-    transform: translateX(-50%) rotate(-2deg);
+  .home-hero__visual {
+    --mascot-left: 50%;
+    --mascot-top: 0;
+    --mascot-width: 138px;
+    --mascot-transform: translateX(-50%) rotate(-2deg);
   }
 
-  .home-hero__mascot--hand {
+  .home-hero__mascot-arm {
     display: none;
   }
 

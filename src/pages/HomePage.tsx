@@ -6,6 +6,7 @@ import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 const formHolderLogoPath = "/branding/test4test-raspberry-no-thumb.png";
+const formHolderArmPath = "/branding/test4test-raspberry-arm-only.png?v=2";
 
 const heroHighlights = [
   { label: "Real user feedback", Icon: Link2 },
@@ -72,7 +73,7 @@ export function HomePage() {
             <img
               src={formHolderLogoPath}
               alt=""
-              className="home-hero__mascot home-hero__mascot--back"
+              className="home-hero__mascot-body"
               aria-hidden="true"
             />
             <div className="simple-start-card home-hero__start-card">
@@ -114,9 +115,9 @@ export function HomePage() {
               )}
             </div>
             <img
-              src={formHolderLogoPath}
+              src={formHolderArmPath}
               alt=""
-              className="home-hero__mascot home-hero__mascot--hand"
+              className="home-hero__mascot-arm"
               aria-hidden="true"
             />
           </div>
