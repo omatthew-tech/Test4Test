@@ -6272,9 +6272,9 @@ body {
 }
 
 .home-hero__visual {
-  --mascot-left: -108px;
+  --mascot-left: -86px;
   --mascot-top: 44%;
-  --mascot-width: clamp(260px, 19.5vw, 300px);
+  --mascot-width: clamp(244px, 18vw, 282px);
   --mascot-transform: translateY(-42%) rotate(-2deg);
 
   position: relative;
@@ -6332,6 +6332,11 @@ body {
 }
 
 .home-hero__mascot-arm {
+  /* The arm PNG is padded to 444x607 vs the body's 364x607 (80px of blank
+     space on the right so the hand can reach past the body). Render it
+     proportionally wider than the body so the arm portion overlays the
+     body's arm exactly and the hand extends into the start card. */
+  width: calc(var(--mascot-width) * (444 / 364));
   z-index: 40;
   filter: none;
 }
@@ -6358,9 +6363,9 @@ body {
 
 @media (min-width: 1500px) {
   .home-hero__visual {
-    --mascot-left: -74px;
+    --mascot-left: -52px;
     --mascot-top: 47%;
-    --mascot-width: 253px;
+    --mascot-width: 238px;
   }
 
   .home-hero__start-card {
@@ -6569,8 +6574,8 @@ body {
   }
 
   .home-hero__visual {
-    --mascot-left: calc(50% - 360px);
-    --mascot-width: clamp(270px, 28vw, 315px);
+    --mascot-left: calc(50% - 338px);
+    --mascot-width: clamp(252px, 26vw, 294px);
   }
 
   .home-process__body {
@@ -6606,8 +6611,8 @@ body {
   }
 
   .home-hero__visual {
-    --mascot-left: 0;
-    --mascot-width: 260px;
+    --mascot-left: 18px;
+    --mascot-width: 246px;
   }
 
   .simple-start-card {

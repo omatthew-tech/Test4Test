@@ -6,7 +6,7 @@ import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 const formHolderLogoPath = "/branding/test4test-raspberry-no-thumb.png";
-const formHolderArmPath = "/branding/test4test-raspberry-arm-only.png?v=2";
+const formHolderArmPath = "/branding/test4test-raspberry-arm-only-padded.png";
 
 const processSteps = [
   {
