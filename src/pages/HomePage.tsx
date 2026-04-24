@@ -1,4 +1,4 @@
-import { ArrowRight, Link2, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/Layout";
@@ -7,12 +7,6 @@ import { getSubmitFlowResume } from "../lib/pendingSubmission";
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 const formHolderLogoPath = "/branding/test4test-raspberry-no-thumb.png";
 const formHolderArmPath = "/branding/test4test-raspberry-arm-only.png?v=2";
-
-const heroHighlights = [
-  { label: "Real user feedback", Icon: Link2 },
-  { label: "Improve with insights", Icon: Sparkles },
-  { label: "Test with confidence", Icon: UsersRound },
-];
 
 const processSteps = [
   {
@@ -51,18 +45,6 @@ export function HomePage() {
             <h1 id="home-hero-title">
               Get <span className="text-accent">FREE</span> user testing on your web or mobile app
             </h1>
-            <span className="home-hero__swoosh" aria-hidden="true" />
-
-            <div className="home-hero__features" aria-label="Platform highlights">
-              {heroHighlights.map(({ label, Icon }) => (
-                <div className="home-feature" key={label}>
-                  <span className="home-feature__icon">
-                    <Icon size={24} strokeWidth={2.35} aria-hidden="true" />
-                  </span>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="home-hero__visual">
@@ -80,7 +62,7 @@ export function HomePage() {
               <p className="simple-start-card__label">
                 {hasResumeSubmission
                   ? "You have a saved submission in progress."
-                  : "What's the name of your web or mobile app?"}
+                  : "What's the name of your app?"}
               </p>
               {hasResumeSubmission ? (
                 <div className="simple-start-card__row simple-start-card__row--resume">
@@ -104,7 +86,7 @@ export function HomePage() {
                         startSubmission();
                       }
                     }}
-                    placeholder="Enter your web or mobile app"
+                    placeholder="Enter your app's name"
                     aria-label="Web or mobile app name"
                   />
                   <button type="button" className="button button--primary" onClick={startSubmission}>
