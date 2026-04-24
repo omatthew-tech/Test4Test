@@ -119,6 +119,12 @@ export function HomePage() {
               className="home-hero__mascot home-hero__mascot--hand"
               aria-hidden="true"
             />
+            <img
+              src={formHolderLogoPath}
+              alt=""
+              className="home-hero__mascot home-hero__mascot--thumb"
+              aria-hidden="true"
+            />
           </div>
         </section>
 
