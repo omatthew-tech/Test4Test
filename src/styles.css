@@ -6332,7 +6332,6 @@ body {
 }
 
 .home-hero__mascot-arm {
-  top: calc(var(--mascot-top) - 20px);
   z-index: 40;
   filter: none;
 }

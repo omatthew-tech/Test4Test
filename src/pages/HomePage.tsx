@@ -6,8 +6,8 @@ import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 const formHolderLogoPath = "/branding/Raspberry.png";
-// The foreground arm is a separate cropped layer: raspberry body behind, form card, then arm above.
-const formHolderArmPath = "/branding/arm-only-cropped-foreground.png";
+// The arm overlay shares Raspberry.png's artboard so body, card, and foreground arm stay aligned.
+const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 
 const processSteps = [
   {
