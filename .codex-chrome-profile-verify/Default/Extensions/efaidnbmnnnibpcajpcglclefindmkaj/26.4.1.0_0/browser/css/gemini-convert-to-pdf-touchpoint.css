@@ -1,0 +1,18 @@
+/*************************************************************************
+* ADOBE CONFIDENTIAL
+* ___________________
+*
+*  Copyright 2015 Adobe Systems Incorporated
+*  All Rights Reserved.
+*
+* NOTICE:  All information contained herein is, and remains
+* the property of Adobe Systems Incorporated and its suppliers,
+* if any.  The intellectual and technical concepts contained
+* herein are proprietary to Adobe Systems Incorporated and its
+* suppliers and are protected by all applicable intellectual property laws,
+* including trade secret and or copyright laws.
+* Dissemination of this information or reproduction of this material
+* is strictly forbidden unless prior written permission is obtained
+* from Adobe Systems Incorporated.
+**************************************************************************/
+.gemini-convert-to-pdf-touchpoint-container{align-items:center;display:inline-flex;position:relative;z-index:2}.gemini-convert-to-pdf-touchpoint{align-items:center;background-color:#fafbfd;border:1px solid #717171;border-radius:100px;box-sizing:border-box;color:#454746;cursor:pointer;display:inline-flex;font-family:Google Sans,Inter,sans-serif;font-size:14px;font-weight:500;gap:8px;height:40px;line-height:20px;outline:none;padding:8px 16px;position:relative;white-space:nowrap}.gemini-convert-to-pdf-touchpoint-tooltip{background-color:#303030;border-radius:4px;box-sizing:border-box;color:#fff;display:block;font-family:Google Sans,Inter,sans-serif;font-size:12px;font-weight:400;height:auto;left:50%;line-height:16px;opacity:0;padding:4px 9px;pointer-events:none;position:absolute;text-align:center;top:calc(100% + 8px);transform:translateX(-50%);white-space:normal;width:min(180px,calc(100vw - 24px))}.gemini-convert-to-pdf-touchpoint:focus-visible>.gemini-convert-to-pdf-touchpoint-tooltip,.gemini-convert-to-pdf-touchpoint:hover>.gemini-convert-to-pdf-touchpoint-tooltip{opacity:1}.gemini-convert-to-pdf-touchpoint-container:has(.acrobat-fte-tooltip-container-geminiChatConvertToPdf) .gemini-convert-to-pdf-touchpoint:focus-visible>.gemini-convert-to-pdf-touchpoint-tooltip,.gemini-convert-to-pdf-touchpoint-container:has(.acrobat-fte-tooltip-container-geminiChatConvertToPdf) .gemini-convert-to-pdf-touchpoint:hover>.gemini-convert-to-pdf-touchpoint-tooltip{opacity:0}.gemini-convert-to-pdf-touchpoint:hover{background-color:#f5f5f5}.gemini-convert-to-pdf-touchpoint:active{background-color:#eee}.gemini-convert-to-pdf-touchpoint:focus-visible{outline:2px solid #0060df;outline-offset:2px}.gemini-convert-to-pdf-touchpoint-icon{flex-shrink:0;height:18px;vertical-align:middle;width:18px}.gemini-convert-to-pdf-touchpoint-compact{gap:6px;padding:12px}.gemini-convert-to-pdf-touchpoint-compact .gemini-convert-to-pdf-touchpoint-text{display:none}.gemini-convert-to-pdf-touchpoint-hidden{display:none!important}

@@ -5,8 +5,9 @@ import { AppShell } from "../components/Layout";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
-const formHolderLogoPath = "/branding/test4test-raspberry-no-thumb.png";
-const formHolderArmPath = "/branding/test4test-raspberry-arm-only-padded.png";
+const formHolderLogoPath = "/branding/Raspberry.png";
+// The foreground arm is a separate cropped layer: raspberry body behind, form card, then arm above.
+const formHolderArmPath = "/branding/arm-only-cropped-foreground.png";
 
 const processSteps = [
   {
@@ -132,4 +133,3 @@ export function HomePage() {
     </AppShell>
   );
 }
-

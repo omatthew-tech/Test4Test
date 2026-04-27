@@ -6332,11 +6332,7 @@ body {
 }
 
 .home-hero__mascot-arm {
-  /* The arm PNG is padded to 444x607 vs the body's 364x607 (80px of blank
-     space on the right so the hand can reach past the body). Render it
-     proportionally wider than the body so the arm portion overlays the
-     body's arm exactly and the hand extends into the start card. */
-  width: calc(var(--mascot-width) * (444 / 364));
+  top: calc(var(--mascot-top) - 20px);
   z-index: 40;
   filter: none;
 }
