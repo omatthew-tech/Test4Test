@@ -122,8 +122,7 @@ export function HomePage() {
 
         <section className="home-process" aria-labelledby="home-process-title">
           <div className="home-process__header">
-            <span className="eyebrow">How it works</span>
-            <h2 id="home-process-title">Three simple steps to better product feedback</h2>
+            <h2 id="home-process-title">How it works</h2>
           </div>
 
           <div className="home-process__body">
