@@ -6150,12 +6150,13 @@ body {
   position: static;
   background: var(--color-surface-100);
   backdrop-filter: none;
-  border-bottom: 0;
+  border-bottom: 1px solid rgba(216, 208, 200, 0.72);
 }
 
 .topbar--marketing {
   width: min(1270px, calc(100% - 48px));
-  padding: 34px 0 14px;
+  align-items: center;
+  padding: 24px 0;
   gap: 21px;
 }
 
@@ -6632,7 +6633,7 @@ body {
   }
 
   .topbar--marketing {
-    padding: 18px 0 10px;
+    padding: 14px 0;
     gap: 16px;
   }
 

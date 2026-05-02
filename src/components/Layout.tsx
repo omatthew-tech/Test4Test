@@ -17,6 +17,7 @@ export function AppShell({
   actions,
   eyebrowLabel,
   variant = "default",
+  headerVariant = variant,
   hideMemberChrome = false,
   children,
 }: {
@@ -25,6 +26,7 @@ export function AppShell({
   actions?: React.ReactNode;
   eyebrowLabel?: string | null;
   variant?: "default" | "marketing";
+  headerVariant?: "default" | "marketing";
   hideMemberChrome?: boolean;
   children: React.ReactNode;
 }) {
@@ -33,9 +35,10 @@ export function AppShell({
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const showTopbarActions = !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
+  const hasMarketingHeader = headerVariant === "marketing";
   const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
-  const siteHeaderClassName = `site-header${variant === "marketing" ? " site-header--marketing" : ""}`;
-  const topbarClassName = `topbar${showMemberNav ? "" : " topbar--guest"}${variant === "marketing" ? " topbar--marketing" : ""}`;
+  const siteHeaderClassName = `site-header${hasMarketingHeader ? " site-header--marketing" : ""}`;
+  const topbarClassName = `topbar${showMemberNav ? "" : " topbar--guest"}${hasMarketingHeader ? " topbar--marketing" : ""}`;
   const pageShellClassName = `page-shell${variant === "marketing" ? " page-shell--marketing" : ""}`;
 
   return (

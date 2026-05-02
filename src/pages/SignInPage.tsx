@@ -70,7 +70,7 @@ export function SignInPage() {
   };
 
   return (
-    <AppShell eyebrowLabel={null}>
+    <AppShell eyebrowLabel={null} headerVariant="marketing">
       <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel">
         {hasRequestedCode ? (
           <>
