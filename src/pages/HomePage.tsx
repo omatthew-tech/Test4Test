@@ -8,6 +8,8 @@ const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
 const formHolderLogoPath = "/branding/Raspberry.png";
 // The arm overlay shares Raspberry.png's artboard so body, card, and foreground arm stay aligned.
 const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
+const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
+const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
 
 const processSteps = [
   {
@@ -59,6 +61,12 @@ export function HomePage() {
               className="home-hero__mascot-body"
               aria-hidden="true"
             />
+            <img
+              src={mobileFormHolderLogoPath}
+              alt=""
+              className="home-hero__mobile-mascot-body"
+              aria-hidden="true"
+            />
             <div className="simple-start-card home-hero__start-card">
               <p className="simple-start-card__label">
                 {hasResumeSubmission
@@ -101,6 +109,12 @@ export function HomePage() {
               src={formHolderArmPath}
               alt=""
               className="home-hero__mascot-arm"
+              aria-hidden="true"
+            />
+            <img
+              src={mobileFormHolderArmsPath}
+              alt=""
+              className="home-hero__mobile-mascot-arms"
               aria-hidden="true"
             />
           </div>

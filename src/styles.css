@@ -6336,6 +6336,11 @@ body {
   filter: none;
 }
 
+.home-hero__mobile-mascot-body,
+.home-hero__mobile-mascot-arms {
+  display: none;
+}
+
 .simple-start-card.home-hero__start-card {
   z-index: 30;
 }
@@ -6654,6 +6659,11 @@ body {
     padding: 20px 0 42px;
   }
 
+  .home-hero__copy {
+    align-items: center;
+    text-align: center;
+  }
+
   .home-hero h1 {
     max-width: 8.8ch;
     font-size: 3.25rem;
@@ -6690,22 +6700,41 @@ body {
   .home-hero__visual {
     display: block;
     min-height: 0;
-    padding-top: 120px;
+    padding-top: clamp(218px, 56vw, 260px);
+    --mobile-mascot-top: clamp(20px, 5.8vw, 26px);
+    --mobile-mascot-width: clamp(220px, 56vw, 244px);
   }
 
   .home-hero__device {
     display: none;
   }
 
-  .home-hero__visual {
-    --mascot-left: 50%;
-    --mascot-top: 0;
-    --mascot-width: 138px;
-    --mascot-transform: translateX(-50%) rotate(-2deg);
-  }
-
+  .home-hero__mascot-body,
   .home-hero__mascot-arm {
     display: none;
+  }
+
+  .home-hero__mobile-mascot-body,
+  .home-hero__mobile-mascot-arms {
+    position: absolute;
+    left: 50%;
+    top: var(--mobile-mascot-top);
+    display: block;
+    width: var(--mobile-mascot-width);
+    height: auto;
+    transform: translateX(-50%);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .home-hero__mobile-mascot-body {
+    z-index: 10;
+    filter: drop-shadow(0 18px 24px rgba(117, 40, 62, 0.14));
+  }
+
+  .home-hero__mobile-mascot-arms {
+    z-index: 40;
+    filter: none;
   }
 
   .simple-start-card {
