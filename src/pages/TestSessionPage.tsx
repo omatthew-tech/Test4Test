@@ -27,10 +27,18 @@ import {
   uploadRecordingDraft,
   validateRecordingFile,
 } from "../lib/recordings";
-import { getActiveQuestionSet } from "../lib/selectors";
+import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
+import {
+  clearLocalTestResponseDraft,
+  clearTestResponseDraft,
+  loadTestResponseDraft,
+  saveLocalTestResponseDraft,
+  saveTestResponseDraft,
+} from "../lib/testResponseDrafts";
 import { ProductType, Question, ResponseRecording, TestAnswer } from "../types";
 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
+type DraftSaveStatus = "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
 
 interface MicrophoneOption {
   deviceId: string;
@@ -69,6 +77,52 @@ function buildAnswer(question: Question, value: string): TestAnswer {
         type: question.type,
         textAnswer: value,
       };
+}
+
+function pruneAnswerValues(answers: Record<string, string>, questions: Question[]) {
+  return Object.fromEntries(
+    questions
+      .map((question) => [question.id, answers[question.id]] as const)
+      .filter((entry): entry is readonly [string, string] => typeof entry[1] === "string" && entry[1].length > 0),
+  );
+}
+
+function hasSavedAnswerValues(answerValues: Record<string, string>) {
+  return Object.values(answerValues).some((value) => value.trim().length > 0);
+}
+
+function parseDraftStartedAt(startedAt: string) {
+  const timestamp = Date.parse(startedAt);
+
+  return Number.isNaN(timestamp) ? Date.now() : timestamp;
+}
+
+function getDraftStatusCopy(status: DraftSaveStatus) {
+  if (status === "loading") {
+    return "Checking for saved answers...";
+  }
+
+  if (status === "restored") {
+    return "Saved answers restored.";
+  }
+
+  if (status === "restored_local") {
+    return "Saved answers restored from this device.";
+  }
+
+  if (status === "saving") {
+    return "Saving answers...";
+  }
+
+  if (status === "saved") {
+    return "Answers saved.";
+  }
+
+  if (status === "saved_local") {
+    return "Answers saved on this device.";
+  }
+
+  return "";
 }
 
 function formatRecordingSize(bytes: number) {
@@ -228,8 +282,13 @@ export function TestSessionPage() {
   const recordingPipWindowRef = useRef<Window | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const nativeStopReasonRef = useRef<NativeStopReason>("user-finished");
+  const draftSaveTimerRef = useRef<number | null>(null);
+  const draftSaveSequenceRef = useRef(0);
+  const draftServerUnavailableRef = useRef(false);
+  const draftEditedKeyRef = useRef("");
   const submission = state.submissions.find((item) => item.id === submissionId);
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
+  const activeSubmissionVersion = submission ? getActiveSubmissionVersion(state, submission.id) : null;
   const accessLinks = useMemo(
     () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
     [submission],
@@ -256,7 +315,9 @@ export function TestSessionPage() {
   const [recordingSessionId] = useState(
     () => initialRecordingSessionRef.current?.sessionId ?? createRecordingSessionId(),
   );
-  const [startedAt] = useState(() => Date.now());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [loadedDraftKey, setLoadedDraftKey] = useState("");
+  const [draftSaveStatus, setDraftSaveStatus] = useState<DraftSaveStatus>("idle");
   const [liveRecordingStartedAt, setLiveRecordingStartedAt] = useState<number | null>(null);
   const [liveElapsedSeconds, setLiveElapsedSeconds] = useState(0);
   const [nativeRecordingBlob, setNativeRecordingBlob] = useState<Blob | null>(null);
@@ -300,6 +361,17 @@ export function TestSessionPage() {
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
   const hasQuestions = (questionSet?.questions.length ?? 0) > 0;
+  const draftIdentity = currentUser && submission && activeSubmissionVersion && questionSet
+    ? {
+        userId: currentUser.id,
+        submissionId: submission.id,
+        submissionVersionId: activeSubmissionVersion.id,
+        questionSetVersionId: questionSet.id,
+      }
+    : null;
+  const draftIdentityKey = draftIdentity
+    ? `${draftIdentity.userId}:${draftIdentity.submissionId}:${draftIdentity.submissionVersionId}:${draftIdentity.questionSetVersionId}`
+    : "";
   const nativeBackupFileName = useMemo(
     () => createGeneratedRecordingFileName(recordingSessionId, nativeRecordingMimeType),
     [nativeRecordingMimeType, recordingSessionId],
@@ -996,6 +1068,190 @@ export function TestSessionPage() {
     recorder.stop();
   };
 
+  const buildDraftInput = (nextAnswers: Record<string, string>) => {
+    if (!draftIdentity || !questionSet) {
+      return null;
+    }
+
+    const answerValues = pruneAnswerValues(nextAnswers, questionSet.questions);
+
+    if (!hasSavedAnswerValues(answerValues)) {
+      return null;
+    }
+
+    return {
+      ...draftIdentity,
+      answerValues,
+      startedAt: new Date(startedAt).toISOString(),
+    };
+  };
+
+  const saveAnswersLocally = (nextAnswers: Record<string, string>) => {
+    if (!draftIdentity) {
+      return;
+    }
+
+    const input = buildDraftInput(nextAnswers);
+
+    if (!input) {
+      clearLocalTestResponseDraft(draftIdentity.userId, draftIdentity.submissionId, draftIdentity.questionSetVersionId);
+      return;
+    }
+
+    saveLocalTestResponseDraft(input);
+  };
+
+  const updateAnswer = (questionId: string, value: string) => {
+    draftEditedKeyRef.current = draftIdentityKey;
+    setAnswers((current) => {
+      const nextAnswers = { ...current, [questionId]: value };
+      saveAnswersLocally(nextAnswers);
+      return nextAnswers;
+    });
+  };
+
+  const persistDraftNow = async (nextAnswers = answers) => {
+    if (!draftIdentity) {
+      return;
+    }
+
+    const input = buildDraftInput(nextAnswers);
+
+    if (!input) {
+      setDraftSaveStatus("idle");
+      await clearTestResponseDraft(
+        draftIdentity.userId,
+        draftIdentity.submissionId,
+        draftIdentity.questionSetVersionId,
+      );
+      return;
+    }
+
+    const result = await saveTestResponseDraft(input, {
+      skipServer: draftServerUnavailableRef.current,
+    });
+
+    if (result.persistedTo === "server") {
+      setDraftSaveStatus("saved");
+      return;
+    }
+
+    draftServerUnavailableRef.current = true;
+    setDraftSaveStatus("saved_local");
+  };
+
+  const handleBackToEarn = () => {
+    void persistDraftNow();
+    navigate("/earn");
+  };
+
+  useEffect(() => {
+    if (!draftIdentity || !questionSet) {
+      setLoadedDraftKey("");
+      setDraftSaveStatus("idle");
+      return undefined;
+    }
+
+    let isCancelled = false;
+    const key = draftIdentityKey;
+    draftEditedKeyRef.current = "";
+    setLoadedDraftKey("");
+    setDraftSaveStatus("loading");
+
+    const loadDraft = async () => {
+      const draft = await loadTestResponseDraft(
+        draftIdentity.userId,
+        draftIdentity.submissionId,
+        draftIdentity.questionSetVersionId,
+      );
+
+      if (isCancelled) {
+        return;
+      }
+
+      const userEditedDuringLoad = draftEditedKeyRef.current === key;
+
+      if (draft && !userEditedDuringLoad) {
+        const nextAnswers = pruneAnswerValues(draft.answerValues, questionSet.questions);
+        const hasAnswers = hasSavedAnswerValues(nextAnswers);
+        setAnswers(nextAnswers);
+        setStartedAt(parseDraftStartedAt(draft.startedAt));
+        setDraftSaveStatus(
+          hasAnswers
+            ? draft.source === "server"
+              ? "restored"
+              : "restored_local"
+            : "idle",
+        );
+      } else if (!userEditedDuringLoad) {
+        setAnswers({});
+        setStartedAt(Date.now());
+        setDraftSaveStatus("idle");
+      }
+
+      setLoadedDraftKey(key);
+    };
+
+    void loadDraft();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [draftIdentityKey, questionSet?.id]);
+
+  useEffect(() => {
+    if (!draftIdentity || !questionSet || loadedDraftKey !== draftIdentityKey) {
+      return undefined;
+    }
+
+    if (draftSaveTimerRef.current !== null) {
+      window.clearTimeout(draftSaveTimerRef.current);
+      draftSaveTimerRef.current = null;
+    }
+
+    const input = buildDraftInput(answers);
+
+    if (!input) {
+      setDraftSaveStatus("idle");
+      void clearTestResponseDraft(
+        draftIdentity.userId,
+        draftIdentity.submissionId,
+        draftIdentity.questionSetVersionId,
+      );
+      return undefined;
+    }
+
+    saveLocalTestResponseDraft(input);
+    setDraftSaveStatus("saving");
+
+    const saveSequence = draftSaveSequenceRef.current + 1;
+    draftSaveSequenceRef.current = saveSequence;
+    draftSaveTimerRef.current = window.setTimeout(() => {
+      void saveTestResponseDraft(input, {
+        skipServer: draftServerUnavailableRef.current,
+      }).then((result) => {
+        if (draftSaveSequenceRef.current !== saveSequence) {
+          return;
+        }
+
+        if (result.persistedTo === "server") {
+          setDraftSaveStatus("saved");
+          return;
+        }
+
+        draftServerUnavailableRef.current = true;
+        setDraftSaveStatus("saved_local");
+      });
+    }, 800);
+
+    return () => {
+      if (draftSaveTimerRef.current !== null) {
+        window.clearTimeout(draftSaveTimerRef.current);
+        draftSaveTimerRef.current = null;
+      }
+    };
+  }, [answers, draftIdentityKey, loadedDraftKey, questionSet?.id, startedAt]);
+
   useEffect(() => {
     if (!isRecordingTest) {
       clearRecordingTestSession(submissionId);
@@ -1140,7 +1396,7 @@ export function TestSessionPage() {
     };
   }, []);
 
-  if (!submission || !questionSet) {
+  if (!submission || !questionSet || !activeSubmissionVersion) {
     return (
       <AppShell title="Test session" description="The test you're looking for could not be loaded.">
         <Surface><p>Try returning to the Earn page and choosing another live submission.</p></Surface>
@@ -1167,11 +1423,16 @@ export function TestSessionPage() {
         payload,
         Math.round((Date.now() - startedAt) / 1000),
         uploadedRecording,
+        questionSet.id,
+        activeSubmissionVersion.id,
       );
       setMessage(result.message);
       if (result.ok) {
         if (isRecordingTest) {
           clearRecordingTestSession(submission.id);
+        }
+        if (currentUser) {
+          await clearTestResponseDraft(currentUser.id, submission.id);
         }
         navigate(`/test/${submission.id}/success`);
       }
@@ -1421,6 +1682,7 @@ export function TestSessionPage() {
     : isNativeDesktopRecording
       ? "Finish the browser recording and let it upload to unlock submit."
       : "Upload the recording to unlock final submit.";
+  const draftStatusCopy = getDraftStatusCopy(draftSaveStatus);
   const shouldShowManualRecoveryUpload =
     isNativeDesktopRecording &&
     nativeRecoveryUploadEnabled &&
@@ -1672,7 +1934,7 @@ export function TestSessionPage() {
                   )}
 
                   <div className="wizard-actions">
-                    <button type="button" className="button button--secondary" onClick={() => navigate("/earn")}>
+                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
                       Back to Earn
                     </button>
                     <button
@@ -1900,7 +2162,7 @@ export function TestSessionPage() {
                                   type="radio"
                                   name={question.id}
                                   checked={answers[question.id] === option}
-                                  onChange={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                                  onChange={() => updateAnswer(question.id, option)}
                                 />
                                 <span>{option}</span>
                               </label>
@@ -1911,7 +2173,7 @@ export function TestSessionPage() {
                             <textarea
                               rows={5}
                               value={answers[question.id] ?? ""}
-                              onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+                              onChange={(event) => updateAnswer(question.id, event.target.value)}
                               placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
                             />
                             <small className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}>
@@ -1942,9 +2204,12 @@ export function TestSessionPage() {
                   {isRecordingTest ? (
                     <span>{recordingStatusCopy}</span>
                   ) : null}
+                  {draftStatusCopy ? (
+                    <span>{draftStatusCopy}</span>
+                  ) : null}
                 </div>
                 <div className="inline-actions">
-                  <button type="button" className="button button--secondary" onClick={() => navigate("/earn")}>
+                  <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
                     Back to Earn
                   </button>
                   <button type="button" className="button button--primary" onClick={() => void submit()} disabled={submitDisabled}>

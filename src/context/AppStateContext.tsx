@@ -168,6 +168,8 @@ interface AppStateContextValue {
     answers: TestAnswer[],
     durationSeconds: number,
     recording?: ResponseRecording | null,
+    questionSetVersionId?: string,
+    submissionVersionId?: string,
   ) => Promise<{ ok: boolean; message: string }>;
   reviseTestResponse: (
     responseId: string,
@@ -1312,19 +1314,40 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return nextVersionId;
       },
-      async completeTest(submissionId, answers, durationSeconds, recording) {
+      async completeTest(submissionId, answers, durationSeconds, recording, questionSetVersionId, submissionVersionId) {
         if (!currentUser) {
           return { ok: false, message: "Verify your email before completing tests." };
         }
 
         const supabase = requireSupabase();
-        const { data, error } = await supabase.rpc("submit_test_response", {
+        let { data, error } = await supabase.rpc("submit_test_response", {
           p_submission_id: submissionId,
           p_answers: answers,
           p_duration_seconds: durationSeconds,
           p_recording_bucket: recording?.bucket ?? null,
           p_recording_path: recording?.path ?? null,
+          p_question_set_version_id: questionSetVersionId ?? null,
+          p_submission_version_id: submissionVersionId ?? null,
         });
+
+        if (
+          error &&
+          (
+            error.message.includes("p_question_set_version_id") ||
+            error.message.includes("p_submission_version_id") ||
+            error.message.includes("Could not find the function")
+          )
+        ) {
+          const retry = await supabase.rpc("submit_test_response", {
+            p_submission_id: submissionId,
+            p_answers: answers,
+            p_duration_seconds: durationSeconds,
+            p_recording_bucket: recording?.bucket ?? null,
+            p_recording_path: recording?.path ?? null,
+          });
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           if (isMissingSubmissionSchemaError(error.message)) {
