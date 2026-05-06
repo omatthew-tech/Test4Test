@@ -11,7 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 import { AppShell, Surface } from "../components/Layout";
 import { ReactionFaces } from "../components/ReactionFaces";
@@ -126,6 +126,7 @@ function formatRecordingSize(bytes: number) {
 
 export function SubmissionDetailPage() {
   const { submissionId = "" } = useParams();
+  const [searchParams] = useSearchParams();
   const {
     state,
     currentUser,
@@ -173,6 +174,7 @@ export function SubmissionDetailPage() {
   const [recordingPreviewFileName, setRecordingPreviewFileName] = useState("");
   const selectedResponseIdRef = useRef<string | null>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
+  const linkedResponseId = searchParams.get("response")?.trim() ?? "";
 
   const selectedVersion = useMemo(() => {
     if (submissionVersions.length === 0) {
@@ -230,6 +232,13 @@ export function SubmissionDetailPage() {
     : 0;
   const latestResponse = allResponses[0] ?? null;
   const nextVersionNumber = submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
+  const linkedResponse = useMemo(
+    () =>
+      linkedResponseId
+        ? allResponses.find((response) => response.id === linkedResponseId) ?? null
+        : null,
+    [allResponses, linkedResponseId],
+  );
 
   const savedEditMode: QuestionMode = activeQuestionSet?.mode ?? submission?.questionMode ?? "general";
   const savedEditQuestions = activeQuestionSet?.questions ?? [];
@@ -306,6 +315,30 @@ export function SubmissionDetailPage() {
   useEffect(() => {
     setSelectedResponseIndex(0);
   }, [responses.length, selectedVersion?.id]);
+
+  useEffect(() => {
+    if (!linkedResponse) {
+      return;
+    }
+
+    setResponseView("individual");
+
+    if (selectedVersionId !== linkedResponse.submissionVersionId) {
+      setSelectedVersionId(linkedResponse.submissionVersionId);
+    }
+  }, [linkedResponse, selectedVersionId]);
+
+  useEffect(() => {
+    if (!linkedResponseId) {
+      return;
+    }
+
+    const linkedIndex = responses.findIndex((response) => response.id === linkedResponseId);
+
+    if (linkedIndex >= 0) {
+      setSelectedResponseIndex(linkedIndex);
+    }
+  }, [linkedResponseId, responses]);
 
   const selectedResponse = responses[selectedResponseIndex] ?? null;
   const selectedRating = selectedResponse

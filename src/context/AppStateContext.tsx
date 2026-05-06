@@ -22,6 +22,7 @@ import {
 } from "../lib/pendingSubmission";
 import { estimateSubmissionMinutes } from "../lib/questions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
+import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
 import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
@@ -1584,6 +1585,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         });
 
         const filledCount = Object.values(normalizedPaymentMethods).filter((value) => Boolean(value)).length;
+
+        if (filledCount > 0) {
+          void notifyTipPaymentMethodsAdded().catch((error) => {
+            console.error("Failed to notify founders about new payment methods.", error);
+          });
+        }
 
         return {
           ok: true,
