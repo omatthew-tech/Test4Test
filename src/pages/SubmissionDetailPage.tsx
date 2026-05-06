@@ -33,6 +33,7 @@ import {
 } from "../lib/selectors";
 import { requestResponseRecordingUrl } from "../lib/recordings";
 import { requireSupabase } from "../lib/supabase";
+import { requestTipPaymentMethodEmail } from "../lib/tipRequests";
 import { PaymentMethods, Question, QuestionMode } from "../types";
 
 type ResponseViewMode = "all" | "individual";
@@ -76,6 +77,14 @@ function getTipHref(key: TipMethodKey, value: string) {
     default:
       return null;
   }
+}
+
+function hasTipPaymentMethods(paymentMethods: PaymentMethods) {
+  return Boolean(
+    paymentMethods.paypalHandle?.trim() ||
+      paymentMethods.venmoHandle?.trim() ||
+      paymentMethods.cashAppHandle?.trim(),
+  );
 }
 
 async function copyTextToClipboard(value: string) {
@@ -156,6 +165,7 @@ export function SubmissionDetailPage() {
   const [tipProfile, setTipProfile] = useState<TipProfile | null>(null);
   const [tipProfileResponseId, setTipProfileResponseId] = useState<string | null>(null);
   const [tipError, setTipError] = useState("");
+  const [tipNotice, setTipNotice] = useState("");
   const [copiedTipMethod, setCopiedTipMethod] = useState<TipMethodKey | null>(null);
   const [recordingAction, setRecordingAction] = useState<"watch" | "download" | null>(null);
   const [recordingActionError, setRecordingActionError] = useState("");
@@ -380,6 +390,7 @@ export function SubmissionDetailPage() {
     setTipProfile(null);
     setTipProfileResponseId(null);
     setTipError("");
+    setTipNotice("");
     setCopiedTipMethod(null);
     setRecordingAction(null);
     setRecordingActionError("");
@@ -478,8 +489,27 @@ export function SubmissionDetailPage() {
 
     setShowTipPanel(true);
     setTipError("");
+    setTipNotice("");
 
     if (tipProfileResponseId === selectedResponse.id && tipProfile) {
+      if (!hasTipPaymentMethods(tipProfile)) {
+        try {
+          const result = await requestTipPaymentMethodEmail(selectedResponse.id);
+
+          if (selectedResponseIdRef.current === selectedResponse.id) {
+            setTipNotice(result.message);
+          }
+        } catch (error) {
+          if (selectedResponseIdRef.current === selectedResponse.id) {
+            setTipNotice(
+              error instanceof Error
+                ? error.message
+                : "We couldn't email this tester about adding a payment method right now.",
+            );
+          }
+        }
+      }
+
       return;
     }
 
@@ -508,13 +538,32 @@ export function SubmissionDetailPage() {
         venmo_handle?: string | null;
         cash_app_handle?: string | null;
       };
-      setTipProfileResponseId(responseId);
-      setTipProfile({
+      const nextTipProfile = {
         anonymousLabel: fallbackAnonymousLabel,
         paypalHandle: typeof payload.paypal_handle === "string" ? payload.paypal_handle : null,
         venmoHandle: typeof payload.venmo_handle === "string" ? payload.venmo_handle : null,
         cashAppHandle: typeof payload.cash_app_handle === "string" ? payload.cash_app_handle : null,
-      });
+      };
+      setTipProfileResponseId(responseId);
+      setTipProfile(nextTipProfile);
+
+      if (!hasTipPaymentMethods(nextTipProfile)) {
+        try {
+          const result = await requestTipPaymentMethodEmail(responseId);
+
+          if (selectedResponseIdRef.current === responseId) {
+            setTipNotice(result.message);
+          }
+        } catch (error) {
+          if (selectedResponseIdRef.current === responseId) {
+            setTipNotice(
+              error instanceof Error
+                ? error.message
+                : "We couldn't email this tester about adding a payment method right now.",
+            );
+          }
+        }
+      }
     } catch (error) {
       if (selectedResponseIdRef.current !== responseId) {
         return;
@@ -1000,7 +1049,7 @@ export function SubmissionDetailPage() {
                   ) : (
                     <div className="results-tip-empty" aria-live="polite">
                       <strong>No tip methods yet</strong>
-                      <p>This tester has not added a payment method to their profile.</p>
+                      <p>{tipNotice || "This tester has not added a payment method to their profile."}</p>
                     </div>
                   )}
                 </div>
