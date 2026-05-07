@@ -877,7 +877,6 @@ export function TestSessionPage() {
         <section class="recording-pip" aria-label="Delete recording confirmation">
           <div class="recording-pip__top">
             <div class="recording-pip__badge">
-              <span class="recording-pip__dot recording-pip__dot--danger" aria-hidden="true"></span>
               <span>Delete recording?</span>
             </div>
           </div>
@@ -911,7 +910,6 @@ export function TestSessionPage() {
         <section class="recording-pip" aria-label="Recording uploaded">
           <div class="recording-pip__top">
             <div class="recording-pip__badge">
-              <span class="recording-pip__dot recording-pip__dot--done" aria-hidden="true"></span>
               <span>Recording uploaded</span>
             </div>
           </div>
@@ -948,7 +946,6 @@ export function TestSessionPage() {
         <section class="recording-pip" aria-label="Uploading recording">
           <div class="recording-pip__top">
             <div class="recording-pip__badge">
-              <span class="recording-pip__dot recording-pip__dot--uploading" aria-hidden="true"></span>
               <span>Uploading recording</span>
             </div>
             <strong class="recording-pip__timer">Saving</strong>
