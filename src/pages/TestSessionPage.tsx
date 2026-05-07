@@ -814,8 +814,8 @@ export function TestSessionPage() {
         }
 
         .recording-pip__button--secondary {
-          border-color: rgba(216, 208, 200, 0.92);
-          background: rgba(255, 254, 252, 0.9);
+          border-color: var(--pip-line);
+          background: var(--pip-paper);
           color: var(--pip-ink);
         }
 
@@ -836,8 +836,8 @@ export function TestSessionPage() {
         }
 
         .recording-pip__button--secondary:hover {
-          background: rgba(255, 244, 234, 0.88);
-          border-color: rgba(245, 142, 86, 0.26);
+          background: var(--pip-bone);
+          border-color: rgba(216, 208, 200, 0.98);
           box-shadow: none;
         }
 
@@ -880,12 +880,11 @@ export function TestSessionPage() {
               <span class="recording-pip__dot recording-pip__dot--danger" aria-hidden="true"></span>
               <span>Delete recording?</span>
             </div>
-            <strong class="recording-pip__timer">Ready</strong>
           </div>
           <div class="recording-pip__main recording-pip__main--danger">
             <p class="recording-pip__text recording-pip__text--strong">Are you sure you want to delete and re-record?</p>
             <div class="recording-pip__status">
-              <span class="recording-pip__pill">Your uploaded recording will be removed</span>
+              <span class="recording-pip__pill">Your recording will be permanently deleted</span>
             </div>
           </div>
           <div class="recording-pip__actions">
@@ -915,7 +914,6 @@ export function TestSessionPage() {
               <span class="recording-pip__dot recording-pip__dot--done" aria-hidden="true"></span>
               <span>Recording uploaded</span>
             </div>
-            <strong class="recording-pip__timer">Ready</strong>
           </div>
           <div class="recording-pip__main">
             <p class="recording-pip__text">Your screen and voice recording is saved. Submit when you&apos;re ready.</p>
