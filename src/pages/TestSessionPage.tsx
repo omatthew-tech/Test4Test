@@ -322,6 +322,7 @@ export function TestSessionPage() {
   const [microphoneStatus, setMicrophoneStatus] = useState<"idle" | "requesting" | "ready" | "error">("idle");
   const [microphoneError, setMicrophoneError] = useState("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
+  const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
 
   const selectedLink = useMemo(() => {
     if (!isRecordingTest) {
@@ -525,7 +526,29 @@ export function TestSessionPage() {
     }
 
     const { document: pipDocument } = pipWindow;
-    pipDocument.title = "Recording live";
+    const isDeleteConfirm = recordingPipDeleteConfirm && uploadedRecording !== null;
+    const isUploaded = uploadedRecording !== null && recordingPhase === "return_and_submit";
+    const isUploading = !isUploaded && (recordingPhase === "uploading_recording" || isUploadingRecording);
+    const submitDisabledAttribute = submitDisabled ? " disabled" : "";
+    const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
+    const submitLabel = isSubmitting ? "Submitting..." : "Submit test";
+    const deleteLabel = isDeletingRecording ? "Deleting..." : "Delete and re-record";
+    const trashIcon = `
+      <svg class="recording-pip__button-icon" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 6V4h8v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M19 6l-1 14H6L5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    pipDocument.title = isDeleteConfirm
+      ? "Delete recording"
+      : isUploaded
+        ? "Recording uploaded"
+        : isUploading
+          ? "Uploading recording"
+          : "Recording live";
 
     if (!pipDocument.getElementById("recording-pip-styles")) {
       const style = pipDocument.createElement("style");
@@ -546,27 +569,24 @@ export function TestSessionPage() {
           min-height: 100%;
           margin: 0;
           overflow: hidden;
-          background: #fffaf5;
-          color: #201813;
+          background: #d9d9d9;
+          color: #000;
         }
 
         body {
-          padding: 14px;
+          padding: 16px;
         }
 
         .recording-pip {
           display: flex;
-          min-height: calc(100vh - 28px);
+          min-height: calc(100vh - 32px);
           flex-direction: column;
           justify-content: space-between;
-          gap: 14px;
-          padding: 16px;
-          border: 1px solid rgba(245, 142, 86, 0.28);
-          border-radius: 22px;
-          background:
-            radial-gradient(circle at top right, rgba(245, 142, 86, 0.18), transparent 34%),
-            #fffdfb;
-          box-shadow: 0 18px 34px rgba(33, 24, 17, 0.16);
+          gap: 28px;
+          padding: 26px 20px 4px;
+          border-radius: 8px;
+          background: #f8f8f8;
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
         }
 
         .recording-pip__top {
@@ -581,7 +601,6 @@ export function TestSessionPage() {
           align-items: center;
           gap: 8px;
           font-weight: 800;
-          letter-spacing: -0.02em;
         }
 
         .recording-pip__dot {
@@ -630,19 +649,128 @@ export function TestSessionPage() {
 
         .recording-pip__button {
           width: 100%;
-          min-height: 42px;
+          min-height: 52px;
           border: 0;
-          border-radius: 999px;
-          background: #f58e56;
-          color: #201813;
+          border-radius: 10px;
+          background: #ff8b50;
+          color: #000;
           cursor: pointer;
           font: inherit;
           font-weight: 800;
-          box-shadow: 0 10px 24px rgba(245, 142, 86, 0.28);
         }
 
         .recording-pip__button:hover {
           background: #f67e42;
+        }
+
+        .recording-pip__button:disabled {
+          cursor: default;
+          opacity: 0.5;
+        }
+
+        .recording-pip__button-icon {
+          flex: 0 0 auto;
+        }
+
+        .recording-pip__title {
+          margin: 0;
+          font-size: 2rem;
+          line-height: 1.15;
+          font-weight: 400;
+        }
+
+        .recording-pip__title--confirm {
+          font-size: 1.8rem;
+        }
+
+        .recording-pip__progress {
+          width: 100%;
+          height: 28px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #d7d7d7;
+        }
+
+        .recording-pip__progress-fill {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: #ff8b50;
+        }
+
+        .recording-pip__progress-fill--uploading {
+          width: 68%;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+          animation: recordingUploadPulse 1.4s ease-in-out infinite alternate;
+        }
+
+        .recording-pip__progress-fill--uploading::after {
+          content: "";
+          display: block;
+          width: 36px;
+          height: 100%;
+          margin-left: auto;
+          transform: skewX(-38deg) translateX(18px);
+          transform-origin: left center;
+          background: #ff8b50;
+        }
+
+        .recording-pip__progress-fill--done {
+          width: 100%;
+        }
+
+        .recording-pip__main {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .recording-pip__actions {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 8px;
+          align-items: center;
+        }
+
+        .recording-pip__button--secondary,
+        .recording-pip__button--danger {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border: 1px solid #f3a7a3;
+          background: #fff;
+          color: #c91616;
+        }
+
+        .recording-pip__button--secondary {
+          border-color: transparent;
+          background: #ffbd98;
+          color: #000;
+        }
+
+        .recording-pip__button--danger:hover {
+          background: #fff7f7;
+        }
+
+        .recording-pip__button--danger:disabled {
+          background: #fff;
+          color: #c91616;
+          opacity: 1;
+        }
+
+        .recording-pip__button--secondary:hover {
+          background: #ffae84;
+        }
+
+        @keyframes recordingUploadPulse {
+          from {
+            width: 58%;
+          }
+          to {
+            width: 74%;
+          }
         }
       `;
       pipDocument.head.append(style);
@@ -654,6 +782,78 @@ export function TestSessionPage() {
       root = pipDocument.createElement("div");
       root.id = "recording-pip-root";
       pipDocument.body.replaceChildren(root);
+    }
+
+    if (isDeleteConfirm) {
+      root.innerHTML = `
+        <section class="recording-pip" aria-label="Delete recording confirmation">
+          <h1 class="recording-pip__title recording-pip__title--confirm">Are you sure you want<br>to delete and re-record?</h1>
+          <div class="recording-pip__actions">
+            <button id="recording-pip-cancel-delete" class="recording-pip__button recording-pip__button--secondary" type="button">Go back</button>
+            <button id="recording-pip-confirm-delete" class="recording-pip__button recording-pip__button--danger" type="button"${deleteDisabledAttribute}>
+              ${trashIcon}
+              ${deleteLabel}
+            </button>
+          </div>
+        </section>
+      `;
+
+      pipDocument
+        .getElementById("recording-pip-cancel-delete")
+        ?.addEventListener("click", () => setRecordingPipDeleteConfirm(false), { once: true });
+      pipDocument
+        .getElementById("recording-pip-confirm-delete")
+        ?.addEventListener("click", () => { void handleDeleteUploadedRecording(); }, { once: true });
+      return;
+    }
+
+    if (isUploaded) {
+      root.innerHTML = `
+        <section class="recording-pip" aria-label="Recording uploaded">
+          <div class="recording-pip__main">
+            <h1 class="recording-pip__title">Recording Uploaded!</h1>
+            <div class="recording-pip__progress" aria-hidden="true">
+              <span class="recording-pip__progress-fill recording-pip__progress-fill--done"></span>
+            </div>
+          </div>
+          <div class="recording-pip__actions">
+            <button id="recording-pip-delete" class="recording-pip__button recording-pip__button--danger" type="button"${deleteDisabledAttribute}>
+              ${trashIcon}
+              ${deleteLabel}
+            </button>
+            <button id="recording-pip-submit" class="recording-pip__button" type="button"${submitDisabledAttribute}>${submitLabel}</button>
+          </div>
+        </section>
+      `;
+
+      pipDocument
+        .getElementById("recording-pip-delete")
+        ?.addEventListener("click", () => setRecordingPipDeleteConfirm(true), { once: true });
+      pipDocument
+        .getElementById("recording-pip-submit")
+        ?.addEventListener("click", () => { void submit(); }, { once: true });
+      return;
+    }
+
+    if (isUploading) {
+      root.innerHTML = `
+        <section class="recording-pip" aria-label="Uploading recording">
+          <div class="recording-pip__main">
+            <h1 class="recording-pip__title">Uploading...</h1>
+            <div class="recording-pip__progress" aria-hidden="true">
+              <span class="recording-pip__progress-fill recording-pip__progress-fill--uploading"></span>
+            </div>
+          </div>
+          <div class="recording-pip__actions">
+            <button class="recording-pip__button recording-pip__button--danger" type="button" disabled>
+              ${trashIcon}
+              Delete and re-record
+            </button>
+            <button class="recording-pip__button" type="button" disabled>Submit test</button>
+          </div>
+        </section>
+      `;
+      return;
     }
 
     root.innerHTML = `
@@ -680,7 +880,7 @@ export function TestSessionPage() {
 
     pipDocument
       .getElementById("recording-pip-finish")
-      ?.addEventListener("click", () => stopNativeRecording({ focusTestPage: true }), { once: true });
+      ?.addEventListener("click", () => stopNativeRecording(), { once: true });
   };
 
   const openRecordingPipWindow = async () => {
@@ -699,8 +899,8 @@ export function TestSessionPage() {
 
     try {
       const pipWindow = await documentPictureInPicture.requestWindow({
-        width: 300,
-        height: 224,
+        width: 383,
+        height: 292,
       });
       recordingPipWindowRef.current = pipWindow;
       pipWindow.addEventListener("pagehide", () => {
@@ -838,7 +1038,6 @@ export function TestSessionPage() {
           nativeStopReasonRef.current = "share-ended";
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
-          closeRecordingPipWindow();
           mediaRecorderRef.current.stop();
           return;
         }
@@ -925,6 +1124,7 @@ export function TestSessionPage() {
     setIsUploadingRecording(true);
     setNativeUploadError("");
     setMessage("");
+    setRecordingPipDeleteConfirm(false);
 
     try {
       const nextRecording = await uploadRecordingDraft(
@@ -979,6 +1179,7 @@ export function TestSessionPage() {
     setIsUploadingRecording(true);
     setNativeUploadError("");
     setMessage("");
+    setRecordingPipDeleteConfirm(false);
 
     try {
       const nextRecording = await uploadGeneratedRecordingDraft(
@@ -1026,6 +1227,7 @@ export function TestSessionPage() {
     setMicrophoneStatus("idle");
     setMicrophoneError("");
     setMessage("");
+    setRecordingPipDeleteConfirm(false);
   };
 
   const stopNativeRecording = (options?: { focusTestPage?: boolean }) => {
@@ -1036,7 +1238,7 @@ export function TestSessionPage() {
     }
 
     const recorder = mediaRecorderRef.current;
-    closeRecordingPipWindow();
+    setRecordingPipDeleteConfirm(false);
 
     if (!recorder || recorder.state === "inactive") {
       setRecordingPhase("return_and_submit");
@@ -1318,19 +1520,33 @@ export function TestSessionPage() {
   }, [isNativeDesktopRecording, liveRecordingStartedAt]);
 
   useEffect(() => {
-    if (!isNativeDesktopRecording || recordingPhase !== "recording_live") {
+    const shouldKeepRecordingPipOpen =
+      isNativeDesktopRecording &&
+      (
+        recordingPhase === "recording_live" ||
+        recordingPhase === "uploading_recording" ||
+        (recordingPhase === "return_and_submit" && uploadedRecording !== null)
+      );
+
+    if (!shouldKeepRecordingPipOpen) {
       closeRecordingPipWindow();
       return;
     }
 
     renderRecordingPipWindow();
   }, [
+    isDeletingRecording,
     isNativeDesktopRecording,
+    isSubmitting,
+    isUploadingRecording,
     liveElapsedSeconds,
     microphoneStatus,
     nativeCaptureConfirmed,
+    recordingPipDeleteConfirm,
     recordingPhase,
     screenShareStatus,
+    submitDisabled,
+    uploadedRecording,
   ]);
 
   useEffect(() => {
@@ -1538,7 +1754,6 @@ export function TestSessionPage() {
           nativeStopReasonRef.current = "share-ended";
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
-          closeRecordingPipWindow();
           mediaRecorderRef.current.stop();
           return;
         }
@@ -1628,6 +1843,7 @@ export function TestSessionPage() {
     setIsDeletingRecording(true);
     setNativeUploadError("");
     setMessage("");
+    setRecordingPipDeleteConfirm(false);
 
     try {
       await deleteRecordingDraft(uploadedRecording);
