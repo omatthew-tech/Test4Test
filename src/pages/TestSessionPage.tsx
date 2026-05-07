@@ -517,6 +517,12 @@ export function TestSessionPage() {
     }
   };
 
+  const returnToTestSessionWindow = () => {
+    focusTestSessionWindow();
+    window.setTimeout(focusTestSessionWindow, 100);
+    window.setTimeout(focusTestSessionWindow, 350);
+  };
+
   const renderRecordingPipWindow = () => {
     const pipWindow = recordingPipWindowRef.current;
 
@@ -901,7 +907,7 @@ export function TestSessionPage() {
         ?.addEventListener("click", () => setRecordingPipDeleteConfirm(false), { once: true });
       pipDocument
         .getElementById("recording-pip-confirm-delete")
-        ?.addEventListener("click", () => { void handleDeleteUploadedRecording(); }, { once: true });
+        ?.addEventListener("click", () => { void handleDeleteUploadedRecording({ returnToTestPage: true }); }, { once: true });
       return;
     }
 
@@ -1348,9 +1354,7 @@ export function TestSessionPage() {
 
   const stopNativeRecording = (options?: { focusTestPage?: boolean }) => {
     if (options?.focusTestPage) {
-      focusTestSessionWindow();
-      window.setTimeout(focusTestSessionWindow, 100);
-      window.setTimeout(focusTestSessionWindow, 350);
+      returnToTestSessionWindow();
     }
 
     const recorder = mediaRecorderRef.current;
@@ -1946,14 +1950,21 @@ export function TestSessionPage() {
     await uploadManualRecordingFile(file, "");
   };
 
-  const handleDeleteUploadedRecording = async () => {
+  const handleDeleteUploadedRecording = async (options?: { returnToTestPage?: boolean }) => {
     if (!uploadedRecording) {
       return;
     }
 
     if (!currentUser) {
       setMessage("Verify your email before deleting a recording.");
+      if (options?.returnToTestPage) {
+        returnToTestSessionWindow();
+      }
       return;
+    }
+
+    if (options?.returnToTestPage) {
+      returnToTestSessionWindow();
     }
 
     setIsDeletingRecording(true);
