@@ -948,7 +948,6 @@ export function TestSessionPage() {
             <div class="recording-pip__badge">
               <span>Uploading recording</span>
             </div>
-            <strong class="recording-pip__timer">Saving</strong>
           </div>
           <div class="recording-pip__main">
             <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
