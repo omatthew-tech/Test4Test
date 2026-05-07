@@ -569,24 +569,27 @@ export function TestSessionPage() {
           min-height: 100%;
           margin: 0;
           overflow: hidden;
-          background: #d9d9d9;
-          color: #000;
+          background: #fffaf5;
+          color: #201813;
         }
 
         body {
-          padding: 16px;
+          padding: 14px;
         }
 
         .recording-pip {
           display: flex;
-          min-height: calc(100vh - 32px);
+          min-height: calc(100vh - 28px);
           flex-direction: column;
           justify-content: space-between;
-          gap: 28px;
-          padding: 26px 20px 4px;
-          border-radius: 8px;
-          background: #f8f8f8;
-          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+          gap: 14px;
+          padding: 16px;
+          border: 1px solid rgba(245, 142, 86, 0.28);
+          border-radius: 22px;
+          background:
+            radial-gradient(circle at top right, rgba(245, 142, 86, 0.18), transparent 34%),
+            #fffdfb;
+          box-shadow: 0 18px 34px rgba(33, 24, 17, 0.16);
         }
 
         .recording-pip__top {
@@ -601,6 +604,7 @@ export function TestSessionPage() {
           align-items: center;
           gap: 8px;
           font-weight: 800;
+          letter-spacing: -0.02em;
         }
 
         .recording-pip__dot {
@@ -649,14 +653,15 @@ export function TestSessionPage() {
 
         .recording-pip__button {
           width: 100%;
-          min-height: 52px;
+          min-height: 42px;
           border: 0;
-          border-radius: 10px;
-          background: #ff8b50;
-          color: #000;
+          border-radius: 999px;
+          background: #f58e56;
+          color: #201813;
           cursor: pointer;
           font: inherit;
           font-weight: 800;
+          box-shadow: 0 10px 24px rgba(245, 142, 86, 0.28);
         }
 
         .recording-pip__button:hover {
@@ -674,28 +679,31 @@ export function TestSessionPage() {
 
         .recording-pip__title {
           margin: 0;
-          font-size: 2rem;
+          color: #201813;
+          font-size: 1.55rem;
           line-height: 1.15;
-          font-weight: 400;
+          font-weight: 800;
+          letter-spacing: -0.03em;
         }
 
         .recording-pip__title--confirm {
-          font-size: 1.8rem;
+          font-size: 1.35rem;
+          line-height: 1.25;
         }
 
         .recording-pip__progress {
           width: 100%;
-          height: 28px;
+          height: 20px;
           overflow: hidden;
           border-radius: 999px;
-          background: #d7d7d7;
+          background: rgba(221, 212, 204, 0.82);
         }
 
         .recording-pip__progress-fill {
           display: block;
           height: 100%;
           border-radius: inherit;
-          background: #ff8b50;
+          background: #f58e56;
         }
 
         .recording-pip__progress-fill--uploading {
@@ -713,7 +721,7 @@ export function TestSessionPage() {
           margin-left: auto;
           transform: skewX(-38deg) translateX(18px);
           transform-origin: left center;
-          background: #ff8b50;
+          background: #f58e56;
         }
 
         .recording-pip__progress-fill--done {
@@ -723,13 +731,13 @@ export function TestSessionPage() {
         .recording-pip__main {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
         }
 
         .recording-pip__actions {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          gap: 8px;
+          gap: 10px;
           align-items: center;
         }
 
@@ -739,15 +747,16 @@ export function TestSessionPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          border: 1px solid #f3a7a3;
-          background: #fff;
-          color: #c91616;
+          border: 1px solid rgba(201, 91, 91, 0.36);
+          background: rgba(255, 253, 251, 0.9);
+          color: #bd3434;
+          box-shadow: none;
         }
 
         .recording-pip__button--secondary {
-          border-color: transparent;
-          background: #ffbd98;
-          color: #000;
+          border: 1px solid rgba(245, 142, 86, 0.24);
+          background: rgba(255, 241, 230, 0.95);
+          color: #8a5c3f;
         }
 
         .recording-pip__button--danger:hover {
@@ -755,13 +764,13 @@ export function TestSessionPage() {
         }
 
         .recording-pip__button--danger:disabled {
-          background: #fff;
-          color: #c91616;
+          background: rgba(255, 253, 251, 0.9);
+          color: #bd3434;
           opacity: 1;
         }
 
         .recording-pip__button--secondary:hover {
-          background: #ffae84;
+          background: rgba(255, 232, 213, 0.98);
         }
 
         @keyframes recordingUploadPulse {
