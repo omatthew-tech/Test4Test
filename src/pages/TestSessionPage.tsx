@@ -742,6 +742,13 @@ export function TestSessionPage() {
           flex: 0 0 auto;
         }
 
+        .recording-pip__pill-icon {
+          width: 1em;
+          height: 1em;
+          margin-left: 6px;
+          flex: 0 0 auto;
+        }
+
         .recording-pip__progress {
           width: 100%;
           height: 14px;
@@ -934,7 +941,12 @@ export function TestSessionPage() {
               <span class="recording-pip__progress-fill recording-pip__progress-fill--done"></span>
             </div>
             <div class="recording-pip__status">
-              <span class="recording-pip__pill recording-pip__pill--success">Upload complete</span>
+              <span class="recording-pip__pill recording-pip__pill--success">
+                Upload complete
+                <svg class="recording-pip__pill-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
             </div>
           </div>
           <div class="recording-pip__actions">
