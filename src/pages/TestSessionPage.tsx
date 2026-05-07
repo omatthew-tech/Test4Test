@@ -615,6 +615,20 @@ export function TestSessionPage() {
           box-shadow: 0 0 0 7px rgba(240, 106, 63, 0.15);
         }
 
+        .recording-pip__dot--uploading {
+          animation: recordingDotPulse 1s ease-in-out infinite alternate;
+        }
+
+        .recording-pip__dot--done {
+          background: #4e9d72;
+          box-shadow: 0 0 0 7px rgba(78, 157, 114, 0.14);
+        }
+
+        .recording-pip__dot--danger {
+          background: #c95b5b;
+          box-shadow: 0 0 0 7px rgba(201, 91, 91, 0.14);
+        }
+
         .recording-pip__timer {
           color: #8a5c3f;
           font-variant-numeric: tabular-nums;
@@ -626,6 +640,13 @@ export function TestSessionPage() {
           color: #65584f;
           font-size: 0.9rem;
           line-height: 1.45;
+        }
+
+        .recording-pip__text--strong {
+          color: #201813;
+          font-size: 1rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
         }
 
         .recording-pip__status {
@@ -649,6 +670,11 @@ export function TestSessionPage() {
         .recording-pip__pill--ok {
           background: rgba(255, 241, 230, 0.95);
           color: #8a5c3f;
+        }
+
+        .recording-pip__pill--success {
+          background: rgba(78, 157, 114, 0.12);
+          color: #326b4d;
         }
 
         .recording-pip__button {
@@ -675,20 +701,6 @@ export function TestSessionPage() {
 
         .recording-pip__button-icon {
           flex: 0 0 auto;
-        }
-
-        .recording-pip__title {
-          margin: 0;
-          color: #201813;
-          font-size: 1.55rem;
-          line-height: 1.15;
-          font-weight: 800;
-          letter-spacing: -0.03em;
-        }
-
-        .recording-pip__title--confirm {
-          font-size: 1.35rem;
-          line-height: 1.25;
         }
 
         .recording-pip__progress {
@@ -781,6 +793,17 @@ export function TestSessionPage() {
             width: 74%;
           }
         }
+
+        @keyframes recordingDotPulse {
+          from {
+            opacity: 0.58;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
       `;
       pipDocument.head.append(style);
     }
@@ -796,7 +819,17 @@ export function TestSessionPage() {
     if (isDeleteConfirm) {
       root.innerHTML = `
         <section class="recording-pip" aria-label="Delete recording confirmation">
-          <h1 class="recording-pip__title recording-pip__title--confirm">Are you sure you want<br>to delete and re-record?</h1>
+          <div class="recording-pip__top">
+            <div class="recording-pip__badge">
+              <span class="recording-pip__dot recording-pip__dot--danger" aria-hidden="true"></span>
+              <span>Delete recording?</span>
+            </div>
+            <strong class="recording-pip__timer">Ready</strong>
+          </div>
+          <p class="recording-pip__text recording-pip__text--strong">Are you sure you want to delete and re-record?</p>
+          <div class="recording-pip__status">
+            <span class="recording-pip__pill">Your uploaded recording will be removed</span>
+          </div>
           <div class="recording-pip__actions">
             <button id="recording-pip-cancel-delete" class="recording-pip__button recording-pip__button--secondary" type="button">Go back</button>
             <button id="recording-pip-confirm-delete" class="recording-pip__button recording-pip__button--danger" type="button"${deleteDisabledAttribute}>
@@ -819,10 +852,20 @@ export function TestSessionPage() {
     if (isUploaded) {
       root.innerHTML = `
         <section class="recording-pip" aria-label="Recording uploaded">
+          <div class="recording-pip__top">
+            <div class="recording-pip__badge">
+              <span class="recording-pip__dot recording-pip__dot--done" aria-hidden="true"></span>
+              <span>Recording uploaded</span>
+            </div>
+            <strong class="recording-pip__timer">Ready</strong>
+          </div>
+          <p class="recording-pip__text">Your screen and voice recording is saved. Submit when you&apos;re ready.</p>
           <div class="recording-pip__main">
-            <h1 class="recording-pip__title">Recording Uploaded!</h1>
-            <div class="recording-pip__progress" aria-hidden="true">
+            <div class="recording-pip__progress" aria-label="Recording upload complete">
               <span class="recording-pip__progress-fill recording-pip__progress-fill--done"></span>
+            </div>
+            <div class="recording-pip__status">
+              <span class="recording-pip__pill recording-pip__pill--success">Upload complete</span>
             </div>
           </div>
           <div class="recording-pip__actions">
@@ -847,10 +890,20 @@ export function TestSessionPage() {
     if (isUploading) {
       root.innerHTML = `
         <section class="recording-pip" aria-label="Uploading recording">
+          <div class="recording-pip__top">
+            <div class="recording-pip__badge">
+              <span class="recording-pip__dot recording-pip__dot--uploading" aria-hidden="true"></span>
+              <span>Uploading recording</span>
+            </div>
+            <strong class="recording-pip__timer">Saving</strong>
+          </div>
+          <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
           <div class="recording-pip__main">
-            <h1 class="recording-pip__title">Uploading...</h1>
-            <div class="recording-pip__progress" aria-hidden="true">
+            <div class="recording-pip__progress" aria-label="Recording upload in progress">
               <span class="recording-pip__progress-fill recording-pip__progress-fill--uploading"></span>
+            </div>
+            <div class="recording-pip__status">
+              <span class="recording-pip__pill recording-pip__pill--ok">Upload in progress</span>
             </div>
           </div>
           <div class="recording-pip__actions">
