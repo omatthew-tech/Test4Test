@@ -7471,6 +7471,21 @@ select {
   padding: 20px;
 }
 
+.recording-upload-card__uploaded {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.recording-upload-card__uploaded h2 {
+  margin: 0;
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: 1.85rem;
+  line-height: 1.15;
+  color: var(--color-ink-900);
+}
+
 .recording-phase-card__actions,
 .recording-upload-card__actions,
 .results-recording-panel__actions {

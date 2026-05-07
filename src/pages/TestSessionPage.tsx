@@ -10,7 +10,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { formatDateTime, getOrderedAccessLinks, productTypeLabel } from "../lib/format";
+import { getOrderedAccessLinks, productTypeLabel } from "../lib/format";
 import {
   clearRecordingTestSession,
   createGeneratedRecordingFileName,
@@ -123,18 +123,6 @@ function getDraftStatusCopy(status: DraftSaveStatus) {
   }
 
   return "";
-}
-
-function formatRecordingSize(bytes: number) {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-
-  return `${bytes} B`;
 }
 
 function formatElapsedDuration(totalSeconds: number) {
@@ -1006,11 +994,7 @@ export function TestSessionPage() {
       setRecordingPhase("return_and_submit");
       setScreenShareStatus("ended");
       setNativeCaptureConfirmed(false);
-      setMessage(
-        nativeStopReasonRef.current === "share-ended"
-          ? "Screen sharing ended, and the recording captured so far has been uploaded."
-          : "Recording uploaded. Submit when you're ready.",
-      );
+      setMessage("");
     } catch (error) {
       setRecordingPhase("return_and_submit");
       setScreenShareStatus("ended");
@@ -1628,7 +1612,7 @@ export function TestSessionPage() {
       return;
     }
 
-    await uploadManualRecordingFile(file, "Recording uploaded. Submit when you're ready.");
+    await uploadManualRecordingFile(file, "");
   };
 
   const handleDeleteUploadedRecording = async () => {
@@ -2040,38 +2024,9 @@ export function TestSessionPage() {
 
               {recordingPhase === "return_and_submit" ? (
                 <div className="recording-upload-card">
-                  <div className="recording-upload-card__copy">
-                    <span className="test-session__label">Return and submit</span>
-                    <h2>{isNativeDesktopRecording ? "Review the recording and submit" : "Stop your recording and upload the video"}</h2>
-                    <p>
-                      {isNativeDesktopRecording
-                        ? "Once the recording is uploaded, final submit unlocks here. If the automatic upload fails, retry it or download a backup copy."
-                        : "Upload the recording from your computer or phone, then complete the questionnaire below. Final submit stays locked until the video upload succeeds."}
-                    </p>
-                  </div>
-
-                  {!isNativeDesktopRecording ? (
-                    <label className="field recording-upload-card__field">
-                      <span>Screen recording upload</span>
-                      <input
-                        type="file"
-                        accept={RECORDING_ACCEPT_ATTRIBUTE}
-                        onChange={handleRecordingUpload}
-                        disabled={isUploadingRecording}
-                      />
-                      <small className="helper-text">
-                        Accepted: MP4, MOV, or WEBM up to 500 MB.
-                      </small>
-                    </label>
-                  ) : null}
-
                   {uploadedRecording ? (
-                    <div className="recording-upload-card__meta">
-                      <div className="recording-upload-card__meta-copy">
-                        <strong>{uploadedRecording.fileName}</strong>
-                        <span>{formatRecordingSize(uploadedRecording.fileSizeBytes)}</span>
-                        <span>{`Available until ${formatDateTime(uploadedRecording.expiresAt)}`}</span>
-                      </div>
+                    <div className="recording-upload-card__uploaded">
+                      <h2>RECORDING UPLOADED</h2>
                       <button
                         type="button"
                         className="button button--danger button--small"
@@ -2086,6 +2041,31 @@ export function TestSessionPage() {
                         {isDeletingRecording ? "Deleting..." : "Delete and re-record"}
                       </button>
                     </div>
+                  ) : (
+                    <div className="recording-upload-card__copy">
+                      <span className="test-session__label">Return and submit</span>
+                      <h2>{isNativeDesktopRecording ? "Review the recording and submit" : "Stop your recording and upload the video"}</h2>
+                      <p>
+                        {isNativeDesktopRecording
+                          ? "Once the recording is uploaded, final submit unlocks here. If the automatic upload fails, retry it or download a backup copy."
+                          : "Upload the recording from your computer or phone, then complete the questionnaire below. Final submit stays locked until the video upload succeeds."}
+                      </p>
+                    </div>
+                  )}
+
+                  {!isNativeDesktopRecording && !uploadedRecording ? (
+                    <label className="field recording-upload-card__field">
+                      <span>Screen recording upload</span>
+                      <input
+                        type="file"
+                        accept={RECORDING_ACCEPT_ATTRIBUTE}
+                        onChange={handleRecordingUpload}
+                        disabled={isUploadingRecording}
+                      />
+                      <small className="helper-text">
+                        Accepted: MP4, MOV, or WEBM up to 500 MB.
+                      </small>
+                    </label>
                   ) : null}
 
                   {isNativeDesktopRecording && !uploadedRecording && nativeRecordingBlob ? (
@@ -2199,19 +2179,27 @@ export function TestSessionPage() {
               ) : null}
 
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
-                <div className="test-session__progress">
-                  <strong>{progressLabel}</strong>
-                  {isRecordingTest ? (
-                    <span>{recordingStatusCopy}</span>
-                  ) : null}
-                  {draftStatusCopy ? (
-                    <span>{draftStatusCopy}</span>
-                  ) : null}
-                </div>
-                <div className="inline-actions">
+                {isRecordingTest && !hasQuestions ? (
                   <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
                     Back to Earn
                   </button>
+                ) : (
+                  <div className="test-session__progress">
+                    <strong>{progressLabel}</strong>
+                    {isRecordingTest ? (
+                      <span>{recordingStatusCopy}</span>
+                    ) : null}
+                    {draftStatusCopy ? (
+                      <span>{draftStatusCopy}</span>
+                    ) : null}
+                  </div>
+                )}
+                <div className="inline-actions">
+                  {isRecordingTest && !hasQuestions ? null : (
+                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                      Back to Earn
+                    </button>
+                  )}
                   <button type="button" className="button button--primary" onClick={() => void submit()} disabled={submitDisabled}>
                     Submit test
                   </button>
