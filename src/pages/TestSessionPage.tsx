@@ -555,6 +555,17 @@ export function TestSessionPage() {
       style.id = "recording-pip-styles";
       style.textContent = `
         :root {
+          --pip-orange: #f58e56;
+          --pip-orange-soft: #ffd0ae;
+          --pip-orange-wash: #fff4ea;
+          --pip-ink: #1d1815;
+          --pip-graphite: #4f4741;
+          --pip-dust: #857b74;
+          --pip-line: #d8d0c8;
+          --pip-bone: #f6f2ee;
+          --pip-paper: #fffefc;
+          --pip-success: #4e9d72;
+          --pip-error: #c95b5b;
           color-scheme: light;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
@@ -569,49 +580,57 @@ export function TestSessionPage() {
           min-height: 100%;
           margin: 0;
           overflow: hidden;
-          background: #fffaf5;
-          color: #201813;
+          background:
+            radial-gradient(circle at 18% 0%, rgba(255, 208, 174, 0.28), transparent 32%),
+            linear-gradient(180deg, var(--pip-orange-wash), var(--pip-bone));
+          color: var(--pip-ink);
         }
 
         body {
-          padding: 14px;
+          padding: 13px;
         }
 
         .recording-pip {
           display: flex;
-          min-height: calc(100vh - 28px);
+          min-height: calc(100vh - 26px);
           flex-direction: column;
           justify-content: space-between;
-          gap: 14px;
+          gap: 13px;
           padding: 16px;
-          border: 1px solid rgba(245, 142, 86, 0.28);
-          border-radius: 22px;
+          border: 1px solid rgba(245, 142, 86, 0.24);
+          border-radius: 24px;
           background:
-            radial-gradient(circle at top right, rgba(245, 142, 86, 0.18), transparent 34%),
-            #fffdfb;
-          box-shadow: 0 18px 34px rgba(33, 24, 17, 0.16);
+            radial-gradient(circle at top right, rgba(245, 142, 86, 0.14), transparent 36%),
+            linear-gradient(180deg, rgba(255, 254, 252, 0.98), rgba(255, 250, 245, 0.98));
+          box-shadow: 0 10px 28px rgba(29, 24, 21, 0.12);
         }
 
         .recording-pip__top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
+          gap: 13px;
+          min-width: 0;
         }
 
         .recording-pip__badge {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
+          min-width: 0;
+          color: var(--pip-ink);
+          font-family: Sora, Inter, ui-sans-serif, system-ui, sans-serif;
+          font-size: 0.96rem;
+          font-weight: 700;
+          letter-spacing: 0;
         }
 
         .recording-pip__dot {
-          width: 10px;
-          height: 10px;
+          width: 12px;
+          height: 12px;
+          flex: 0 0 12px;
           border-radius: 999px;
-          background: #f06a3f;
+          background: var(--pip-orange);
           box-shadow: 0 0 0 7px rgba(240, 106, 63, 0.15);
         }
 
@@ -620,33 +639,40 @@ export function TestSessionPage() {
         }
 
         .recording-pip__dot--done {
-          background: #4e9d72;
+          background: var(--pip-success);
           box-shadow: 0 0 0 7px rgba(78, 157, 114, 0.14);
         }
 
         .recording-pip__dot--danger {
-          background: #c95b5b;
+          background: var(--pip-error);
           box-shadow: 0 0 0 7px rgba(201, 91, 91, 0.14);
         }
 
         .recording-pip__timer {
+          flex: 0 0 auto;
+          min-height: 28px;
+          padding: 5px 10px;
+          border-radius: 999px;
+          background: rgba(255, 241, 230, 0.88);
           color: #8a5c3f;
+          font-size: 0.82rem;
           font-variant-numeric: tabular-nums;
-          font-weight: 800;
+          font-weight: 700;
         }
 
         .recording-pip__text {
           margin: 0;
-          color: #65584f;
+          color: var(--pip-graphite);
           font-size: 0.9rem;
-          line-height: 1.45;
+          line-height: 1.5;
         }
 
         .recording-pip__text--strong {
-          color: #201813;
+          color: var(--pip-ink);
+          font-family: Sora, Inter, ui-sans-serif, system-ui, sans-serif;
           font-size: 1rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
+          font-weight: 700;
+          letter-spacing: 0;
         }
 
         .recording-pip__status {
@@ -659,16 +685,16 @@ export function TestSessionPage() {
           display: inline-flex;
           align-items: center;
           min-height: 30px;
-          padding: 0 11px;
+          padding: 0 12px;
           border-radius: 999px;
-          background: rgba(235, 238, 242, 0.95);
-          color: #6f7782;
+          background: rgba(246, 242, 238, 0.92);
+          color: var(--pip-graphite);
           font-size: 0.82rem;
           font-weight: 700;
         }
 
         .recording-pip__pill--ok {
-          background: rgba(255, 241, 230, 0.95);
+          background: rgba(255, 241, 230, 0.96);
           color: #8a5c3f;
         }
 
@@ -679,24 +705,31 @@ export function TestSessionPage() {
 
         .recording-pip__button {
           width: 100%;
-          min-height: 42px;
-          border: 0;
-          border-radius: 999px;
-          background: #f58e56;
-          color: #201813;
+          min-height: 44px;
+          border: 1px solid transparent;
+          border-radius: 16px;
+          background: var(--pip-orange);
+          color: var(--pip-ink);
           cursor: pointer;
           font: inherit;
-          font-weight: 800;
-          box-shadow: 0 10px 24px rgba(245, 142, 86, 0.28);
+          font-size: 0.9rem;
+          font-weight: 700;
+          line-height: 1.2;
+          padding: 0 14px;
+          white-space: nowrap;
+          box-shadow: 0 6px 18px rgba(245, 142, 86, 0.22);
+          transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
         }
 
         .recording-pip__button:hover {
           background: #f67e42;
+          box-shadow: 0 10px 28px rgba(245, 142, 86, 0.26);
         }
 
         .recording-pip__button:disabled {
           cursor: default;
           opacity: 0.5;
+          box-shadow: none;
         }
 
         .recording-pip__button-icon {
@@ -705,17 +738,18 @@ export function TestSessionPage() {
 
         .recording-pip__progress {
           width: 100%;
-          height: 20px;
+          height: 14px;
           overflow: hidden;
           border-radius: 999px;
-          background: rgba(221, 212, 204, 0.82);
+          background: rgba(216, 208, 200, 0.72);
+          box-shadow: inset 0 1px 2px rgba(29, 24, 21, 0.08);
         }
 
         .recording-pip__progress-fill {
           display: block;
           height: 100%;
           border-radius: inherit;
-          background: #f58e56;
+          background: linear-gradient(90deg, var(--pip-orange), #f67e42);
         }
 
         .recording-pip__progress-fill--uploading {
@@ -733,7 +767,7 @@ export function TestSessionPage() {
           margin-left: auto;
           transform: skewX(-38deg) translateX(18px);
           transform-origin: left center;
-          background: #f58e56;
+          background: #f67e42;
         }
 
         .recording-pip__progress-fill--done {
@@ -743,14 +777,28 @@ export function TestSessionPage() {
         .recording-pip__main {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 10px;
+          padding: 12px;
+          border: 1px solid rgba(216, 208, 200, 0.74);
+          border-radius: 16px;
+          background: rgba(255, 254, 252, 0.78);
+        }
+
+        .recording-pip__main--danger {
+          border-color: rgba(201, 91, 91, 0.22);
+          background: rgba(255, 245, 244, 0.58);
         }
 
         .recording-pip__actions {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          gap: 10px;
+          gap: 8px;
           align-items: center;
+        }
+
+        .recording-pip__actions .recording-pip__button {
+          font-size: 0.84rem;
+          padding: 0 8px;
         }
 
         .recording-pip__button--secondary,
@@ -759,30 +807,38 @@ export function TestSessionPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          border: 1px solid rgba(201, 91, 91, 0.36);
-          background: rgba(255, 253, 251, 0.9);
-          color: #bd3434;
+          border: 1px solid rgba(216, 208, 200, 0.92);
+          background: rgba(255, 254, 252, 0.9);
+          color: var(--pip-ink);
           box-shadow: none;
         }
 
         .recording-pip__button--secondary {
-          border: 1px solid rgba(245, 142, 86, 0.24);
-          background: rgba(255, 241, 230, 0.95);
-          color: #8a5c3f;
+          border-color: rgba(216, 208, 200, 0.92);
+          background: rgba(255, 254, 252, 0.9);
+          color: var(--pip-ink);
+        }
+
+        .recording-pip__button--danger {
+          border-color: rgba(201, 91, 91, 0.34);
+          color: #b42318;
         }
 
         .recording-pip__button--danger:hover {
-          background: #fff7f7;
+          background: rgba(255, 245, 244, 0.96);
+          border-color: rgba(201, 91, 91, 0.54);
         }
 
         .recording-pip__button--danger:disabled {
-          background: rgba(255, 253, 251, 0.9);
-          color: #bd3434;
-          opacity: 1;
+          background: rgba(255, 254, 252, 0.84);
+          color: #b42318;
+          opacity: 0.48;
         }
 
         .recording-pip__button--secondary:hover {
-          background: rgba(255, 232, 213, 0.98);
+          background: rgba(255, 244, 234, 0.88);
+          border-color: rgba(245, 142, 86, 0.26);
+          box-shadow: none;
         }
 
         @keyframes recordingUploadPulse {
@@ -826,9 +882,11 @@ export function TestSessionPage() {
             </div>
             <strong class="recording-pip__timer">Ready</strong>
           </div>
-          <p class="recording-pip__text recording-pip__text--strong">Are you sure you want to delete and re-record?</p>
-          <div class="recording-pip__status">
-            <span class="recording-pip__pill">Your uploaded recording will be removed</span>
+          <div class="recording-pip__main recording-pip__main--danger">
+            <p class="recording-pip__text recording-pip__text--strong">Are you sure you want to delete and re-record?</p>
+            <div class="recording-pip__status">
+              <span class="recording-pip__pill">Your uploaded recording will be removed</span>
+            </div>
           </div>
           <div class="recording-pip__actions">
             <button id="recording-pip-cancel-delete" class="recording-pip__button recording-pip__button--secondary" type="button">Go back</button>
@@ -859,8 +917,8 @@ export function TestSessionPage() {
             </div>
             <strong class="recording-pip__timer">Ready</strong>
           </div>
-          <p class="recording-pip__text">Your screen and voice recording is saved. Submit when you&apos;re ready.</p>
           <div class="recording-pip__main">
+            <p class="recording-pip__text">Your screen and voice recording is saved. Submit when you&apos;re ready.</p>
             <div class="recording-pip__progress" aria-label="Recording upload complete">
               <span class="recording-pip__progress-fill recording-pip__progress-fill--done"></span>
             </div>
@@ -897,8 +955,8 @@ export function TestSessionPage() {
             </div>
             <strong class="recording-pip__timer">Saving</strong>
           </div>
-          <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
           <div class="recording-pip__main">
+            <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
             <div class="recording-pip__progress" aria-label="Recording upload in progress">
               <span class="recording-pip__progress-fill recording-pip__progress-fill--uploading"></span>
             </div>
@@ -927,14 +985,16 @@ export function TestSessionPage() {
           </div>
           <strong class="recording-pip__timer">${formatElapsedDuration(liveElapsedSeconds)}</strong>
         </div>
-        <p class="recording-pip__text">You can move this window while you test. Click finish when you are done.</p>
-        <div class="recording-pip__status">
-          <span class="recording-pip__pill${microphoneStatus === "ready" ? " recording-pip__pill--ok" : ""}">
-            Mic ${microphoneStatus === "ready" ? "connected" : "not ready"}
-          </span>
-          <span class="recording-pip__pill${screenShareStatus === "active" ? " recording-pip__pill--ok" : ""}">
-            Screen ${screenShareStatus === "active" ? "sharing" : "not shared"}
-          </span>
+        <div class="recording-pip__main">
+          <p class="recording-pip__text">You can move this window while you test. Click finish when you are done.</p>
+          <div class="recording-pip__status">
+            <span class="recording-pip__pill${microphoneStatus === "ready" ? " recording-pip__pill--ok" : ""}">
+              Mic ${microphoneStatus === "ready" ? "connected" : "not ready"}
+            </span>
+            <span class="recording-pip__pill${screenShareStatus === "active" ? " recording-pip__pill--ok" : ""}">
+              Screen ${screenShareStatus === "active" ? "sharing" : "not shared"}
+            </span>
+          </div>
         </div>
         <button id="recording-pip-finish" class="recording-pip__button" type="button">Finish recording</button>
       </section>
