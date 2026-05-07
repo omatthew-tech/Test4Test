@@ -759,10 +759,10 @@ export function TestSessionPage() {
         }
 
         .recording-pip__progress-fill--uploading {
-          width: 68%;
+          width: 0%;
           border-top-right-radius: 0;
           border-bottom-right-radius: 0;
-          animation: recordingUploadPulse 1.4s ease-in-out infinite alternate;
+          animation: recordingUploadProgress 2.8s ease-out forwards, recordingUploadPulse 1.2s ease-in-out 2.8s infinite alternate;
         }
 
         .recording-pip__progress-fill--uploading::after {
@@ -849,10 +849,19 @@ export function TestSessionPage() {
 
         @keyframes recordingUploadPulse {
           from {
-            width: 58%;
+            width: 76%;
           }
           to {
-            width: 74%;
+            width: 90%;
+          }
+        }
+
+        @keyframes recordingUploadProgress {
+          from {
+            width: 0%;
+          }
+          to {
+            width: 78%;
           }
         }
 
