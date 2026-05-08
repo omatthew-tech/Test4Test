@@ -2423,7 +2423,10 @@ export function TestSessionPage() {
                           checked={confirmedRecording}
                           onChange={(event) => setConfirmedRecording(event.target.checked)}
                         />
-                        <span>I have started a screen recording with microphone audio for this session.</span>
+                        <span>
+                          I started a screen recording and I currently see a red icon{" "}
+                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> to show it's recording
+                        </span>
                       </label>
                     </>
                   )}

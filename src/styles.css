@@ -7575,6 +7575,16 @@ select {
   background: rgba(255, 247, 239, 0.72);
 }
 
+.recording-attestation__recording-dot {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin: 0 0.12em;
+  border-radius: 999px;
+  background: #ff5b3d;
+  vertical-align: -0.04em;
+}
+
 .recording-phase-card,
 .recording-upload-card {
   display: flex;
