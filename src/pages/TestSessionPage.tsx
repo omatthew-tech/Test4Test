@@ -2143,11 +2143,17 @@ export function TestSessionPage() {
     manualRecordingDevice === "ios" || manualRecordingDevice === "android" || manualRecordingDevice === "mobile";
   const manualRecordingTitle = getManualRecordingTitle(manualRecordingDevice, recordingInstructions.title);
   const manualRecordingIntro = isPhoneManualRecording ? "" : recordingInstructions.intro;
+  const manualRecordingGuideUrl =
+    manualRecordingDevice === "ios"
+      ? "https://support.apple.com/en-us/102653"
+      : manualRecordingDevice === "android"
+        ? "https://support.google.com/android/answer/9075928?hl=en"
+        : "";
   const manualRecordingSteps = isPhoneManualRecording
     ? [
-        "Find a quiet place. Close any unwanted tabs. And get ready to think out loud. Share your honest thoughts (positive or negative). There are no right or wrong answers.",
-        "The site will open in a new tab. Refer back to this tab for instructions. When you're finished, end the recording and upload your test here.",
-        "Start recording your full screen and microphone.",
+        "Find a quiet place, close any unwanted tabs and get ready to think out loud. Share your honest thoughts. There are no right or wrong answers.",
+        "The app will open in a new tab. Refer back here for instructions. When you're finished, stop the recording and upload it.",
+        "Start recording your screen and microphone.",
       ]
     : recordingInstructions.steps;
   const screenRecordingIllustrationDevice =
@@ -2376,7 +2382,17 @@ export function TestSessionPage() {
                             <ol className="recording-guidance__steps">
                               {manualRecordingSteps.map((step, index) => (
                                 <li key={step}>
-                                  <span>{step}</span>
+                                  {index === 2 && manualRecordingGuideUrl ? (
+                                    <span>
+                                      Let&apos;s get started. Start recording your screen and microphone. Review{" "}
+                                      <a href={manualRecordingGuideUrl} target="_blank" rel="noreferrer">
+                                        this guide
+                                      </a>{" "}
+                                      if you're unfamiliar.
+                                    </span>
+                                  ) : (
+                                    <span>{step}</span>
+                                  )}
                                   {index === 2 && screenRecordingIllustrationDevice ? (
                                     <ScreenRecordingMenuIllustration device={screenRecordingIllustrationDevice} />
                                   ) : null}
