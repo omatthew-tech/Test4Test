@@ -2384,11 +2384,10 @@ export function TestSessionPage() {
                                 <li key={step}>
                                   {index === 2 && manualRecordingGuideUrl ? (
                                     <span>
-                                      Let&apos;s get started. Start recording your screen and microphone. Review{" "}
+                                      Start recording your screen and microphone. If you&apos;re not sure how to record, check out{" "}
                                       <a className="recording-guide-link" href={manualRecordingGuideUrl} target="_blank" rel="noreferrer">
                                         this guide
-                                      </a>{" "}
-                                      if you're unfamiliar.
+                                      </a>
                                     </span>
                                   ) : (
                                     <span>{step}</span>
@@ -2424,7 +2423,7 @@ export function TestSessionPage() {
                           onChange={(event) => setConfirmedRecording(event.target.checked)}
                         />
                         <span>
-                          My screen is currently being recorded and I currently see{" "}
+                          My screen is currently being recorded and I see the{" "}
                           <span className="recording-attestation__recording-dot" aria-hidden="true" /> showing it's recording
                         </span>
                       </label>
