@@ -2032,6 +2032,7 @@ export function TestSessionPage() {
       ? "Finish the browser recording and let it upload to unlock submit."
       : "Upload the recording to unlock final submit.";
   const draftStatusCopy = getDraftStatusCopy(draftSaveStatus);
+  const shouldShowManualRecordingGuidance = !isNativeDesktopRecording && !recordingExperience.isMobile;
   const shouldShowManualRecoveryUpload =
     isNativeDesktopRecording &&
     nativeRecoveryUploadEnabled &&
@@ -2084,7 +2085,7 @@ export function TestSessionPage() {
 
           {isRecordingTest ? (
             <>
-              {!isNativeDesktopRecording ? (
+              {shouldShowManualRecordingGuidance ? (
                 <div className="callout callout--soft recording-test-callout">
                   <div className="recording-test-callout__copy">
                     <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
@@ -2244,6 +2245,8 @@ export function TestSessionPage() {
                     </div>
                   ) : (
                     <>
+                      {shouldShowManualRecordingGuidance ? (
+                        <>
                       <div className="recording-guidance">
                         <div className="recording-guidance__intro">
                           <h2>{recordingInstructions.title}</h2>
@@ -2267,6 +2270,8 @@ export function TestSessionPage() {
                           ))}
                         </ul>
                       </div>
+                        </>
+                      ) : null}
 
                       <label className="checkbox-row recording-attestation">
                         <input
@@ -2295,7 +2300,7 @@ export function TestSessionPage() {
                       }}
                       disabled={isNativeDesktopRecording && (microphoneStatus !== "ready" || screenShareStatus !== "active")}
                     >
-                      {isNativeDesktopRecording ? "Start test" : "I&apos;m recording and ready to test"}
+                      {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </button>
                   </div>
                 </div>
