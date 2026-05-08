@@ -2385,7 +2385,7 @@ export function TestSessionPage() {
                                   {index === 2 && manualRecordingGuideUrl ? (
                                     <span>
                                       Let&apos;s get started. Start recording your screen and microphone. Review{" "}
-                                      <a href={manualRecordingGuideUrl} target="_blank" rel="noreferrer">
+                                      <a className="recording-guide-link" href={manualRecordingGuideUrl} target="_blank" rel="noreferrer">
                                         this guide
                                       </a>{" "}
                                       if you're unfamiliar.
