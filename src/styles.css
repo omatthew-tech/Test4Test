@@ -7459,7 +7459,7 @@ select {
 }
 
 .screen-recording-illustration {
-  width: min(100%, 320px);
+  width: min(100%, 340px);
   margin: 14px 0 2px;
 }
 
@@ -7468,44 +7468,88 @@ select {
   height: auto;
 }
 
+.screen-recording-illustration__phone {
+  fill: #111827;
+  opacity: 0.08;
+}
+
 .screen-recording-illustration__panel {
-  fill: #f7f3ef;
-  stroke: rgba(221, 212, 204, 0.94);
+  stroke: rgba(255, 255, 255, 0.54);
   stroke-width: 2;
 }
 
-.screen-recording-illustration__tile {
-  fill: #fffefc;
-  stroke: rgba(216, 208, 200, 0.9);
+.screen-recording-illustration__ios-tile,
+.screen-recording-illustration__ios-slider,
+.screen-recording-illustration__small-tile {
+  fill: rgba(255, 255, 255, 0.16);
+}
+
+.screen-recording-illustration__ios-toggle {
+  fill: rgba(255, 255, 255, 0.24);
+}
+
+.screen-recording-illustration__ios-toggle--active {
+  fill: #3b82f6;
+}
+
+.screen-recording-illustration__wifi {
+  fill: none;
+  stroke: #ffffff;
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+.screen-recording-illustration__ios-slider-fill {
+  fill: rgba(255, 255, 255, 0.68);
+}
+
+.screen-recording-illustration__record-target {
+  fill: rgba(255, 255, 255, 0.2);
+  stroke: rgba(255, 255, 255, 0.54);
   stroke-width: 2;
 }
 
-.screen-recording-illustration__tile--active {
-  fill: rgba(255, 139, 80, 0.18);
-  stroke: rgba(245, 142, 86, 0.58);
+.screen-recording-illustration__record-ring {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 4;
 }
 
-.screen-recording-illustration__target {
-  fill: #fffefc;
-  stroke: #f58e56;
-  stroke-width: 6;
-}
-
-.screen-recording-illustration__target-dot {
+.screen-recording-illustration__record-dot,
+.screen-recording-illustration__android-brightness-fill {
   fill: #f58e56;
 }
 
-.screen-recording-illustration__label {
-  fill: #f58e56;
+.screen-recording-illustration__android-time {
+  fill: #1f2937;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.screen-recording-illustration__android-brightness,
+.screen-recording-illustration__android-tile {
+  fill: rgba(255, 255, 255, 0.78);
+}
+
+.screen-recording-illustration__android-tile--active {
+  fill: rgba(245, 142, 86, 0.22);
+  stroke: rgba(245, 142, 86, 0.72);
+  stroke-width: 2;
+}
+
+.screen-recording-illustration__android-label {
+  fill: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .screen-recording-illustration__arrow,
 .screen-recording-illustration__arrow-head {
   fill: none;
-  stroke: #9b6641;
+  stroke: #f58e56;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 8;
+  stroke-width: 7;
 }
 
 .recording-attestation {

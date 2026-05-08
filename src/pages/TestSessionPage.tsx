@@ -286,29 +286,60 @@ function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRec
 
   return (
     <figure className={`screen-recording-illustration screen-recording-illustration--${device}`} aria-label={label}>
-      <svg viewBox="0 0 360 230" role="img" aria-hidden="true" focusable="false">
-        <rect className="screen-recording-illustration__panel" x="22" y="18" width="316" height="194" rx="28" />
+      <svg viewBox="0 0 360 260" role="img" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id={`screen-recording-panel-${device}`} x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor={isIOS ? "#263247" : "#f8fafc"} />
+            <stop offset="100%" stopColor={isIOS ? "#0f1724" : "#e5ecf6"} />
+          </linearGradient>
+          <filter id={`screen-recording-shadow-${device}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#221a14" floodOpacity="0.18" />
+          </filter>
+        </defs>
+        <rect className="screen-recording-illustration__phone" x="30" y="14" width="300" height="226" rx="34" />
+        <rect
+          className="screen-recording-illustration__panel"
+          x="44"
+          y="28"
+          width="272"
+          height="198"
+          rx="26"
+          fill={`url(#screen-recording-panel-${device})`}
+          filter={`url(#screen-recording-shadow-${device})`}
+        />
         {isIOS ? (
           <>
-            <rect className="screen-recording-illustration__tile" x="48" y="44" width="94" height="94" rx="24" />
-            <rect className="screen-recording-illustration__tile" x="160" y="44" width="152" height="42" rx="21" />
-            <rect className="screen-recording-illustration__tile" x="160" y="100" width="68" height="86" rx="24" />
-            <rect className="screen-recording-illustration__tile" x="244" y="100" width="68" height="86" rx="24" />
-            <circle className="screen-recording-illustration__target" cx="94" cy="162" r="30" />
-            <circle className="screen-recording-illustration__target-dot" cx="94" cy="162" r="13" />
-            <path className="screen-recording-illustration__arrow" d="M248 188 C210 172 172 164 128 162" />
-            <path className="screen-recording-illustration__arrow-head" d="M143 145 L125 162 L144 178" />
+            <rect className="screen-recording-illustration__ios-tile" x="62" y="48" width="108" height="108" rx="28" />
+            <circle className="screen-recording-illustration__ios-toggle screen-recording-illustration__ios-toggle--active" cx="92" cy="78" r="17" />
+            <circle className="screen-recording-illustration__ios-toggle" cx="140" cy="78" r="17" />
+            <circle className="screen-recording-illustration__ios-toggle" cx="92" cy="126" r="17" />
+            <circle className="screen-recording-illustration__ios-toggle" cx="140" cy="126" r="17" />
+            <path className="screen-recording-illustration__wifi" d="M130 74 Q140 66 150 74 M134 80 Q140 75 146 80" />
+            <rect className="screen-recording-illustration__ios-tile" x="188" y="48" width="106" height="50" rx="20" />
+            <rect className="screen-recording-illustration__ios-slider" x="188" y="114" width="46" height="92" rx="23" />
+            <rect className="screen-recording-illustration__ios-slider-fill" x="188" y="154" width="46" height="52" rx="23" />
+            <rect className="screen-recording-illustration__ios-slider" x="248" y="114" width="46" height="92" rx="23" />
+            <rect className="screen-recording-illustration__ios-slider-fill" x="248" y="136" width="46" height="70" rx="23" />
+            <circle className="screen-recording-illustration__record-target" cx="92" cy="190" r="26" />
+            <circle className="screen-recording-illustration__record-ring" cx="92" cy="190" r="13" />
+            <circle className="screen-recording-illustration__record-dot" cx="92" cy="190" r="6" />
+            <rect className="screen-recording-illustration__small-tile" x="124" y="164" width="46" height="52" rx="16" />
+            <path className="screen-recording-illustration__arrow" d="M250 226 C206 210 164 196 121 191" />
+            <path className="screen-recording-illustration__arrow-head" d="M137 176 L119 191 L137 208" />
           </>
         ) : (
           <>
-            <rect className="screen-recording-illustration__tile" x="48" y="44" width="116" height="54" rx="27" />
-            <rect className="screen-recording-illustration__tile" x="180" y="44" width="116" height="54" rx="27" />
-            <rect className="screen-recording-illustration__tile" x="48" y="116" width="116" height="54" rx="27" />
-            <rect className="screen-recording-illustration__tile screen-recording-illustration__tile--active" x="180" y="116" width="116" height="54" rx="27" />
-            <circle className="screen-recording-illustration__target-dot" cx="214" cy="143" r="12" />
-            <rect className="screen-recording-illustration__label" x="234" y="135" width="42" height="16" rx="8" />
-            <path className="screen-recording-illustration__arrow" d="M94 190 C126 168 154 154 196 146" />
-            <path className="screen-recording-illustration__arrow-head" d="M176 135 L199 146 L181 165" />
+            <text className="screen-recording-illustration__android-time" x="66" y="62">10:56</text>
+            <rect className="screen-recording-illustration__android-brightness" x="64" y="82" width="232" height="20" rx="10" />
+            <rect className="screen-recording-illustration__android-brightness-fill" x="64" y="82" width="146" height="20" rx="10" />
+            <rect className="screen-recording-illustration__android-tile" x="64" y="118" width="104" height="44" rx="22" />
+            <rect className="screen-recording-illustration__android-tile" x="190" y="118" width="104" height="44" rx="22" />
+            <rect className="screen-recording-illustration__android-tile" x="64" y="176" width="104" height="44" rx="22" />
+            <rect className="screen-recording-illustration__android-tile screen-recording-illustration__android-tile--active" x="190" y="176" width="104" height="44" rx="22" />
+            <circle className="screen-recording-illustration__record-dot" cx="216" cy="198" r="10" />
+            <text className="screen-recording-illustration__android-label" x="236" y="203">Record</text>
+            <path className="screen-recording-illustration__arrow" d="M92 236 C128 217 158 205 204 199" />
+            <path className="screen-recording-illustration__arrow-head" d="M184 187 L207 198 L188 216" />
           </>
         )}
       </svg>
@@ -2129,19 +2160,18 @@ export function TestSessionPage() {
     nativeRecoveryUploadEnabled &&
     !uploadedRecording &&
     !nativeRecordingBlob;
+  const testSessionHeaderCopy = isRecordingTest
+    ? isNativeDesktopRecording
+      ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
+      : ""
+    : "Open the app in a new tab, keep this questionnaire here, and leave thoughtful answers that are actually useful to the person who submitted it.";
 
   return (
     <AppShell eyebrowLabel={null}>
       <div className="test-layout test-layout--single">
         <div className="test-session__header">
           <h1>{`Test ${submission.productName}`}</h1>
-          <p>
-            {isRecordingTest
-              ? isNativeDesktopRecording
-                ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
-                : "This is a recording test. Record your screen and voice during the session, then come back here to upload the video and submit your answers."
-              : "Open the app in a new tab, keep this questionnaire here, and leave thoughtful answers that are actually useful to the person who submitted it."}
-          </p>
+          {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
         </div>
 
         <Surface className="test-questions test-questions--full">
@@ -2396,7 +2426,11 @@ export function TestSessionPage() {
                           handleManualRecordingStart();
                         }
                       }}
-                      disabled={isNativeDesktopRecording && (microphoneStatus !== "ready" || screenShareStatus !== "active")}
+                      disabled={
+                        isNativeDesktopRecording
+                          ? microphoneStatus !== "ready" || screenShareStatus !== "active"
+                          : !confirmedRecording
+                      }
                     >
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </button>
