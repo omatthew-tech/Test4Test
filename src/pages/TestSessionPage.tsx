@@ -2423,8 +2423,8 @@ export function TestSessionPage() {
                           onChange={(event) => setConfirmedRecording(event.target.checked)}
                         />
                         <span>
-                          My screen is currently recording and I see the red dot at the top of my screen{" "}
-                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> showing it's recording
+                          I started recording and I see the{" "}
+                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> on the upper part of my screen
                         </span>
                       </label>
                     </>
