@@ -2134,26 +2134,41 @@ export function TestSessionPage() {
                           <div className="recording-quickstart__copy">
                             <strong>Enable microphone access</strong>
                             <div className="recording-microphone-setup">
-                              {availableMicrophones.length > 0 ? (
-                                <label className="recording-microphone-select">
-                                  <select
-                                    aria-label="Microphone device"
-                                    value={selectedMicrophoneId}
-                                    onChange={(event) => {
-                                      const nextMicrophoneId = event.target.value;
-                                      setSelectedMicrophoneId(nextMicrophoneId);
-                                      void prepareMicrophonePreview(nextMicrophoneId);
-                                    }}
-                                    disabled={microphoneStatus === "requesting"}
-                                  >
-                                    {availableMicrophones.map((microphone) => (
-                                      <option key={microphone.deviceId} value={microphone.deviceId}>
-                                        {microphone.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              ) : null}
+                              <div className="recording-microphone-input-row">
+                                {availableMicrophones.length > 0 ? (
+                                  <label className="recording-microphone-select">
+                                    <select
+                                      aria-label="Microphone device"
+                                      value={selectedMicrophoneId}
+                                      onChange={(event) => {
+                                        const nextMicrophoneId = event.target.value;
+                                        setSelectedMicrophoneId(nextMicrophoneId);
+                                        void prepareMicrophonePreview(nextMicrophoneId);
+                                      }}
+                                      disabled={microphoneStatus === "requesting"}
+                                    >
+                                      {availableMicrophones.map((microphone) => (
+                                        <option key={microphone.deviceId} value={microphone.deviceId}>
+                                          {microphone.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                ) : null}
+                                <div
+                                  className={`recording-mic-indicator${microphoneStatus === "ready" ? " recording-mic-indicator--active" : " recording-mic-indicator--inactive"}`}
+                                  role="img"
+                                  aria-label={
+                                    microphoneStatus === "ready"
+                                      ? "Voice activity level for the selected microphone"
+                                      : "Microphone activity is inactive until microphone access is enabled"
+                                  }
+                                >
+                                  {microphoneBarHeights.map((height, index) => (
+                                    <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
+                                  ))}
+                                </div>
+                              </div>
                               <div className="recording-microphone-actions">
                                 <button
                                   type="button"
@@ -2176,19 +2191,6 @@ export function TestSessionPage() {
                                 )}
                               </div>
                             </div>
-                          </div>
-                          <div
-                            className={`recording-mic-indicator${microphoneStatus === "ready" ? " recording-mic-indicator--active" : " recording-mic-indicator--inactive"}`}
-                            role="img"
-                            aria-label={
-                              microphoneStatus === "ready"
-                                ? "Voice activity level for the selected microphone"
-                                : "Microphone activity is inactive until microphone access is enabled"
-                            }
-                          >
-                            {microphoneBarHeights.map((height, index) => (
-                              <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
-                            ))}
                           </div>
                         </div>
                       </div>

@@ -7360,10 +7360,18 @@ select {
   gap: 10px;
 }
 
+.recording-microphone-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
 .recording-microphone-select {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .recording-microphone-select span {
@@ -7372,7 +7380,7 @@ select {
 }
 
 .recording-microphone-select select {
-  min-height: 44px;
+  min-height: 54px;
   min-width: 260px;
 }
 
@@ -7389,9 +7397,10 @@ select {
   justify-content: center;
   gap: 4px;
   box-sizing: border-box;
-  height: 44px;
-  min-height: 44px;
-  min-width: 74px;
+  align-self: stretch;
+  width: 74px;
+  min-height: 54px;
+  flex: 0 0 74px;
   padding: 0 12px;
   border-radius: 999px;
   overflow: hidden;
