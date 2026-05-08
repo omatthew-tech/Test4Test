@@ -2230,7 +2230,7 @@ export function TestSessionPage() {
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
                             <strong className="recording-quickstart__title">Think out loud</strong>
-                            <small className="helper-text">Find a quiet place. Close out any unwanted tabs. Lastly, share your honest thoughts out loud. We love hearing your reactions (positive or negative). There are no right or wrong answers.</small>
+                            <small className="helper-text">Find a quiet place. Close out any unwanted tabs. And share your honest thoughts. We love hearing your reactions (positive or negative). There are no right or wrong answers.</small>
                           </div>
                         </div>
                       </div>
