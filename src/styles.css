@@ -7458,6 +7458,56 @@ select {
   margin-top: 8px;
 }
 
+.screen-recording-illustration {
+  width: min(100%, 320px);
+  margin: 14px 0 2px;
+}
+
+.screen-recording-illustration svg {
+  width: 100%;
+  height: auto;
+}
+
+.screen-recording-illustration__panel {
+  fill: #f7f3ef;
+  stroke: rgba(221, 212, 204, 0.94);
+  stroke-width: 2;
+}
+
+.screen-recording-illustration__tile {
+  fill: #fffefc;
+  stroke: rgba(216, 208, 200, 0.9);
+  stroke-width: 2;
+}
+
+.screen-recording-illustration__tile--active {
+  fill: rgba(255, 139, 80, 0.18);
+  stroke: rgba(245, 142, 86, 0.58);
+}
+
+.screen-recording-illustration__target {
+  fill: #fffefc;
+  stroke: #f58e56;
+  stroke-width: 6;
+}
+
+.screen-recording-illustration__target-dot {
+  fill: #f58e56;
+}
+
+.screen-recording-illustration__label {
+  fill: #f58e56;
+}
+
+.screen-recording-illustration__arrow,
+.screen-recording-illustration__arrow-head {
+  fill: none;
+  stroke: #9b6641;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 8;
+}
+
 .recording-attestation {
   width: 100%;
   padding: 16px 18px;

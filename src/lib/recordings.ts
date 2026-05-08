@@ -19,11 +19,13 @@ export type RecordingTestPhase =
   | "return_and_submit";
 
 export type RecordingExperienceMode = "native-desktop" | "manual-upload";
+export type MobileOperatingSystem = "ios" | "android" | "unknown";
 
 export interface RecordingExperience {
   mode: RecordingExperienceMode;
   reason: string;
   isMobile: boolean;
+  mobileOs: MobileOperatingSystem;
   isChromiumDesktop: boolean;
 }
 
@@ -48,6 +50,7 @@ interface RecordingAccessResponse {
 interface NavigatorWithUserAgentData extends Navigator {
   userAgentData?: {
     mobile?: boolean;
+    platform?: string;
     brands?: Array<{
       brand?: string;
       version?: string;
@@ -140,6 +143,26 @@ function isProbablyMobileNavigator(navigatorRef: NavigatorWithUserAgentData) {
   return /android|iphone|ipad|ipod|mobile/i.test(navigatorRef.userAgent);
 }
 
+function detectMobileOperatingSystem(navigatorRef: NavigatorWithUserAgentData): MobileOperatingSystem {
+  const userAgent = navigatorRef.userAgent.toLowerCase();
+  const platform = navigatorRef.userAgentData?.platform?.toLowerCase() ?? navigatorRef.platform.toLowerCase();
+
+  if (platform.includes("android") || userAgent.includes("android")) {
+    return "android";
+  }
+
+  if (
+    platform.includes("ios") ||
+    /iphone|ipad|ipod/.test(userAgent) ||
+    /iphone|ipad|ipod/.test(platform) ||
+    (platform.includes("mac") && navigatorRef.maxTouchPoints > 1)
+  ) {
+    return "ios";
+  }
+
+  return "unknown";
+}
+
 function isChromiumDesktopNavigator(navigatorRef: NavigatorWithUserAgentData) {
   const brandNames = navigatorRef.userAgentData?.brands?.map((brand) => brand.brand?.toLowerCase() ?? "") ?? [];
   const userAgent = navigatorRef.userAgent;
@@ -164,12 +187,14 @@ export function resolveRecordingExperience(productType: ProductType | null | und
       mode: "manual-upload",
       reason: "Native browser recording works on desktop Chrome and Edge for website tests.",
       isMobile: false,
+      mobileOs: "unknown",
       isChromiumDesktop: false,
     };
   }
 
   const navigatorRef = navigator as NavigatorWithUserAgentData;
   const isMobile = isProbablyMobileNavigator(navigatorRef);
+  const mobileOs = isMobile ? detectMobileOperatingSystem(navigatorRef) : "unknown";
   const isChromiumDesktop = isChromiumDesktopNavigator(navigatorRef);
   const hasNativeCaptureApis =
     window.isSecureContext &&
@@ -182,6 +207,7 @@ export function resolveRecordingExperience(productType: ProductType | null | und
       mode: "manual-upload",
       reason: "This test targets a phone app, so keep using your device recorder and upload afterward.",
       isMobile,
+      mobileOs,
       isChromiumDesktop,
     };
   }
@@ -191,6 +217,7 @@ export function resolveRecordingExperience(productType: ProductType | null | und
       mode: "manual-upload",
       reason: "Native browser recording works on desktop Chrome and Edge for website tests.",
       isMobile,
+      mobileOs,
       isChromiumDesktop,
     };
   }
@@ -200,6 +227,7 @@ export function resolveRecordingExperience(productType: ProductType | null | und
       mode: "native-desktop",
       reason: "Chrome or Edge will open the browser's built-in share picker so you can record and upload automatically.",
       isMobile,
+      mobileOs,
       isChromiumDesktop,
     };
   }
@@ -210,6 +238,7 @@ export function resolveRecordingExperience(productType: ProductType | null | und
       ? "Native browser recording is desktop-only right now, so keep using your device recorder and upload afterward."
       : "Native browser recording works on desktop Chrome and Edge for website tests.",
     isMobile,
+    mobileOs,
     isChromiumDesktop,
   };
 }

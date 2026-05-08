@@ -22,6 +22,7 @@ import {
   RECORDING_ACCEPT_ATTRIBUTE,
   resolveRecordingExperience,
   saveRecordingTestSession,
+  type MobileOperatingSystem,
   type RecordingTestPhase,
   uploadGeneratedRecordingDraft,
   uploadRecordingDraft,
@@ -243,6 +244,76 @@ function PlatformIcon({ productType }: { productType: ProductType }) {
   }
 
   return <Smartphone size={18} aria-hidden="true" />;
+}
+
+type ManualRecordingDevice = "ios" | "android" | "mobile" | "desktop";
+
+function getManualRecordingDevice(
+  productType: ProductType | null,
+  mobileOs: MobileOperatingSystem,
+  isMobile: boolean,
+): ManualRecordingDevice {
+  if (mobileOs === "ios" || mobileOs === "android") {
+    return mobileOs;
+  }
+
+  if (productType === "ios" || productType === "android") {
+    return productType;
+  }
+
+  return isMobile ? "mobile" : "desktop";
+}
+
+function getManualRecordingTitle(device: ManualRecordingDevice, fallbackTitle: string) {
+  if (device === "ios") {
+    return "iOS recording";
+  }
+
+  if (device === "android") {
+    return "Android recording";
+  }
+
+  if (device === "mobile") {
+    return "Mobile recording";
+  }
+
+  return fallbackTitle;
+}
+
+function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRecordingDevice, "mobile" | "desktop"> }) {
+  const isIOS = device === "ios";
+  const label = isIOS ? "iOS Control Center screen recording button" : "Android quick settings screen recording button";
+
+  return (
+    <figure className={`screen-recording-illustration screen-recording-illustration--${device}`} aria-label={label}>
+      <svg viewBox="0 0 360 230" role="img" aria-hidden="true" focusable="false">
+        <rect className="screen-recording-illustration__panel" x="22" y="18" width="316" height="194" rx="28" />
+        {isIOS ? (
+          <>
+            <rect className="screen-recording-illustration__tile" x="48" y="44" width="94" height="94" rx="24" />
+            <rect className="screen-recording-illustration__tile" x="160" y="44" width="152" height="42" rx="21" />
+            <rect className="screen-recording-illustration__tile" x="160" y="100" width="68" height="86" rx="24" />
+            <rect className="screen-recording-illustration__tile" x="244" y="100" width="68" height="86" rx="24" />
+            <circle className="screen-recording-illustration__target" cx="94" cy="162" r="30" />
+            <circle className="screen-recording-illustration__target-dot" cx="94" cy="162" r="13" />
+            <path className="screen-recording-illustration__arrow" d="M248 188 C210 172 172 164 128 162" />
+            <path className="screen-recording-illustration__arrow-head" d="M143 145 L125 162 L144 178" />
+          </>
+        ) : (
+          <>
+            <rect className="screen-recording-illustration__tile" x="48" y="44" width="116" height="54" rx="27" />
+            <rect className="screen-recording-illustration__tile" x="180" y="44" width="116" height="54" rx="27" />
+            <rect className="screen-recording-illustration__tile" x="48" y="116" width="116" height="54" rx="27" />
+            <rect className="screen-recording-illustration__tile screen-recording-illustration__tile--active" x="180" y="116" width="116" height="54" rx="27" />
+            <circle className="screen-recording-illustration__target-dot" cx="214" cy="143" r="12" />
+            <rect className="screen-recording-illustration__label" x="234" y="135" width="42" height="16" rx="8" />
+            <path className="screen-recording-illustration__arrow" d="M94 190 C126 168 154 154 196 146" />
+            <path className="screen-recording-illustration__arrow-head" d="M176 135 L199 146 L181 165" />
+          </>
+        )}
+      </svg>
+    </figure>
+  );
 }
 
 const thinkAloudTips = [
@@ -2032,7 +2103,27 @@ export function TestSessionPage() {
       ? "Finish the browser recording and let it upload to unlock submit."
       : "Upload the recording to unlock final submit.";
   const draftStatusCopy = getDraftStatusCopy(draftSaveStatus);
-  const shouldShowManualRecordingGuidance = !isNativeDesktopRecording && !recordingExperience.isMobile;
+  const manualRecordingDevice = getManualRecordingDevice(
+    selectedProductType,
+    recordingExperience.mobileOs,
+    recordingExperience.isMobile,
+  );
+  const isPhoneManualRecording =
+    manualRecordingDevice === "ios" || manualRecordingDevice === "android" || manualRecordingDevice === "mobile";
+  const manualRecordingTitle = getManualRecordingTitle(manualRecordingDevice, recordingInstructions.title);
+  const manualRecordingIntro = isPhoneManualRecording ? "" : recordingInstructions.intro;
+  const manualRecordingSteps = isPhoneManualRecording
+    ? [
+        "Find a quiet place. Close any unwanted tabs. And get ready to think out loud. Share your honest thoughts (positive or negative). There are no right or wrong answers.",
+        "The site will open in a new tab. Refer back to this tab for instructions. When you're finished, end the recording and upload your test here.",
+        "Start recording your full screen and microphone.",
+      ]
+    : recordingInstructions.steps;
+  const screenRecordingIllustrationDevice =
+    manualRecordingDevice === "ios" || manualRecordingDevice === "android" ? manualRecordingDevice : null;
+  const shouldShowManualRecordingCallout = !isNativeDesktopRecording && !recordingExperience.isMobile;
+  const shouldShowManualRecordingGuidance = !isNativeDesktopRecording;
+  const shouldShowManualThinkAloudTips = !isPhoneManualRecording;
   const shouldShowManualRecoveryUpload =
     isNativeDesktopRecording &&
     nativeRecoveryUploadEnabled &&
@@ -2085,7 +2176,7 @@ export function TestSessionPage() {
 
           {isRecordingTest ? (
             <>
-              {shouldShowManualRecordingGuidance ? (
+              {shouldShowManualRecordingCallout ? (
                 <div className="callout callout--soft recording-test-callout">
                   <div className="recording-test-callout__copy">
                     <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
@@ -2247,29 +2338,36 @@ export function TestSessionPage() {
                     <>
                       {shouldShowManualRecordingGuidance ? (
                         <>
-                      <div className="recording-guidance">
-                        <div className="recording-guidance__intro">
-                          <h2>{recordingInstructions.title}</h2>
-                          <p>{recordingInstructions.intro}</p>
-                        </div>
-                        <ol className="recording-guidance__steps">
-                          {recordingInstructions.steps.map((step) => (
-                            <li key={step}>{step}</li>
-                          ))}
-                        </ol>
-                      </div>
+                          <div className="recording-guidance">
+                            <div className="recording-guidance__intro">
+                              <h2>{manualRecordingTitle}</h2>
+                              {manualRecordingIntro ? <p>{manualRecordingIntro}</p> : null}
+                            </div>
+                            <ol className="recording-guidance__steps">
+                              {manualRecordingSteps.map((step, index) => (
+                                <li key={step}>
+                                  <span>{step}</span>
+                                  {index === 2 && screenRecordingIllustrationDevice ? (
+                                    <ScreenRecordingMenuIllustration device={screenRecordingIllustrationDevice} />
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
 
-                      <div className="recording-guidance">
-                        <div className="recording-guidance__intro">
-                          <h2>Think out loud while you test</h2>
-                          <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
-                        </div>
-                        <ul className="recording-tips">
-                          {thinkAloudTips.map((tip) => (
-                            <li key={tip}>{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
+                          {shouldShowManualThinkAloudTips ? (
+                            <div className="recording-guidance">
+                              <div className="recording-guidance__intro">
+                                <h2>Think out loud while you test</h2>
+                                <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
+                              </div>
+                              <ul className="recording-tips">
+                                {thinkAloudTips.map((tip) => (
+                                  <li key={tip}>{tip}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
                         </>
                       ) : null}
 
