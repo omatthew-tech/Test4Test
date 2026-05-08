@@ -7321,6 +7321,7 @@ select {
   flex: 0 0 30px;
   color: #9b6641;
   font-weight: 700;
+  transition: opacity 160ms ease;
 }
 
 .recording-quickstart__content {
@@ -7342,6 +7343,15 @@ select {
 .recording-quickstart__content strong {
   color: var(--color-ink-900);
   line-height: 1.5;
+}
+
+.recording-quickstart__title {
+  transition: opacity 160ms ease;
+}
+
+.recording-quickstart__step--pending .recording-quickstart__number,
+.recording-quickstart__step--pending .recording-quickstart__title {
+  opacity: 0.38;
 }
 
 .recording-microphone-setup {

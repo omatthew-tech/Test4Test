@@ -2191,11 +2191,11 @@ export function TestSessionPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="recording-quickstart__step">
+                      <div className={`recording-quickstart__step${microphoneStatus === "ready" ? "" : " recording-quickstart__step--pending"}`}>
                         <span className="recording-quickstart__number">2.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong>Enable screen sharing</strong>
+                            <strong className="recording-quickstart__title">Enable screen sharing</strong>
                             <div className="recording-microphone-actions">
                               <button
                                 type="button"
@@ -2224,11 +2224,11 @@ export function TestSessionPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="recording-quickstart__step">
+                      <div className={`recording-quickstart__step${screenShareStatus === "active" ? "" : " recording-quickstart__step--pending"}`}>
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong>Get ready to think out loud</strong>
+                            <strong className="recording-quickstart__title">Get ready to think out loud</strong>
                             <small className="helper-text">Find a quiet place. Close out of any unwanted tabs. Lastly, share your honest thoughts out loud. Founders love hearing your reactions (positive or negative).</small>
                           </div>
                         </div>
