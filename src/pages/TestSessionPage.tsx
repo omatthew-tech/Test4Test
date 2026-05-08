@@ -2424,17 +2424,14 @@ export function TestSessionPage() {
                           onChange={(event) => setConfirmedRecording(event.target.checked)}
                         />
                         <span>
-                          I started a screen recording and I currently see a red icon{" "}
-                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> to show it's recording
+                          My screen is currently being recorded and I currently see{" "}
+                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> showing it's recording
                         </span>
                       </label>
                     </>
                   )}
 
                   <div className="wizard-actions">
-                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                      Back to Earn
-                    </button>
                     <button
                       type="button"
                       className="button button--primary"
@@ -2452,6 +2449,9 @@ export function TestSessionPage() {
                       }
                     >
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
+                    </button>
+                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                      Back to Earn
                     </button>
                   </div>
                 </div>
