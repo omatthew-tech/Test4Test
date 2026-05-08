@@ -2045,7 +2045,7 @@ export function TestSessionPage() {
           <p>
             {isRecordingTest
               ? isNativeDesktopRecording
-                ? "This is a recording test. Desktop Chrome or Edge will open the browser's native share picker, record your screen and voice, and upload the video automatically when you finish."
+                ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
                 : "This is a recording test. Record your screen and voice during the session, then come back here to upload the video and submit your answers."
               : "Open the app in a new tab, keep this questionnaire here, and leave thoughtful answers that are actually useful to the person who submitted it."}
           </p>
@@ -2228,20 +2228,10 @@ export function TestSessionPage() {
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong>Start test</strong>
-                            <small className="helper-text">When your microphone and screen are ready, Start test opens the website in a new tab and begins recording right away.</small>
+                            <strong>Get ready to think out loud</strong>
+                            <small className="helper-text">Find a quiet place. Close out of any unwanted tabs. Lastly, share your honest thoughts out loud. Founders love hearing your reactions (positive or negative).</small>
                           </div>
                         </div>
-                      </div>
-                      <div className={`recording-status-summary${nativeCaptureConfirmed ? " recording-status-summary--live" : ""}`}>
-                        <strong>{nativeCaptureConfirmed ? "Recording confirmed" : "Ready to start"}</strong>
-                        <span>
-                          {nativeCaptureConfirmed
-                            ? "We can confirm screen sharing is active and your selected microphone is connected."
-                            : screenShareStatus === "active"
-                              ? "Screen sharing is ready. Click Start test to open the website and begin recording."
-                              : "Enable your microphone, then share your screen before you start the test."}
-                        </span>
                       </div>
                     </div>
                   ) : (

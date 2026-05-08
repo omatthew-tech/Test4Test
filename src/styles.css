@@ -7373,27 +7373,6 @@ select {
   flex-wrap: wrap;
 }
 
-.recording-status-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(221, 212, 204, 0.9);
-}
-
-.recording-status-summary strong {
-  color: var(--color-ink-900);
-}
-
-.recording-status-summary span {
-  color: var(--color-ink-700);
-  line-height: 1.5;
-}
-
-.recording-status-summary--live strong {
-  color: #8a5c3f;
-}
-
 .recording-mic-indicator {
   display: inline-flex;
   align-items: end;
