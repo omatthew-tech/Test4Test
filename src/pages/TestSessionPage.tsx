@@ -1197,7 +1197,7 @@ export function TestSessionPage() {
 
       displayStreamRef.current = displayStream;
       setScreenShareStatus("active");
-      setMessage("Screen sharing is ready. Click Start test when you're ready to begin recording.");
+      setMessage("");
       return true;
     } catch (error) {
       setScreenShareStatus("error");
@@ -2169,27 +2169,25 @@ export function TestSessionPage() {
                                   ))}
                                 </div>
                               </div>
-                              <div className="recording-microphone-actions">
-                                <button
-                                  type="button"
-                                  className="button button--secondary button--small"
-                                  onClick={() => { void prepareMicrophonePreview(selectedMicrophoneId || undefined); }}
-                                  disabled={microphoneStatus === "requesting"}
-                                >
-                                  {microphoneStatus === "ready"
-                                    ? "Change microphone"
-                                    : microphoneStatus === "requesting"
-                                      ? "Checking microphone..."
-                                      : "Enable microphone"}
-                                </button>
-                                {microphoneError ? (
-                                  <small className="helper-text helper-text--warning">{microphoneError}</small>
-                                ) : microphoneStatus === "ready" ? (
-                                  null
-                                ) : (
-                                  <small className="helper-text">Choose the microphone you want to use for this test.</small>
-                                )}
-                              </div>
+                              {microphoneStatus !== "ready" || microphoneError ? (
+                                <div className="recording-microphone-actions">
+                                  {microphoneStatus !== "ready" ? (
+                                    <button
+                                      type="button"
+                                      className="button button--secondary button--small"
+                                      onClick={() => { void prepareMicrophonePreview(selectedMicrophoneId || undefined); }}
+                                      disabled={microphoneStatus === "requesting"}
+                                    >
+                                      {microphoneStatus === "requesting" ? "Checking microphone..." : "Enable microphone"}
+                                    </button>
+                                  ) : null}
+                                  {microphoneError ? (
+                                    <small className="helper-text helper-text--warning">{microphoneError}</small>
+                                  ) : microphoneStatus !== "ready" ? (
+                                    <small className="helper-text">Choose the microphone you want to use for this test.</small>
+                                  ) : null}
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         </div>
@@ -2207,7 +2205,7 @@ export function TestSessionPage() {
                                 disabled={microphoneStatus !== "ready" || screenShareStatus === "requesting"}
                               >
                                 {screenShareStatus === "active"
-                                  ? "Share screen again"
+                                  ? "Select screen again"
                                   : screenShareStatus === "requesting"
                                     ? "Waiting for screen share..."
                                     : "Enable screen sharing"}
@@ -2216,7 +2214,7 @@ export function TestSessionPage() {
                             {screenShareStatus === "active" ? null : (
                               <small className={`helper-text ${screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
                                 {screenShareStatus === "requesting"
-                                  ? "Chrome or Edge is asking what you want to share."
+                                  ? "Select \"Entire screen\" and then click \"Share\""
                                   : screenShareStatus === "error"
                                     ? "Screen sharing did not start. Try again."
                                     : screenShareStatus === "ended"
