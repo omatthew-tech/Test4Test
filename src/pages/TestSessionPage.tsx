@@ -2228,8 +2228,8 @@ export function TestSessionPage() {
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong className="recording-quickstart__title">Get ready to think out loud</strong>
-                            <small className="helper-text">Find a quiet place. Close out of any unwanted tabs. Lastly, share your honest thoughts out loud. Founders love hearing your reactions (positive or negative).</small>
+                            <strong className="recording-quickstart__title">Think out loud</strong>
+                            <small className="helper-text">Find a quiet place. Close out any unwanted tabs. Lastly, share your honest thoughts out loud. We love hearing your reactions (positive or negative). There are no right or wrong answers.</small>
                           </div>
                         </div>
                       </div>
