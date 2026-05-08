@@ -2155,19 +2155,17 @@ export function TestSessionPage() {
                                     </select>
                                   </label>
                                 ) : null}
-                                <div
-                                  className={`recording-mic-indicator${microphoneStatus === "ready" ? " recording-mic-indicator--active" : " recording-mic-indicator--inactive"}`}
-                                  role="img"
-                                  aria-label={
-                                    microphoneStatus === "ready"
-                                      ? "Voice activity level for the selected microphone"
-                                      : "Microphone activity is inactive until microphone access is enabled"
-                                  }
-                                >
-                                  {microphoneBarHeights.map((height, index) => (
-                                    <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
-                                  ))}
-                                </div>
+                                {microphoneStatus === "ready" ? (
+                                  <div
+                                    className="recording-mic-indicator recording-mic-indicator--active"
+                                    role="img"
+                                    aria-label="Voice activity level for the selected microphone"
+                                  >
+                                    {microphoneBarHeights.map((height, index) => (
+                                      <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
+                                    ))}
+                                  </div>
+                                ) : null}
                               </div>
                               {microphoneStatus !== "ready" || microphoneError ? (
                                 <div className="recording-microphone-actions">
@@ -2181,10 +2179,19 @@ export function TestSessionPage() {
                                       {microphoneStatus === "requesting" ? "Checking microphone..." : "Enable microphone"}
                                     </button>
                                   ) : null}
+                                  {microphoneStatus !== "ready" ? (
+                                    <div
+                                      className="recording-mic-indicator recording-mic-indicator--inactive"
+                                      role="img"
+                                      aria-label="Microphone activity is inactive until microphone access is enabled"
+                                    >
+                                      {microphoneBarHeights.map((height, index) => (
+                                        <span key={`inactive-mic-bar-${index}`} style={{ height: `${height}px` }} />
+                                      ))}
+                                    </div>
+                                  ) : null}
                                   {microphoneError ? (
                                     <small className="helper-text helper-text--warning">{microphoneError}</small>
-                                  ) : microphoneStatus !== "ready" ? (
-                                    <small className="helper-text">Choose the microphone you want to use for this test.</small>
                                   ) : null}
                                 </div>
                               ) : null}
