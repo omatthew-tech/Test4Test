@@ -373,10 +373,11 @@ export function TestSessionPage() {
     }
 
     const weightedLevel = Math.max(0, Math.min(1, microphoneLevel));
+    const responsiveLevel = Math.pow(weightedLevel, 0.58);
     const weights = [0.6, 0.82, 1, 0.82, 0.6];
 
     return baseHeights.map((baseHeight, index) =>
-      Math.max(6, Math.round(baseHeight * (0.45 + weightedLevel * 1.9 * weights[index]))),
+      Math.min(34, Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index])))),
     );
   }, [microphoneLevel, microphoneStatus]);
 
@@ -443,7 +444,7 @@ export function TestSessionPage() {
     const audioContext = new window.AudioContext();
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;
-    analyser.smoothingTimeConstant = 0.8;
+    analyser.smoothingTimeConstant = 0.68;
 
     const source = audioContext.createMediaStreamSource(stream);
     source.connect(analyser);
@@ -471,8 +472,8 @@ export function TestSessionPage() {
       }
 
       const rms = Math.sqrt(sumSquares / nextData.length);
-      const nextLevel = Math.min(1, rms * 8);
-      setMicrophoneLevel((currentLevel) => currentLevel * 0.65 + nextLevel * 0.35);
+      const nextLevel = Math.min(1, Math.max(0, rms - 0.006) * 18);
+      setMicrophoneLevel((currentLevel) => currentLevel * 0.5 + nextLevel * 0.5);
       microphoneMeterFrameRef.current = window.requestAnimationFrame(updateMeter);
     };
 
@@ -2135,8 +2136,8 @@ export function TestSessionPage() {
                             <div className="recording-microphone-setup">
                               {availableMicrophones.length > 0 ? (
                                 <label className="recording-microphone-select">
-                                  <span>Select microphone</span>
                                   <select
+                                    aria-label="Microphone device"
                                     value={selectedMicrophoneId}
                                     onChange={(event) => {
                                       const nextMicrophoneId = event.target.value;
@@ -2169,7 +2170,7 @@ export function TestSessionPage() {
                                 {microphoneError ? (
                                   <small className="helper-text helper-text--warning">{microphoneError}</small>
                                 ) : microphoneStatus === "ready" ? (
-                                  <small className="helper-text helper-text--success">Microphone ready and responding to your voice</small>
+                                  null
                                 ) : (
                                   <small className="helper-text">Choose the microphone you want to use for this test.</small>
                                 )}
@@ -2210,17 +2211,17 @@ export function TestSessionPage() {
                                     : "Enable screen sharing"}
                               </button>
                             </div>
-                            <small className={`helper-text ${screenShareStatus === "active" ? "helper-text--success" : screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
-                              {screenShareStatus === "active"
-                                ? "Screen sharing is active. Keep this tab open, then click Start test."
-                                : screenShareStatus === "requesting"
+                            {screenShareStatus === "active" ? null : (
+                              <small className={`helper-text ${screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
+                                {screenShareStatus === "requesting"
                                   ? "Chrome or Edge is asking what you want to share."
                                   : screenShareStatus === "error"
                                     ? "Screen sharing did not start. Try again."
                                     : screenShareStatus === "ended"
                                       ? "Screen sharing stopped. Enable it again before starting."
-                                      : "Choose Entire screen or Window so the new test tab is included."}
-                            </small>
+                                      : "Select \"Entire screen\" and then click \"Share\""}
+                              </small>
+                            )}
                           </div>
                         </div>
                       </div>

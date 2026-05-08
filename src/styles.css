@@ -7385,11 +7385,16 @@ select {
 
 .recording-mic-indicator {
   display: inline-flex;
-  align-items: end;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
   min-width: 74px;
-  padding: 10px 12px;
+  padding: 0 12px;
   border-radius: 999px;
+  overflow: hidden;
   transition: background 160ms ease;
 }
 
