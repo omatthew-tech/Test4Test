@@ -2170,7 +2170,7 @@ export function TestSessionPage() {
     ? isNativeDesktopRecording
       ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
       : ""
-    : "Open the app in a new tab, keep this questionnaire here, and leave thoughtful answers that are actually useful to the person who submitted it.";
+    : "";
 
   return (
     <AppShell eyebrowLabel={null}>
