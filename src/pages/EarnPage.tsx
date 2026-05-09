@@ -5,7 +5,8 @@ import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
 import { formatDate, productTypeLabel, productTypesBadges } from "../lib/format";
-import { getAvailableSubmissions } from "../lib/selectors";
+import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors";
+import { loadTestResponseDraft } from "../lib/testResponseDrafts";
 import {
   EarnSubmissionCard,
   EarnSubmissionReputation,
@@ -75,12 +76,17 @@ function compareEarnSubmissions(
   return compareEarnSubmissionsByMode(first, second, sortMode);
 }
 
+function hasSavedDraftAnswers(answerValues: Record<string, string>) {
+  return Object.values(answerValues).some((value) => value.trim().length > 0);
+}
+
 export function EarnPage() {
   const [sortMode, setSortMode] = useState("recommended");
   const [typeFilter, setTypeFilter] = useState("all");
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
   >({});
+  const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
   const { state, currentUser, isConfigured } = useAppState();
   const available = getAvailableSubmissions(state);
 
@@ -148,6 +154,44 @@ export function EarnPage() {
     };
   }, [currentUser?.id, isConfigured, visibleSubmissionIdsKey]);
 
+  useEffect(() => {
+    let isCancelled = false;
+    const submissionIds = visibleSubmissionIdsKey ? visibleSubmissionIdsKey.split("|") : [];
+
+    if (!currentUser || submissionIds.length === 0) {
+      setDraftProgressBySubmissionId({});
+      return undefined;
+    }
+
+    const loadDraftProgress = async () => {
+      const entries = await Promise.all(
+        submissionIds.map(async (submissionId) => {
+          const questionSet = getActiveQuestionSet(state, submissionId);
+
+          if (!questionSet) {
+            return [submissionId, false] as const;
+          }
+
+          const draft = await loadTestResponseDraft(currentUser.id, submissionId, questionSet.id);
+
+          return [submissionId, Boolean(draft && hasSavedDraftAnswers(draft.answerValues))] as const;
+        }),
+      );
+
+      if (isCancelled) {
+        return;
+      }
+
+      setDraftProgressBySubmissionId(Object.fromEntries(entries));
+    };
+
+    void loadDraftProgress();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, state, visibleSubmissionIdsKey]);
+
   const cards = useMemo<EarnSubmissionCard[]>(
     () =>
       items.map((submission) => ({
@@ -195,7 +239,11 @@ export function EarnPage() {
         {cards.length > 0 ? (
           <div className="earn-list">
             {cards.map((card) => (
-              <EarnRow key={card.submission.id} card={card} />
+              <EarnRow
+                key={card.submission.id}
+                card={card}
+                hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
+              />
             ))}
           </div>
         ) : (
@@ -214,8 +262,10 @@ export function EarnPage() {
 
 function EarnRow({
   card,
+  hasDraftProgress,
 }: {
   card: EarnSubmissionCard;
+  hasDraftProgress: boolean;
 }) {
   const { submission, reputation } = card;
   const showReputation = reputation?.ownerHasTestedYou === true;
@@ -250,7 +300,7 @@ function EarnRow({
         <div className="earn-row__aside">
           <small className="earn-row__date">Submitted {formatDate(submission.createdAt)}</small>
           <Link to={`/test/${submission.id}`} className="button button--primary">
-            Start test
+            {hasDraftProgress ? "Resume test" : "Start test"}
             <ArrowRight size={16} />
           </Link>
         </div>
