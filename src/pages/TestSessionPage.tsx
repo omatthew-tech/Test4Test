@@ -29,6 +29,7 @@ import {
   validateRecordingFile,
 } from "../lib/recordings";
 import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
+import { trackEventOncePerSession } from "../lib/analytics";
 import {
   clearLocalTestResponseDraft,
   clearTestResponseDraft,
@@ -482,6 +483,18 @@ export function TestSessionPage() {
       Math.min(34, Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index])))),
     );
   }, [microphoneLevel, microphoneStatus]);
+
+  useEffect(() => {
+    if (!submission) {
+      return;
+    }
+
+    trackEventOncePerSession(
+      "test_started",
+      { submissionId: submission.id },
+      `test_started:${submission.id}`,
+    );
+  }, [submission?.id]);
 
   const completion = useMemo(() => {
     if (!questionSet) {

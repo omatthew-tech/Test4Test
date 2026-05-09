@@ -20,6 +20,7 @@ import {
   savePendingSubmission,
   storeOtpChallenge,
 } from "../lib/pendingSubmission";
+import { trackAuthenticatedVisit, trackEvent } from "../lib/analytics";
 import { estimateSubmissionMinutes } from "../lib/questions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
@@ -1005,6 +1006,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const currentUserId = authUser?.id ?? null;
       const currentProfile = authUser ? await ensureProfile(authUser) : null;
 
+      if (currentProfile) {
+        trackAuthenticatedVisit(currentProfile.id);
+      }
+
       if (currentProfile?.banStatus === "banned") {
         if (loadId !== loadIdRef.current) {
           return;
@@ -1156,6 +1161,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             ...current,
             otpChallenge: challenge,
           }));
+          trackEvent("email_signup_requested");
 
           return challenge;
         })();
@@ -1241,6 +1247,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const verifiedProfile = await ensureProfile(authUser);
+        trackEvent("email_verified");
+        trackAuthenticatedVisit(verifiedProfile.id);
 
         clearStoredOtpChallenge();
         setState((current) => ({
@@ -1320,6 +1328,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: "Verify your email before completing tests." };
         }
 
+        const hadCompletedTest = state.responses.some(
+          (response) => response.testerUserId === currentUser.id && response.creditAwarded,
+        );
         const supabase = requireSupabase();
         let { data, error } = await supabase.rpc("submit_test_response", {
           p_submission_id: submissionId,
@@ -1363,6 +1374,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         if (result.responseId) {
           void notifySubmissionOwnerAboutNewResult(result.responseId);
+        }
+
+        if (result.ok) {
+          trackEvent("test_completed", { submissionId });
+
+          if (!hadCompletedTest) {
+            trackEvent("first_test_completed", { submissionId });
+          }
         }
 
         return {

@@ -6,6 +6,7 @@ import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { StepIndicator } from "../components/StepIndicator";
 import { useAppState } from "../context/AppStateContext";
+import { trackEvent, trackEventOncePerSession } from "../lib/analytics";
 import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
 import {
   accessLinkFieldLabel,
@@ -217,6 +218,7 @@ export function SubmitFlowPage() {
   const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(
     initialState.aiQuestionSourceKey,
   );
+  const hasTrackedSubmitProductNameRef = useRef(false);
 
 
   useEffect(() => {
@@ -224,6 +226,21 @@ export function SubmitFlowPage() {
       syncGeneralQuestionsProductName(current, draft.productName || "Your product"),
     );
   }, [draft.productName]);
+
+  useEffect(() => {
+    if (currentStep >= steps.length) {
+      return;
+    }
+
+    trackEventOncePerSession(
+      "submit_step_viewed",
+      {
+        stepIndex: currentStep,
+        stepName: steps[currentStep],
+      },
+      `submit_step_viewed:${currentStep}`,
+    );
+  }, [currentStep]);
 
 
   useEffect(() => {
@@ -708,6 +725,11 @@ export function SubmitFlowPage() {
         setIsSubmitting(false);
       }
       return;
+    }
+
+    if (currentStep === 0 && draft.productName.trim() && !hasTrackedSubmitProductNameRef.current) {
+      hasTrackedSubmitProductNameRef.current = true;
+      trackEvent("product_name_entered", { source: "submit_flow" });
     }
 
     setFlowPhase("wizard");

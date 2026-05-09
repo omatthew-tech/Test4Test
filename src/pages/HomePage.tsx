@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/Layout";
+import { trackEvent } from "../lib/analytics";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
@@ -32,7 +33,13 @@ export function HomePage() {
   const navigate = useNavigate();
 
   const startSubmission = () => {
-    const query = productName.trim() ? `?productName=${encodeURIComponent(productName.trim())}` : "";
+    const trimmedProductName = productName.trim();
+
+    if (trimmedProductName) {
+      trackEvent("product_name_entered", { source: "home" });
+    }
+
+    const query = trimmedProductName ? `?productName=${encodeURIComponent(trimmedProductName)}` : "";
     navigate(`/submit${query}`);
   };
 

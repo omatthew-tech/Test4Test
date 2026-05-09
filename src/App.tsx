@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
+import { trackEventOncePerSession } from "./lib/analytics";
 import { BannedPage } from "./pages/BannedPage";
 import { EarnPage } from "./pages/EarnPage";
 import { HomePage } from "./pages/HomePage";
@@ -62,6 +64,10 @@ function BannedOnlyRoute({ children }: { children: ReactElement }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    trackEventOncePerSession("site_visited");
+  }, []);
+
   return (
     <AppStateProvider>
       <BrowserRouter>
