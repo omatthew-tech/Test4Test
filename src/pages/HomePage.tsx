@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppShell } from "../components/Layout";
+import { AppShell, type AudienceRole } from "../components/Layout";
 import { trackEvent } from "../lib/analytics";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
@@ -47,8 +47,19 @@ export function HomePage() {
     navigate("/submit");
   };
 
+  const handleAudienceRoleChange = (role: AudienceRole) => {
+    if (role === "Tester") {
+      navigate("/get-paid-to-test");
+    }
+  };
+
   return (
-    <AppShell variant="marketing">
+    <AppShell
+      variant="marketing"
+      showAudienceToggle
+      audienceRole="Founder"
+      onAudienceRoleChange={handleAudienceRoleChange}
+    >
       <div className="home-page">
         <section className="home-hero" aria-labelledby="home-hero-title">
           <div className="home-hero__copy">

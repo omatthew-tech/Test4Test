@@ -13,6 +13,7 @@ import { SignInPage } from "./pages/SignInPage";
 import { SubmissionDetailPage } from "./pages/SubmissionDetailPage";
 import { SubmissionsPage } from "./pages/SubmissionsPage";
 import { SubmitFlowPage } from "./pages/SubmitFlowPage";
+import { TesterLandingPage } from "./pages/TesterLandingPage";
 import { TestSessionPage } from "./pages/TestSessionPage";
 import { TestSuccessPage } from "./pages/TestSuccessPage";
 import { VerifyPage } from "./pages/VerifyPage";
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="/sign-in" element={<BanRedirectRoute><SignInPage /></BanRedirectRoute>} />
           <Route path="/submit" element={<BanRedirectRoute><SubmitFlowPage /></BanRedirectRoute>} />
           <Route path="/verify" element={<BanRedirectRoute><VerifyPage /></BanRedirectRoute>} />
+          <Route path="/get-paid-to-test" element={<BanRedirectRoute><TesterLandingPage /></BanRedirectRoute>} />
           <Route path="/earn" element={<BanRedirectRoute><EarnPage /></BanRedirectRoute>} />
           <Route path="/test/:submissionId" element={<BanRedirectRoute><TestSessionPage /></BanRedirectRoute>} />
           <Route path="/test/:submissionId/success" element={<BanRedirectRoute><TestSuccessPage /></BanRedirectRoute>} />
