@@ -22,9 +22,12 @@ function HeaderAudienceToggle({
   audienceRole: AudienceRole;
   onAudienceRoleChange?: (role: AudienceRole) => void;
 }) {
+  const audiencePrompt =
+    audienceRole === "Tester" ? "Want free user testing?" : "Want to get paid to test?";
+
   return (
     <div className="topbar-audience" aria-label="Testing audience selector">
-      <span className="topbar-audience__prompt">Do you want to get paid to test?</span>
+      <span className="topbar-audience__prompt">{audiencePrompt}</span>
       <div className="audience-toggle" role="group" aria-label="Choose your role">
         {audienceRoleOptions.map((role) => (
           <button

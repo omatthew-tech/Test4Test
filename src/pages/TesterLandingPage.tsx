@@ -12,7 +12,7 @@ import { AppShell, type AudienceRole } from "../components/Layout";
 
 const greenLogoPath = "/branding/Green%20Logo.png";
 const greenLogoArmPath = "/branding/Green%20Logo%20Arm.png";
-const paypalSymbolPath = "/assets/PayPal%20P%20Symbol.png";
+const paypalSymbolPath = "/Assets/PayPal%20P.svg";
 
 const testerSteps = [
   {
