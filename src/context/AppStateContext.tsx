@@ -104,7 +104,8 @@ interface TestResponseRow {
   id: string;
   submission_id: string;
   submission_version_id?: string | null;
-  tester_user_id: string;
+  tester_user_id: string | null;
+  public_tester_key?: string | null;
   question_set_version_id: string;
   anonymous_label: string;
   status: TestResponse["status"];
@@ -202,6 +203,7 @@ interface AppStateContextValue {
 }
 
 const OTP_REQUEST_DEDUPE_WINDOW_MS = 10000;
+const PUBLIC_TESTER_KEY_STORAGE_KEY = "test4test_public_tester_key";
 
 const emptyState: AppState = {
   currentUserId: null,
@@ -321,6 +323,34 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
   };
 }
 
+function createPublicTesterKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function getPublicTesterKey() {
+  if (typeof window === "undefined") {
+    return createPublicTesterKey();
+  }
+
+  try {
+    const stored = window.localStorage.getItem(PUBLIC_TESTER_KEY_STORAGE_KEY)?.trim();
+
+    if (stored && stored.length >= 16 && stored.length <= 128) {
+      return stored;
+    }
+
+    const next = createPublicTesterKey();
+    window.localStorage.setItem(PUBLIC_TESTER_KEY_STORAGE_KEY, next);
+    return next;
+  } catch {
+    return createPublicTesterKey();
+  }
+}
+
 function mapSubmission(row: SubmissionRow): Submission {
   const accessLinks = normalizeAccessLinks(
     row.access_links && typeof row.access_links === "object"
@@ -392,6 +422,7 @@ function mapTestResponse(row: TestResponseRow): TestResponse {
     submissionId: row.submission_id,
     submissionVersionId: row.submission_version_id ?? row.question_set_version_id,
     testerUserId: row.tester_user_id,
+    publicTesterKey: row.public_tester_key ?? null,
     questionSetVersionId: row.question_set_version_id,
     anonymousLabel: row.anonymous_label,
     status: row.status,
@@ -559,6 +590,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
     normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
+    normalized.includes('column "public_tester_key" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_path" of relation "test_responses" does not exist') ||
     normalized.includes('relation "public.submission_versions" does not exist') ||
@@ -568,6 +600,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('delete_submission_version') ||
     normalized.includes('update_question_set') ||
     normalized.includes('submit_test_response') ||
+    normalized.includes('submit_public_test_response') ||
     normalized.includes('p_product_types') ||
     normalized.includes('p_access_links') ||
     normalized.includes('p_requires_recording') ||
@@ -1325,7 +1358,35 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
       async completeTest(submissionId, answers, durationSeconds, recording, questionSetVersionId, submissionVersionId) {
         if (!currentUser) {
-          return { ok: false, message: "Verify your email before completing tests." };
+          const supabase = requireSupabase();
+          const { data, error } = await supabase.rpc("submit_public_test_response", {
+            p_submission_id: submissionId,
+            p_answers: answers,
+            p_duration_seconds: durationSeconds,
+            p_public_tester_key: getPublicTesterKey(),
+            p_question_set_version_id: questionSetVersionId ?? null,
+            p_submission_version_id: submissionVersionId ?? null,
+          });
+
+          if (error) {
+            if (isMissingSubmissionSchemaError(error.message)) {
+              return { ok: false, message: latestSubmissionSchemaMessage };
+            }
+
+            return { ok: false, message: error.message };
+          }
+
+          const result = (data ?? {}) as SubmissionRpcResult;
+          await refreshState(null);
+
+          if (result.ok) {
+            trackEvent("test_completed", { submissionId, public: true });
+          }
+
+          return {
+            ok: Boolean(result.ok),
+            message: result.message ?? "Feedback submitted. Thanks for sharing your thoughts.",
+          };
         }
 
         const hadCompletedTest = state.responses.some(

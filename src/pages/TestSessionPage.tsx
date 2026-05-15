@@ -359,6 +359,7 @@ export function TestSessionPage() {
   const { submissionId = "" } = useParams();
   const navigate = useNavigate();
   const { state, currentUser, completeTest } = useAppState();
+  const isPublicTester = !currentUser;
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
@@ -1891,7 +1892,7 @@ export function TestSessionPage() {
         if (currentUser) {
           await clearTestResponseDraft(currentUser.id, submission.id);
         }
-        navigate(`/test/${submission.id}/success`);
+        navigate(`/test/${submission.id}/success${currentUser ? "" : "?shared=1"}`);
       }
     } finally {
       setIsSubmitting(false);
@@ -2183,7 +2184,10 @@ export function TestSessionPage() {
     ? isNativeDesktopRecording
       ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
       : ""
-    : "";
+    : isPublicTester
+      ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
+      : "";
+  const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
 
   return (
     <AppShell eyebrowLabel={null}>
@@ -2463,7 +2467,7 @@ export function TestSessionPage() {
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </button>
                     <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                      Back to Earn
+                      {backToTestsLabel}
                     </button>
                   </div>
                 </div>
@@ -2711,7 +2715,7 @@ export function TestSessionPage() {
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
                 {isRecordingTest && !hasQuestions ? (
                   <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                    Back to Earn
+                    {backToTestsLabel}
                   </button>
                 ) : (
                   <div className="test-session__progress">
@@ -2727,7 +2731,7 @@ export function TestSessionPage() {
                 <div className="inline-actions">
                   {isRecordingTest && !hasQuestions ? null : (
                     <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                      Back to Earn
+                      {backToTestsLabel}
                     </button>
                   )}
                   <button type="button" className="button button--primary" onClick={() => void submit()} disabled={submitDisabled}>

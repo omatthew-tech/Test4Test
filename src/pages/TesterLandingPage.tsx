@@ -55,13 +55,12 @@ export function TesterLandingPage() {
         <section className="tester-hero" aria-labelledby="tester-hero-title">
           <div className="tester-hero__copy">
             <h1 id="tester-hero-title">Make over $22/hour testing websites and apps</h1>
-            <p>Earn money by completing short usability tests and sharing helpful feedback from anywhere.</p>
             <button
               type="button"
               className="button button--primary tester-hero__cta"
               onClick={() => navigate("/sign-in")}
             >
-              Create free account
+              Get started
               <ArrowRight size={20} aria-hidden="true" />
             </button>
           </div>
@@ -88,6 +87,17 @@ export function TesterLandingPage() {
                   role="img"
                   aria-label="Example upward earnings chart"
                 >
+                  <defs>
+                    <linearGradient id="tester-earnings-fill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+                      <stop offset="72%" stopColor="currentColor" stopOpacity="0.06" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    className="tester-earnings-chart__fill"
+                    d="M8 92 C42 70 72 64 96 82 S148 88 178 65 S238 54 268 46 S318 18 352 20 L352 116 L8 116 Z"
+                  />
                   <path
                     d="M8 92 C42 70 72 64 96 82 S148 88 178 65 S238 54 268 46 S318 18 352 20"
                     fill="none"

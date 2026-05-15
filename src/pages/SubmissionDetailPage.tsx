@@ -345,6 +345,7 @@ export function SubmissionDetailPage() {
     ? getResponseRating(state, selectedResponse.id, currentUser?.id ?? null)
     : null;
   const selectedRecording = selectedResponse?.recording ?? null;
+  const canTipSelectedResponse = Boolean(selectedResponse?.testerUserId);
   const recordingIsExpired =
     !selectedRecording ||
     Boolean(selectedRecording.deletedAt) ||
@@ -511,9 +512,11 @@ export function SubmissionDetailPage() {
   }, [tipProfile]);
 
   const handleTipToggle = async () => {
-    if (!selectedResponse) {
+    if (!selectedResponse || !selectedResponse.testerUserId) {
       return;
     }
+
+    const testerUserId = selectedResponse.testerUserId;
 
     if (showTipPanel) {
       setShowTipPanel(false);
@@ -555,7 +558,7 @@ export function SubmissionDetailPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("paypal_handle, venmo_handle, cash_app_handle")
-        .eq("id", selectedResponse.testerUserId)
+        .eq("id", testerUserId)
         .maybeSingle();
 
       if (selectedResponseIdRef.current !== responseId) {
@@ -1005,18 +1008,20 @@ export function SubmissionDetailPage() {
                       value={selectedRating?.ratingValue}
                       onChange={(value) => { void rateFeedback(selectedResponse.id, value); }}
                     />
-                    <button
-                      type="button"
-                      className={`reaction-face results-tip-button${showTipPanel ? " results-tip-button--active" : ""}`}
-                      onClick={() => { void handleTipToggle(); }}
-                      disabled={isLoadingTipProfile}
-                      aria-expanded={showTipPanel}
-                      aria-pressed={showTipPanel}
-                      aria-controls="response-tip-panel"
-                    >
-                      {isLoadingTipProfile ? <span className="button__spinner" aria-hidden="true" /> : <HandCoins size={18} aria-hidden="true" />}
-                      <span>{isLoadingTipProfile ? "Loading" : "Tip"}</span>
-                    </button>
+                    {canTipSelectedResponse ? (
+                      <button
+                        type="button"
+                        className={`reaction-face results-tip-button${showTipPanel ? " results-tip-button--active" : ""}`}
+                        onClick={() => { void handleTipToggle(); }}
+                        disabled={isLoadingTipProfile}
+                        aria-expanded={showTipPanel}
+                        aria-pressed={showTipPanel}
+                        aria-controls="response-tip-panel"
+                      >
+                        {isLoadingTipProfile ? <span className="button__spinner" aria-hidden="true" /> : <HandCoins size={18} aria-hidden="true" />}
+                        <span>{isLoadingTipProfile ? "Loading" : "Tip"}</span>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>

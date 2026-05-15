@@ -15,7 +15,8 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 export interface NewFeedbackResponseRow {
   id: string;
   submission_id: string;
-  tester_user_id: string;
+  tester_user_id: string | null;
+  public_tester_key: string | null;
   owner_notified_at: string | null;
   status: string;
   credit_awarded: boolean;
@@ -26,7 +27,8 @@ interface NewFeedbackEmailContext {
   ownerEmail: string;
   ownerDisplayName: string;
   ownerProductName: string;
-  testerUserId: string;
+  testerUserId: string | null;
+  publicTesterKey: string | null;
   responseId: string;
   submissionId: string;
   feedbackUrl: string;
@@ -145,9 +147,9 @@ export async function loadUnnotifiedNewFeedbackResponses(
   const submittedAfter = new Date(Date.now() - Math.max(1, lookbackHours) * 60 * 60 * 1000).toISOString();
   const { data, error } = await admin
     .from("test_responses")
-    .select("id, submission_id, tester_user_id, owner_notified_at, status, credit_awarded")
+    .select("id, submission_id, tester_user_id, public_tester_key, owner_notified_at, status, credit_awarded")
     .eq("status", "approved")
-    .eq("credit_awarded", true)
+    .or("credit_awarded.eq.true,public_tester_key.not.is.null")
     .is("owner_notified_at", null)
     .gte("submitted_at", submittedAfter)
     .order("submitted_at", { ascending: true })
@@ -198,6 +200,7 @@ export async function sendNewFeedbackNotification(
       providerMessageId: sendResult.providerMessageId,
       metadata: {
         testerUserId: context.testerUserId,
+        publicTesterKey: context.publicTesterKey,
       },
     });
   } catch (error) {
@@ -212,6 +215,7 @@ export async function sendNewFeedbackNotification(
       errorMessage: error instanceof Error ? error.message : "Failed to send feedback notification.",
       metadata: {
         testerUserId: context.testerUserId,
+        publicTesterKey: context.publicTesterKey,
       },
     }).catch(() => undefined);
 
@@ -231,7 +235,9 @@ export async function processNewFeedbackNotificationForResponse(
     return { outcome: "skipped" as const, reason: "already_notified" as const };
   }
 
-  if (response.status !== "approved" || response.credit_awarded !== true) {
+  const isPublicFeedback = Boolean(response.public_tester_key);
+
+  if (response.status !== "approved" || (response.credit_awarded !== true && !isPublicFeedback)) {
     return { outcome: "skipped" as const, reason: "not_approved" as const };
   }
 
@@ -243,7 +249,9 @@ export async function processNewFeedbackNotificationForResponse(
 
   if (sentDelivery) {
     await markResponseOwnerNotified(admin, response.id, sentDelivery.created_at);
-    await advanceReminderAfterNewFeedback(admin, owner.id, response.tester_user_id, sentDelivery.created_at);
+    if (response.tester_user_id) {
+      await advanceReminderAfterNewFeedback(admin, owner.id, response.tester_user_id, sentDelivery.created_at);
+    }
     return { outcome: "skipped" as const, reason: "already_sent" as const };
   }
 
@@ -258,6 +266,7 @@ export async function processNewFeedbackNotificationForResponse(
       ownerDisplayName: owner.display_name,
       ownerProductName: submission.product_name,
       testerUserId: response.tester_user_id,
+      publicTesterKey: response.public_tester_key,
       responseId: response.id,
       submissionId: submission.id,
       feedbackUrl,
@@ -267,7 +276,9 @@ export async function processNewFeedbackNotificationForResponse(
 
   const notifiedAt = new Date().toISOString();
   await markResponseOwnerNotified(admin, response.id, notifiedAt);
-  await advanceReminderAfterNewFeedback(admin, owner.id, response.tester_user_id, notifiedAt);
+  if (response.tester_user_id) {
+    await advanceReminderAfterNewFeedback(admin, owner.id, response.tester_user_id, notifiedAt);
+  }
 
   return { outcome: "sent" as const };
 }

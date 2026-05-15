@@ -17,22 +17,30 @@ export function AdminPage() {
         </Surface>
         <div className="list-stack">
           {queue.map((response) => {
-            const tester = getUserById(state, response.testerUserId);
+            const testerUserId = response.testerUserId;
+            const tester = getUserById(state, testerUserId);
+
             return (
               <Surface key={response.id} className="moderation-card">
                 <div className="moderation-card__header">
                   <div>
                     <span className="eyebrow">{response.status}</span>
                     <h3>{response.anonymousLabel}</h3>
-                    <p>{tester?.displayName ?? "Unknown tester"} · {formatDateTime(response.submittedAt)}</p>
+                    <p>{tester?.displayName ?? (testerUserId ? "Unknown tester" : "Public tester")} / {formatDateTime(response.submittedAt)}</p>
                   </div>
                   <span className="pill">Quality {response.qualityScore}</span>
                 </div>
-                <p>{response.internalFlags.join(" · ") || "Low confidence response"}</p>
+                <p>{response.internalFlags.join(" / ") || "Low confidence response"}</p>
                 <div className="inline-actions inline-actions--compact">
-                  <button type="button" className="button button--secondary" onClick={() => addModerationAction(response.id, response.testerUserId, "warn", "Warned for low-effort feedback patterns.")}>Warn user</button>
-                  <button type="button" className="button button--secondary" onClick={() => addModerationAction(response.id, response.testerUserId, "revoke_credit", "Credit revoked pending moderator review.")}>Revoke credit</button>
-                  <button type="button" className="button button--primary" onClick={() => addModerationAction(response.id, response.testerUserId, "reject", "Response rejected for MVP quality floor.")}>Reject response</button>
+                  {testerUserId ? (
+                    <>
+                      <button type="button" className="button button--secondary" onClick={() => addModerationAction(response.id, testerUserId, "warn", "Warned for low-effort feedback patterns.")}>Warn user</button>
+                      <button type="button" className="button button--secondary" onClick={() => addModerationAction(response.id, testerUserId, "revoke_credit", "Credit revoked pending moderator review.")}>Revoke credit</button>
+                      <button type="button" className="button button--primary" onClick={() => addModerationAction(response.id, testerUserId, "reject", "Response rejected for MVP quality floor.")}>Reject response</button>
+                    </>
+                  ) : (
+                    <span className="pill">Public response</span>
+                  )}
                 </div>
               </Surface>
             );

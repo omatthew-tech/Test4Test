@@ -1280,8 +1280,7 @@ export function SubmitFlowPage() {
           </div>
         ) : (
           <VerificationFlowShell title="Your app has been submitted">
-            <span className="eyebrow">Submitted</span>
-            <h2>{currentUser ? "Your app has been submitted." : "Verify your email"}</h2>
+            <h2>{currentUser ? "Your app has been submitted." : "Verify your email to start receiving feedback"}</h2>
             <p>{submitSuccessMessage}</p>
             {!currentUser ? (
               <div className="form-stack form-stack--narrow form-stack--verification">

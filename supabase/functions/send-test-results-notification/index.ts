@@ -17,7 +17,8 @@ interface NotificationRequest {
 interface ResponseRow {
   id: string;
   submission_id: string;
-  tester_user_id: string;
+  tester_user_id: string | null;
+  public_tester_key: string | null;
   owner_notified_at: string | null;
   status: string;
   credit_awarded: boolean;
@@ -81,7 +82,7 @@ Deno.serve(async (request) => {
 
   const { data: responseRow, error: responseError } = await admin
     .from("test_responses")
-    .select("id, submission_id, tester_user_id, owner_notified_at, status, credit_awarded")
+    .select("id, submission_id, tester_user_id, public_tester_key, owner_notified_at, status, credit_awarded")
     .eq("id", responseId)
     .single();
 
@@ -99,7 +100,9 @@ Deno.serve(async (request) => {
     return json({ ok: true, skipped: true, message: "Notification already sent." });
   }
 
-  if (responseRecord.status !== "approved" || responseRecord.credit_awarded !== true) {
+  const isPublicFeedback = Boolean(responseRecord.public_tester_key);
+
+  if (responseRecord.status !== "approved" || (responseRecord.credit_awarded !== true && !isPublicFeedback)) {
     return json({ ok: true, skipped: true, message: "Notification will send after the response is approved." });
   }
 

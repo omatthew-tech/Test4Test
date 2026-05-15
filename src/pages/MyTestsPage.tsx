@@ -1,19 +1,20 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, Check, Inbox, X } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink, Inbox, Mic, Share2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import {
   accessLinkFieldLabel,
   accessLinkPlaceholder,
+  formatDate,
+  getOrderedAccessLinks,
   PRODUCT_TYPE_ORDER,
   normalizeProductTypes,
   productTypeLabel,
 } from "../lib/format";
-import { getMySubmissions } from "../lib/selectors";
+import { getActiveQuestionSet, getMySubmissions } from "../lib/selectors";
 import { validateAccessLink } from "../lib/questions";
-import { ProductType, Submission, SubmissionDraft, SubmissionStatus } from "../types";
-import { formatDate } from "../lib/format";
+import { ProductType, QuestionSetVersion, Submission, SubmissionDraft, SubmissionStatus } from "../types";
 
 function submissionStatusLabel(status: SubmissionStatus) {
   switch (status) {
@@ -48,6 +49,39 @@ const productTypeOptions: Array<{ value: ProductType; title: string }> = PRODUCT
   title: productTypeLabel(value),
 }));
 
+function buildShareUrl(submissionId: string) {
+  if (typeof window === "undefined") {
+    return `/test/${submissionId}`;
+  }
+
+  return `${window.location.origin}/test/${submissionId}`;
+}
+
+async function copyTextToClipboard(value: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 export function MyTestsPage() {
   const { state, updateSubmissionDetails } = useAppState();
   const submissions = getMySubmissions(state);
@@ -55,11 +89,22 @@ export function MyTestsPage() {
   const [editDraft, setEditDraft] = useState<SubmissionDraft | null>(null);
   const [editError, setEditError] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [sharingSubmissionId, setSharingSubmissionId] = useState<string | null>(null);
+  const [shareCopyStatus, setShareCopyStatus] = useState("");
 
   const selectedEditProductTypes = useMemo(
     () => normalizeProductTypes(editDraft?.productTypes ?? []),
     [editDraft?.productTypes],
   );
+
+  const sharingSubmission = useMemo(
+    () => submissions.find((submission) => submission.id === sharingSubmissionId) ?? null,
+    [sharingSubmissionId, submissions],
+  );
+  const sharingQuestionSet = sharingSubmission
+    ? getActiveQuestionSet(state, sharingSubmission.id)
+    : null;
+  const sharingUrl = sharingSubmission ? buildShareUrl(sharingSubmission.id) : "";
 
   const openEditTest = (submission: Submission) => {
     setEditingSubmissionId(submission.id);
@@ -75,6 +120,29 @@ export function MyTestsPage() {
     setEditingSubmissionId(null);
     setEditDraft(null);
     setEditError("");
+  };
+
+  const openShareTest = (submission: Submission) => {
+    if (submission.status !== "live") {
+      return;
+    }
+
+    setSharingSubmissionId(submission.id);
+    setShareCopyStatus("");
+  };
+
+  const closeShareTest = () => {
+    setSharingSubmissionId(null);
+    setShareCopyStatus("");
+  };
+
+  const copyShareUrl = async () => {
+    if (!sharingUrl) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(sharingUrl);
+    setShareCopyStatus(copied ? "Copied" : "Copy failed");
   };
 
   const updateEditDraft = (next: Partial<SubmissionDraft>) => {
@@ -235,6 +303,15 @@ export function MyTestsPage() {
                       >
                         Edit app
                       </button>
+                      <button
+                        type="button"
+                        className="button button--secondary"
+                        onClick={() => openShareTest(submission)}
+                        disabled={submission.status !== "live"}
+                      >
+                        Share test
+                        <Share2 size={16} />
+                      </button>
                       <Link to={`/my-tests/${submission.id}`} className="button button--primary">
                         View results
                         <ArrowRight size={16} />
@@ -247,6 +324,17 @@ export function MyTestsPage() {
           </div>
         )}
       </div>
+
+      {sharingSubmission ? (
+        <ShareTestModal
+          submission={sharingSubmission}
+          questionSet={sharingQuestionSet}
+          shareUrl={sharingUrl}
+          copyStatus={shareCopyStatus}
+          onCopy={() => void copyShareUrl()}
+          onClose={closeShareTest}
+        />
+      ) : null}
 
       {editDraft && editingSubmissionId ? (
         <div className="results-modal-backdrop" role="presentation" onClick={closeEditTest}>
@@ -395,5 +483,158 @@ export function MyTestsPage() {
   );
 }
 
+function ShareTestModal({
+  submission,
+  questionSet,
+  shareUrl,
+  copyStatus,
+  onCopy,
+  onClose,
+}: {
+  submission: Submission;
+  questionSet: QuestionSetVersion | null;
+  shareUrl: string;
+  copyStatus: string;
+  onCopy: () => void;
+  onClose: () => void;
+}) {
+  const accessLinks = getOrderedAccessLinks(submission.accessLinks, submission.productTypes);
+  const previewQuestions = [...(questionSet?.questions ?? [])]
+    .sort((first, second) => first.sortOrder - second.sortOrder);
+  const testerInstructions = submission.instructions.trim()
+    ? submission.instructions.trim()
+    : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
 
+  return (
+    <div className="results-modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="results-modal results-modal--share-test"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Share test"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="results-modal__header">
+          <div>
+            <h2>Share test</h2>
+          </div>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onClose}
+            aria-label="Close share test"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
+        <div className="share-test-link-row">
+          <input
+            value={shareUrl}
+            readOnly
+            aria-label="Share test link"
+            onFocus={(event) => event.currentTarget.select()}
+          />
+          <button type="button" className="button button--secondary" onClick={onCopy}>
+            {copyStatus === "Copied" ? <Check size={16} /> : <Copy size={16} />}
+            {copyStatus || "Copy link"}
+          </button>
+        </div>
+
+        <div className="share-test-modal__copy">
+          <h3>Share your test with anyone!</h3>
+          <p>No sign up is required for testers and it's completely free</p>
+        </div>
+
+        <div className="share-test-preview-label">preview</div>
+        <div className="share-test-page-preview" aria-label="Shared test preview">
+          <div className="test-layout test-layout--single share-test-page-preview__layout">
+            <div className="test-session__header">
+              <h1>{`Test ${submission.productName}`}</h1>
+            </div>
+
+            <Surface className="test-questions test-questions--full">
+              <div className="test-session__intro-card">
+                <div className="test-session__resource">
+                  <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+                  {accessLinks.length > 0 ? (
+                    <div className="test-session__link-list">
+                      {accessLinks.map((link) => (
+                        <div key={link.productType} className="test-session__link share-test-page-preview__link">
+                          <span className="test-session__link-label">{link.label}</span>
+                          <span>{link.displayUrl}</span>
+                          <ExternalLink size={15} aria-hidden="true" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No public app links were provided for this test.</p>
+                  )}
+                </div>
+
+                <div className="test-session__resource">
+                  <span className="test-session__label">Tester instructions</span>
+                  <p>{testerInstructions}</p>
+                </div>
+              </div>
+
+              {submission.requiresRecording ? (
+                <div className="callout callout--soft recording-test-callout share-test-page-preview__recording-callout">
+                  <div className="recording-test-callout__copy">
+                    <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                    <strong>This session needs a screen and voice recording.</strong>
+                    <p>Open the app, think out loud, and upload the recording with your feedback.</p>
+                  </div>
+                  <Mic size={20} aria-hidden="true" />
+                </div>
+              ) : null}
+
+              {previewQuestions.length > 0 ? (
+                <div className="question-list test-session__questions">
+                  {previewQuestions.map((question) => (
+                    <article key={question.id} className="question-card question-card--spacious">
+                      <div className="test-session__question-body">
+                        <h3>{question.sortOrder}. {question.title}</h3>
+                        {question.type === "multiple" ? (
+                          <div className="radio-list" aria-hidden="true">
+                            {(question.options ?? []).map((option) => (
+                              <label key={option} className="radio-card">
+                                <input
+                                  className="radio-card__control"
+                                  type="radio"
+                                  name={`preview-${question.id}`}
+                                  tabIndex={-1}
+                                  disabled
+                                />
+                                <span>{option}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <label className="field">
+                            <textarea
+                              rows={5}
+                              tabIndex={-1}
+                              disabled
+                              placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
+                            />
+                            <small className="helper-text">0 / 40 recommended minimum characters</small>
+                          </label>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : submission.requiresRecording ? (
+                <div className="recording-questionless-note">
+                  <strong>No written questionnaire for this test.</strong>
+                  <p>Once the recording is ready, you can submit this test from the footer below.</p>
+                </div>
+              ) : null}
+            </Surface>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

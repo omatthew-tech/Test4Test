@@ -142,7 +142,8 @@ export interface TestResponse {
   id: string;
   submissionId: string;
   submissionVersionId: string;
-  testerUserId: string;
+  testerUserId: string | null;
+  publicTesterKey?: string | null;
   questionSetVersionId: string;
   anonymousLabel: string;
   status: ResponseStatus;
