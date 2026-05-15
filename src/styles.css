@@ -7775,15 +7775,18 @@ select {
 }
 
 .topbar--marketing .brandmark {
+  grid-column: 1;
   justify-self: start;
 }
 
 .topbar--marketing .topbar__actions {
+  grid-column: 3;
   justify-self: end;
   margin-left: 0;
 }
 
 .topbar-audience {
+  grid-column: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7845,12 +7848,12 @@ select {
 }
 
 .audience-toggle__option--active:last-child {
-  background: #8cbf33;
-  box-shadow: 0 6px 14px rgba(140, 191, 51, 0.2);
+  background: #8dc034;
+  box-shadow: 0 6px 14px rgba(141, 192, 52, 0.2);
 }
 
 .audience-toggle__option--active:last-child:hover {
-  background: #8cbf33;
+  background: #8dc034;
 }
 
 @media (max-width: 960px) {
@@ -7944,9 +7947,9 @@ select {
   min-width: 260px;
   min-height: 64px;
   margin-top: 34px;
-  color: #fffefc;
-  background: linear-gradient(180deg, #ff7b39 0%, #ff641f 100%);
-  box-shadow: 0 14px 28px rgba(242, 105, 33, 0.2);
+  color: var(--color-ink-900);
+  background: #8dc034;
+  box-shadow: 0 14px 28px rgba(141, 192, 52, 0.2);
 }
 
 .tester-hero__visual {
