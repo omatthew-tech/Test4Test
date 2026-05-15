@@ -2187,13 +2187,16 @@ export function TestSessionPage() {
     : isPublicTester
       ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
       : "";
+  const testSessionTitle = isPublicTester
+    ? `Congrats! You've been selected to try ${submission.productName}`
+    : `Test ${submission.productName}`;
   const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
 
   return (
     <AppShell eyebrowLabel={null}>
       <div className="test-layout test-layout--single">
         <div className="test-session__header">
-          <h1>{`Test ${submission.productName}`}</h1>
+          <h1>{testSessionTitle}</h1>
           {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
         </div>
 

@@ -504,6 +504,7 @@ function ShareTestModal({
   const testerInstructions = submission.instructions.trim()
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
+  const sharedTestTitle = `Congrats! You've been selected to try ${submission.productName}`;
 
   return (
     <div className="results-modal-backdrop" role="presentation" onClick={onClose}>
@@ -543,14 +544,14 @@ function ShareTestModal({
 
         <div className="share-test-modal__copy">
           <h3>Share your test with anyone!</h3>
-          <p>No sign up is required for testers and it's completely free</p>
+          <p>No sign ups required. Simply share this link, look out for email notifications and review test results.</p>
         </div>
 
         <div className="share-test-preview-label">preview</div>
         <div className="share-test-page-preview" aria-label="Shared test preview">
           <div className="test-layout test-layout--single share-test-page-preview__layout">
             <div className="test-session__header">
-              <h1>{`Test ${submission.productName}`}</h1>
+              <h1>{sharedTestTitle}</h1>
             </div>
 
             <Surface className="test-questions test-questions--full">
