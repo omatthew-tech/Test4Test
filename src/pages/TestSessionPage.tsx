@@ -1,16 +1,13 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  CheckCircle2,
   ExternalLink,
   Mic,
-  Monitor,
-  Smartphone,
   Trash2,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import { getOrderedAccessLinks, productTypeLabel } from "../lib/format";
+import { getOrderedAccessLinks, type AccessLinkItem } from "../lib/format";
 import {
   clearRecordingTestSession,
   createGeneratedRecordingFileName,
@@ -23,6 +20,7 @@ import {
   resolveRecordingExperience,
   saveRecordingTestSession,
   type MobileOperatingSystem,
+  type RecordingExperience,
   type RecordingTestPhase,
   uploadGeneratedRecordingDraft,
   uploadRecordingDraft,
@@ -222,7 +220,7 @@ function getRecordingInstructions(productType: ProductType) {
       };
     default:
       return {
-        title: "Desktop / web recording",
+        title: "Screen recording",
         intro:
           "Use your computer's built-in screen recorder or another desktop recorder, and make sure your microphone is capturing your voice before you start.",
         steps: [
@@ -239,15 +237,37 @@ function getRecordingInstructions(productType: ProductType) {
   }
 }
 
-function PlatformIcon({ productType }: { productType: ProductType }) {
-  if (productType === "website") {
-    return <Monitor size={18} aria-hidden="true" />;
+type ManualRecordingDevice = "ios" | "android" | "mobile" | "desktop";
+
+function getAutoDetectedProductType(
+  accessLinks: AccessLinkItem[],
+  recordingExperience: Pick<RecordingExperience, "isMobile" | "mobileOs">,
+) {
+  if (accessLinks.length === 0) {
+    return null;
   }
 
-  return <Smartphone size={18} aria-hidden="true" />;
-}
+  const hasProductType = (productType: ProductType) =>
+    accessLinks.some((link) => link.productType === productType);
 
-type ManualRecordingDevice = "ios" | "android" | "mobile" | "desktop";
+  if (!recordingExperience.isMobile && hasProductType("website")) {
+    return "website";
+  }
+
+  if (recordingExperience.mobileOs === "ios" && hasProductType("ios")) {
+    return "ios";
+  }
+
+  if (recordingExperience.mobileOs === "android" && hasProductType("android")) {
+    return "android";
+  }
+
+  if (recordingExperience.isMobile && hasProductType("website")) {
+    return "website";
+  }
+
+  return accessLinks[0].productType;
+}
 
 function getManualRecordingDevice(
   productType: ProductType | null,
@@ -348,18 +368,13 @@ function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRec
   );
 }
 
-const thinkAloudTips = [
-  "Say what you expect to happen before you tap or click.",
-  "Call out anything confusing, slow, reassuring, or unexpectedly helpful.",
-  "If you hesitate, explain what information you were looking for.",
-  "Share what you would try next if you were using this for real.",
-];
-
 export function TestSessionPage() {
   const { submissionId = "" } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { state, currentUser, completeTest } = useAppState();
   const isPublicTester = !currentUser;
+  const isSharedPublicVisit = isPublicTester && searchParams.get("shared") === "1";
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
@@ -427,20 +442,28 @@ export function TestSessionPage() {
   const [microphoneError, setMicrophoneError] = useState("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
+  const deviceRecordingExperience = useMemo(() => resolveRecordingExperience(null), []);
+  const autoDetectedProductType = useMemo(
+    () => getAutoDetectedProductType(accessLinks, deviceRecordingExperience),
+    [accessLinks, deviceRecordingExperience],
+  );
+  const effectiveProductType = isRecordingTest
+    ? autoDetectedProductType ?? chosenProductType ?? defaultProductType
+    : accessLinks[0]?.productType ?? null;
 
   const selectedLink = useMemo(() => {
     if (!isRecordingTest) {
       return accessLinks[0] ?? null;
     }
 
-    if (!chosenProductType) {
+    if (!effectiveProductType) {
       return null;
     }
 
-    return accessLinks.find((link) => link.productType === chosenProductType) ?? null;
-  }, [accessLinks, chosenProductType, isRecordingTest]);
+    return accessLinks.find((link) => link.productType === effectiveProductType) ?? null;
+  }, [accessLinks, effectiveProductType, isRecordingTest]);
 
-  const selectedProductType = selectedLink?.productType ?? chosenProductType ?? defaultProductType ?? null;
+  const selectedProductType = selectedLink?.productType ?? effectiveProductType ?? null;
   const recordingExperience = useMemo(
     () => resolveRecordingExperience(selectedProductType),
     [selectedProductType],
@@ -1702,9 +1725,9 @@ export function TestSessionPage() {
       return;
     }
 
-    const validChosenProductType = chosenProductType
-      ? accessLinks.some((link) => link.productType === chosenProductType)
-        ? chosenProductType
+    const validChosenProductType = selectedProductType
+      ? accessLinks.some((link) => link.productType === selectedProductType)
+        ? selectedProductType
         : null
       : null;
 
@@ -1718,11 +1741,11 @@ export function TestSessionPage() {
     });
   }, [
     accessLinks,
-    chosenProductType,
     confirmedRecording,
     isRecordingTest,
     recordingPhase,
     recordingSessionId,
+    selectedProductType,
     submissionId,
     uploadedRecording,
   ]);
@@ -1732,8 +1755,8 @@ export function TestSessionPage() {
       return;
     }
 
-    if (accessLinks.length === 1 && !chosenProductType) {
-      setChosenProductType(accessLinks[0].productType);
+    if (autoDetectedProductType && chosenProductType !== autoDetectedProductType) {
+      setChosenProductType(autoDetectedProductType);
       return;
     }
 
@@ -1741,9 +1764,9 @@ export function TestSessionPage() {
       chosenProductType &&
       !accessLinks.some((link) => link.productType === chosenProductType)
     ) {
-      setChosenProductType(accessLinks.length === 1 ? accessLinks[0].productType : null);
+      setChosenProductType(autoDetectedProductType);
     }
-  }, [accessLinks, chosenProductType, isRecordingTest]);
+  }, [accessLinks, autoDetectedProductType, chosenProductType, isRecordingTest]);
 
   useEffect(() => {
     if (isNativeDesktopRecording) {
@@ -1901,7 +1924,7 @@ export function TestSessionPage() {
 
   const handleManualRecordingStart = () => {
     if (!selectedLink && accessLinks.length > 0) {
-      setMessage("Choose the platform you're about to test before continuing.");
+      setMessage("We couldn't find a matching app link for this device. Try refreshing the page.");
       return;
     }
 
@@ -2173,8 +2196,7 @@ export function TestSessionPage() {
   const screenRecordingIllustrationDevice =
     manualRecordingDevice === "ios" || manualRecordingDevice === "android" ? manualRecordingDevice : null;
   const shouldShowManualRecordingCallout = !isNativeDesktopRecording && !recordingExperience.isMobile;
-  const shouldShowManualRecordingGuidance = !isNativeDesktopRecording;
-  const shouldShowManualThinkAloudTips = !isPhoneManualRecording;
+  const shouldShowManualRecordingGuidance = !isNativeDesktopRecording && isPhoneManualRecording;
   const shouldShowManualRecoveryUpload =
     isNativeDesktopRecording &&
     nativeRecoveryUploadEnabled &&
@@ -2187,7 +2209,7 @@ export function TestSessionPage() {
     : isPublicTester
       ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
       : "";
-  const testSessionTitle = isPublicTester
+  const testSessionTitle = isSharedPublicVisit
     ? `Congrats! You've been selected to try ${submission.productName}`
     : `Test ${submission.productName}`;
   const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
@@ -2245,35 +2267,6 @@ export function TestSessionPage() {
 
               {recordingPhase === "preflight" ? (
                 <div className="recording-phase-stack">
-                  {accessLinks.length > 1 ? (
-                    <div className="recording-platform-picker">
-                      <span className="test-session__label">Choose the platform you will test</span>
-                      <div className="choice-grid choice-grid--compact">
-                        {accessLinks.map((link) => {
-                          const isActive = chosenProductType === link.productType;
-
-                          return (
-                            <button
-                              key={link.productType}
-                              type="button"
-                              className={`choice-card choice-card--multi${isActive ? " choice-card--active" : ""}`}
-                              onClick={() => setChosenProductType(link.productType)}
-                              aria-pressed={isActive}
-                            >
-                              <span className={`choice-card__check${isActive ? " choice-card__check--active" : ""}`} aria-hidden="true">
-                                {isActive ? <CheckCircle2 size={16} /> : <PlatformIcon productType={link.productType} />}
-                              </span>
-                              <span className="choice-card__content">
-                                <strong>{productTypeLabel(link.productType)}</strong>
-                                <small>{link.displayUrl}</small>
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-
                   {isNativeDesktopRecording ? (
                     <div className="recording-quickstart">
                       <div className="recording-quickstart__step">
@@ -2420,19 +2413,6 @@ export function TestSessionPage() {
                             </ol>
                           </div>
 
-                          {shouldShowManualThinkAloudTips ? (
-                            <div className="recording-guidance">
-                              <div className="recording-guidance__intro">
-                                <h2>Think out loud while you test</h2>
-                                <p>The goal is not polished narration. Small reactions and in-the-moment confusion are the most useful parts.</p>
-                              </div>
-                              <ul className="recording-tips">
-                                {thinkAloudTips.map((tip) => (
-                                  <li key={tip}>{tip}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : null}
                         </>
                       ) : null}
 

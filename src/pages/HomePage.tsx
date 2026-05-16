@@ -12,6 +12,15 @@ const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
 const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
 
+const homeReviews = [
+  "Test4Test helped me get my first useful feedback from real users.",
+  "I found issues in my signup flow that I never would have caught alone.",
+  "The credit system made user testing possible before I had a research budget.",
+  "I finally understood where people were getting stuck.",
+  "Other user testing sites were expensive. Test4Test gave me premium-feeling feedback for free.",
+  "The reviews helped me fix things I never would have thought of.",
+];
+
 const processSteps = [
   {
     title: "Submit",
@@ -135,6 +144,26 @@ export function HomePage() {
               className="home-hero__mobile-mascot-arms"
               aria-hidden="true"
             />
+          </div>
+        </section>
+
+        <section className="home-review-marquee" aria-label="Test4Test user reviews">
+          <div className="home-review-marquee__viewport">
+            <div className="home-review-marquee__track">
+              {[0, 1].map((groupIndex) => (
+                <div
+                  className="home-review-marquee__group"
+                  key={groupIndex}
+                  aria-hidden={groupIndex === 1}
+                >
+                  {homeReviews.map((quote) => (
+                    <span className="home-review-text" key={`${quote}-${groupIndex}`}>
+                      &ldquo;{quote}&rdquo;
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

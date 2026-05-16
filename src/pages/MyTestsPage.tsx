@@ -51,10 +51,10 @@ const productTypeOptions: Array<{ value: ProductType; title: string }> = PRODUCT
 
 function buildShareUrl(submissionId: string) {
   if (typeof window === "undefined") {
-    return `/test/${submissionId}`;
+    return `/test/${submissionId}?shared=1`;
   }
 
-  return `${window.location.origin}/test/${submissionId}`;
+  return `${window.location.origin}/test/${submissionId}?shared=1`;
 }
 
 async function copyTextToClipboard(value: string) {
