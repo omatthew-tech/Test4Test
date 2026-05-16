@@ -9,6 +9,7 @@ import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getOrderedAccessLinks, type AccessLinkItem } from "../lib/format";
 import {
+  buildRecordingDraftPath,
   clearRecordingTestSession,
   createGeneratedRecordingFileName,
   createRecordingSessionId,
@@ -16,12 +17,14 @@ import {
   downloadRecordingBackup,
   getPreferredMediaRecorderMimeType,
   loadRecordingTestSession,
+  normalizeRecordingMimeType,
   RECORDING_ACCEPT_ATTRIBUTE,
   resolveRecordingExperience,
   saveRecordingTestSession,
   type MobileOperatingSystem,
   type RecordingExperience,
   type RecordingTestPhase,
+  type RecordingUploadProgress,
   uploadGeneratedRecordingDraft,
   uploadRecordingDraft,
   validateRecordingFile,
@@ -129,6 +132,26 @@ function formatElapsedDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function formatUploadBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+
+  return `${bytes} B`;
+}
+
+function formatUploadProgress(progress: RecordingUploadProgress | null) {
+  if (!progress) {
+    return "Preparing upload...";
+  }
+
+  return `${Math.round(progress.percentage)}% (${formatUploadBytes(progress.bytesUploaded)} of ${formatUploadBytes(progress.bytesTotal)})`;
 }
 
 function getMediaPermissionMessage(error: unknown) {
@@ -431,6 +454,8 @@ export function TestSessionPage() {
   const [nativeRecordingMimeType, setNativeRecordingMimeType] = useState(
     () => getPreferredMediaRecorderMimeType() || "video/webm",
   );
+  const [recordingUploadProgress, setRecordingUploadProgress] = useState<RecordingUploadProgress | null>(null);
+  const [pendingRecordingUploadPath, setPendingRecordingUploadPath] = useState("");
   const [nativeUploadError, setNativeUploadError] = useState("");
   const [nativeRecoveryUploadEnabled, setNativeRecoveryUploadEnabled] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -675,6 +700,9 @@ export function TestSessionPage() {
     const isDeleteConfirm = recordingPipDeleteConfirm && uploadedRecording !== null;
     const isUploaded = uploadedRecording !== null && recordingPhase === "return_and_submit";
     const isUploading = !isUploaded && (recordingPhase === "uploading_recording" || isUploadingRecording);
+    const uploadProgressPercentage = Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0));
+    const uploadProgressLabel = formatUploadProgress(recordingUploadProgress);
+    const uploadStatusLabel = recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
     const submitDisabledAttribute = submitDisabled ? " disabled" : "";
     const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
     const submitLabel = isSubmitting ? "Submitting..." : "Submit test";
@@ -1113,16 +1141,18 @@ export function TestSessionPage() {
         <section class="recording-pip" aria-label="Uploading recording">
           <div class="recording-pip__top">
             <div class="recording-pip__badge">
+              <span class="recording-pip__dot recording-pip__dot--uploading" aria-hidden="true"></span>
               <span>Uploading recording</span>
             </div>
           </div>
           <div class="recording-pip__main">
             <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
             <div class="recording-pip__progress" aria-label="Recording upload in progress">
-              <span class="recording-pip__progress-fill recording-pip__progress-fill--uploading"></span>
+              <span class="recording-pip__progress-fill" style="width: ${uploadProgressPercentage.toFixed(1)}%"></span>
             </div>
             <div class="recording-pip__status">
-              <span class="recording-pip__pill recording-pip__pill--ok">Upload in progress</span>
+              <span class="recording-pip__pill recording-pip__pill--ok">${uploadStatusLabel}</span>
+              <span class="recording-pip__pill">${uploadProgressLabel}</span>
             </div>
           </div>
           <div class="recording-pip__actions">
@@ -1407,6 +1437,7 @@ export function TestSessionPage() {
     setIsUploadingRecording(true);
     setNativeUploadError("");
     setMessage("");
+    setRecordingUploadProgress(null);
     setRecordingPipDeleteConfirm(false);
 
     try {
@@ -1415,14 +1446,20 @@ export function TestSessionPage() {
         recordingSessionId,
         file,
         uploadedRecording,
+        {
+          onProgress: setRecordingUploadProgress,
+        },
       );
       setUploadedRecording(nextRecording);
       setNativeRecoveryUploadEnabled(false);
       setRecordingPhase("return_and_submit");
+      setRecordingUploadProgress(null);
       setMessage(successMessage);
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The recording could not be uploaded.");
+      const errorMessage = error instanceof Error ? error.message : "The recording could not be uploaded.";
+      setNativeUploadError(errorMessage);
+      setMessage(errorMessage);
       return false;
     } finally {
       setIsUploadingRecording(false);
@@ -1430,10 +1467,11 @@ export function TestSessionPage() {
   };
 
   const finalizeNativeRecording = async (blob: Blob, mimeType: string) => {
-    const resolvedMimeType = mimeType || getPreferredMediaRecorderMimeType() || "video/webm";
+    const resolvedMimeType = normalizeRecordingMimeType("", mimeType || getPreferredMediaRecorderMimeType() || "video/webm") || "video/webm";
+    const generatedFileName = createGeneratedRecordingFileName(recordingSessionId, resolvedMimeType);
     const generatedFile = new File(
       [blob],
-      createGeneratedRecordingFileName(recordingSessionId, resolvedMimeType),
+      generatedFileName,
       {
         type: resolvedMimeType,
         lastModified: Date.now(),
@@ -1462,33 +1500,45 @@ export function TestSessionPage() {
     setIsUploadingRecording(true);
     setNativeUploadError("");
     setMessage("");
+    setRecordingUploadProgress(null);
     setRecordingPipDeleteConfirm(false);
 
     try {
+      const uploadPath =
+        pendingRecordingUploadPath ||
+        buildRecordingDraftPath(currentUser.id, recordingSessionId, generatedFile.name);
+      setPendingRecordingUploadPath(uploadPath);
+
       const nextRecording = await uploadGeneratedRecordingDraft(
         currentUser.id,
         recordingSessionId,
         blob,
         resolvedMimeType,
         uploadedRecording,
+        {
+          path: uploadPath,
+          onProgress: setRecordingUploadProgress,
+        },
       );
       setUploadedRecording(nextRecording);
       setNativeRecordingBlob(null);
       setNativeRecoveryUploadEnabled(false);
+      setPendingRecordingUploadPath("");
+      setRecordingUploadProgress(null);
       setRecordingPhase("return_and_submit");
       setScreenShareStatus("ended");
       setNativeCaptureConfirmed(false);
       setMessage("");
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "The recording could not be uploaded automatically.";
       setRecordingPhase("return_and_submit");
       setScreenShareStatus("ended");
       setNativeCaptureConfirmed(false);
-      setNativeUploadError(
-        error instanceof Error
-          ? error.message
-          : "The recording could not be uploaded automatically.",
-      );
-      setMessage("The browser recording is ready. Retry the upload or download a backup copy.");
+      setNativeUploadError(errorMessage);
+      setMessage(errorMessage);
     } finally {
       setIsUploadingRecording(false);
     }
@@ -1500,6 +1550,8 @@ export function TestSessionPage() {
     setLiveRecordingStartedAt(null);
     setLiveElapsedSeconds(0);
     setNativeRecordingBlob(null);
+    setRecordingUploadProgress(null);
+    setPendingRecordingUploadPath("");
     setNativeUploadError("");
     setNativeRecoveryUploadEnabled(false);
     setPopupBlocked(false);
@@ -1825,6 +1877,7 @@ export function TestSessionPage() {
     nativeCaptureConfirmed,
     recordingPipDeleteConfirm,
     recordingPhase,
+    recordingUploadProgress,
     screenShareStatus,
     submitDisabled,
     uploadedRecording,
@@ -2138,6 +2191,8 @@ export function TestSessionPage() {
       cleanupActiveCaptureStreams();
       setUploadedRecording(null);
       setNativeRecordingBlob(null);
+      setRecordingUploadProgress(null);
+      setPendingRecordingUploadPath("");
       setNativeUploadError("");
       setNativeRecoveryUploadEnabled(false);
       setConfirmedRecording(false);
@@ -2534,7 +2589,17 @@ export function TestSessionPage() {
                   </div>
                   <div className="callout callout--soft">
                     <span className="button__spinner" aria-hidden="true" />
-                    <span>Uploading recording...</span>
+                    <span>
+                      {recordingUploadProgress?.state === "retrying"
+                        ? "Upload paused briefly. Retrying..."
+                        : "Uploading recording..."}
+                    </span>
+                  </div>
+                  <div className="recording-upload-progress" aria-live="polite">
+                    <div className="recording-upload-progress__track" aria-label="Recording upload progress">
+                      <span style={{ width: `${Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}%` }} />
+                    </div>
+                    <small>{formatUploadProgress(recordingUploadProgress)}</small>
                   </div>
                 </div>
               ) : null}
@@ -2583,6 +2648,19 @@ export function TestSessionPage() {
                         Accepted: MP4, MOV, or WEBM up to 500 MB.
                       </small>
                     </label>
+                  ) : null}
+
+                  {isUploadingRecording && recordingUploadProgress ? (
+                    <div className="recording-upload-progress" aria-live="polite">
+                      <div className="recording-upload-progress__track" aria-label="Recording upload progress">
+                        <span style={{ width: `${Math.min(100, Math.max(0, recordingUploadProgress.percentage))}%` }} />
+                      </div>
+                      <small>
+                        {recordingUploadProgress.state === "retrying"
+                          ? `Retrying upload - ${formatUploadProgress(recordingUploadProgress)}`
+                          : formatUploadProgress(recordingUploadProgress)}
+                      </small>
+                    </div>
                   ) : null}
 
                   {isNativeDesktopRecording && !uploadedRecording && nativeRecordingBlob ? (

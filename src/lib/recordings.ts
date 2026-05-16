@@ -1,9 +1,13 @@
+import * as tus from "tus-js-client";
 import { ProductType, ResponseRecording } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const RECORDING_STORAGE_DAYS = 7;
 export const RECORDING_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+export const RECORDING_RESUMABLE_UPLOAD_THRESHOLD_BYTES = 6 * 1024 * 1024;
+const RECORDING_TUS_CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
+const RECORDING_TUS_RETRY_DELAYS_MS = [0, 3000, 5000, 10000, 20000];
 export const RECORDING_ACCEPTED_MIME_TYPES = [
   "video/mp4",
   "video/quicktime",
@@ -45,6 +49,19 @@ interface RecordingAccessResponse {
   expiresInSeconds?: number;
   error?: string;
   message?: string;
+}
+
+export interface RecordingUploadProgress {
+  bytesUploaded: number;
+  bytesTotal: number;
+  percentage: number;
+  state: "uploading" | "retrying";
+}
+
+export interface RecordingUploadOptions {
+  path?: string;
+  preferResumable?: boolean;
+  onProgress?: (progress: RecordingUploadProgress) => void;
 }
 
 interface NavigatorWithUserAgentData extends Navigator {
@@ -248,9 +265,33 @@ function fileHasAcceptedExtension(fileName: string) {
   return RECORDING_ACCEPTED_EXTENSIONS.some((extension) => normalized.endsWith(extension));
 }
 
+export function normalizeRecordingMimeType(fileName: string, mimeType: string | null | undefined) {
+  const baseMimeType = (mimeType ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+  const normalizedFileName = fileName.trim().toLowerCase();
+
+  if (RECORDING_ACCEPTED_MIME_TYPES.includes(baseMimeType as (typeof RECORDING_ACCEPTED_MIME_TYPES)[number])) {
+    return baseMimeType;
+  }
+
+  if (normalizedFileName.endsWith(".webm")) {
+    return "video/webm";
+  }
+
+  if (normalizedFileName.endsWith(".mov")) {
+    return "video/quicktime";
+  }
+
+  if (normalizedFileName.endsWith(".mp4")) {
+    return "video/mp4";
+  }
+
+  return baseMimeType;
+}
+
 export function validateRecordingFile(file: File) {
+  const normalizedMimeType = normalizeRecordingMimeType(file.name, file.type);
   const hasAcceptedMimeType = RECORDING_ACCEPTED_MIME_TYPES.includes(
-    file.type as (typeof RECORDING_ACCEPTED_MIME_TYPES)[number],
+    normalizedMimeType as (typeof RECORDING_ACCEPTED_MIME_TYPES)[number],
   );
 
   if (!hasAcceptedMimeType && !fileHasAcceptedExtension(file.name)) {
@@ -279,16 +320,122 @@ export function buildRecordingDraftPath(userId: string, sessionId: string, fileN
   return `draft/${userId}/${sessionId}/${Date.now()}-${sanitizeFileName(fileName)}`;
 }
 
-async function uploadRecordingObject(
-  userId: string,
-  sessionId: string,
+function getResumableUploadEndpoint() {
+  if (!supabaseUrl) {
+    throw new Error("Missing Supabase configuration for recording uploads.");
+  }
+
+  const parsedUrl = new URL(supabaseUrl);
+  const projectRef = parsedUrl.hostname.split(".")[0];
+
+  if (projectRef && parsedUrl.hostname.endsWith(".supabase.co")) {
+    return `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`;
+  }
+
+  return `${parsedUrl.origin}/storage/v1/upload/resumable`;
+}
+
+function buildUploadProgress(bytesUploaded: number, bytesTotal: number, state: RecordingUploadProgress["state"]) {
+  return {
+    bytesUploaded,
+    bytesTotal,
+    percentage: bytesTotal > 0 ? Math.min(100, Math.max(0, (bytesUploaded / bytesTotal) * 100)) : 0,
+    state,
+  } satisfies RecordingUploadProgress;
+}
+
+function getRecordingUploadErrorMessage(error: Error | tus.DetailedError) {
+  if (error instanceof tus.DetailedError) {
+    const status = error.originalResponse?.getStatus();
+    const body = error.originalResponse?.getBody()?.trim();
+
+    if (body) {
+      return `Recording upload failed${status ? ` (${status})` : ""}: ${body}`;
+    }
+  }
+
+  return error.message || "The recording could not be uploaded.";
+}
+
+async function uploadRecordingObjectResumable(
+  path: string,
   file: File,
-  previousRecording?: ResponseRecording | null,
+  contentType: string,
+  onProgress?: RecordingUploadOptions["onProgress"],
 ) {
   const supabase = requireSupabase();
-  const path = buildRecordingDraftPath(userId, sessionId, file.name);
-  const contentType = file.type || "video/mp4";
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
+  if (sessionError || !session?.access_token) {
+    throw new Error("Sign in again before uploading this recording.");
+  }
+
+  let lastBytesUploaded = 0;
+  const bytesTotal = file.size;
+  const fingerprint = `test4test-recording:${RECORDING_BUCKET_ID}:${path}:${file.size}:${contentType}`;
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: getResumableUploadEndpoint(),
+      headers: {
+        authorization: `Bearer ${session.access_token}`,
+      },
+      metadata: {
+        bucketName: RECORDING_BUCKET_ID,
+        objectName: path,
+        contentType,
+        cacheControl: "3600",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: RECORDING_TUS_CHUNK_SIZE_BYTES,
+      retryDelays: RECORDING_TUS_RETRY_DELAYS_MS,
+      fingerprint: async () => fingerprint,
+      onProgress: (bytesUploaded, nextBytesTotal) => {
+        lastBytesUploaded = bytesUploaded;
+        onProgress?.(buildUploadProgress(bytesUploaded, nextBytesTotal, "uploading"));
+      },
+      onShouldRetry: (error) => {
+        const status = error.originalResponse?.getStatus();
+
+        if (status && [400, 401, 403, 404, 409, 413, 415].includes(status)) {
+          return false;
+        }
+
+        onProgress?.(buildUploadProgress(lastBytesUploaded, bytesTotal, "retrying"));
+        return true;
+      },
+      onError: (error) => {
+        reject(new Error(getRecordingUploadErrorMessage(error)));
+      },
+      onSuccess: () => {
+        onProgress?.(buildUploadProgress(bytesTotal, bytesTotal, "uploading"));
+        resolve();
+      },
+    });
+
+    void upload.findPreviousUploads().then((previousUploads) => {
+      const [previousUpload] = previousUploads;
+
+      if (previousUpload) {
+        upload.resumeFromPreviousUpload(previousUpload);
+      }
+
+      onProgress?.(buildUploadProgress(0, bytesTotal, "uploading"));
+      upload.start();
+    }).catch((error) => reject(error instanceof Error ? error : new Error("The recording upload could not start.")));
+  });
+}
+
+async function uploadRecordingObjectStandard(
+  path: string,
+  file: File,
+  contentType: string,
+) {
+  const supabase = requireSupabase();
   const { error } = await supabase.storage.from(RECORDING_BUCKET_ID).upload(path, file, {
     cacheControl: "3600",
     contentType,
@@ -297,6 +444,29 @@ async function uploadRecordingObject(
 
   if (error) {
     throw new Error(error.message);
+  }
+}
+
+async function uploadRecordingObject(
+  userId: string,
+  sessionId: string,
+  file: File,
+  previousRecording?: ResponseRecording | null,
+  options: RecordingUploadOptions = {},
+) {
+  const supabase = requireSupabase();
+  const path = options.path ?? buildRecordingDraftPath(userId, sessionId, file.name);
+  const contentType = normalizeRecordingMimeType(file.name, file.type) || "video/mp4";
+  const shouldUseResumableUpload =
+    options.preferResumable === true ||
+    file.size > RECORDING_RESUMABLE_UPLOAD_THRESHOLD_BYTES;
+
+  if (shouldUseResumableUpload) {
+    await uploadRecordingObjectResumable(path, file, contentType, options.onProgress);
+  } else {
+    options.onProgress?.(buildUploadProgress(0, file.size, "uploading"));
+    await uploadRecordingObjectStandard(path, file, contentType);
+    options.onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
   }
 
   if (previousRecording?.bucket === RECORDING_BUCKET_ID && previousRecording.path) {
@@ -322,8 +492,9 @@ export async function uploadRecordingDraft(
   sessionId: string,
   file: File,
   previousRecording?: ResponseRecording | null,
+  options?: RecordingUploadOptions,
 ) {
-  return uploadRecordingObject(userId, sessionId, file, previousRecording);
+  return uploadRecordingObject(userId, sessionId, file, previousRecording, options);
 }
 
 export function getPreferredMediaRecorderMimeType() {
@@ -341,7 +512,7 @@ export function getPreferredMediaRecorderMimeType() {
 }
 
 export function createGeneratedRecordingFileName(sessionId: string, mimeType: string) {
-  const extension = mimeType.toLowerCase().includes("webm") ? "webm" : "mp4";
+  const extension = normalizeRecordingMimeType("", mimeType).includes("webm") ? "webm" : "mp4";
   return `screen-recording-${sessionId}.${extension}`;
 }
 
@@ -351,14 +522,19 @@ export async function uploadGeneratedRecordingDraft(
   blob: Blob,
   mimeType: string,
   previousRecording?: ResponseRecording | null,
+  options?: RecordingUploadOptions,
 ) {
-  const fileName = createGeneratedRecordingFileName(sessionId, mimeType || "video/webm");
+  const normalizedMimeType = normalizeRecordingMimeType("", mimeType || "video/webm") || "video/webm";
+  const fileName = createGeneratedRecordingFileName(sessionId, normalizedMimeType);
   const recordingFile = new File([blob], fileName, {
-    type: mimeType || "video/webm",
+    type: normalizedMimeType,
     lastModified: Date.now(),
   });
 
-  return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording);
+  return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording, {
+    ...options,
+    preferResumable: true,
+  });
 }
 
 export async function deleteRecordingDraft(recording?: ResponseRecording | null) {
