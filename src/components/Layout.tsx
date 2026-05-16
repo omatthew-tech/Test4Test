@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
+import { useId, useState } from "react";
+import { CheckCircle2, Coins, Inbox, Menu, Plus, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
 
 const navItems = [
-  { to: "/earn", label: "Earn" },
-  { to: "/my-tests", label: "My Apps" },
-  { to: "/submit", label: "New App" },
-  { to: "/submissions", label: "My Feedback" },
+  { to: "/earn", label: "Earn", mobileLabel: "Earn", Icon: Coins },
+  { to: "/my-tests", label: "My Apps", mobileLabel: "Apps", Icon: Inbox },
+  { to: "/submit", label: "New App", mobileLabel: "New", Icon: Plus },
+  { to: "/submissions", label: "My Feedback", mobileLabel: "Feedback", Icon: CheckCircle2 },
 ];
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
@@ -72,6 +74,8 @@ export function AppShell({
   onAudienceRoleChange?: (role: AudienceRole) => void;
   children: ReactNode;
 }) {
+  const mobileMenuId = useId();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { state, currentUser } = useAppState();
   const credits = getCreditBalance(state, currentUser?.id ?? null);
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
@@ -81,7 +85,7 @@ export function AppShell({
   const shouldShowAudienceToggle = showAudienceToggle && hasMarketingHeader && !showMemberNav;
   const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
   const siteHeaderClassName = `site-header${hasMarketingHeader ? " site-header--marketing" : ""}`;
-  const topbarClassName = `topbar${showMemberNav ? "" : " topbar--guest"}${hasMarketingHeader ? " topbar--marketing" : ""}`;
+  const topbarClassName = `topbar${showMemberNav ? " topbar--member" : " topbar--guest"}${hasMarketingHeader ? " topbar--marketing" : ""}`;
   const pageShellClassName = `page-shell${variant === "marketing" ? " page-shell--marketing" : ""}`;
 
   return (
@@ -108,16 +112,23 @@ export function AppShell({
           ) : null}
 
           {showMemberNav ? (
-            <nav className="topnav">
-              {navItems.map(({ to, label }) => (
+            <nav
+              id={mobileMenuId}
+              className={`topnav${isMobileMenuOpen ? " topnav--open" : ""}`}
+              aria-label="Primary navigation"
+            >
+              {navItems.map(({ to, label, mobileLabel, Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
                   className={({ isActive }) =>
                     `topnav__link${isActive ? " topnav__link--active" : ""}`
                   }
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {label}
+                  <Icon className="topnav__icon" size={18} aria-hidden="true" />
+                  <span className="topnav__label topnav__label--desktop">{label}</span>
+                  <span className="topnav__label topnav__label--mobile">{mobileLabel}</span>
                 </NavLink>
               ))}
             </nav>
@@ -140,6 +151,18 @@ export function AppShell({
               <NavLink to={profileHref} className="button button--secondary button--small">
                 {currentUser ? "Profile" : "Log in"}
               </NavLink>
+              {showMemberNav ? (
+                <button
+                  type="button"
+                  className="mobile-menu-button"
+                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isMobileMenuOpen}
+                  aria-controls={mobileMenuId}
+                  onClick={() => setIsMobileMenuOpen((current) => !current)}
+                >
+                  {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </header>

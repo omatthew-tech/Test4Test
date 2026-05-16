@@ -242,6 +242,15 @@ textarea {
   color: var(--color-ink-700);
 }
 
+.topnav__icon,
+.topnav__label--mobile {
+  display: none;
+}
+
+.mobile-menu-button {
+  display: none;
+}
+
 .topnav__link--active {
   background: var(--color-orange-050);
   color: var(--color-ink-900);
@@ -8882,7 +8891,148 @@ select {
   }
 }
 
+/* Member mobile header */
+@media (max-width: 760px) {
+  .topbar--member:not(.topbar--marketing) {
+    position: relative;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 10px;
+    flex-wrap: wrap;
+  }
 
+  .topbar--member:not(.topbar--marketing) .brandmark {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
+  .topbar--member:not(.topbar--marketing) .topbar__actions {
+    order: 2;
+    width: auto;
+    margin-left: auto;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav {
+    order: 3;
+    width: 100%;
+    flex: 0 0 100%;
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-top: 2px;
+    padding: 8px;
+    border: 1px solid rgba(216, 208, 200, 0.92);
+    border-radius: 18px;
+    background: rgba(255, 254, 252, 0.96);
+    box-shadow: 0 14px 30px rgba(29, 24, 21, 0.08);
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav--open {
+    display: grid;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__link {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #625850;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__icon {
+    display: block;
+    color: #8a5c3f;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__label--desktop {
+    display: none;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__label--mobile {
+    display: inline;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__link--active {
+    background: var(--color-orange-050);
+    color: var(--color-ink-900);
+    box-shadow: inset 0 0 0 1px rgba(245, 142, 86, 0.16);
+  }
+
+  .topbar--member:not(.topbar--marketing) .topnav__link:hover {
+    transform: none;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topbar__actions .button,
+  .topbar--member:not(.topbar--marketing) .topbar__actions .profile-menu {
+    flex: 0 0 auto;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topbar__actions .button--small {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .credit-chip {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .topbar--member:not(.topbar--marketing) .mobile-menu-button {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(216, 208, 200, 0.9);
+    border-radius: 12px;
+    background: var(--color-surface-000);
+    color: var(--color-ink-900);
+    box-shadow: 0 4px 10px rgba(29, 24, 21, 0.04);
+  }
+
+  .topbar--member:not(.topbar--marketing) .mobile-menu-button:focus-visible {
+    outline: 2px solid rgba(245, 142, 86, 0.46);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar--member:not(.topbar--marketing) {
+    column-gap: 6px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topbar__actions {
+    gap: 6px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .credit-chip {
+    padding: 8px 9px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .credit-chip__label {
+    font-size: 0.78rem;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topbar__actions .button--small {
+    padding: 8px 10px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .mobile-menu-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+}
 
 

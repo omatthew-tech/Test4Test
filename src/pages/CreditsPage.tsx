@@ -53,9 +53,9 @@ export function CreditsPage() {
           <div className="credits-hero-copy">
             <h2>1 Credit = 1 Test</h2>
             <p>
-              Complete tests for other founders to earn credits. Your balance is
-              automatically applied to your apps. The more credits you have, the
-              higher your test will appear on the earn page.
+              Complete tests to earn credits. Your balance is automatically
+              applied to your apps. The more credits you have, the more
+              visibility your test will gain on the earn page.
             </p>
             <div className="inline-actions credits-hero-actions">
               <Link to="/my-tests" className="button button--secondary">
