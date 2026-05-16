@@ -126,10 +126,16 @@ export function AppShell({
           {showTopbarActions ? (
             <div className="topbar__actions">
               {showMemberNav ? (
-                <div className="credit-chip">
+                <NavLink
+                  to="/credits"
+                  className={({ isActive }) =>
+                    `credit-chip credit-chip--link${isActive ? " credit-chip--active" : ""}`
+                  }
+                  aria-label={`${credits} credits. View credit balance details.`}
+                >
                   <strong>{credits}</strong>
                   <span className="credit-chip__label">credits</span>
-                </div>
+                </NavLink>
               ) : null}
               <NavLink to={profileHref} className="button button--secondary button--small">
                 {currentUser ? "Profile" : "Log in"}

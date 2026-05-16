@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { trackEventOncePerSession } from "./lib/analytics";
 import { BannedPage } from "./pages/BannedPage";
+import { CreditsPage } from "./pages/CreditsPage";
 import { EarnPage } from "./pages/EarnPage";
 import { HomePage } from "./pages/HomePage";
 import { MyTestsPage } from "./pages/MyTestsPage";
@@ -85,6 +86,7 @@ export default function App() {
           <Route path="/my-tests/:submissionId" element={<BanRedirectRoute><SubmissionDetailPage /></BanRedirectRoute>} />
           <Route path="/submissions" element={<BanRedirectRoute><SubmissionsPage /></BanRedirectRoute>} />
           <Route path="/submissions/:responseId/revise" element={<BanRedirectRoute><ReviseSubmissionPage /></BanRedirectRoute>} />
+          <Route path="/credits" element={<BanRedirectRoute><CreditsPage /></BanRedirectRoute>} />
           <Route path="/profile" element={<BanRedirectRoute><ProfilePage /></BanRedirectRoute>} />
           <Route path="/banned" element={<BannedOnlyRoute><BannedPage /></BannedOnlyRoute>} />
           <Route path="*" element={<BanRedirectRoute><HomePage /></BanRedirectRoute>} />
