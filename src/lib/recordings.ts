@@ -1,13 +1,13 @@
-import * as tus from "tus-js-client";
 import { ProductType, ResponseRecording } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
+export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
 export const RECORDING_STORAGE_DAYS = 7;
 export const RECORDING_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
-export const RECORDING_RESUMABLE_UPLOAD_THRESHOLD_BYTES = 6 * 1024 * 1024;
-const RECORDING_TUS_CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
-const RECORDING_TUS_RETRY_DELAYS_MS = [0, 3000, 5000, 10000, 20000];
+export const RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
+const RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES = 10 * 1024 * 1024;
+const RECORDING_UPLOAD_RETRY_DELAYS_MS = [750, 1500, 3000];
 export const RECORDING_ACCEPTED_MIME_TYPES = [
   "video/mp4",
   "video/quicktime",
@@ -60,8 +60,25 @@ export interface RecordingUploadProgress {
 
 export interface RecordingUploadOptions {
   path?: string;
-  preferResumable?: boolean;
   onProgress?: (progress: RecordingUploadProgress) => void;
+}
+
+interface RecordingUploadR2Response {
+  ok?: boolean;
+  bucket?: string;
+  path?: string;
+  uploadUrl?: string;
+  uploadId?: string;
+  partSizeBytes?: number;
+  expiresInSeconds?: number;
+  error?: string;
+  message?: string;
+}
+
+interface MultipartUploadCacheEntry {
+  uploadId: string;
+  partSizeBytes: number;
+  completedParts: Array<{ partNumber: number; etag: string }>;
 }
 
 interface NavigatorWithUserAgentData extends Navigator {
@@ -74,6 +91,8 @@ interface NavigatorWithUserAgentData extends Navigator {
     }>;
   };
 }
+
+const multipartUploadCache = new Map<string, MultipartUploadCacheEntry>();
 
 function buildRecordingSessionStorageKey(submissionId: string) {
   return `test4test:recording-session:${submissionId}`;
@@ -320,21 +339,6 @@ export function buildRecordingDraftPath(userId: string, sessionId: string, fileN
   return `draft/${userId}/${sessionId}/${Date.now()}-${sanitizeFileName(fileName)}`;
 }
 
-function getResumableUploadEndpoint() {
-  if (!supabaseUrl) {
-    throw new Error("Missing Supabase configuration for recording uploads.");
-  }
-
-  const parsedUrl = new URL(supabaseUrl);
-  const projectRef = parsedUrl.hostname.split(".")[0];
-
-  if (projectRef && parsedUrl.hostname.endsWith(".supabase.co")) {
-    return `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`;
-  }
-
-  return `${parsedUrl.origin}/storage/v1/upload/resumable`;
-}
-
 function buildUploadProgress(bytesUploaded: number, bytesTotal: number, state: RecordingUploadProgress["state"]) {
   return {
     bytesUploaded,
@@ -344,25 +348,7 @@ function buildUploadProgress(bytesUploaded: number, bytesTotal: number, state: R
   } satisfies RecordingUploadProgress;
 }
 
-function getRecordingUploadErrorMessage(error: Error | tus.DetailedError) {
-  if (error instanceof tus.DetailedError) {
-    const status = error.originalResponse?.getStatus();
-    const body = error.originalResponse?.getBody()?.trim();
-
-    if (body) {
-      return `Recording upload failed${status ? ` (${status})` : ""}: ${body}`;
-    }
-  }
-
-  return error.message || "The recording could not be uploaded.";
-}
-
-async function uploadRecordingObjectResumable(
-  path: string,
-  file: File,
-  contentType: string,
-  onProgress?: RecordingUploadOptions["onProgress"],
-) {
+async function getCurrentAccessToken() {
   const supabase = requireSupabase();
   const {
     data: { session },
@@ -373,78 +359,226 @@ async function uploadRecordingObjectResumable(
     throw new Error("Sign in again before uploading this recording.");
   }
 
-  let lastBytesUploaded = 0;
-  const bytesTotal = file.size;
-  const fingerprint = `test4test-recording:${RECORDING_BUCKET_ID}:${path}:${file.size}:${contentType}`;
-
-  await new Promise<void>((resolve, reject) => {
-    const upload = new tus.Upload(file, {
-      endpoint: getResumableUploadEndpoint(),
-      headers: {
-        authorization: `Bearer ${session.access_token}`,
-      },
-      metadata: {
-        bucketName: RECORDING_BUCKET_ID,
-        objectName: path,
-        contentType,
-        cacheControl: "3600",
-      },
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      chunkSize: RECORDING_TUS_CHUNK_SIZE_BYTES,
-      retryDelays: RECORDING_TUS_RETRY_DELAYS_MS,
-      fingerprint: async () => fingerprint,
-      onProgress: (bytesUploaded, nextBytesTotal) => {
-        lastBytesUploaded = bytesUploaded;
-        onProgress?.(buildUploadProgress(bytesUploaded, nextBytesTotal, "uploading"));
-      },
-      onShouldRetry: (error) => {
-        const status = error.originalResponse?.getStatus();
-
-        if (status && [400, 401, 403, 404, 409, 413, 415].includes(status)) {
-          return false;
-        }
-
-        onProgress?.(buildUploadProgress(lastBytesUploaded, bytesTotal, "retrying"));
-        return true;
-      },
-      onError: (error) => {
-        reject(new Error(getRecordingUploadErrorMessage(error)));
-      },
-      onSuccess: () => {
-        onProgress?.(buildUploadProgress(bytesTotal, bytesTotal, "uploading"));
-        resolve();
-      },
-    });
-
-    void upload.findPreviousUploads().then((previousUploads) => {
-      const [previousUpload] = previousUploads;
-
-      if (previousUpload) {
-        upload.resumeFromPreviousUpload(previousUpload);
-      }
-
-      onProgress?.(buildUploadProgress(0, bytesTotal, "uploading"));
-      upload.start();
-    }).catch((error) => reject(error instanceof Error ? error : new Error("The recording upload could not start.")));
-  });
+  return session.access_token;
 }
 
-async function uploadRecordingObjectStandard(
+async function callRecordingUploadR2(payload: Record<string, unknown>) {
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error("Recording uploads are not available in the current environment.");
+  }
+
+  const accessToken = await getCurrentAccessToken();
+  const response = await fetch(`${supabaseUrl}/functions/v1/recording-upload-r2`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: supabasePublishableKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = (await response.json().catch(() => null)) as RecordingUploadR2Response | null;
+
+  if (!response.ok || !result?.ok) {
+    throw new Error(
+      result?.error ??
+        result?.message ??
+        "The recording could not be uploaded.",
+    );
+  }
+
+  return result;
+}
+
+async function uploadFileToSignedUrl(
+  uploadUrl: string,
+  body: Blob,
+  options: {
+    contentType?: string;
+    retryLabel?: string;
+  } = {},
+) {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const headers = new Headers();
+
+      if (options.contentType) {
+        headers.set("Content-Type", options.contentType);
+      }
+
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers,
+        body,
+      });
+
+      if (!response.ok) {
+        const responseBody = await response.text().catch(() => "");
+        throw new Error(responseBody || `${options.retryLabel ?? "Recording upload"} failed (${response.status}).`);
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("The recording upload failed.");
+
+      if (attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length) {
+        break;
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, RECORDING_UPLOAD_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+
+  throw lastError ?? new Error("The recording upload failed.");
+}
+
+async function uploadRecordingObjectSingle(
   path: string,
   file: File,
   contentType: string,
+  onProgress?: RecordingUploadOptions["onProgress"],
 ) {
-  const supabase = requireSupabase();
-  const { error } = await supabase.storage.from(RECORDING_BUCKET_ID).upload(path, file, {
-    cacheControl: "3600",
-    contentType,
-    upsert: false,
+  onProgress?.(buildUploadProgress(0, file.size, "uploading"));
+  const createResult = await callRecordingUploadR2({
+    action: "create_single",
+    path,
+    fileName: file.name,
+    mimeType: contentType,
+    fileSizeBytes: file.size,
   });
 
-  if (error) {
-    throw new Error(error.message);
+  if (!createResult.uploadUrl) {
+    throw new Error("The recording upload URL could not be created.");
   }
+
+  await uploadFileToSignedUrl(createResult.uploadUrl, file, {
+    contentType,
+    retryLabel: "Recording upload",
+  });
+  onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
+
+  await callRecordingUploadR2({
+    action: "complete_single",
+    path,
+    fileName: file.name,
+    mimeType: contentType,
+    fileSizeBytes: file.size,
+  });
+}
+
+function getMultipartCacheKey(path: string, file: File, contentType: string) {
+  return `${path}:${file.size}:${contentType}`;
+}
+
+async function uploadRecordingObjectMultipart(
+  path: string,
+  file: File,
+  contentType: string,
+  onProgress?: RecordingUploadOptions["onProgress"],
+) {
+  const cacheKey = getMultipartCacheKey(path, file, contentType);
+  let cacheEntry = multipartUploadCache.get(cacheKey);
+
+  if (!cacheEntry) {
+    const initiateResult = await callRecordingUploadR2({
+      action: "initiate_multipart",
+      path,
+      fileName: file.name,
+      mimeType: contentType,
+      fileSizeBytes: file.size,
+    });
+
+    if (!initiateResult.uploadId) {
+      throw new Error("The multipart recording upload could not start.");
+    }
+
+    cacheEntry = {
+      uploadId: initiateResult.uploadId,
+      partSizeBytes: initiateResult.partSizeBytes ?? RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES,
+      completedParts: [],
+    };
+    multipartUploadCache.set(cacheKey, cacheEntry);
+  }
+
+  const completedPartNumbers = new Set(cacheEntry.completedParts.map((part) => part.partNumber));
+  const totalParts = Math.ceil(file.size / cacheEntry.partSizeBytes);
+  let uploadedBytes = cacheEntry.completedParts.reduce((total, part) => {
+    const partStart = (part.partNumber - 1) * cacheEntry!.partSizeBytes;
+    const partEnd = Math.min(file.size, partStart + cacheEntry!.partSizeBytes);
+    return total + Math.max(0, partEnd - partStart);
+  }, 0);
+
+  onProgress?.(buildUploadProgress(uploadedBytes, file.size, uploadedBytes > 0 ? "retrying" : "uploading"));
+
+  for (let partNumber = 1; partNumber <= totalParts; partNumber += 1) {
+    if (completedPartNumbers.has(partNumber)) {
+      continue;
+    }
+
+    const partStart = (partNumber - 1) * cacheEntry.partSizeBytes;
+    const partEnd = Math.min(file.size, partStart + cacheEntry.partSizeBytes);
+    const partBlob = file.slice(partStart, partEnd);
+    let partResponse: Response | null = null;
+
+    for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
+      const signedPart = await callRecordingUploadR2({
+        action: "sign_part",
+        path,
+        fileName: file.name,
+        mimeType: contentType,
+        fileSizeBytes: file.size,
+        uploadId: cacheEntry.uploadId,
+        partNumber,
+      });
+
+      if (!signedPart.uploadUrl) {
+        throw new Error("The recording upload part URL could not be created.");
+      }
+
+      try {
+        if (attempt > 0) {
+          onProgress?.(buildUploadProgress(uploadedBytes, file.size, "retrying"));
+        }
+
+        partResponse = await uploadFileToSignedUrl(signedPart.uploadUrl, partBlob, {
+          retryLabel: `Recording upload part ${partNumber}`,
+        });
+        break;
+      } catch (error) {
+        if (attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length) {
+          throw error;
+        }
+      }
+    }
+
+    const etag = partResponse?.headers.get("etag")?.trim();
+
+    if (!etag) {
+      throw new Error("Cloudflare R2 did not return a part ETag. Check the R2 bucket CORS exposed headers.");
+    }
+
+    cacheEntry.completedParts = [
+      ...cacheEntry.completedParts,
+      { partNumber, etag },
+    ];
+    completedPartNumbers.add(partNumber);
+    uploadedBytes += partBlob.size;
+    onProgress?.(buildUploadProgress(uploadedBytes, file.size, "uploading"));
+  }
+
+  await callRecordingUploadR2({
+    action: "complete_multipart",
+    path,
+    fileName: file.name,
+    mimeType: contentType,
+    fileSizeBytes: file.size,
+    uploadId: cacheEntry.uploadId,
+    parts: cacheEntry.completedParts,
+  });
+  multipartUploadCache.delete(cacheKey);
+  onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 }
 
 async function uploadRecordingObject(
@@ -454,29 +588,24 @@ async function uploadRecordingObject(
   previousRecording?: ResponseRecording | null,
   options: RecordingUploadOptions = {},
 ) {
-  const supabase = requireSupabase();
   const path = options.path ?? buildRecordingDraftPath(userId, sessionId, file.name);
   const contentType = normalizeRecordingMimeType(file.name, file.type) || "video/mp4";
-  const shouldUseResumableUpload =
-    options.preferResumable === true ||
-    file.size > RECORDING_RESUMABLE_UPLOAD_THRESHOLD_BYTES;
+  const shouldUseMultipartUpload = file.size > RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES;
 
-  if (shouldUseResumableUpload) {
-    await uploadRecordingObjectResumable(path, file, contentType, options.onProgress);
+  if (shouldUseMultipartUpload) {
+    await uploadRecordingObjectMultipart(path, file, contentType, options.onProgress);
   } else {
-    options.onProgress?.(buildUploadProgress(0, file.size, "uploading"));
-    await uploadRecordingObjectStandard(path, file, contentType);
-    options.onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
+    await uploadRecordingObjectSingle(path, file, contentType, options.onProgress);
   }
 
-  if (previousRecording?.bucket === RECORDING_BUCKET_ID && previousRecording.path) {
-    await supabase.storage.from(RECORDING_BUCKET_ID).remove([previousRecording.path]);
+  if (previousRecording?.path) {
+    await deleteRecordingDraft(previousRecording).catch(() => undefined);
   }
 
   const uploadedAt = new Date().toISOString();
 
   return {
-    bucket: RECORDING_BUCKET_ID,
+    bucket: R2_RECORDING_BUCKET_ID,
     path,
     fileName: file.name,
     mimeType: contentType,
@@ -531,20 +660,31 @@ export async function uploadGeneratedRecordingDraft(
     lastModified: Date.now(),
   });
 
-  return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording, {
-    ...options,
-    preferResumable: true,
-  });
+  return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording, options);
 }
 
 export async function deleteRecordingDraft(recording?: ResponseRecording | null) {
-  if (!recording?.path || recording.bucket !== RECORDING_BUCKET_ID) {
+  if (!recording?.path) {
+    return;
+  }
+
+  if (recording.bucket === R2_RECORDING_BUCKET_ID) {
+    await callRecordingUploadR2({
+      action: "delete",
+      path: recording.path,
+      fileName: recording.fileName,
+      mimeType: recording.mimeType,
+      fileSizeBytes: recording.fileSizeBytes,
+    });
+    return;
+  }
+
+  if (recording.bucket !== RECORDING_BUCKET_ID) {
     return;
   }
 
   const supabase = requireSupabase();
   const { error } = await supabase.storage.from(RECORDING_BUCKET_ID).remove([recording.path]);
-
   if (error) {
     throw new Error(error.message);
   }

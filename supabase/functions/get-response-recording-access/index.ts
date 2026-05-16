@@ -4,6 +4,11 @@ import {
   recordingCorsHeaders,
   recordingJson,
 } from "../_shared/response-recordings.ts";
+import {
+  buildDownloadContentDisposition,
+  createR2PresignedUrl,
+  getR2RecordingEnvironment,
+} from "../_shared/r2-recordings.ts";
 
 interface RecordingAccessRequest {
   responseId?: string;
@@ -106,24 +111,50 @@ Deno.serve(async (request) => {
     return recordingJson({ error: "You do not have permission to access this recording." }, 403);
   }
 
-  const signedUrlResult = await admin.storage
-    .from(responseRecord.recording_bucket)
-    .createSignedUrl(
-      responseRecord.recording_path,
-      60 * 5,
-      payload.download
-        ? { download: responseRecord.recording_file_name ?? "screen-recording.mp4" }
-        : undefined,
-    );
+  let signedUrl = "";
+  const fileName = responseRecord.recording_file_name ?? "screen-recording.mp4";
 
-  if (signedUrlResult.error || !signedUrlResult.data?.signedUrl) {
-    return recordingJson({ error: signedUrlResult.error?.message ?? "Recording URL could not be created." }, 502);
+  if (responseRecord.recording_bucket.startsWith("r2:")) {
+    let r2Env;
+
+    try {
+      r2Env = getR2RecordingEnvironment();
+    } catch (error) {
+      return recordingJson({ error: error instanceof Error ? error.message : "R2 recording setup is incomplete." }, 500);
+    }
+
+    if (responseRecord.recording_bucket !== r2Env.providerBucket) {
+      return recordingJson({ error: "Recording storage bucket is not configured." }, 500);
+    }
+
+    signedUrl = await createR2PresignedUrl(r2Env, "GET", responseRecord.recording_path, {
+      expiresInSeconds: 60 * 5,
+      query: payload.download
+        ? { "response-content-disposition": buildDownloadContentDisposition(fileName) }
+        : undefined,
+    });
+  } else {
+    const signedUrlResult = await admin.storage
+      .from(responseRecord.recording_bucket)
+      .createSignedUrl(
+        responseRecord.recording_path,
+        60 * 5,
+        payload.download
+          ? { download: fileName }
+          : undefined,
+      );
+
+    if (signedUrlResult.error || !signedUrlResult.data?.signedUrl) {
+      return recordingJson({ error: signedUrlResult.error?.message ?? "Recording URL could not be created." }, 502);
+    }
+
+    signedUrl = signedUrlResult.data.signedUrl;
   }
 
   return recordingJson({
     ok: true,
-    url: signedUrlResult.data.signedUrl,
-    fileName: responseRecord.recording_file_name ?? "screen-recording.mp4",
+    url: signedUrl,
+    fileName,
     expiresInSeconds: 60 * 5,
   });
 });
