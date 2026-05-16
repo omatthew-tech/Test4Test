@@ -7560,6 +7560,31 @@ select {
   opacity: 0.38;
 }
 
+.recording-recovery-upload {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(221, 212, 204, 0.9);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.recording-recovery-upload__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recording-recovery-upload__copy strong {
+  color: var(--color-ink-900);
+}
+
+.recording-recovery-upload__field {
+  margin: 0;
+}
+
 .recording-microphone-setup {
   display: flex;
   flex-direction: column;
@@ -7987,6 +8012,10 @@ select {
 
   .recording-quickstart__content {
     flex-direction: column;
+  }
+
+  .recording-recovery-upload {
+    grid-template-columns: 1fr;
   }
 
   .recording-microphone-select select {

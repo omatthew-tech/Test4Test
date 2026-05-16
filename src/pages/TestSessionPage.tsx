@@ -2485,6 +2485,26 @@ export function TestSessionPage() {
                     </>
                   )}
 
+                  {isNativeDesktopRecording ? (
+                    <div className="recording-recovery-upload">
+                      <div className="recording-recovery-upload__copy">
+                        <strong>Already have a saved recording?</strong>
+                        <small className="helper-text">
+                          If you downloaded a backup after a failed upload, attach it here and submit without recording again.
+                        </small>
+                      </div>
+                      <label className="field recording-recovery-upload__field">
+                        <span>Upload saved recording</span>
+                        <input
+                          type="file"
+                          accept={RECORDING_ACCEPT_ATTRIBUTE}
+                          onChange={handleRecordingUpload}
+                          disabled={isUploadingRecording}
+                        />
+                      </label>
+                    </div>
+                  ) : null}
+
                   <div className="wizard-actions">
                     <button
                       type="button"
