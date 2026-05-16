@@ -8562,32 +8562,34 @@ select {
   }
 
   .tester-hero__visual {
-    min-height: 500px;
+    min-height: 0;
   }
 
   .tester-visual-stack {
-    min-height: 500px;
+    width: 100%;
+    min-height: 0;
   }
 
   .tester-visual-stack__dots {
-    right: 2%;
-    top: 40px;
-    width: 116px;
-    height: 116px;
+    display: none;
   }
 
   .tester-mascot {
-    right: calc(50% - 212px);
-    bottom: 12px;
-    width: clamp(220px, 66vw, 280px);
+    display: none;
   }
 
   .tester-earnings-card {
-    left: 50%;
-    top: 12px;
+    position: relative;
+    left: auto;
+    top: auto;
     width: min(100%, 390px);
+    margin: 0 auto;
     padding: 21px;
-    transform: translateX(-50%);
+    transform: none;
+  }
+
+  .tester-sparkle {
+    display: none;
   }
 
   .tester-sparkle--top {
@@ -8619,7 +8621,7 @@ select {
 @media (max-width: 520px) {
   .tester-hero__visual,
   .tester-visual-stack {
-    min-height: 540px;
+    min-height: 0;
   }
 
   .tester-earnings-card {
@@ -8653,11 +8655,6 @@ select {
   .tester-paypal-logo {
     width: 24px;
     height: 30px;
-  }
-
-  .tester-mascot {
-    right: calc(50% - 176px);
-    width: 235px;
   }
 
   .tester-step-card {
