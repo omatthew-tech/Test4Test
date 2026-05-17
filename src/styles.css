@@ -242,7 +242,6 @@ textarea {
   color: var(--color-ink-700);
 }
 
-.topnav__icon,
 .topnav__label--mobile {
   display: none;
 }
@@ -8937,21 +8936,15 @@ select {
   }
 
   .topbar--member:not(.topbar--marketing) .topnav__link {
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
+    display: flex;
+    align-items: center;
     justify-content: flex-start;
-    gap: 10px;
     min-height: 46px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     border-radius: 12px;
     color: #625850;
     font-weight: 700;
     white-space: nowrap;
-  }
-
-  .topbar--member:not(.topbar--marketing) .topnav__icon {
-    display: block;
-    color: #8a5c3f;
   }
 
   .topbar--member:not(.topbar--marketing) .topnav__label--desktop {

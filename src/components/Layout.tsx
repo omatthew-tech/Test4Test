@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
-import { CheckCircle2, Coins, Inbox, Menu, Plus, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getCreditBalance } from "../lib/selectors";
 
 const navItems = [
-  { to: "/earn", label: "Earn", mobileLabel: "Earn", Icon: Coins },
-  { to: "/my-tests", label: "My Apps", mobileLabel: "My Apps", Icon: Inbox },
-  { to: "/submit", label: "New App", mobileLabel: "New App", Icon: Plus },
-  { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews", Icon: CheckCircle2 },
+  { to: "/earn", label: "Earn", mobileLabel: "Earn" },
+  { to: "/my-tests", label: "My Apps", mobileLabel: "My Apps" },
+  { to: "/submit", label: "New App", mobileLabel: "New App" },
+  { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews" },
 ];
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
@@ -117,7 +117,7 @@ export function AppShell({
               className={`topnav${isMobileMenuOpen ? " topnav--open" : ""}`}
               aria-label="Primary navigation"
             >
-              {navItems.map(({ to, label, mobileLabel, Icon }) => (
+              {navItems.map(({ to, label, mobileLabel }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -126,7 +126,6 @@ export function AppShell({
                   }
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <Icon className="topnav__icon" size={18} aria-hidden="true" />
                   <span className="topnav__label topnav__label--desktop">{label}</span>
                   <span className="topnav__label topnav__label--mobile">{mobileLabel}</span>
                 </NavLink>
