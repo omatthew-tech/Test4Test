@@ -7,9 +7,9 @@ import { getCreditBalance } from "../lib/selectors";
 
 const navItems = [
   { to: "/earn", label: "Earn", mobileLabel: "Earn", Icon: Coins },
-  { to: "/my-tests", label: "My Apps", mobileLabel: "Apps", Icon: Inbox },
-  { to: "/submit", label: "New App", mobileLabel: "New", Icon: Plus },
-  { to: "/submissions", label: "My Feedback", mobileLabel: "Feedback", Icon: CheckCircle2 },
+  { to: "/my-tests", label: "My Apps", mobileLabel: "My Apps", Icon: Inbox },
+  { to: "/submit", label: "New App", mobileLabel: "New App", Icon: Plus },
+  { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews", Icon: CheckCircle2 },
 ];
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
