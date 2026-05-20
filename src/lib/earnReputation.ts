@@ -4,6 +4,7 @@ import { requireSupabase } from "./supabase";
 interface EarnSubmissionReputationRpcRow {
   submission_id: string;
   owner_has_tested_you: boolean;
+  owner_credit_balance: number | null;
   owner_test_back_rate_percent: number | null;
   owner_satisfaction_rate_percent: number | null;
 }
@@ -33,6 +34,10 @@ export async function loadEarnSubmissionReputations(submissionIds: string[]) {
   return ((data ?? []) as EarnSubmissionReputationRpcRow[]).map((row) => ({
     submissionId: row.submission_id,
     ownerHasTestedYou: row.owner_has_tested_you === true,
+    ownerCreditBalance:
+      typeof row.owner_credit_balance === "number" && !Number.isNaN(row.owner_credit_balance)
+        ? row.owner_credit_balance
+        : 0,
     ownerTestBackRatePercent: normalizePercent(row.owner_test_back_rate_percent),
     ownerSatisfactionRatePercent: normalizePercent(
       row.owner_satisfaction_rate_percent,

@@ -34,6 +34,36 @@ function compareEarnSubmissionsByMode(first: Submission, second: Submission, sor
   return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
 }
 
+function compareTestBackTargetSubmissions(first: Submission, second: Submission) {
+  if (first.promoted !== second.promoted) {
+    return first.promoted ? -1 : 1;
+  }
+
+  if (first.responseCount !== second.responseCount) {
+    return first.responseCount - second.responseCount;
+  }
+
+  return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+}
+
+function selectOneSubmissionPerOwner(submissions: Submission[]) {
+  const selectedByOwner = new Map<string, Submission>();
+
+  submissions.forEach((submission) => {
+    if (!submission.userId) {
+      return;
+    }
+
+    const current = selectedByOwner.get(submission.userId);
+
+    if (!current || compareTestBackTargetSubmissions(submission, current) < 0) {
+      selectedByOwner.set(submission.userId, submission);
+    }
+  });
+
+  return [...selectedByOwner.values()];
+}
+
 function getReputationScore(reputation: EarnSubmissionReputation | null | undefined) {
   if (!reputation) {
     return null;
@@ -49,28 +79,37 @@ function compareEarnSubmissions(
   firstReputation: EarnSubmissionReputation | null | undefined,
   secondReputation: EarnSubmissionReputation | null | undefined,
 ) {
+  if (sortMode !== "recommended") {
+    return compareEarnSubmissionsByMode(first, second, sortMode);
+  }
+
+  const firstCreditBalance = firstReputation?.ownerCreditBalance ?? 0;
+  const secondCreditBalance = secondReputation?.ownerCreditBalance ?? 0;
+
+  if (firstCreditBalance !== secondCreditBalance) {
+    return secondCreditBalance - firstCreditBalance;
+  }
+
   if (first.promoted !== second.promoted) {
     return first.promoted ? -1 : 1;
   }
 
-  if (sortMode === "recommended") {
-    const firstOwnerTestedYou = firstReputation?.ownerHasTestedYou === true;
-    const secondOwnerTestedYou = secondReputation?.ownerHasTestedYou === true;
+  const firstOwnerTestedYou = firstReputation?.ownerHasTestedYou === true;
+  const secondOwnerTestedYou = secondReputation?.ownerHasTestedYou === true;
 
-    if (firstOwnerTestedYou !== secondOwnerTestedYou) {
-      return firstOwnerTestedYou ? -1 : 1;
-    }
+  if (firstOwnerTestedYou !== secondOwnerTestedYou) {
+    return firstOwnerTestedYou ? -1 : 1;
+  }
 
-    const firstScore = getReputationScore(firstReputation);
-    const secondScore = getReputationScore(secondReputation);
+  const firstScore = getReputationScore(firstReputation);
+  const secondScore = getReputationScore(secondReputation);
 
-    if (firstScore !== null && secondScore !== null && firstScore !== secondScore) {
-      return secondScore - firstScore;
-    }
+  if (firstScore !== null && secondScore !== null && firstScore !== secondScore) {
+    return secondScore - firstScore;
+  }
 
-    if (firstScore !== secondScore) {
-      return secondScore === null ? -1 : 1;
-    }
+  if (firstScore !== secondScore) {
+    return secondScore === null ? -1 : 1;
   }
 
   return compareEarnSubmissionsByMode(first, second, sortMode);
@@ -90,12 +129,28 @@ export function EarnPage() {
   const { state, currentUser, isConfigured } = useAppState();
   const available = getAvailableSubmissions(state);
 
-  const items = useMemo(() => {
+  const candidateSubmissions = useMemo(() => {
     let next = [...available];
 
     if (typeFilter !== "all") {
       next = next.filter((item) => item.productTypes.includes(typeFilter as ProductType));
     }
+
+    return next;
+  }, [available, typeFilter]);
+
+  const candidateSubmissionIdsKey = useMemo(
+    () => [...new Set(candidateSubmissions.map((item) => item.id))].sort().join("|"),
+    [candidateSubmissions],
+  );
+
+  const displayedSubmissions = useMemo(() => {
+    const reciprocalCandidates = selectOneSubmissionPerOwner(
+      candidateSubmissions.filter(
+        (submission) => reputationBySubmissionId[submission.id]?.ownerHasTestedYou === true,
+      ),
+    );
+    const next = reciprocalCandidates.length > 0 ? reciprocalCandidates : [...candidateSubmissions];
 
     next.sort((first, second) =>
       compareEarnSubmissions(
@@ -108,16 +163,16 @@ export function EarnPage() {
     );
 
     return next;
-  }, [available, reputationBySubmissionId, sortMode, typeFilter]);
+  }, [candidateSubmissions, reputationBySubmissionId, sortMode]);
 
-  const visibleSubmissionIdsKey = useMemo(
-    () => [...new Set(items.map((item) => item.id))].sort().join("|"),
-    [items],
+  const displayedSubmissionIdsKey = useMemo(
+    () => [...new Set(displayedSubmissions.map((item) => item.id))].sort().join("|"),
+    [displayedSubmissions],
   );
 
   useEffect(() => {
     let isCancelled = false;
-    const submissionIds = visibleSubmissionIdsKey ? visibleSubmissionIdsKey.split("|") : [];
+    const submissionIds = candidateSubmissionIdsKey ? candidateSubmissionIdsKey.split("|") : [];
 
     if (!isConfigured || !currentUser || submissionIds.length === 0) {
       setReputationBySubmissionId({});
@@ -152,11 +207,11 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, isConfigured, visibleSubmissionIdsKey]);
+  }, [candidateSubmissionIdsKey, currentUser?.id, isConfigured]);
 
   useEffect(() => {
     let isCancelled = false;
-    const submissionIds = visibleSubmissionIdsKey ? visibleSubmissionIdsKey.split("|") : [];
+    const submissionIds = displayedSubmissionIdsKey ? displayedSubmissionIdsKey.split("|") : [];
 
     if (!currentUser || submissionIds.length === 0) {
       setDraftProgressBySubmissionId({});
@@ -190,15 +245,15 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, state, visibleSubmissionIdsKey]);
+  }, [currentUser?.id, displayedSubmissionIdsKey, state]);
 
   const cards = useMemo<EarnSubmissionCard[]>(
     () =>
-      items.map((submission) => ({
+      displayedSubmissions.map((submission) => ({
         submission,
         reputation: reputationBySubmissionId[submission.id] ?? null,
       })),
-    [items, reputationBySubmissionId],
+    [displayedSubmissions, reputationBySubmissionId],
   );
 
   return (

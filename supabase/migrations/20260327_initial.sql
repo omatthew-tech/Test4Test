@@ -229,15 +229,6 @@ begin
     set email = excluded.email,
         display_name = excluded.display_name;
 
-  insert into public.credit_transactions (user_id, type, amount, reason)
-  select new.id, 'starter_credit', 1, 'Starter credit after first email verification'
-  where not exists (
-    select 1
-    from public.credit_transactions transactions
-    where transactions.user_id = new.id
-      and transactions.type = 'starter_credit'
-  );
-
   return new;
 end;
 $$;

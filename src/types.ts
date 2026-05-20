@@ -105,6 +105,7 @@ export interface Submission {
 export interface EarnSubmissionReputation {
   submissionId: string;
   ownerHasTestedYou: boolean;
+  ownerCreditBalance: number;
   ownerTestBackRatePercent: number;
   ownerSatisfactionRatePercent: number;
   ownerAvatarUrl?: string | null;
