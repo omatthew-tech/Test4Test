@@ -1565,6 +1565,10 @@ body {
   color: var(--color-ink-700);
 }
 
+.topnav__profile-link {
+  display: none;
+}
+
 .topnav__link--active {
   background: var(--color-orange-050);
   color: var(--color-ink-900);
@@ -8947,6 +8951,12 @@ select {
     white-space: nowrap;
   }
 
+  .topbar--member:not(.topbar--marketing) .topnav__profile-link {
+    display: flex;
+    margin-top: 6px;
+    box-shadow: inset 0 1px 0 rgba(216, 208, 200, 0.72);
+  }
+
   .topbar--member:not(.topbar--marketing) .topnav__label--desktop {
     display: none;
   }
@@ -8973,6 +8983,10 @@ select {
   .topbar--member:not(.topbar--marketing) .topbar__actions .button--small {
     min-width: 0;
     padding: 10px 12px;
+  }
+
+  .topbar--member:not(.topbar--marketing) .topbar-profile-link {
+    display: none;
   }
 
   .topbar--member:not(.topbar--marketing) .credit-chip {

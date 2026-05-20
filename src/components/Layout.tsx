@@ -130,6 +130,16 @@ export function AppShell({
                   <span className="topnav__label topnav__label--mobile">{mobileLabel}</span>
                 </NavLink>
               ))}
+              <NavLink
+                to={profileHref}
+                className={({ isActive }) =>
+                  `topnav__link topnav__profile-link${isActive ? " topnav__link--active" : ""}`
+                }
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="topnav__label topnav__label--desktop">Profile</span>
+                <span className="topnav__label topnav__label--mobile">Profile</span>
+              </NavLink>
             </nav>
           ) : null}
 
@@ -147,7 +157,7 @@ export function AppShell({
                   <span className="credit-chip__label">credits</span>
                 </NavLink>
               ) : null}
-              <NavLink to={profileHref} className="button button--secondary button--small">
+              <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
                 {currentUser ? "Profile" : "Log in"}
               </NavLink>
               {showMemberNav ? (
