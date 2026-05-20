@@ -8951,12 +8951,6 @@ select {
     white-space: nowrap;
   }
 
-  .topbar--member:not(.topbar--marketing) .topnav__profile-link {
-    display: flex;
-    margin-top: 6px;
-    box-shadow: inset 0 1px 0 rgba(216, 208, 200, 0.72);
-  }
-
   .topbar--member:not(.topbar--marketing) .topnav__label--desktop {
     display: none;
   }
