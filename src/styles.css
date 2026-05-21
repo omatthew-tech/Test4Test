@@ -7945,27 +7945,36 @@ select {
 }
 
 .recording-setup-copy {
-  margin: 0;
+  display: grid;
+  gap: 10px;
+  max-width: 650px;
+  margin: 2px 0 0;
   color: var(--color-ink-700);
   line-height: 1.6;
 }
 
+.recording-setup-copy p {
+  margin: 0;
+}
+
 .recording-setup-insight {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 8px;
-  margin-bottom: 4px;
-  padding: 4px 10px;
+  align-items: flex-start;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 12px;
   border: 1px solid rgba(245, 142, 86, 0.22);
-  border-radius: 999px;
-  background: var(--color-orange-050);
+  border-radius: 14px;
+  background: rgba(255, 244, 234, 0.72);
   color: var(--color-ink-900);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 .recording-setup-insight svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
   color: var(--color-warning);
   stroke-width: 2.4;
 }

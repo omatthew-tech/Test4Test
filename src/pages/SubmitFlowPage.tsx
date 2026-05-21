@@ -987,14 +987,16 @@ export function SubmitFlowPage() {
 
                       {isRecordingOnlyMode ? (
                         <>
-                          <p className="recording-setup-copy">
-                            <span className="recording-setup-insight">
+                          <div className="recording-setup-copy">
+                            <div className="recording-setup-insight">
                               <Lightbulb size={14} aria-hidden="true" />
-                              Testing this way typically generates the most results and higher quality insights.
-                            </span>
-                            Testers will record their screen and voice while using your app. Please ensure tester
-                            instructions are simple and easy to follow.
-                          </p>
+                              <span>This option usually produces more insights and better results</span>
+                            </div>
+                            <p>
+                              Testers will record their screen and voice while using your app. Please ensure tester
+                              instructions are simple and easy to follow.
+                            </p>
+                          </div>
                           <div className="question-list question-list--studio">
                             <div className="field recording-preview-field">
                               <div className="recording-preview-field__label">
