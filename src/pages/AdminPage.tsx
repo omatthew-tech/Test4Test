@@ -13,6 +13,7 @@ import {
 import { AdminReviewSubmission, AdminTestReport } from "../types";
 
 type AdminAction = `report:${string}:ok` | `report:${string}:not_ok` | `restore:${string}`;
+type PendingReportDecision = { reportId: string; decision: "ok" | "not_ok" } | null;
 
 function reportStatusLabel(status: AdminTestReport["status"]) {
   switch (status) {
@@ -67,6 +68,7 @@ export function AdminPage() {
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [activeAction, setActiveAction] = useState<AdminAction | null>(null);
+  const [pendingDecision, setPendingDecision] = useState<PendingReportDecision>(null);
 
   const sortedReports = useMemo(() => {
     const next = [...reports].sort(compareReports);
@@ -135,6 +137,7 @@ export function AdminPage() {
 
     try {
       applyAdminResult(await decideAdminTestReport(reportId, decision));
+      setPendingDecision(null);
     } catch (error) {
       setLoadError(
         error instanceof Error
@@ -249,6 +252,9 @@ export function AdminPage() {
                 report={report}
                 isFocused={report.id === focusedReportId}
                 activeAction={activeAction}
+                pendingDecision={pendingDecision}
+                onRequestDecision={setPendingDecision}
+                onCancelDecision={() => setPendingDecision(null)}
                 onDecide={decideReport}
               />
             ))}
@@ -271,14 +277,25 @@ function AdminReportCard({
   report,
   isFocused,
   activeAction,
+  pendingDecision,
+  onRequestDecision,
+  onCancelDecision,
   onDecide,
 }: {
   report: AdminTestReport;
   isFocused: boolean;
   activeAction: AdminAction | null;
+  pendingDecision: PendingReportDecision;
+  onRequestDecision: (decision: Exclude<PendingReportDecision, null>) => void;
+  onCancelDecision: () => void;
   onDecide: (reportId: string, decision: "ok" | "not_ok") => Promise<void>;
 }) {
   const isPending = report.status === "pending";
+  const activePendingDecision =
+    pendingDecision?.reportId === report.id ? pendingDecision.decision : null;
+  const isWorkingOnThisReport =
+    activeAction === `report:${report.id}:ok` ||
+    activeAction === `report:${report.id}:not_ok`;
 
   return (
     <Surface className={`admin-report-card${isFocused ? " admin-report-card--focused" : ""}`}>
@@ -298,26 +315,61 @@ function AdminReportCard({
         </div>
         <div className="admin-report-card__actions">
           {isPending ? (
-            <>
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={() => void onDecide(report.id, "ok")}
-                disabled={activeAction !== null}
-              >
-                <CheckCircle2 size={16} />
-                Test is OK
-              </button>
-              <button
-                type="button"
-                className="button button--danger"
-                onClick={() => void onDecide(report.id, "not_ok")}
-                disabled={activeAction !== null}
-              >
-                <XCircle size={16} />
-                Not OK
-              </button>
-            </>
+            activePendingDecision ? (
+              <div className="admin-report-card__confirm">
+                <p>
+                  {activePendingDecision === "ok"
+                    ? "Confirm this test is OK? The reporter will be emailed and the app will stay live."
+                    : "Confirm this test is not OK? The app will be paused, the reporter will get a credit, and both users will be emailed."}
+                </p>
+                <div className="inline-actions inline-actions--compact">
+                  <button
+                    type="button"
+                    className={activePendingDecision === "ok" ? "button button--primary" : "button button--danger"}
+                    onClick={() => void onDecide(report.id, activePendingDecision)}
+                    disabled={activeAction !== null}
+                  >
+                    {isWorkingOnThisReport ? (
+                      <span className="button__spinner" aria-hidden="true" />
+                    ) : activePendingDecision === "ok" ? (
+                      <CheckCircle2 size={16} />
+                    ) : (
+                      <XCircle size={16} />
+                    )}
+                    {activePendingDecision === "ok" ? "Confirm test is OK" : "Confirm not OK"}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={onCancelDecision}
+                    disabled={activeAction !== null}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => onRequestDecision({ reportId: report.id, decision: "ok" })}
+                  disabled={activeAction !== null}
+                >
+                  <CheckCircle2 size={16} />
+                  Test is OK
+                </button>
+                <button
+                  type="button"
+                  className="button button--danger"
+                  onClick={() => onRequestDecision({ reportId: report.id, decision: "not_ok" })}
+                  disabled={activeAction !== null}
+                >
+                  <XCircle size={16} />
+                  Not OK
+                </button>
+              </>
+            )
           ) : (
             <span className="pill">
               {report.decidedAt ? `Decided ${formatDateTime(report.decidedAt)}` : "Decided"}

@@ -2331,51 +2331,49 @@ export function TestSessionPage() {
     <AppShell eyebrowLabel={null}>
       <div className="test-layout test-layout--single">
         <div className="test-session__header">
-          <div className="test-session__header-row">
-            <div className="test-session__header-copy">
-              <h1>{testSessionTitle}</h1>
-              {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
-            </div>
-            {currentUser ? (
-              <button
-                type="button"
-                className="test-session__report-button"
-                onClick={() => {
-                  setReportError("");
-                  setIsReportModalOpen(true);
-                }}
-                disabled={hasSubmittedReport}
-              >
-                <Flag size={16} />
-                {hasSubmittedReport ? "Report submitted" : "Report"}
-              </button>
-            ) : null}
-          </div>
+          <h1>{testSessionTitle}</h1>
+          {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
         </div>
 
         <Surface className="test-questions test-questions--full">
           <div className="test-session__intro-card">
-            <div className="test-session__resource">
-              <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
-              {accessLinks.length > 0 ? (
-                <div className="test-session__link-list">
-                  {accessLinks.map((link) => (
-                    <a
-                      key={link.productType}
-                      href={link.normalizedUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="test-session__link"
-                    >
-                      <span className="test-session__link-label">{link.label}</span>
-                      <span>{link.displayUrl}</span>
-                      <ExternalLink size={15} />
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p>No public app links were provided for this test.</p>
-              )}
+            <div className="test-session__intro-card-header">
+              <div className="test-session__resource">
+                <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+                {accessLinks.length > 0 ? (
+                  <div className="test-session__link-list">
+                    {accessLinks.map((link) => (
+                      <a
+                        key={link.productType}
+                        href={link.normalizedUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="test-session__link"
+                      >
+                        <span className="test-session__link-label">{link.label}</span>
+                        <span>{link.displayUrl}</span>
+                        <ExternalLink size={15} />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No public app links were provided for this test.</p>
+                )}
+              </div>
+              {currentUser ? (
+                <button
+                  type="button"
+                  className="test-session__report-button"
+                  onClick={() => {
+                    setReportError("");
+                    setIsReportModalOpen(true);
+                  }}
+                  disabled={hasSubmittedReport}
+                >
+                  <Flag size={16} />
+                  {hasSubmittedReport ? "Report submitted" : "Report"}
+                </button>
+              ) : null}
             </div>
             <div className="test-session__resource">
               <span className="test-session__label">Tester instructions</span>

@@ -384,13 +384,16 @@ async function sendReporterNotOkEmail(
     "",
     "We investigated the app and confirmed there was a problem. We added a free credit to your account, and you do not need to test this app.",
     "",
-    `If you have any questions, reply to this email and ${supportEmail} will receive it.`,
+    `If you have any questions, reply to this email or send an email to ${supportEmail}.`,
+    "",
+    "Happy testing!",
   ].join("\n");
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; color: #231f1c; line-height: 1.6;">
       <p>Thanks for reporting <strong>${escapeHtml(submission.product_name)}</strong>.</p>
       <p>We investigated the app and confirmed there was a problem. We added a free credit to your account, and you do not need to test this app.</p>
-      <p style="color: #6f655d;">If you have any questions, reply to this email and ${escapeHtml(supportEmail)} will receive it.</p>
+      <p style="color: #6f655d;">If you have any questions, reply to this email or send an email to <a href="mailto:${escapeHtml(supportEmail)}" style="color: #a34f25;">${escapeHtml(supportEmail)}</a>.</p>
+      <p>Happy testing!</p>
     </div>
   `;
 
@@ -435,7 +438,7 @@ async function sendFounderNotOkEmail(
     "Go to My Apps and click \"Edit app\" to make changes. After you save edits, the app will move to pending verification for support review.",
     myTestsUrl,
     "",
-    `If you disagree, reply to this email and ${supportEmail} will receive it.`,
+    `If you disagree, reply to this email or send an email to ${supportEmail}.`,
   ].join("\n");
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; color: #231f1c; line-height: 1.6;">
@@ -450,7 +453,7 @@ async function sendFounderNotOkEmail(
           Open My Apps
         </a>
       </p>
-      <p style="color: #6f655d;">If you disagree, reply to this email and ${escapeHtml(supportEmail)} will receive it.</p>
+      <p style="color: #6f655d;">If you disagree, reply to this email or send an email to <a href="mailto:${escapeHtml(supportEmail)}" style="color: #a34f25;">${escapeHtml(supportEmail)}</a>.</p>
     </div>
   `;
 

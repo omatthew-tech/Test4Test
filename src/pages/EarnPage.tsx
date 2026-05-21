@@ -265,6 +265,12 @@ export function EarnPage() {
     return storedProductTypes ?? getDefaultSelectedProductTypes(state.submissions, currentUser.id);
   });
   const [pendingProductTypes, setPendingProductTypes] = useState<ProductType[]>(selectedProductTypes);
+  const [hasConfirmedPlatformFilter, setHasConfirmedPlatformFilter] = useState(() =>
+    currentUser
+      ? readStoredPlatformConfirmation(currentUser.id) &&
+        readStoredProductTypes(currentUser.id) !== null
+      : false,
+  );
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
@@ -283,6 +289,7 @@ export function EarnPage() {
     if (!currentUser) {
       setSelectedProductTypes(defaultSelectedProductTypes);
       setPendingProductTypes(defaultSelectedProductTypes);
+      setHasConfirmedPlatformFilter(false);
       setIsPlatformModalOpen(false);
       return;
     }
@@ -294,6 +301,7 @@ export function EarnPage() {
 
     setSelectedProductTypes(nextSelectedProductTypes);
     setPendingProductTypes(nextSelectedProductTypes);
+    setHasConfirmedPlatformFilter(isConfirmed);
     setIsPlatformModalOpen(!isConfirmed);
   }, [currentUser?.id, defaultSelectedProductTypesKey]);
 
@@ -372,6 +380,7 @@ export function EarnPage() {
 
     setSelectedProductTypes(next);
     setPendingProductTypes(next);
+    setHasConfirmedPlatformFilter(true);
     setIsPlatformModalOpen(false);
   };
 
@@ -571,6 +580,7 @@ export function EarnPage() {
       {isPlatformModalOpen ? (
         <EarnPlatformModal
           selectedProductTypes={pendingProductTypes}
+          confirmLabel={hasConfirmedPlatformFilter ? "Save" : "I Confirm"}
           onToggle={togglePendingProductType}
           onClose={closePlatformModal}
           onConfirm={confirmPlatformSelection}
@@ -582,11 +592,13 @@ export function EarnPage() {
 
 function EarnPlatformModal({
   selectedProductTypes,
+  confirmLabel,
   onToggle,
   onClose,
   onConfirm,
 }: {
   selectedProductTypes: ProductType[];
+  confirmLabel: string;
   onToggle: (productType: ProductType) => void;
   onClose: () => void;
   onConfirm: () => void;
@@ -646,7 +658,7 @@ function EarnPlatformModal({
         </div>
 
         <button type="button" className="button button--primary earn-platform-confirm" onClick={onConfirm}>
-          I Confirm
+          {confirmLabel}
         </button>
       </div>
     </div>
