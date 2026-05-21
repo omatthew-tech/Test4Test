@@ -989,7 +989,7 @@ export function SubmitFlowPage() {
                         <>
                           <div className="recording-setup-copy">
                             <div className="recording-setup-insight">
-                              <Lightbulb size={14} aria-hidden="true" />
+                              <Lightbulb size={13} aria-hidden="true" />
                               <span>This option usually produces more insights and better results</span>
                             </div>
                             <p>

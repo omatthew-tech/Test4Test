@@ -7960,23 +7960,19 @@ select {
 .recording-setup-insight {
   display: inline-flex;
   align-items: flex-start;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(245, 142, 86, 0.22);
-  border-radius: 14px;
-  background: rgba(255, 244, 234, 0.72);
-  color: var(--color-ink-900);
-  font-weight: 600;
-  line-height: 1.45;
+  gap: 6px;
+  max-width: 620px;
+  color: var(--color-ink-500);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .recording-setup-insight svg {
   flex: 0 0 auto;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--color-warning);
-  stroke-width: 2.4;
+  stroke-width: 2;
 }
 
 .recording-setup-callout,
