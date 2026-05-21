@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowRight, Check, Lightbulb, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 import { AppShell, Surface } from "../components/Layout";
@@ -942,10 +942,11 @@ export function SubmitFlowPage() {
                         <div className="question-mode-strip question-mode-strip--recording">
                           <button
                             type="button"
-                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode !== "ai" ? " question-mode-button--active" : ""}`}
-                            onClick={() => setMode("general")}
+                            className={`question-mode-button question-mode-button--recording${isRecordingOnlyMode ? " question-mode-button--active" : ""}`}
+                            onClick={setRecordingMode}
+                            aria-pressed={isRecordingOnlyMode}
                           >
-                            <span>Custom questions</span>
+                            <span>Screen + voice recording</span>
                           </button>
                           <button
                             type="button"
@@ -956,11 +957,10 @@ export function SubmitFlowPage() {
                           </button>
                           <button
                             type="button"
-                            className={`question-mode-button question-mode-button--recording${isRecordingOnlyMode ? " question-mode-button--active" : ""}`}
-                            onClick={setRecordingMode}
-                            aria-pressed={isRecordingOnlyMode}
+                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode !== "ai" ? " question-mode-button--active" : ""}`}
+                            onClick={() => setMode("general")}
                           >
-                            <span>Screen + voice recording</span>
+                            <span>Custom questions</span>
                           </button>
                         </div>
                       </div>
@@ -988,7 +988,12 @@ export function SubmitFlowPage() {
                       {isRecordingOnlyMode ? (
                         <>
                           <p className="recording-setup-copy">
-                            This is a traditional unmoderated usability test where testers will record their screen and voice while using your app. Please ensure tester instruction are simple and easy to follow.
+                            <span className="recording-setup-insight">
+                              <Lightbulb size={14} aria-hidden="true" />
+                              Testing this way typically generates the most results and higher quality insights.
+                            </span>
+                            Testers will record their screen and voice while using your app. Please ensure tester
+                            instructions are simple and easy to follow.
                           </p>
                           <div className="question-list question-list--studio">
                             <div className="field recording-preview-field">
