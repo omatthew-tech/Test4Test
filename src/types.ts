@@ -11,6 +11,12 @@ export type SubmissionStatus =
 export type ResponseStatus = "approved" | "flagged" | "rejected";
 export type FeedbackRatingValue = "smiley" | "neutral" | "frowny";
 export type FeedbackReportStatus = "pending" | "resolved" | "dismissed";
+export type TestReportReason =
+  | "app_unavailable"
+  | "requires_payment"
+  | "suspicious_malware"
+  | "other";
+export type TestReportStatus = "pending" | "dismissed" | "confirmed";
 export type CreditTransactionType =
   | "starter_credit"
   | "earned_test"
@@ -114,6 +120,47 @@ export interface EarnSubmissionReputation {
 export interface EarnSubmissionCard {
   submission: Submission;
   reputation: EarnSubmissionReputation | null;
+}
+
+export interface SubmissionReportStatus {
+  submissionId: string;
+  status: TestReportStatus;
+}
+
+export interface AdminTestReport {
+  id: string;
+  submissionId: string;
+  reporterUserId: string;
+  reporterEmail: string;
+  reporterDisplayName: string;
+  founderUserId: string;
+  founderEmail: string;
+  founderDisplayName: string;
+  appName: string;
+  appDescription: string;
+  appStatus: SubmissionStatus;
+  reason: TestReportReason;
+  reasonLabel: string;
+  message: string;
+  status: TestReportStatus;
+  supportNotifiedAt: string | null;
+  decisionNote: string;
+  decidedByEmail: string | null;
+  decidedAt: string | null;
+  creditedTransactionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  accessLinks: Array<{ productType: string; url: string }>;
+}
+
+export interface AdminReviewSubmission {
+  submissionId: string;
+  appName: string;
+  founderEmail: string;
+  founderDisplayName: string;
+  latestReportId: string;
+  reasonLabel: string;
+  updatedAt: string;
 }
 
 export interface SubmittedFeedbackCard {

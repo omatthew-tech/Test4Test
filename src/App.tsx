@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { trackEventOncePerSession } from "./lib/analytics";
+import { AdminPage } from "./pages/AdminPage";
 import { BannedPage } from "./pages/BannedPage";
 import { CreditsPage } from "./pages/CreditsPage";
 import { EarnPage } from "./pages/EarnPage";
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/submissions/:responseId/revise" element={<BanRedirectRoute><ReviseSubmissionPage /></BanRedirectRoute>} />
           <Route path="/credits" element={<BanRedirectRoute><CreditsPage /></BanRedirectRoute>} />
           <Route path="/profile" element={<BanRedirectRoute><ProfilePage /></BanRedirectRoute>} />
+          <Route path="/admin" element={<BanRedirectRoute><AdminPage /></BanRedirectRoute>} />
           <Route path="/banned" element={<BannedOnlyRoute><BannedPage /></BannedOnlyRoute>} />
           <Route path="*" element={<BanRedirectRoute><HomePage /></BanRedirectRoute>} />
         </Routes>

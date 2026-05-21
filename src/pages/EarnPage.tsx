@@ -11,6 +11,7 @@ import {
   productTypesBadges,
 } from "../lib/format";
 import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors";
+import { loadMySubmissionReportStatuses } from "../lib/testReports";
 import { loadTestResponseDraft } from "../lib/testResponseDrafts";
 import {
   EarnSubmissionCard,
@@ -269,6 +270,7 @@ export function EarnPage() {
     Record<string, EarnSubmissionReputation>
   >({});
   const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
+  const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
   const available = getAvailableSubmissions(state);
 
   const defaultSelectedProductTypes = useMemo(
@@ -294,6 +296,42 @@ export function EarnPage() {
     setPendingProductTypes(nextSelectedProductTypes);
     setIsPlatformModalOpen(!isConfirmed);
   }, [currentUser?.id, defaultSelectedProductTypesKey]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!currentUser || !isConfigured) {
+      setHiddenReportedSubmissionIds([]);
+      return undefined;
+    }
+
+    const loadReportedSubmissions = async () => {
+      try {
+        const reports = await loadMySubmissionReportStatuses();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setHiddenReportedSubmissionIds(
+          reports
+            .filter((report) => report.status === "pending" || report.status === "confirmed")
+            .map((report) => report.submissionId),
+        );
+      } catch (error) {
+        if (!isCancelled) {
+          console.error(error);
+          setHiddenReportedSubmissionIds([]);
+        }
+      }
+    };
+
+    void loadReportedSubmissions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured]);
 
   const applyPlatformSelection = (productTypes: ProductType[]) => {
     const next = normalizeProductTypes(productTypes);
@@ -342,10 +380,13 @@ export function EarnPage() {
       return [];
     }
 
+    const hiddenReportedSubmissions = new Set(hiddenReportedSubmissionIds);
+
     return available.filter((item) =>
+      !hiddenReportedSubmissions.has(item.id) &&
       item.productTypes.some((productType) => selectedProductTypes.includes(productType)),
     );
-  }, [available, selectedProductTypes]);
+  }, [available, hiddenReportedSubmissionIds, selectedProductTypes]);
 
   const candidateSubmissionIdsKey = useMemo(
     () => [...new Set(candidateSubmissions.map((item) => item.id))].sort().join("|"),

@@ -142,13 +142,19 @@ export async function sendEmail(
     subject,
     textBody,
     htmlBody,
+    replyTo,
   }: {
     to: string;
     subject: string;
     textBody: string;
     htmlBody: string;
+    replyTo?: string | null;
   },
 ) {
+  const customHeaders = replyTo?.trim()
+    ? [{ header: "Reply-To", value: replyTo.trim() }]
+    : undefined;
+
   const response = await fetch("https://api.smtp2go.com/v3/email/send", {
     method: "POST",
     headers: {
@@ -162,6 +168,7 @@ export async function sendEmail(
       subject,
       text_body: textBody,
       html_body: htmlBody,
+      custom_headers: customHeaders,
     }),
   });
 

@@ -1,8 +1,11 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  CheckCircle2,
   ExternalLink,
+  Flag,
   Mic,
   Trash2,
+  X,
 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
@@ -38,10 +41,20 @@ import {
   saveLocalTestResponseDraft,
   saveTestResponseDraft,
 } from "../lib/testResponseDrafts";
-import { ProductType, Question, ResponseRecording, TestAnswer } from "../types";
+import { reportTest } from "../lib/testReports";
+import { ProductType, Question, ResponseRecording, TestAnswer, TestReportReason } from "../types";
 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
 type DraftSaveStatus = "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
+
+const reportReasons: Array<{ value: TestReportReason; label: string }> = [
+  { value: "app_unavailable", label: "App unavailable" },
+  { value: "requires_payment", label: "Requires payment" },
+  { value: "suspicious_malware", label: "Looks suspicious/malware" },
+  { value: "other", label: "Other" },
+];
+
+const REPORT_MESSAGE_LIMIT = 1000;
 
 interface MicrophoneOption {
   deviceId: string;
@@ -467,6 +480,12 @@ export function TestSessionPage() {
   const [microphoneError, setMicrophoneError] = useState("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<TestReportReason>("app_unavailable");
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [hasSubmittedReport, setHasSubmittedReport] = useState(false);
   const deviceRecordingExperience = useMemo(() => resolveRecordingExperience(null), []);
   const autoDetectedProductType = useMemo(
     () => getAutoDetectedProductType(accessLinks, deviceRecordingExperience),
@@ -1975,6 +1994,45 @@ export function TestSessionPage() {
     }
   };
 
+  const closeReportModal = () => {
+    if (isSubmittingReport) {
+      return;
+    }
+
+    setIsReportModalOpen(false);
+    setReportError("");
+  };
+
+  const submitReport = async () => {
+    if (!currentUser) {
+      setReportError("Sign in to report this test.");
+      return;
+    }
+
+    const trimmedMessage = reportMessage.trim();
+
+    if (reportReason === "other" && !trimmedMessage) {
+      setReportError("Tell us what happened before submitting an Other report.");
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    setReportError("");
+
+    try {
+      await reportTest(submission.id, reportReason, trimmedMessage);
+      setHasSubmittedReport(true);
+    } catch (error) {
+      setReportError(
+        error instanceof Error
+          ? error.message
+          : "We could not submit this report right now.",
+      );
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   const handleManualRecordingStart = () => {
     if (!selectedLink && accessLinks.length > 0) {
       setMessage("We couldn't find a matching app link for this device. Try refreshing the page.");
@@ -2273,8 +2331,26 @@ export function TestSessionPage() {
     <AppShell eyebrowLabel={null}>
       <div className="test-layout test-layout--single">
         <div className="test-session__header">
-          <h1>{testSessionTitle}</h1>
-          {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
+          <div className="test-session__header-row">
+            <div className="test-session__header-copy">
+              <h1>{testSessionTitle}</h1>
+              {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
+            </div>
+            {currentUser ? (
+              <button
+                type="button"
+                className="test-session__report-button"
+                onClick={() => {
+                  setReportError("");
+                  setIsReportModalOpen(true);
+                }}
+                disabled={hasSubmittedReport}
+              >
+                <Flag size={16} />
+                {hasSubmittedReport ? "Report submitted" : "Report"}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <Surface className="test-questions test-questions--full">
@@ -2826,6 +2902,130 @@ export function TestSessionPage() {
           ) : null}
         </Surface>
       </div>
+
+      {isReportModalOpen ? (
+        <div
+          className="results-modal-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeReportModal();
+            }
+          }}
+        >
+          <div
+            className="results-modal test-report-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="test-report-title"
+            aria-describedby="test-report-description"
+          >
+            {hasSubmittedReport ? (
+              <div className="submission-report-modal__success test-report-modal__success">
+                <span className="submission-report-modal__success-icon" aria-hidden="true">
+                  <CheckCircle2 size={34} />
+                </span>
+                <h2 id="test-report-title">Report submitted</h2>
+                <p id="test-report-description">
+                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a problem with the app, you&apos;ll get a free credit and won&apos;t need to test it.
+                </p>
+                <div className="inline-actions inline-actions--compact">
+                  <button type="button" className="button button--secondary" onClick={closeReportModal}>
+                    Close
+                  </button>
+                  <button type="button" className="button button--primary" onClick={() => navigate("/earn")}>
+                    Back to Earn
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="results-modal__header">
+                  <div>
+                    <h2 id="test-report-title">Report {submission.productName}</h2>
+                    <p id="test-report-description">
+                      Tell us what went wrong. We&apos;ll review the app before asking you to test it.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={closeReportModal}
+                    aria-label="Close report dialog"
+                    disabled={isSubmittingReport}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="test-report-modal__body">
+                  <div className="test-report-modal__reasons" role="radiogroup" aria-label="Report reason">
+                    {reportReasons.map((reason) => (
+                      <label
+                        key={reason.value}
+                        className={`radio-card${reportReason === reason.value ? " radio-card--active" : ""}`}
+                      >
+                        <input
+                          className="radio-card__control"
+                          type="radio"
+                          name="test-report-reason"
+                          checked={reportReason === reason.value}
+                          onChange={() => {
+                            setReportReason(reason.value);
+                            setReportError("");
+                          }}
+                        />
+                        <span>{reason.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {reportReason === "other" ? (
+                    <label className="field">
+                      <span>What happened?</span>
+                      <textarea
+                        rows={4}
+                        maxLength={REPORT_MESSAGE_LIMIT}
+                        value={reportMessage}
+                        onChange={(event) => {
+                          setReportMessage(event.target.value);
+                          setReportError("");
+                        }}
+                        placeholder="Share the issue so support knows what to review."
+                        autoFocus
+                      />
+                      <small className="helper-text">
+                        {reportMessage.length} / {REPORT_MESSAGE_LIMIT} characters
+                      </small>
+                    </label>
+                  ) : null}
+
+                  {reportError ? <div className="callout callout--warning">{reportError}</div> : null}
+                </div>
+
+                <div className="inline-actions inline-actions--compact">
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={closeReportModal}
+                    disabled={isSubmittingReport}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void submitReport()}
+                    disabled={isSubmittingReport}
+                  >
+                    {isSubmittingReport ? "Sending..." : "Submit report"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

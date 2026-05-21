@@ -892,6 +892,7 @@ async function persistSubmissionDetails(
   submissionId: string,
   draft: SubmissionDraft,
   estimatedMinutes: number,
+  nextStatus?: Submission["status"],
 ) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before updating your app.",
@@ -932,6 +933,7 @@ async function persistSubmissionDetails(
       access_links: accessLinks,
       requires_recording: draft.requiresRecording,
       estimated_minutes: estimatedMinutes,
+      ...(nextStatus ? { status: nextStatus } : {}),
     })
     .eq("id", submissionId)
     .select("id")
@@ -1337,13 +1339,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return createdId;
       },
       async updateSubmissionDetails(submissionId, draft) {
+        const submission = state.submissions.find((item) => item.id === submissionId);
         const activeQuestionSet = getActiveQuestionSet(state, submissionId);
         const estimatedMinutes = estimateSubmissionMinutes(
           activeQuestionSet?.questions ?? [],
           draft.requiresRecording,
         );
+        const nextStatus = submission?.status === "paused" ? "pending_verification" : undefined;
 
-        await persistSubmissionDetails(submissionId, draft, estimatedMinutes);
+        await persistSubmissionDetails(submissionId, draft, estimatedMinutes, nextStatus);
         await refreshState();
       },
       async createSubmissionVersion(submissionId, title, description) {

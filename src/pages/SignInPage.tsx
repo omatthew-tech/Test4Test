@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, MailCheck, RefreshCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
 import { wait } from "../lib/timing";
 
+function sanitizeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+
+  return value;
+}
+
 export function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { currentUser, requestOtp, state, verifyOtp } = useAppState();
+  const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
   const activeChallenge = state.otpChallenge && !state.otpChallenge.submissionId ? state.otpChallenge : null;
   const [email, setEmail] = useState(activeChallenge?.email ?? "");
   const [code, setCode] = useState("");
@@ -19,9 +29,9 @@ export function SignInPage() {
 
   useEffect(() => {
     if (currentUser) {
-      navigate(currentUser.banStatus === "banned" ? "/banned" : "/earn", { replace: true });
+      navigate(currentUser.banStatus === "banned" ? "/banned" : returnTo ?? "/earn", { replace: true });
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, returnTo]);
 
   useEffect(() => {
     if (activeChallenge?.email) {

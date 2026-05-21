@@ -4149,6 +4149,17 @@ body {
   gap: 10px;
 }
 
+.test-session__header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.test-session__header-copy {
+  min-width: 0;
+}
+
 .test-session__header h1 {
   margin: 0;
   font-family: "Sora", system-ui, sans-serif;
@@ -4160,6 +4171,53 @@ body {
   max-width: 72ch;
   color: #5f5750;
   line-height: 1.65;
+}
+
+.test-session__report-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 91, 91, 0.26);
+  background: linear-gradient(180deg, rgba(255, 248, 247, 0.98), rgba(255, 241, 239, 0.96));
+  color: rgba(142, 58, 58, 0.98);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(29, 24, 21, 0.05);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.test-session__report-button:hover:not(:disabled) {
+  border-color: rgba(201, 91, 91, 0.4);
+  background: linear-gradient(180deg, rgba(255, 244, 242, 0.99), rgba(255, 234, 231, 0.97));
+  color: rgba(122, 44, 44, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(201, 91, 91, 0.12);
+}
+
+.test-session__report-button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.test-report-modal {
+  width: min(640px, 100%);
+}
+
+.test-report-modal__body,
+.test-report-modal__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.test-report-modal__success p {
+  max-width: 42ch;
 }
 
 .revise-response-page__subheader-row {
@@ -5544,6 +5602,119 @@ body {
 
 .results-modal--edit-test {
   width: min(980px, 100%);
+}
+
+.admin-page {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.admin-report-list,
+.admin-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-report-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-report-card--focused {
+  border-color: rgba(245, 142, 86, 0.48);
+  box-shadow: 0 16px 36px rgba(245, 142, 86, 0.12);
+}
+
+.admin-report-card__header,
+.admin-review-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-report-card__header h2 {
+  margin: 10px 0 0;
+  font-family: "Sora", system-ui, sans-serif;
+}
+
+.admin-report-card__header p,
+.admin-review-row p,
+.admin-report-card__message p,
+.admin-report-card__decision p {
+  margin: 6px 0 0;
+  color: var(--color-ink-700);
+  line-height: 1.55;
+}
+
+.admin-report-card__meta,
+.admin-report-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-report-card__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line-200);
+  background: var(--color-surface-000);
+  color: var(--color-ink-700);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-report-card__status--pending {
+  border-color: rgba(229, 169, 61, 0.38);
+  background: rgba(255, 247, 229, 0.86);
+  color: #9c6510;
+}
+
+.admin-report-card__status--confirmed {
+  border-color: rgba(201, 91, 91, 0.34);
+  background: rgba(255, 245, 244, 0.94);
+  color: #9b362f;
+}
+
+.admin-report-card__status--dismissed {
+  border-color: rgba(78, 157, 114, 0.34);
+  background: rgba(234, 248, 240, 0.92);
+  color: #2f7550;
+}
+
+.admin-report-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-report-card__grid > div,
+.admin-report-card__message,
+.admin-report-card__links,
+.admin-report-card__decision,
+.admin-review-row {
+  padding: 16px;
+  border: 1px solid rgba(216, 208, 200, 0.8);
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 246, 0.58);
+}
+
+.admin-report-card__grid a {
+  color: #a34f25;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-report-card__links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .results-modal--version-creator,
@@ -7616,6 +7787,22 @@ select {
   .button {
     min-width: 0;
     white-space: normal;
+  }
+
+  .test-session__header-row,
+  .admin-report-card__header,
+  .admin-review-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-session__report-button,
+  .admin-report-card__actions .button {
+    width: 100%;
+  }
+
+  .admin-report-card__grid {
+    grid-template-columns: 1fr;
   }
 
   .otp-row,

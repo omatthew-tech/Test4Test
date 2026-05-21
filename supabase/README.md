@@ -14,11 +14,14 @@
    - `SMTP2GO_API_KEY`
    - `SMTP2GO_SENDER`
    - `APP_BASE_URL` (for example `https://test4test.io`)
+   - `TEST_REPORT_SUPPORT_EMAIL` (optional, defaults to `support@test4test.io`)
    - `TEST_BACK_REMINDER_CRON_SECRET`
 8. Deploy the edge functions from:
    - `supabase/functions/generate-ai-questions`
    - `supabase/functions/send-test-results-notification`
    - `supabase/functions/send-test-back-reminders`
+   - `supabase/functions/report-test`
+   - `supabase/functions/manage-test-reports`
 9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`.
 10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
 11. The final reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
