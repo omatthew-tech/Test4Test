@@ -261,17 +261,9 @@ export function EarnPage() {
 
     const storedProductTypes = readStoredProductTypes(currentUser.id);
 
-    return readStoredPlatformConfirmation(currentUser.id) && storedProductTypes !== null
-      ? storedProductTypes
-      : getDefaultSelectedProductTypes(state.submissions, currentUser.id);
+    return storedProductTypes ?? getDefaultSelectedProductTypes(state.submissions, currentUser.id);
   });
   const [pendingProductTypes, setPendingProductTypes] = useState<ProductType[]>(selectedProductTypes);
-  const [hasConfirmedPlatformFilter, setHasConfirmedPlatformFilter] = useState(() =>
-    currentUser
-      ? readStoredPlatformConfirmation(currentUser.id) &&
-        readStoredProductTypes(currentUser.id) !== null
-      : false,
-  );
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
@@ -289,7 +281,6 @@ export function EarnPage() {
     if (!currentUser) {
       setSelectedProductTypes(defaultSelectedProductTypes);
       setPendingProductTypes(defaultSelectedProductTypes);
-      setHasConfirmedPlatformFilter(false);
       setIsPlatformModalOpen(false);
       return;
     }
@@ -297,22 +288,30 @@ export function EarnPage() {
     const storedProductTypes = readStoredProductTypes(currentUser.id);
     const hasStoredConfirmation = readStoredPlatformConfirmation(currentUser.id);
     const isConfirmed = hasStoredConfirmation && storedProductTypes !== null;
-    const nextSelectedProductTypes = isConfirmed
-      ? storedProductTypes
-      : defaultSelectedProductTypes;
+    const nextSelectedProductTypes = storedProductTypes ?? defaultSelectedProductTypes;
 
     setSelectedProductTypes(nextSelectedProductTypes);
     setPendingProductTypes(nextSelectedProductTypes);
-    setHasConfirmedPlatformFilter(isConfirmed);
     setIsPlatformModalOpen(!isConfirmed);
   }, [currentUser?.id, defaultSelectedProductTypesKey]);
 
+  const applyPlatformSelection = (productTypes: ProductType[]) => {
+    const next = normalizeProductTypes(productTypes);
+
+    setSelectedProductTypes(next);
+    setPendingProductTypes(next);
+
+    if (currentUser) {
+      saveStoredProductTypes(currentUser.id, next);
+    }
+  };
+
   const togglePendingProductType = (productType: ProductType) => {
-    setPendingProductTypes((current) => {
-      return current.includes(productType)
-        ? current.filter((item) => item !== productType)
-        : normalizeProductTypes([...current, productType]);
-    });
+    applyPlatformSelection(
+      pendingProductTypes.includes(productType)
+        ? pendingProductTypes.filter((item) => item !== productType)
+        : [...pendingProductTypes, productType],
+    );
   };
 
   const openPlatformModal = () => {
@@ -321,28 +320,20 @@ export function EarnPage() {
   };
 
   const closePlatformModal = () => {
-    if (hasConfirmedPlatformFilter) {
-      setPendingProductTypes(selectedProductTypes);
-    } else {
-      setSelectedProductTypes(defaultSelectedProductTypes);
-      setPendingProductTypes(defaultSelectedProductTypes);
-    }
-
+    applyPlatformSelection(pendingProductTypes);
     setIsPlatformModalOpen(false);
   };
 
   const confirmPlatformSelection = () => {
     const next = normalizeProductTypes(pendingProductTypes);
 
-    setSelectedProductTypes(next);
-    setPendingProductTypes(next);
-    setHasConfirmedPlatformFilter(true);
-
     if (currentUser) {
       saveStoredProductTypes(currentUser.id, next);
       saveStoredPlatformConfirmation(currentUser.id);
     }
 
+    setSelectedProductTypes(next);
+    setPendingProductTypes(next);
     setIsPlatformModalOpen(false);
   };
 
@@ -560,7 +551,11 @@ function EarnPlatformModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="results-modal-backdrop earn-platform-modal-backdrop" role="presentation">
+    <div
+      className="results-modal-backdrop earn-platform-modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
       <div
         className="results-modal earn-platform-modal"
         role="dialog"
