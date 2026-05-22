@@ -338,14 +338,14 @@ begin
   end if;
 
   select coalesce(
-    array_agg(product_type order by array_position(array['website', 'ios', 'android']::text[], product_type)),
+    array_agg(normalized.product_type order by array_position(array['website', 'ios', 'android']::text[], normalized.product_type)),
     array[]::text[]
   )
   into v_product_types
   from (
     select distinct unnest(coalesce(p_product_types, array[]::text[])) as product_type
   ) normalized
-  where product_type = any (array['website', 'ios', 'android']::text[]);
+  where normalized.product_type = any (array['website', 'ios', 'android']::text[]);
 
   if cardinality(v_product_types) = 0 then
     return;
