@@ -70,6 +70,7 @@ interface SubmissionRow {
   access_url: string;
   access_method: string;
   requires_recording?: boolean | null;
+  needs_google_play_closed_testers?: boolean | null;
   status: Submission["status"];
   question_mode: Submission["questionMode"];
   is_open_for_more_tests: boolean;
@@ -377,6 +378,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     instructions: row.instructions ?? "",
     accessLinks,
     requiresRecording: row.requires_recording === true,
+    needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
@@ -589,6 +591,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "access_links" of relation "submissions" does not exist') ||
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
+    normalized.includes('column "needs_google_play_closed_testers" of relation "submissions" does not exist') ||
     normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
     normalized.includes('column "public_tester_key" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
@@ -604,6 +607,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('p_product_types') ||
     normalized.includes('p_access_links') ||
     normalized.includes('p_requires_recording') ||
+    normalized.includes('p_needs_google_play_closed_testers') ||
     normalized.includes('p_recording_bucket') ||
     normalized.includes('p_recording_path') ||
     normalized.includes('p_question_set_version_id')
@@ -868,6 +872,7 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
     p_instructions: draft.instructions,
     p_access_links: accessLinks,
     p_requires_recording: draft.requiresRecording,
+    p_needs_google_play_closed_testers: draft.needsGooglePlayClosedTesters,
     p_question_mode: draft.questionMode,
     p_questions: questions,
     p_estimated_minutes: estimateSubmissionMinutes(questions, draft.requiresRecording),
@@ -932,6 +937,7 @@ async function persistSubmissionDetails(
       access_url: primaryAccessLink.url,
       access_links: accessLinks,
       requires_recording: draft.requiresRecording,
+      needs_google_play_closed_testers: draft.needsGooglePlayClosedTesters,
       estimated_minutes: estimatedMinutes,
       ...(nextStatus ? { status: nextStatus } : {}),
     })

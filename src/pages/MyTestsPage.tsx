@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, Check, Copy, ExternalLink, Inbox, Mic, Share2, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { GooglePlayClosedTestOption } from "../components/GooglePlayClosedTestOption";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import {
@@ -40,6 +41,7 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
     instructions: submission.instructions,
     accessLinks: { ...submission.accessLinks },
     requiresRecording: submission.requiresRecording,
+    needsGooglePlayClosedTesters: submission.needsGooglePlayClosedTesters,
     questionMode: submission.questionMode,
   };
 }
@@ -96,6 +98,9 @@ export function MyTestsPage() {
     () => normalizeProductTypes(editDraft?.productTypes ?? []),
     [editDraft?.productTypes],
   );
+  const showEditGooglePlayClosedTestOption =
+    selectedEditProductTypes.includes("android") || editDraft?.needsGooglePlayClosedTesters === true;
+  const isEditGooglePlayClosedTestLocked = editDraft?.needsGooglePlayClosedTesters === true;
 
   const sharingSubmission = useMemo(
     () => submissions.find((submission) => submission.id === sharingSubmissionId) ?? null,
@@ -157,6 +162,10 @@ export function MyTestsPage() {
         return current;
       }
 
+      if (current.needsGooglePlayClosedTesters) {
+        return current;
+      }
+
       const isSelected = current.productTypes.includes(productType);
       const nextProductTypes = normalizeProductTypes(
         isSelected
@@ -173,6 +182,33 @@ export function MyTestsPage() {
         ...current,
         productTypes: nextProductTypes,
         accessLinks: nextAccessLinks,
+        needsGooglePlayClosedTesters:
+          current.needsGooglePlayClosedTesters && nextProductTypes.includes("android"),
+      };
+    });
+  };
+
+  const setEditGooglePlayClosedTestRequirement = (checked: boolean) => {
+    setEditError("");
+    setEditDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      if (checked) {
+        return {
+          ...current,
+          productTypes: ["android"],
+          accessLinks: current.accessLinks.android
+            ? { android: current.accessLinks.android }
+            : {},
+          needsGooglePlayClosedTesters: true,
+        };
+      }
+
+      return {
+        ...current,
+        needsGooglePlayClosedTesters: false,
       };
     });
   };
@@ -205,6 +241,13 @@ export function MyTestsPage() {
 
     if (selectedEditProductTypes.length === 0) {
       return "Select at least one app type to continue.";
+    }
+
+    if (
+      editDraft.needsGooglePlayClosedTesters &&
+      (selectedEditProductTypes.length !== 1 || selectedEditProductTypes[0] !== "android")
+    ) {
+      return "Google Play closed-test matching requires an Android-only submission.";
     }
 
     for (const productType of selectedEditProductTypes) {
@@ -292,6 +335,9 @@ export function MyTestsPage() {
 
                       {submission.lastResponseAt ? (
                         <span className="my-test-row__latest">Latest feedback {formatDate(submission.lastResponseAt)}</span>
+                      ) : null}
+                      {submission.needsGooglePlayClosedTesters ? (
+                        <span className="tag tag--warm">Google Play closed test</span>
                       ) : null}
                     </div>
 
@@ -391,14 +437,16 @@ export function MyTestsPage() {
                 <div className="choice-grid">
                   {productTypeOptions.map((option) => {
                     const isSelected = editDraft.productTypes.includes(option.value);
+                    const isDisabled = isEditGooglePlayClosedTestLocked;
 
                     return (
                       <button
                         key={option.value}
                         type="button"
-                        className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}`}
+                        className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}${isDisabled ? " choice-card--disabled" : ""}`}
                         onClick={() => toggleEditProductType(option.value)}
                         aria-pressed={isSelected}
+                        disabled={isDisabled}
                       >
                         <span className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`} aria-hidden="true">
                           {isSelected ? <Check size={16} /> : null}
@@ -410,6 +458,12 @@ export function MyTestsPage() {
                     );
                   })}
                 </div>
+                {showEditGooglePlayClosedTestOption ? (
+                  <GooglePlayClosedTestOption
+                    checked={editDraft.needsGooglePlayClosedTesters}
+                    onChange={setEditGooglePlayClosedTestRequirement}
+                  />
+                ) : null}
               </div>
 
               <div className="edit-test-modal__section">

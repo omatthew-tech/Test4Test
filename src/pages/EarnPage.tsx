@@ -74,6 +74,31 @@ function selectOneSubmissionPerOwner(submissions: Submission[]) {
   return [...selectedByOwner.values()];
 }
 
+function userIsInGooglePlayClosedTestPool(submissions: Submission[], userId: string | null) {
+  if (!userId) {
+    return false;
+  }
+
+  return submissions.some(
+    (submission) =>
+      submission.userId === userId &&
+      submission.status === "live" &&
+      submission.needsGooglePlayClosedTesters,
+  );
+}
+
+function getGooglePlayClosedTestPoolUserIds(submissions: Submission[]) {
+  return new Set(
+    submissions
+      .filter(
+        (submission) =>
+          submission.status === "live" && submission.needsGooglePlayClosedTesters,
+      )
+      .map((submission) => submission.userId)
+      .filter((userId): userId is string => Boolean(userId)),
+  );
+}
+
 function getReputationScore(reputation: EarnSubmissionReputation | null | undefined) {
   if (!reputation) {
     return null;
@@ -284,6 +309,14 @@ export function EarnPage() {
     [currentUser?.id, state.submissions],
   );
   const defaultSelectedProductTypesKey = defaultSelectedProductTypes.join("|");
+  const isGooglePlayClosedTestPool = useMemo(
+    () => userIsInGooglePlayClosedTestPool(state.submissions, currentUser?.id ?? null),
+    [currentUser?.id, state.submissions],
+  );
+  const googlePlayClosedTestPoolUserIds = useMemo(
+    () => getGooglePlayClosedTestPoolUserIds(state.submissions),
+    [state.submissions],
+  );
 
   useEffect(() => {
     if (!currentUser) {
@@ -393,9 +426,17 @@ export function EarnPage() {
 
     return available.filter((item) =>
       !hiddenReportedSubmissions.has(item.id) &&
+      item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
+      googlePlayClosedTestPoolUserIds.has(item.userId ?? "") === isGooglePlayClosedTestPool &&
       item.productTypes.some((productType) => selectedProductTypes.includes(productType)),
     );
-  }, [available, hiddenReportedSubmissionIds, selectedProductTypes]);
+  }, [
+    available,
+    googlePlayClosedTestPoolUserIds,
+    hiddenReportedSubmissionIds,
+    isGooglePlayClosedTestPool,
+    selectedProductTypes,
+  ]);
 
   const candidateSubmissionIdsKey = useMemo(
     () => [...new Set(candidateSubmissions.map((item) => item.id))].sort().join("|"),
@@ -690,6 +731,9 @@ function EarnRow({
             ))}
             {submission.requiresRecording ? (
               <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
+            ) : null}
+            {submission.needsGooglePlayClosedTesters ? (
+              <span className="tag tag--warm earn-row__closed-test-tag">Google Play closed test</span>
             ) : null}
           </div>
           <div className="earn-row__head">

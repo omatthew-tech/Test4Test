@@ -31,6 +31,7 @@ interface SubmissionRow {
   product_name: string;
   status: string;
   is_open_for_more_tests: boolean;
+  needs_google_play_closed_testers?: boolean | null;
   promoted?: boolean | null;
   response_count: number;
   created_at: string;
@@ -151,6 +152,22 @@ export async function hasTestedBack(
   return Boolean(response?.id);
 }
 
+async function loadGooglePlayClosedTestPoolStatus(admin: SupabaseClient, userId: string) {
+  const { data, error } = await admin
+    .from("submissions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "live")
+    .eq("needs_google_play_closed_testers", true)
+    .limit(1);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).length > 0;
+}
+
 export async function findTargetSubmission(
   admin: SupabaseClient,
   testerUserId: string,
@@ -170,12 +187,22 @@ export async function findTargetSubmission(
     return null;
   }
 
+  const [ownerNeedsGooglePlayClosedTesters, testerNeedsGooglePlayClosedTesters] = await Promise.all([
+    loadGooglePlayClosedTestPoolStatus(admin, ownerUserId),
+    loadGooglePlayClosedTestPoolStatus(admin, testerUserId),
+  ]);
+
+  if (ownerNeedsGooglePlayClosedTesters !== testerNeedsGooglePlayClosedTesters) {
+    return null;
+  }
+
   const { data: candidateRows, error: candidateError } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, is_open_for_more_tests, promoted, response_count, created_at")
+    .select("id, user_id, product_name, status, is_open_for_more_tests, needs_google_play_closed_testers, promoted, response_count, created_at")
     .eq("user_id", testerUserId)
     .eq("status", "live")
     .eq("is_open_for_more_tests", true)
+    .eq("needs_google_play_closed_testers", ownerNeedsGooglePlayClosedTesters)
     .order("promoted", { ascending: false })
     .order("response_count", { ascending: true })
     .order("created_at", { ascending: false });

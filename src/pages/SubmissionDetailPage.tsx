@@ -701,6 +701,7 @@ export function SubmissionDetailPage() {
           instructions: submission.instructions,
           accessLinks: submission.accessLinks,
           requiresRecording: submission.requiresRecording,
+          needsGooglePlayClosedTesters: submission.needsGooglePlayClosedTesters,
           questionMode: mode,
         }),
       );

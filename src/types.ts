@@ -97,6 +97,7 @@ export interface Submission {
   instructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;
+  needsGooglePlayClosedTesters: boolean;
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;
@@ -273,6 +274,7 @@ export interface SubmissionDraft {
   instructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;
+  needsGooglePlayClosedTesters: boolean;
   questionMode: QuestionMode;
 }
 

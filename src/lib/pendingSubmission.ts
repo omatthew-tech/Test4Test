@@ -118,6 +118,13 @@ function hasExpired(timestamp: string, retentionMs: number) {
   return Date.now() - time > retentionMs;
 }
 
+function normalizeSubmissionDraft(draft: SubmissionDraft): SubmissionDraft {
+  return {
+    ...draft,
+    needsGooglePlayClosedTesters: draft.needsGooglePlayClosedTesters === true,
+  };
+}
+
 export function createPendingSubmissionId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `pending-${crypto.randomUUID()}`;
@@ -150,7 +157,10 @@ export function getPendingSubmission(id: string) {
       return null;
     }
 
-    return payload;
+    return {
+      ...payload,
+      draft: normalizeSubmissionDraft(payload.draft),
+    };
   } catch {
     removeStoredValue(storageKey);
     return null;
@@ -217,7 +227,10 @@ export function getSubmitFlowResume() {
       return null;
     }
 
-    return payload;
+    return {
+      ...payload,
+      draft: normalizeSubmissionDraft(payload.draft),
+    };
   } catch {
     removeStoredValue(SUBMIT_FLOW_RESUME_KEY);
     return null;

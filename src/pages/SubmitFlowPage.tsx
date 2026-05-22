@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, Lightbulb, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
+import { GooglePlayClosedTestOption } from "../components/GooglePlayClosedTestOption";
 import { AppShell, Surface } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { StepIndicator } from "../components/StepIndicator";
@@ -96,6 +97,7 @@ function createDefaultDraft(productName: string): SubmissionDraft {
     instructions: "",
     accessLinks: {},
     requiresRecording: false,
+    needsGooglePlayClosedTesters: false,
     questionMode: "general",
   };
 }
@@ -270,6 +272,9 @@ export function SubmitFlowPage() {
     () => normalizeProductTypes(draft.productTypes),
     [draft.productTypes],
   );
+  const isGooglePlayClosedTestLocked = draft.needsGooglePlayClosedTesters;
+  const showGooglePlayClosedTestOption =
+    selectedProductTypes.includes("android") || draft.needsGooglePlayClosedTesters;
   const orderedAccessLinks = useMemo(
     () => getOrderedAccessLinks(draft.accessLinks, selectedProductTypes),
     [draft.accessLinks, selectedProductTypes],
@@ -372,6 +377,8 @@ export function SubmitFlowPage() {
     selectedProductTypes.length > 0 ||
     orderedAccessLinks.length > 0 ||
     draft.questionMode !== "general" ||
+    draft.requiresRecording ||
+    draft.needsGooglePlayClosedTesters ||
     hasGeneratedGeneralQuestions ||
     aiQuestions.length > 0;
 
@@ -606,6 +613,10 @@ export function SubmitFlowPage() {
   const toggleProductType = (productType: ProductType) => {
     setError("");
     setDraft((current) => {
+      if (current.needsGooglePlayClosedTesters) {
+        return current;
+      }
+
       const isSelected = current.productTypes.includes(productType);
       const nextProductTypes = normalizeProductTypes(
         isSelected
@@ -622,6 +633,29 @@ export function SubmitFlowPage() {
         ...current,
         productTypes: nextProductTypes,
         accessLinks: nextAccessLinks,
+        needsGooglePlayClosedTesters:
+          current.needsGooglePlayClosedTesters && nextProductTypes.includes("android"),
+      };
+    });
+  };
+
+  const setGooglePlayClosedTestRequirement = (checked: boolean) => {
+    setError("");
+    setDraft((current) => {
+      if (checked) {
+        return {
+          ...current,
+          productTypes: ["android"],
+          accessLinks: current.accessLinks.android
+            ? { android: current.accessLinks.android }
+            : {},
+          needsGooglePlayClosedTesters: true,
+        };
+      }
+
+      return {
+        ...current,
+        needsGooglePlayClosedTesters: false,
       };
     });
   };
@@ -643,6 +677,14 @@ export function SubmitFlowPage() {
 
     if (currentStep === 1 && draft.productTypes.length === 0) {
       return "Select at least one app type to continue.";
+    }
+
+    if (
+      currentStep === 1 &&
+      draft.needsGooglePlayClosedTesters &&
+      (selectedProductTypes.length !== 1 || selectedProductTypes[0] !== "android")
+    ) {
+      return "Google Play closed-test matching requires an Android-only submission.";
     }
 
     if (currentStep === 2) {
@@ -863,14 +905,17 @@ export function SubmitFlowPage() {
                     <div className="choice-grid">
                       {productTypeOptions.map((option) => {
                         const isSelected = draft.productTypes.includes(option.value);
+                        const isLocked = isGooglePlayClosedTestLocked;
+                        const isDisabled = isLocked;
 
                         return (
                           <button
                             key={option.value}
                             type="button"
-                            className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}`}
+                            className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}${isDisabled ? " choice-card--disabled" : ""}`}
                             onClick={() => toggleProductType(option.value)}
                             aria-pressed={isSelected}
+                            disabled={isDisabled}
                           >
                             <span className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`} aria-hidden="true">
                               {isSelected ? <Check size={16} /> : null}
@@ -882,6 +927,12 @@ export function SubmitFlowPage() {
                         );
                       })}
                     </div>
+                    {showGooglePlayClosedTestOption ? (
+                      <GooglePlayClosedTestOption
+                        checked={draft.needsGooglePlayClosedTesters}
+                        onChange={setGooglePlayClosedTestRequirement}
+                      />
+                    ) : null}
 
                   </div>
                 ) : null}
@@ -1246,6 +1297,15 @@ export function SubmitFlowPage() {
                             </span>
                             <ArrowRight size={16} />
                           </button>
+                          {draft.needsGooglePlayClosedTesters ? (
+                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(1)}>
+                              <span className="review-edit-row__copy">
+                                <span className="review-edit-row__label">Google Play testing</span>
+                                <strong>Closed-test testers for 14 days</strong>
+                              </span>
+                              <ArrowRight size={16} />
+                            </button>
+                          ) : null}
                           {draft.instructions.trim() ? (
                             <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
                               <span className="review-edit-row__copy">
