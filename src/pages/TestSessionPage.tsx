@@ -408,7 +408,13 @@ export function TestSessionPage() {
   const { submissionId = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { state, currentUser, completeTest } = useAppState();
+  const {
+    state,
+    currentUser,
+    completeTest,
+    startGooglePlayClosedTestParticipation,
+    recordGooglePlayClosedTestCheckIn,
+  } = useAppState();
   const isPublicTester = !currentUser;
   const isSharedPublicVisit = isPublicTester && searchParams.get("shared") === "1";
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
@@ -486,6 +492,8 @@ export function TestSessionPage() {
   const [reportError, setReportError] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [hasSubmittedReport, setHasSubmittedReport] = useState(false);
+  const [closedTestAction, setClosedTestAction] = useState<"joining" | "checking-in" | null>(null);
+  const [closedTestNotice, setClosedTestNotice] = useState("");
   const deviceRecordingExperience = useMemo(() => resolveRecordingExperience(null), []);
   const autoDetectedProductType = useMemo(
     () => getAutoDetectedProductType(accessLinks, deviceRecordingExperience),
@@ -520,6 +528,51 @@ export function TestSessionPage() {
   const testerInstructions = submission?.instructions.trim()
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
+  const todayUtcDate = new Date().toISOString().slice(0, 10);
+  const googlePlayClosedTestParticipation = useMemo(() => {
+    if (!currentUser || !submission?.needsGooglePlayClosedTesters) {
+      return null;
+    }
+
+    return state.googlePlayClosedTestParticipations.find(
+      (participation) =>
+        participation.submissionId === submission.id &&
+        participation.testerUserId === currentUser.id &&
+        (participation.status === "active" || participation.status === "completed"),
+    ) ?? state.googlePlayClosedTestParticipations.find(
+      (participation) =>
+        participation.submissionId === submission.id &&
+        participation.testerUserId === currentUser.id,
+    ) ?? null;
+  }, [currentUser, state.googlePlayClosedTestParticipations, submission]);
+  const googlePlayClosedTestCheckIns = useMemo(
+    () =>
+      googlePlayClosedTestParticipation
+        ? state.googlePlayClosedTestCheckIns.filter(
+            (checkIn) => checkIn.participationId === googlePlayClosedTestParticipation.id,
+          )
+        : [],
+    [googlePlayClosedTestParticipation, state.googlePlayClosedTestCheckIns],
+  );
+  const googlePlayClosedTestCheckInCount = googlePlayClosedTestCheckIns.length;
+  const hasGooglePlayClosedTestCheckInToday = googlePlayClosedTestCheckIns.some(
+    (checkIn) => checkIn.checkInDate === todayUtcDate,
+  );
+  const googlePlayClosedTestStatus = googlePlayClosedTestParticipation?.status ?? "not_started";
+  const googlePlayClosedTestActionLabel =
+    !currentUser
+      ? "Sign in to join"
+      : googlePlayClosedTestStatus === "completed"
+        ? "Completed"
+        : googlePlayClosedTestStatus === "active"
+          ? hasGooglePlayClosedTestCheckInToday
+            ? "Checked in today"
+            : "Check in today"
+          : "Join closed test";
+  const googlePlayClosedTestProgressLabel =
+    googlePlayClosedTestStatus === "completed"
+      ? "14 / 14 days complete"
+      : `${Math.min(googlePlayClosedTestCheckInCount, 14)} / 14 days checked in`;
   const hasQuestions = (questionSet?.questions.length ?? 0) > 0;
   const draftIdentity = currentUser && submission && activeSubmissionVersion && questionSet
     ? {
@@ -1957,6 +2010,47 @@ export function TestSessionPage() {
     );
   }
 
+  const handleGooglePlayClosedTestAction = async () => {
+    if (!submission.needsGooglePlayClosedTesters) {
+      return;
+    }
+
+    if (!currentUser) {
+      navigate(`/sign-in?returnTo=${encodeURIComponent(`/test/${submission.id}`)}`);
+      return;
+    }
+
+    if (
+      googlePlayClosedTestParticipation?.status === "completed" ||
+      (
+        googlePlayClosedTestParticipation?.status === "active" &&
+        hasGooglePlayClosedTestCheckInToday
+      )
+    ) {
+      return;
+    }
+
+    const isActiveAttempt = googlePlayClosedTestParticipation?.status === "active";
+    setClosedTestAction(isActiveAttempt ? "checking-in" : "joining");
+    setClosedTestNotice("");
+
+    try {
+      const result = isActiveAttempt
+        ? await recordGooglePlayClosedTestCheckIn(submission.id)
+        : await startGooglePlayClosedTestParticipation(submission.id);
+
+      setClosedTestNotice(result.message);
+    } catch (error) {
+      setClosedTestNotice(
+        error instanceof Error
+          ? error.message
+          : "We could not update this Google Play closed test right now.",
+      );
+    } finally {
+      setClosedTestAction(null);
+    }
+  };
+
   const submit = async () => {
     if (isRecordingTest && !uploadedRecording) {
       setMessage("Upload your screen recording before submitting this test.");
@@ -2379,6 +2473,43 @@ export function TestSessionPage() {
               <span className="test-session__label">Tester instructions</span>
               <p>{testerInstructions}</p>
             </div>
+            {submission.needsGooglePlayClosedTesters ? (
+              <div className="google-play-session-panel">
+                <div className="google-play-session-panel__copy">
+                  <span className="test-session__label">Google Play closed test</span>
+                  <strong>Use this Android app for 14 consecutive days.</strong>
+                  <p>
+                    Join the Google Play closed test, install the app, and check in here once per day.
+                  </p>
+                  {submission.googlePlayClosedTestInstructions.trim() ? (
+                    <p>{submission.googlePlayClosedTestInstructions.trim()}</p>
+                  ) : null}
+                  {currentUser ? (
+                    <small>{googlePlayClosedTestProgressLabel}</small>
+                  ) : null}
+                </div>
+                <div className="google-play-session-panel__actions">
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void handleGooglePlayClosedTestAction()}
+                    disabled={
+                      closedTestAction !== null ||
+                      googlePlayClosedTestParticipation?.status === "completed" ||
+                      (
+                        googlePlayClosedTestParticipation?.status === "active" &&
+                        hasGooglePlayClosedTestCheckInToday
+                      )
+                    }
+                  >
+                    {closedTestAction ? "Saving..." : googlePlayClosedTestActionLabel}
+                  </button>
+                  {closedTestNotice ? (
+                    <small className="google-play-session-panel__notice">{closedTestNotice}</small>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {isRecordingTest ? (

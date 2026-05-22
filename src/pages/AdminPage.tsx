@@ -309,6 +309,9 @@ function AdminReportCard({
             <span className={`admin-report-card__status admin-report-card__status--${report.status}`}>
               {reportStatusLabel(report.status)}
             </span>
+            {report.needsGooglePlayClosedTesters ? (
+              <span className="tag tag--warm">Google Play closed test</span>
+            ) : null}
           </div>
           <h2>{report.appName}</h2>
           <p>{report.reasonLabel} / Reported {formatDateTime(report.createdAt)}</p>
@@ -395,6 +398,13 @@ function AdminReportCard({
         <div className="admin-report-card__message">
           <span className="eyebrow">Reporter message</span>
           <p>{report.message}</p>
+        </div>
+      ) : null}
+
+      {report.needsGooglePlayClosedTesters ? (
+        <div className="admin-report-card__message">
+          <span className="eyebrow">Closed-test instructions</span>
+          <p>{report.googlePlayClosedTestInstructions || "No closed-test instructions were provided."}</p>
         </div>
       ) : null}
 

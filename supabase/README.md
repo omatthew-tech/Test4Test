@@ -1,7 +1,7 @@
 # Supabase Launch Setup
 
 1. Create a Supabase project.
-2. Run the SQL in the `supabase/migrations` folder in order, starting with `20260327_initial.sql` and continuing through `20260409_test_back_rate_grace_period.sql`.
+2. Run the SQL in the `supabase/migrations` folder in order, starting with `20260327_initial.sql` and continuing through the latest dated migration. The Google Play closed-test workflow requires `20260521_zz_google_play_closed_test_matching.sql` and `20260522_google_play_closed_test_follow_through.sql`.
 3. In Auth, enable email OTP sign-in.
 4. Update the email template so it sends the OTP token (for example using `{{ .Token }}`) instead of only a magic link.
 5. In Auth URL configuration, set the site URL to `https://test4test.io`.
@@ -20,11 +20,13 @@
    - `supabase/functions/generate-ai-questions`
    - `supabase/functions/send-test-results-notification`
    - `supabase/functions/send-test-back-reminders`
+   - `supabase/functions/send-google-play-closed-test-reminders`
    - `supabase/functions/report-test`
    - `supabase/functions/manage-test-reports`
-9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`.
+9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.
 10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
-11. The final reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
+11. The final test-back reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
+12. Google Play closed-test matching uses a separate 14-day self-attested participation table. Earn discovery and test-back reminders stay pool-aware; direct/shared test URLs remain accessible for live submissions.
 
 Recommended free-stack deployment:
 - Supabase free project for Auth, Postgres, and Edge Functions

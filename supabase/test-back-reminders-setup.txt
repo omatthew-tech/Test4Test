@@ -12,6 +12,7 @@ What this system does
 3. If the owner tests back before the next reminder, the sequence stops automatically.
 4. If the tester no longer has a live app available to test back, the sequence cancels automatically.
 5. The missed test-back does not affect the owner's public Test-back Rate until the final reminder is sent.
+6. Google Play closed-test founders stay in a separate reminder pool, and a dedicated daily function reminds active closed-test participants to check in.
 
 What makes the copy easy to update
 ----------------------------------
@@ -44,6 +45,8 @@ Step 1: Run the migrations
 Run the latest migrations in order:
 - supabase/migrations/20260408_test_back_reminder_emails.sql
 - supabase/migrations/20260409_test_back_rate_grace_period.sql
+- supabase/migrations/20260521_zz_google_play_closed_test_matching.sql
+- supabase/migrations/20260522_google_play_closed_test_follow_through.sql
 
 Step 2: Set the required function secrets
 -----------------------------------------
@@ -63,6 +66,10 @@ npx supabase functions deploy send-test-results-notification --no-verify-jwt --p
 The scheduled reminder processor should be deployed without JWT verification because it uses the reminder secret header instead:
 
 npx supabase functions deploy send-test-back-reminders --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
+
+The Google Play closed-test daily reminder processor uses the same reminder secret:
+
+npx supabase functions deploy send-google-play-closed-test-reminders --no-verify-jwt --project-ref lteimepkxuiupbcsbcpz
 
 Step 4: Create the immediate feedback trigger and hourly schedule
 ----------------------------------
@@ -94,6 +101,22 @@ select cron.schedule(
   $$
 );
 
+select cron.schedule(
+  'send-google-play-closed-test-reminders-daily',
+  '0 15 * * *',
+  $$
+  select
+    net.http_post(
+      url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/send-google-play-closed-test-reminders',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-reminder-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'test_back_reminder_cron_secret')
+      ),
+      body := '{"limit":50}'::jsonb
+    ) as request_id;
+  $$
+);
+
 Why hourly instead of exactly every 24 hours?
 - The sequence still waits at least one day between sends because each reminder stores its own `next_send_at` timestamp.
 - Running hourly keeps the follow-up delay close to the requested day boundary.
@@ -115,4 +138,6 @@ Useful tables to inspect
 ------------------------
 - public.email_templates
 - public.test_back_reminder_sequences
+- public.google_play_closed_test_participations
+- public.google_play_closed_test_check_ins
 - public.email_delivery_logs

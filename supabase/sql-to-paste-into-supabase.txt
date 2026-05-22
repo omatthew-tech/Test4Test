@@ -1,3 +1,8 @@
+-- NOTE: This manual paste file is a legacy convenience artifact. For the
+-- Google Play closed-test workflow, run the ordered files in supabase/migrations,
+-- including 20260521_zz_google_play_closed_test_matching.sql and
+-- 20260522_google_play_closed_test_follow_through.sql.
+
 -- 20260327_initial.sql
 
 create extension if not exists pgcrypto;

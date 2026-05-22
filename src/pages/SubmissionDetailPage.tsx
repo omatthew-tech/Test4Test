@@ -352,6 +352,24 @@ export function SubmissionDetailPage() {
     new Date(selectedRecording.expiresAt).getTime() <= Date.now();
   const showRecordingPanel = submission?.requiresRecording === true || Boolean(selectedRecording);
   const isRecordingResults = submission?.requiresRecording === true;
+  const googlePlayClosedTestParticipations = useMemo(
+    () =>
+      submission
+        ? state.googlePlayClosedTestParticipations.filter(
+            (participation) => participation.submissionId === submission.id,
+          )
+        : [],
+    [state.googlePlayClosedTestParticipations, submission],
+  );
+  const activeGooglePlayClosedTests = googlePlayClosedTestParticipations.filter(
+    (participation) => participation.status === "active",
+  ).length;
+  const completedGooglePlayClosedTests = googlePlayClosedTestParticipations.filter(
+    (participation) => participation.status === "completed",
+  ).length;
+  const missedGooglePlayClosedTests = googlePlayClosedTestParticipations.filter(
+    (participation) => participation.status === "missed",
+  ).length;
 
   const handleCreateVersion = async () => {
     if (!submission) {
@@ -699,6 +717,7 @@ export function SubmissionDetailPage() {
           description: submission.description,
           targetAudience: submission.targetAudience,
           instructions: submission.instructions,
+          googlePlayClosedTestInstructions: submission.googlePlayClosedTestInstructions,
           accessLinks: submission.accessLinks,
           requiresRecording: submission.requiresRecording,
           needsGooglePlayClosedTesters: submission.needsGooglePlayClosedTesters,
@@ -825,6 +844,23 @@ export function SubmissionDetailPage() {
             <span>{latestResponse ? `Latest feedback ${formatDateTime(latestResponse.submittedAt)}` : "No feedback yet"}</span>
           </div>
         </Surface>
+
+        {submission.needsGooglePlayClosedTesters ? (
+          <Surface className="google-play-owner-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Google Play closed test</span>
+              <h2>14-day participant progress</h2>
+            </div>
+            <div className="google-play-owner-progress__metrics">
+              <span><strong>{activeGooglePlayClosedTests}</strong> active</span>
+              <span><strong>{completedGooglePlayClosedTests}</strong> completed</span>
+              <span><strong>{missedGooglePlayClosedTests}</strong> missed</span>
+            </div>
+            {submission.googlePlayClosedTestInstructions.trim() ? (
+              <p>{submission.googlePlayClosedTestInstructions}</p>
+            ) : null}
+          </Surface>
+        ) : null}
 
         <Surface className="results-section">
           <div className="results-version-header">

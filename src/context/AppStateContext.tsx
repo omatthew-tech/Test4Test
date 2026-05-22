@@ -31,6 +31,9 @@ import {
   AppState,
   CreditTransaction,
   FeedbackRatingValue,
+  GooglePlayClosedTestCheckIn,
+  GooglePlayClosedTestParticipation,
+  GooglePlayClosedTestParticipationStatus,
   ModerationAction,
   OTPChallenge,
   PaymentMethods,
@@ -66,6 +69,7 @@ interface SubmissionRow {
   description: string;
   target_audience: string;
   instructions: string;
+  google_play_closed_test_instructions?: string | null;
   access_links?: Submission["accessLinks"] | null;
   access_url: string;
   access_method: string;
@@ -145,6 +149,29 @@ interface CreditTransactionRow {
   created_at: string;
 }
 
+interface GooglePlayClosedTestParticipationRow {
+  id: string;
+  submission_id: string;
+  tester_user_id: string;
+  founder_user_id: string;
+  attempt_number: number;
+  started_on: string;
+  status: GooglePlayClosedTestParticipationStatus;
+  required_days: number;
+  completed_at?: string | null;
+  missed_at?: string | null;
+  cancelled_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface GooglePlayClosedTestCheckInRow {
+  id: string;
+  participation_id: string;
+  check_in_date: string;
+  created_at: string;
+}
+
 interface SubmissionRpcResult {
   responseId?: string;
   ok?: boolean;
@@ -152,6 +179,11 @@ interface SubmissionRpcResult {
   status?: TestResponse["status"];
   qualityScore?: number;
   creditAwarded?: boolean;
+}
+
+interface GooglePlayClosedTestActionResult {
+  ok: boolean;
+  message: string;
 }
 
 interface AppStateContextValue {
@@ -199,6 +231,9 @@ interface AppStateContextValue {
   resetDemo: () => Promise<void>;
   changeEmail: (nextEmail: string) => Promise<{ ok: boolean; message: string }>;
   updatePaymentMethods: (paymentMethods: PaymentMethods) => Promise<{ ok: boolean; message: string }>;
+  listEarnSubmissions: (productTypes: Submission["productTypes"]) => Promise<Submission[]>;
+  startGooglePlayClosedTestParticipation: (submissionId: string) => Promise<GooglePlayClosedTestActionResult>;
+  recordGooglePlayClosedTestCheckIn: (submissionId: string) => Promise<GooglePlayClosedTestActionResult>;
   deleteAccount: () => Promise<{ ok: boolean; message: string }>;
   signOut: () => Promise<void>;
 }
@@ -215,6 +250,8 @@ const emptyState: AppState = {
   responses: [],
   feedbackRatings: [],
   creditTransactions: [],
+  googlePlayClosedTestParticipations: [],
+  googlePlayClosedTestCheckIns: [],
   emailLogs: [],
   moderationActions: [],
   otpChallenge: null,
@@ -376,6 +413,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     description: row.description ?? "",
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
+    googlePlayClosedTestInstructions: row.google_play_closed_test_instructions ?? "",
     accessLinks,
     requiresRecording: row.requires_recording === true,
     needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
@@ -457,6 +495,37 @@ function mapCreditTransaction(row: CreditTransactionRow) {
     amount: row.amount,
     reason: row.reason,
     relatedTestResponseId: row.related_test_response_id ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+function mapGooglePlayClosedTestParticipation(
+  row: GooglePlayClosedTestParticipationRow,
+): GooglePlayClosedTestParticipation {
+  return {
+    id: row.id,
+    submissionId: row.submission_id,
+    testerUserId: row.tester_user_id,
+    founderUserId: row.founder_user_id,
+    attemptNumber: row.attempt_number,
+    startedOn: row.started_on,
+    status: row.status,
+    requiredDays: row.required_days,
+    completedAt: row.completed_at ?? null,
+    missedAt: row.missed_at ?? null,
+    cancelledAt: row.cancelled_at ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapGooglePlayClosedTestCheckIn(
+  row: GooglePlayClosedTestCheckInRow,
+): GooglePlayClosedTestCheckIn {
+  return {
+    id: row.id,
+    participationId: row.participation_id,
+    checkInDate: row.check_in_date,
     createdAt: row.created_at,
   };
 }
@@ -592,10 +661,13 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
     normalized.includes('column "needs_google_play_closed_testers" of relation "submissions" does not exist') ||
+    normalized.includes('column "google_play_closed_test_instructions" of relation "submissions" does not exist') ||
     normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
     normalized.includes('column "public_tester_key" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_path" of relation "test_responses" does not exist') ||
+    normalized.includes('relation "public.google_play_closed_test_participations" does not exist') ||
+    normalized.includes('relation "public.google_play_closed_test_check_ins" does not exist') ||
     normalized.includes('relation "public.submission_versions" does not exist') ||
     normalized.includes('submission_versions') ||
     normalized.includes('create_submission_with_questions') ||
@@ -604,10 +676,14 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('update_question_set') ||
     normalized.includes('submit_test_response') ||
     normalized.includes('submit_public_test_response') ||
+    normalized.includes('list_earn_submissions') ||
+    normalized.includes('start_google_play_closed_test_participation') ||
+    normalized.includes('record_google_play_closed_test_check_in') ||
     normalized.includes('p_product_types') ||
     normalized.includes('p_access_links') ||
     normalized.includes('p_requires_recording') ||
     normalized.includes('p_needs_google_play_closed_testers') ||
+    normalized.includes('p_google_play_closed_test_instructions') ||
     normalized.includes('p_recording_bucket') ||
     normalized.includes('p_recording_path') ||
     normalized.includes('p_question_set_version_id')
@@ -842,6 +918,77 @@ async function loadCreditTransactions(currentUserId: string | null) {
   return ((data ?? []) as CreditTransactionRow[]).map(mapCreditTransaction);
 }
 
+async function loadGooglePlayClosedTestParticipations(currentUserId: string | null) {
+  if (!currentUserId) {
+    return [];
+  }
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("google_play_closed_test_participations")
+    .select("*")
+    .or(`tester_user_id.eq.${currentUserId},founder_user_id.eq.${currentUserId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      return [];
+    }
+
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as GooglePlayClosedTestParticipationRow[])
+    .map(mapGooglePlayClosedTestParticipation);
+}
+
+async function loadGooglePlayClosedTestCheckIns(participationIds: string[]) {
+  if (participationIds.length === 0) {
+    return [];
+  }
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("google_play_closed_test_check_ins")
+    .select("*")
+    .in("participation_id", participationIds)
+    .order("check_in_date", { ascending: true });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      return [];
+    }
+
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as GooglePlayClosedTestCheckInRow[])
+    .map(mapGooglePlayClosedTestCheckIn);
+}
+
+async function loadEarnSubmissionsForProductTypes(productTypes: Submission["productTypes"]) {
+  const supabase = requireSupabase();
+  const normalizedProductTypes = normalizeProductTypes(productTypes);
+
+  if (normalizedProductTypes.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc("list_earn_submissions", {
+    p_product_types: normalizedProductTypes,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as SubmissionRow[]).map(mapSubmission);
+}
+
 async function persistSubmission(draft: SubmissionDraft, questions: Question[]) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before publishing your app.",
@@ -873,6 +1020,9 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
     p_access_links: accessLinks,
     p_requires_recording: draft.requiresRecording,
     p_needs_google_play_closed_testers: draft.needsGooglePlayClosedTesters,
+    p_google_play_closed_test_instructions: draft.needsGooglePlayClosedTesters
+      ? draft.googlePlayClosedTestInstructions
+      : "",
     p_question_mode: draft.questionMode,
     p_questions: questions,
     p_estimated_minutes: estimateSubmissionMinutes(questions, draft.requiresRecording),
@@ -934,6 +1084,9 @@ async function persistSubmissionDetails(
       description: draft.description,
       target_audience: draft.targetAudience,
       instructions: draft.instructions,
+      google_play_closed_test_instructions: draft.needsGooglePlayClosedTesters
+        ? draft.googlePlayClosedTestInstructions
+        : "",
       access_url: primaryAccessLink.url,
       access_links: accessLinks,
       requires_recording: draft.requiresRecording,
@@ -1065,6 +1218,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           responses: [],
           feedbackRatings: [],
           creditTransactions: [],
+          googlePlayClosedTestParticipations: [],
+          googlePlayClosedTestCheckIns: [],
           emailLogs: [],
           moderationActions: [],
           otpChallenge: getStoredOtpChallenge(),
@@ -1083,6 +1238,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const responses = await loadResponses(currentUserId, ownedSubmissionIds);
       const feedbackRatings = await loadFeedbackRatings(currentUserId);
       const creditTransactions = await loadCreditTransactions(currentUserId);
+      const googlePlayClosedTestParticipations =
+        await loadGooglePlayClosedTestParticipations(currentUserId);
+      const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
+        googlePlayClosedTestParticipations.map((participation) => participation.id),
+      );
 
       if (loadId !== loadIdRef.current) {
         return;
@@ -1097,6 +1257,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         responses,
         feedbackRatings,
         creditTransactions,
+        googlePlayClosedTestParticipations,
+        googlePlayClosedTestCheckIns,
         emailLogs: [],
         moderationActions: [],
         otpChallenge: getStoredOtpChallenge(),
@@ -1688,6 +1850,67 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             filledCount > 0
               ? `Payment methods saved. ${filledCount} payout option${filledCount === 1 ? "" : "s"} ready on your profile.`
               : "Payment methods cleared from your profile.",
+        };
+      },
+      async listEarnSubmissions(productTypes) {
+        if (!currentUser) {
+          return [];
+        }
+
+        return loadEarnSubmissionsForProductTypes(productTypes);
+      },
+      async startGooglePlayClosedTestParticipation(submissionId) {
+        if (!currentUser) {
+          return { ok: false, message: "Sign in to join this Google Play closed test." };
+        }
+
+        const supabase = requireSupabase();
+        const { data, error } = await supabase.rpc("start_google_play_closed_test_participation", {
+          p_submission_id: submissionId,
+        });
+
+        if (error) {
+          return {
+            ok: false,
+            message: isMissingSubmissionSchemaError(error.message)
+              ? latestSubmissionSchemaMessage
+              : error.message,
+          };
+        }
+
+        await refreshState();
+        const result = (data ?? {}) as { message?: string };
+
+        return {
+          ok: true,
+          message: result.message ?? "You joined this Google Play closed test.",
+        };
+      },
+      async recordGooglePlayClosedTestCheckIn(submissionId) {
+        if (!currentUser) {
+          return { ok: false, message: "Sign in to check in for this Google Play closed test." };
+        }
+
+        const supabase = requireSupabase();
+        const { data, error } = await supabase.rpc("record_google_play_closed_test_check_in", {
+          p_submission_id: submissionId,
+        });
+
+        if (error) {
+          return {
+            ok: false,
+            message: isMissingSubmissionSchemaError(error.message)
+              ? latestSubmissionSchemaMessage
+              : error.message,
+          };
+        }
+
+        await refreshState();
+        const result = (data ?? {}) as { message?: string };
+
+        return {
+          ok: true,
+          message: result.message ?? "Checked in for today.",
         };
       },
       async deleteAccount() {

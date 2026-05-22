@@ -45,6 +45,8 @@ interface SubmissionRow {
   access_links?: Record<string, string> | null;
   product_type?: string | null;
   product_types?: string[] | null;
+  needs_google_play_closed_testers?: boolean | null;
+  google_play_closed_test_instructions?: string | null;
 }
 
 interface ProfileRow {
@@ -161,7 +163,7 @@ async function loadSubmissions(admin: SupabaseClient, submissionIds: string[]) {
 
   const { data, error } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, description, access_url, access_links, product_type, product_types")
+    .select("id, user_id, product_name, status, description, access_url, access_links, product_type, product_types, needs_google_play_closed_testers, google_play_closed_test_instructions")
     .in("id", uniqueSubmissionIds);
 
   if (error) {
@@ -214,6 +216,8 @@ async function buildReportPayload(admin: SupabaseClient, rows: ReportRow[]) {
       appName: submission.product_name,
       appDescription: submission.description ?? "",
       appStatus: submission.status,
+      needsGooglePlayClosedTesters: submission.needs_google_play_closed_testers === true,
+      googlePlayClosedTestInstructions: submission.google_play_closed_test_instructions ?? "",
       reason: report.reason,
       reasonLabel: reasonLabels[report.reason],
       message: report.message,

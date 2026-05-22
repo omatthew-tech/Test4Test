@@ -121,6 +121,10 @@ function hasExpired(timestamp: string, retentionMs: number) {
 function normalizeSubmissionDraft(draft: SubmissionDraft): SubmissionDraft {
   return {
     ...draft,
+    googlePlayClosedTestInstructions:
+      typeof draft.googlePlayClosedTestInstructions === "string"
+        ? draft.googlePlayClosedTestInstructions
+        : "",
     needsGooglePlayClosedTesters: draft.needsGooglePlayClosedTesters === true,
   };
 }

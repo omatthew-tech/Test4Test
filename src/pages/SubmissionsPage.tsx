@@ -260,6 +260,36 @@ export function SubmissionsPage() {
 
     return [...cards].sort(compareAllSubmissionCards);
   }, [cards, favoriteResponseIdSet, viewMode]);
+  const closedTestItems = useMemo(() => {
+    if (!currentUser) {
+      return [];
+    }
+
+    return state.googlePlayClosedTestParticipations
+      .filter((participation) => participation.testerUserId === currentUser.id)
+      .map((participation) => {
+        const submission = state.submissions.find((item) => item.id === participation.submissionId);
+        const checkInCount = state.googlePlayClosedTestCheckIns.filter(
+          (checkIn) => checkIn.participationId === participation.id,
+        ).length;
+
+        return {
+          participation,
+          submission,
+          checkInCount,
+        };
+      })
+      .sort(
+        (first, second) =>
+          new Date(second.participation.createdAt).getTime() -
+          new Date(first.participation.createdAt).getTime(),
+      );
+  }, [
+    currentUser,
+    state.googlePlayClosedTestCheckIns,
+    state.googlePlayClosedTestParticipations,
+    state.submissions,
+  ]);
 
   const toggleFavorite = async (responseId: string) => {
     if (!currentUser || favoritePendingIdSet.has(responseId)) {
@@ -339,6 +369,39 @@ export function SubmissionsPage() {
 
         {loadError ? <Surface className="callout callout--warning">{loadError}</Surface> : null}
         {favoriteError ? <Surface className="callout callout--warning">{favoriteError}</Surface> : null}
+
+        {closedTestItems.length > 0 ? (
+          <Surface className="google-play-feedback-panel">
+            <div className="section-heading">
+              <span className="eyebrow">Google Play closed tests</span>
+              <h2>14-day commitments</h2>
+            </div>
+            <div className="google-play-feedback-list">
+              {closedTestItems.map(({ participation, submission, checkInCount }) => (
+                <div key={participation.id} className="google-play-feedback-row">
+                  <div>
+                    <strong>{submission?.productName ?? "Closed test"}</strong>
+                    <p>
+                      {participation.status === "completed"
+                        ? "Completed"
+                        : participation.status === "missed"
+                          ? "Missed a day"
+                          : participation.status === "cancelled"
+                            ? "Cancelled"
+                            : `${Math.min(checkInCount, participation.requiredDays)} / ${participation.requiredDays} days checked in`}
+                    </p>
+                  </div>
+                  {submission ? (
+                    <Link to={`/test/${submission.id}`} className="button button--secondary button--small">
+                      Open test
+                      <ArrowRight size={14} />
+                    </Link>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </Surface>
+        ) : null}
 
         {isLoadingCards || isLoadingFavorites ? (
           <Surface>
@@ -446,6 +509,9 @@ function SubmissionFeedbackRow({
             ) : null}
           </div>
           <p>{card.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
+          {card.needsGooglePlayClosedTesters ? (
+            <span className="tag tag--warm">Google Play closed test</span>
+          ) : null}
         </div>
         <div className="submission-feedback-card__actions">
           {hasPendingReport ? (

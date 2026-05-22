@@ -9602,4 +9602,128 @@ select {
   }
 }
 
+.field--google-play-instructions textarea {
+  min-height: 112px;
+}
+
+.earn-row__closed-test-note {
+  margin: 0;
+  color: #6f4a2f;
+  font-weight: 650;
+}
+
+.google-play-session-panel,
+.google-play-owner-panel,
+.google-play-feedback-panel,
+.google-play-owner-progress {
+  border: 1px solid rgba(245, 142, 86, 0.28);
+  background: #fff8f2;
+}
+
+.google-play-session-panel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 8px;
+}
+
+.google-play-session-panel__copy {
+  display: grid;
+  gap: 6px;
+}
+
+.google-play-session-panel__copy strong {
+  color: #211b17;
+  font-size: 0.98rem;
+}
+
+.google-play-session-panel__copy p,
+.google-play-session-panel__copy small {
+  margin: 0;
+  color: #6f655d;
+}
+
+.google-play-session-panel__actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.google-play-session-panel__notice {
+  color: #6f4a2f;
+  text-align: right;
+}
+
+.google-play-owner-progress,
+.google-play-owner-panel,
+.google-play-feedback-panel {
+  padding: 18px;
+  border-radius: 8px;
+}
+
+.google-play-owner-progress {
+  margin: 16px 0;
+}
+
+.google-play-owner-progress__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.google-play-owner-progress__metrics span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid rgba(216, 208, 200, 0.9);
+  border-radius: 999px;
+  background: #fffdfb;
+  color: #5f4a3d;
+  font-size: 0.86rem;
+}
+
+.google-play-feedback-list {
+  display: grid;
+  gap: 10px;
+}
+
+.google-play-feedback-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid rgba(216, 208, 200, 0.9);
+  border-radius: 8px;
+  background: #fffdfb;
+}
+
+.google-play-feedback-row p {
+  margin: 4px 0 0;
+  color: #6f655d;
+}
+
+@media (max-width: 720px) {
+  .google-play-session-panel,
+  .google-play-feedback-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .google-play-session-panel__actions {
+    justify-items: stretch;
+    min-width: 0;
+  }
+
+  .google-play-session-panel__notice {
+    text-align: left;
+  }
+}
+
 

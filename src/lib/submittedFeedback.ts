@@ -14,6 +14,7 @@ interface SubmittedFeedbackCardRpcRow {
   product_name: string;
   product_types: ProductType[] | null;
   description: string | null;
+  needs_google_play_closed_testers?: boolean | null;
   submitted_at: string;
   rating_value: FeedbackRatingValue | null;
   owner_test_back_rate_percent: number | null;
@@ -58,6 +59,7 @@ export async function loadSubmittedFeedbackCards() {
       Array.isArray(row.product_types) ? row.product_types : [],
     ),
     description: row.description ?? "",
+    needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
     submittedAt: row.submitted_at,
     ratingValue: normalizeRatingValue(row.rating_value),
     ownerTestBackRatePercent: normalizePercent(row.owner_test_back_rate_percent),

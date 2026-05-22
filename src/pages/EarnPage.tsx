@@ -278,7 +278,7 @@ function formatSelectedPlatformSummary(productTypes: ProductType[]) {
 }
 
 export function EarnPage() {
-  const { state, currentUser, isConfigured } = useAppState();
+  const { state, currentUser, isConfigured, listEarnSubmissions } = useAppState();
   const [sortMode, setSortMode] = useState("recommended");
   const [selectedProductTypes, setSelectedProductTypes] = useState<ProductType[]>(() => {
     if (!currentUser) {
@@ -300,6 +300,8 @@ export function EarnPage() {
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
   >({});
+  const [serverEarnSubmissions, setServerEarnSubmissions] = useState<Submission[] | null>(null);
+  const [serverEarnError, setServerEarnError] = useState("");
   const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
   const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
   const available = getAvailableSubmissions(state);
@@ -309,6 +311,7 @@ export function EarnPage() {
     [currentUser?.id, state.submissions],
   );
   const defaultSelectedProductTypesKey = defaultSelectedProductTypes.join("|");
+  const selectedProductTypesKey = selectedProductTypes.join("|");
   const isGooglePlayClosedTestPool = useMemo(
     () => userIsInGooglePlayClosedTestPool(state.submissions, currentUser?.id ?? null),
     [currentUser?.id, state.submissions],
@@ -337,6 +340,53 @@ export function EarnPage() {
     setHasConfirmedPlatformFilter(isConfirmed);
     setIsPlatformModalOpen(!isConfirmed);
   }, [currentUser?.id, defaultSelectedProductTypesKey]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!currentUser || !isConfigured) {
+      setServerEarnSubmissions(null);
+      setServerEarnError("");
+      return undefined;
+    }
+
+    if (selectedProductTypes.length === 0) {
+      setServerEarnSubmissions([]);
+      setServerEarnError("");
+      return undefined;
+    }
+
+    const loadServerEarnSubmissions = async () => {
+      try {
+        const submissions = await listEarnSubmissions(selectedProductTypes);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setServerEarnSubmissions(submissions);
+        setServerEarnError("");
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        console.error(error);
+        setServerEarnSubmissions(null);
+        setServerEarnError(
+          error instanceof Error
+            ? error.message
+            : "We could not load pool-filtered tests right now.",
+        );
+      }
+    };
+
+    void loadServerEarnSubmissions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured, listEarnSubmissions, selectedProductTypesKey]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -424,10 +474,15 @@ export function EarnPage() {
 
     const hiddenReportedSubmissions = new Set(hiddenReportedSubmissionIds);
 
-    return available.filter((item) =>
+    const baseSubmissions = serverEarnSubmissions ?? available;
+
+    return baseSubmissions.filter((item) =>
       !hiddenReportedSubmissions.has(item.id) &&
-      item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
-      googlePlayClosedTestPoolUserIds.has(item.userId ?? "") === isGooglePlayClosedTestPool &&
+      (serverEarnSubmissions !== null ||
+        (
+          item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
+          googlePlayClosedTestPoolUserIds.has(item.userId ?? "") === isGooglePlayClosedTestPool
+        )) &&
       item.productTypes.some((productType) => selectedProductTypes.includes(productType)),
     );
   }, [
@@ -436,6 +491,7 @@ export function EarnPage() {
     hiddenReportedSubmissionIds,
     isGooglePlayClosedTestPool,
     selectedProductTypes,
+    serverEarnSubmissions,
   ]);
 
   const candidateSubmissionIdsKey = useMemo(
@@ -587,6 +643,10 @@ export function EarnPage() {
             </div>
           </div>
         </Surface>
+
+        {serverEarnError ? (
+          <Surface className="callout callout--warning">{serverEarnError}</Surface>
+        ) : null}
 
         {cards.length > 0 ? (
           <div className="earn-list">
@@ -742,6 +802,11 @@ function EarnRow({
             {submission.requiresRecording ? (
               <p className="earn-row__recording-note">
                 Screen + voice recording required. Record locally during the session, then upload the video after testing.
+              </p>
+            ) : null}
+            {submission.needsGooglePlayClosedTesters ? (
+              <p className="earn-row__closed-test-note">
+                Google Play closed test: join the Android test and check in once a day for 14 consecutive days.
               </p>
             ) : null}
           </div>

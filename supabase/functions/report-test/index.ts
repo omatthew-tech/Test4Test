@@ -26,6 +26,8 @@ interface SubmissionRow {
   access_links?: Record<string, string> | null;
   product_type?: string | null;
   product_types?: string[] | null;
+  needs_google_play_closed_testers?: boolean | null;
+  google_play_closed_test_instructions?: string | null;
 }
 
 interface ProfileRow {
@@ -221,6 +223,13 @@ async function sendSupportNotification(
   const reasonLabel = reasonLabels[report.reason];
   const subject = `Reported app: ${submission.product_name}`;
   const message = report.message.trim() || "No custom message provided.";
+  const closedTestContext = submission.needs_google_play_closed_testers
+    ? [
+        "",
+        "Google Play closed test: yes",
+        `Closed-test instructions: ${submission.google_play_closed_test_instructions?.trim() || "None provided."}`,
+      ]
+    : [];
   const textBody = [
     `A tester reported ${submission.product_name}.`,
     "",
@@ -232,6 +241,7 @@ async function sendSupportNotification(
     `Founder: ${founder.display_name} <${founder.email}>`,
     `Founder user id: ${founder.id}`,
     `Submission id: ${submission.id}`,
+    ...closedTestContext,
     "",
     "App links:",
     formatAccessLinks(submission),
@@ -250,6 +260,12 @@ async function sendSupportNotification(
         <p style="margin: 0 0 6px;"><strong>Founder:</strong> ${escapeHtml(founder.display_name)} &lt;${escapeHtml(founder.email)}&gt;</p>
         <p style="margin: 0;"><strong>Submission id:</strong> ${escapeHtml(submission.id)}</p>
       </div>
+      ${submission.needs_google_play_closed_testers ? `
+        <div style="margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(245, 142, 86, 0.35); border-radius: 14px; background: #fff3ea;">
+          <p style="margin: 0 0 6px;"><strong>Google Play closed test:</strong> yes</p>
+          <p style="margin: 0;"><strong>Instructions:</strong> ${escapeHtmlWithBreaks(submission.google_play_closed_test_instructions?.trim() || "None provided.")}</p>
+        </div>
+      ` : ""}
       <div style="margin: 18px 0;">
         <p style="margin: 0 0 6px; font-weight: 700;">App links</p>
         ${formatAccessLinksHtml(submission)}
@@ -335,7 +351,7 @@ Deno.serve(async (request) => {
 
   const { data: submissionRow, error: submissionError } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, access_url, access_links, product_type, product_types")
+    .select("id, user_id, product_name, status, access_url, access_links, product_type, product_types, needs_google_play_closed_testers, google_play_closed_test_instructions")
     .eq("id", submissionId)
     .single();
 

@@ -39,6 +39,7 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
     description: submission.description,
     targetAudience: submission.targetAudience,
     instructions: submission.instructions,
+    googlePlayClosedTestInstructions: submission.googlePlayClosedTestInstructions,
     accessLinks: { ...submission.accessLinks },
     requiresRecording: submission.requiresRecording,
     needsGooglePlayClosedTesters: submission.needsGooglePlayClosedTesters,
@@ -110,6 +111,16 @@ export function MyTestsPage() {
     ? getActiveQuestionSet(state, sharingSubmission.id)
     : null;
   const sharingUrl = sharingSubmission ? buildShareUrl(sharingSubmission.id) : "";
+  const closedTestParticipationsBySubmissionId = useMemo(() => {
+    const grouped = new Map<string, typeof state.googlePlayClosedTestParticipations>();
+
+    state.googlePlayClosedTestParticipations.forEach((participation) => {
+      const current = grouped.get(participation.submissionId) ?? [];
+      grouped.set(participation.submissionId, [...current, participation]);
+    });
+
+    return grouped;
+  }, [state.googlePlayClosedTestParticipations]);
 
   const openEditTest = (submission: Submission) => {
     setEditingSubmissionId(submission.id);
@@ -209,6 +220,7 @@ export function MyTestsPage() {
       return {
         ...current,
         needsGooglePlayClosedTesters: false,
+        googlePlayClosedTestInstructions: "",
       };
     });
   };
@@ -253,14 +265,25 @@ export function MyTestsPage() {
     for (const productType of selectedEditProductTypes) {
       const value = editDraft.accessLinks[productType] ?? "";
       const validation = validateAccessLink(value, productType);
+      const fieldLabel = accessLinkFieldLabel(
+        productType,
+        editDraft.needsGooglePlayClosedTesters && productType === "android",
+      ).toLowerCase();
 
       if (!value.trim()) {
-        return `Add a public ${accessLinkFieldLabel(productType).toLowerCase()} for testers.`;
+        return `Add a public ${fieldLabel} for testers.`;
       }
 
       if (!validation.valid) {
         return `${productTypeLabel(productType)}: ${validation.message}`;
       }
+    }
+
+    if (
+      editDraft.needsGooglePlayClosedTesters &&
+      !editDraft.googlePlayClosedTestInstructions.trim()
+    ) {
+      return "Add Google Play closed-test access instructions for testers.";
     }
 
     return "";
@@ -309,6 +332,18 @@ export function MyTestsPage() {
         ) : (
           <div className="my-tests-list">
             {submissions.map((submission) => {
+              const closedTestParticipations =
+                closedTestParticipationsBySubmissionId.get(submission.id) ?? [];
+              const activeClosedTestCount = closedTestParticipations.filter(
+                (participation) => participation.status === "active",
+              ).length;
+              const completedClosedTestCount = closedTestParticipations.filter(
+                (participation) => participation.status === "completed",
+              ).length;
+              const missedClosedTestCount = closedTestParticipations.filter(
+                (participation) => participation.status === "missed",
+              ).length;
+
               return (
                 <Surface key={submission.id} className={`my-test-row my-test-row--${submission.status}`}>
                   <div className="my-test-row__header">
@@ -324,6 +359,17 @@ export function MyTestsPage() {
 
                   {submission.description ? (
                     <p className="my-test-row__description">{submission.description}</p>
+                  ) : null}
+
+                  {submission.needsGooglePlayClosedTesters ? (
+                    <div className="google-play-owner-progress">
+                      <span className="eyebrow">Google Play closed-test participants</span>
+                      <div className="google-play-owner-progress__metrics">
+                        <span><strong>{activeClosedTestCount}</strong> active</span>
+                        <span><strong>{completedClosedTestCount}</strong> completed</span>
+                        <span><strong>{missedClosedTestCount}</strong> missed</span>
+                      </div>
+                    </div>
                   ) : null}
 
                   <div className="my-test-row__footer">
@@ -476,14 +522,16 @@ export function MyTestsPage() {
                 {selectedEditProductTypes.map((productType) => {
                   const value = editDraft.accessLinks[productType] ?? "";
                   const validation = validateAccessLink(value, productType);
+                  const isGooglePlayClosedTestLink =
+                    editDraft.needsGooglePlayClosedTesters && productType === "android";
 
                   return (
                     <label key={productType} className="field">
-                      <span>{accessLinkFieldLabel(productType)}</span>
+                      <span>{accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}</span>
                       <input
                         value={value}
                         onChange={(event) => updateEditAccessLink(productType, event.target.value)}
-                        placeholder={accessLinkPlaceholder(productType)}
+                        placeholder={accessLinkPlaceholder(productType, isGooglePlayClosedTestLink)}
                       />
                       {value.trim() ? (
                         <small
@@ -495,6 +543,24 @@ export function MyTestsPage() {
                     </label>
                   );
                 })}
+                {editDraft.needsGooglePlayClosedTesters ? (
+                  <label className="field field--google-play-instructions">
+                    <span>Google Play closed-test access instructions</span>
+                    <textarea
+                      rows={4}
+                      value={editDraft.googlePlayClosedTestInstructions}
+                      onChange={(event) =>
+                        updateEditDraft({
+                          googlePlayClosedTestInstructions: event.target.value,
+                        })
+                      }
+                      placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
+                    />
+                    <small className="helper-text">
+                      Include any tester group, opt-in, or install steps needed before users can access the Android closed test.
+                    </small>
+                  </label>
+                ) : null}
                 <label className="field">
                   <span>(optional) Tester Instructions</span>
                   <textarea

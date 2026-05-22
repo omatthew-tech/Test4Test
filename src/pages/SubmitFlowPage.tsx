@@ -95,6 +95,7 @@ function createDefaultDraft(productName: string): SubmissionDraft {
     description: "",
     targetAudience: "",
     instructions: "",
+    googlePlayClosedTestInstructions: "",
     accessLinks: {},
     requiresRecording: false,
     needsGooglePlayClosedTesters: false,
@@ -374,6 +375,7 @@ export function SubmitFlowPage() {
     Boolean(draft.description.trim()) ||
     Boolean(draft.targetAudience.trim()) ||
     Boolean(draft.instructions.trim()) ||
+    Boolean(draft.googlePlayClosedTestInstructions.trim()) ||
     selectedProductTypes.length > 0 ||
     orderedAccessLinks.length > 0 ||
     draft.questionMode !== "general" ||
@@ -656,6 +658,7 @@ export function SubmitFlowPage() {
       return {
         ...current,
         needsGooglePlayClosedTesters: false,
+        googlePlayClosedTestInstructions: "",
       };
     });
   };
@@ -690,14 +693,25 @@ export function SubmitFlowPage() {
     if (currentStep === 2) {
       for (const productType of selectedProductTypes) {
         const validation = validateAccessLink(draft.accessLinks[productType] ?? "", productType);
+        const fieldLabel = accessLinkFieldLabel(
+          productType,
+          draft.needsGooglePlayClosedTesters && productType === "android",
+        ).toLowerCase();
 
         if (!(draft.accessLinks[productType] ?? "").trim()) {
-          return `Add a public ${accessLinkFieldLabel(productType).toLowerCase()} for testers.`;
+          return `Add a public ${fieldLabel} for testers.`;
         }
 
         if (!validation.valid) {
           return `${productTypeLabel(productType)}: ${validation.message}`;
         }
+      }
+
+      if (
+        draft.needsGooglePlayClosedTesters &&
+        !draft.googlePlayClosedTestInstructions.trim()
+      ) {
+        return "Add Google Play closed-test access instructions for testers.";
       }
     }
 
@@ -949,14 +963,16 @@ export function SubmitFlowPage() {
                     {selectedProductTypes.map((productType) => {
                       const value = draft.accessLinks[productType] ?? "";
                       const validation = validateAccessLink(value, productType);
+                      const isGooglePlayClosedTestLink =
+                        draft.needsGooglePlayClosedTesters && productType === "android";
 
                       return (
                         <label key={productType} className="field">
-                          <span>{accessLinkFieldLabel(productType)}</span>
+                          <span>{accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}</span>
                           <input
                             value={value}
                             onChange={(event) => updateAccessLink(productType, event.target.value)}
-                            placeholder={accessLinkPlaceholder(productType)}
+                            placeholder={accessLinkPlaceholder(productType, isGooglePlayClosedTestLink)}
                           />
                           {value.trim() ? (
                             <small
@@ -968,6 +984,25 @@ export function SubmitFlowPage() {
                         </label>
                       );
                     })}
+                    {draft.needsGooglePlayClosedTesters ? (
+                      <label className="field field--google-play-instructions">
+                        <span>Google Play closed-test access instructions</span>
+                        <textarea
+                          rows={4}
+                          value={draft.googlePlayClosedTestInstructions}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              googlePlayClosedTestInstructions: event.target.value,
+                            }))
+                          }
+                          placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
+                        />
+                        <small className="helper-text">
+                          Include any tester group, opt-in, or install steps needed before users can access the Android closed test.
+                        </small>
+                      </label>
+                    ) : null}
                     <label className="field">
                       <span>(optional) Tester Instructions</span>
                       <textarea
@@ -1302,6 +1337,15 @@ export function SubmitFlowPage() {
                               <span className="review-edit-row__copy">
                                 <span className="review-edit-row__label">Google Play testing</span>
                                 <strong>Closed-test testers for 14 days</strong>
+                              </span>
+                              <ArrowRight size={16} />
+                            </button>
+                          ) : null}
+                          {draft.needsGooglePlayClosedTesters && draft.googlePlayClosedTestInstructions.trim() ? (
+                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                              <span className="review-edit-row__copy">
+                                <span className="review-edit-row__label">Closed-test access</span>
+                                <strong>{draft.googlePlayClosedTestInstructions}</strong>
                               </span>
                               <ArrowRight size={16} />
                             </button>

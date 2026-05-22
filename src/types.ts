@@ -30,6 +30,11 @@ export type ModerationActionType =
   | "warn"
   | "suspend"
   | "ban";
+export type GooglePlayClosedTestParticipationStatus =
+  | "active"
+  | "completed"
+  | "missed"
+  | "cancelled";
 
 export interface PaymentMethods {
   paypalHandle?: string | null;
@@ -95,6 +100,7 @@ export interface Submission {
   description: string;
   targetAudience: string;
   instructions: string;
+  googlePlayClosedTestInstructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;
   needsGooglePlayClosedTesters: boolean;
@@ -140,6 +146,8 @@ export interface AdminTestReport {
   appName: string;
   appDescription: string;
   appStatus: SubmissionStatus;
+  needsGooglePlayClosedTesters: boolean;
+  googlePlayClosedTestInstructions: string;
   reason: TestReportReason;
   reasonLabel: string;
   message: string;
@@ -170,6 +178,7 @@ export interface SubmittedFeedbackCard {
   productName: string;
   productTypes: ProductType[];
   description: string;
+  needsGooglePlayClosedTesters: boolean;
   submittedAt: string;
   ratingValue: FeedbackRatingValue | null;
   ownerTestBackRatePercent: number;
@@ -224,6 +233,29 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
+export interface GooglePlayClosedTestParticipation {
+  id: string;
+  submissionId: string;
+  testerUserId: string;
+  founderUserId: string;
+  attemptNumber: number;
+  startedOn: string;
+  status: GooglePlayClosedTestParticipationStatus;
+  requiredDays: number;
+  completedAt?: string | null;
+  missedAt?: string | null;
+  cancelledAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GooglePlayClosedTestCheckIn {
+  id: string;
+  participationId: string;
+  checkInDate: string;
+  createdAt: string;
+}
+
 export interface EmailNotificationLog {
   id: string;
   userId: string;
@@ -261,6 +293,8 @@ export interface AppState {
   responses: TestResponse[];
   feedbackRatings: FeedbackRating[];
   creditTransactions: CreditTransaction[];
+  googlePlayClosedTestParticipations: GooglePlayClosedTestParticipation[];
+  googlePlayClosedTestCheckIns: GooglePlayClosedTestCheckIn[];
   emailLogs: EmailNotificationLog[];
   moderationActions: ModerationAction[];
   otpChallenge: OTPChallenge | null;
@@ -272,6 +306,7 @@ export interface SubmissionDraft {
   description: string;
   targetAudience: string;
   instructions: string;
+  googlePlayClosedTestInstructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;
   needsGooglePlayClosedTesters: boolean;

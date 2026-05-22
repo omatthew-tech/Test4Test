@@ -150,11 +150,15 @@ export function normalizeAccessLinks(accessLinks: AccessLinks) {
   return normalized;
 }
 
-export function accessLinkFieldLabel(productType: ProductType) {
+export function accessLinkFieldLabel(productType: ProductType, isGooglePlayClosedTest = false) {
   switch (productType) {
     case "ios":
       return "iOS app link";
     case "android":
+      if (isGooglePlayClosedTest) {
+        return "Google Play closed-test link";
+      }
+
       return "Android app link";
     default:
       return "Website / Web app link";
@@ -172,11 +176,15 @@ export function accessLinkButtonLabel(productType: ProductType) {
   }
 }
 
-export function accessLinkPlaceholder(productType: ProductType) {
+export function accessLinkPlaceholder(productType: ProductType, isGooglePlayClosedTest = false) {
   switch (productType) {
     case "ios":
       return "apps.apple.com/app/... or testflight.apple.com/join/...";
     case "android":
+      if (isGooglePlayClosedTest) {
+        return "play.google.com/apps/testing/...";
+      }
+
       return "play.google.com/store/apps/...";
     default:
       return "yourapp.com";
