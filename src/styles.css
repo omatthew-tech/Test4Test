@@ -7121,9 +7121,9 @@ body {
   display: inline-flex;
   align-items: center;
   color: rgba(79, 71, 65, 0.58);
-  font-size: clamp(1rem, 1.25vw, 1.16rem);
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: clamp(1.125rem, 1.45vw, 1.28rem);
+  font-weight: 500;
+  line-height: 1.45;
   white-space: nowrap;
 }
 
@@ -7507,7 +7507,7 @@ body {
   }
 
   .home-review-text {
-    font-size: 0.96rem;
+    font-size: 1.05rem;
   }
 
   .home-process {
