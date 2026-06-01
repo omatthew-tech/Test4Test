@@ -21,6 +21,24 @@ const homeReviews = [
   "The reviews helped me fix things I never would have thought of.",
 ];
 
+const feedbackDemoItems = [
+  {
+    id: "cta",
+    label: "CTA clarity",
+    quote: "I know what the button will do. It feels more useful than a vague Get started.",
+  },
+  {
+    id: "progress",
+    label: "Setup flow",
+    quote: "The setup list makes this feel manageable. I can see the three things left.",
+  },
+  {
+    id: "pricing",
+    label: "Trust signal",
+    quote: "The trial note and security link answer the questions I would have before trying it.",
+  },
+];
+
 const processSteps = [
   {
     title: "Submit",
@@ -162,6 +180,83 @@ export function HomePage() {
                     </span>
                   ))}
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="home-feedback-demo" aria-labelledby="home-feedback-demo-title">
+          <div className="home-feedback-demo__header">
+            <h2 id="home-feedback-demo-title">See what AI can't</h2>
+          </div>
+
+          <div className="home-feedback-demo__stage" aria-label="Example SaaS usability feedback">
+            <div className="home-feedback-demo__product" aria-hidden="true">
+              <div className="demo-saas">
+                <div className="demo-saas__topbar">
+                  <div className="demo-saas__brand">
+                    <span />
+                    Northstar
+                  </div>
+                  <div className="demo-saas__nav">
+                    <span>Pipeline</span>
+                    <span>Insights</span>
+                    <span>Settings</span>
+                  </div>
+                </div>
+
+                <div className="demo-saas__hero">
+                  <div>
+                    <h3>Track Deals. Get Insights. Grow Now</h3>
+                    <p>
+                      Pull open deals from your CRM and give every next step a clear owner before
+                      the pipeline call.
+                    </p>
+                  </div>
+                  <button type="button" className="demo-saas__cta" tabIndex={-1}>
+                    Build handoff report
+                  </button>
+                </div>
+
+                <div className="demo-saas__grid">
+                  <div className="demo-saas__panel demo-saas__panel--progress">
+                    <div className="demo-saas__panel-header">
+                      <span>Launch checklist</span>
+                      <strong>72%</strong>
+                    </div>
+                    <div className="demo-saas__progress">
+                      <span />
+                    </div>
+                    <div className="demo-saas__checklist">
+                      <span>Import open deals</span>
+                      <span>Match owners to stages</span>
+                      <span>Send Friday digest</span>
+                    </div>
+                  </div>
+
+                  <div className="demo-saas__panel demo-saas__panel--pricing">
+                    <span className="demo-saas__eyebrow">Team trial</span>
+                    <strong>$19</strong>
+                    <p>Per seat after the trial. Cancel before July 1 and you won't be charged.</p>
+                    <span className="demo-saas__security">Edit subscription</span>
+                  </div>
+                </div>
+              </div>
+              <span className="home-feedback-demo__cursor" />
+            </div>
+
+            <div className="home-feedback-demo__callouts">
+              {feedbackDemoItems.map(({ id, label, quote }) => (
+                <figure
+                  className={`home-feedback-demo__callout home-feedback-demo__callout--${id}`}
+                  key={id}
+                >
+                  <span className="home-feedback-demo__connector" />
+                  <figcaption>
+                    <span>{label}</span>
+                    <blockquote>&ldquo;{quote}&rdquo;</blockquote>
+                  </figcaption>
+                </figure>
               ))}
             </div>
           </div>
