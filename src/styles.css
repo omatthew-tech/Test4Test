@@ -3248,7 +3248,8 @@ body {
   min-width: 0;
   margin: 0;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+  font-weight: 600;
   letter-spacing: 0;
   overflow-wrap: anywhere;
 }
@@ -3279,14 +3280,21 @@ body {
   min-height: 230px;
   padding: 34px;
   border-right: 1px solid rgba(216, 208, 200, 0.9);
+  background:
+    conic-gradient(from 214deg at 8% 18%, rgba(245, 142, 86, 0.2), rgba(255, 208, 174, 0.12), rgba(255, 254, 252, 0.04), rgba(245, 142, 86, 0.16)),
+    radial-gradient(120% 86% at 0% 8%, rgba(245, 142, 86, 0.18), rgba(255, 208, 174, 0.1) 42%, rgba(255, 254, 252, 0) 68%),
+    linear-gradient(145deg, rgba(255, 244, 234, 0.86), rgba(255, 254, 252, 0.88) 62%, rgba(246, 242, 238, 0.68));
+  background-blend-mode: soft-light, normal, normal;
 }
 
 .earn-visibility__rank-label {
   order: 2;
   color: #7a7068;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(0.82rem, 1.2vw, 0.96rem);
+  font-size: 0.86rem;
   font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
 .earn-visibility__rank-value {
@@ -3297,8 +3305,9 @@ body {
 
 .earn-visibility__rank-value strong {
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(4.15rem, 8vw, 6.25rem);
-  line-height: 1;
+  font-size: clamp(4.65rem, 9vw, 7.25rem);
+  font-weight: 700;
+  line-height: 0.94;
 }
 
 .earn-visibility__rank-panel small {
@@ -3313,35 +3322,50 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 13px;
+  gap: 0;
   padding: 34px;
+  background: #fffefc;
 }
 
 .earn-visibility__detail-row {
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
   align-items: center;
   gap: 13px;
-  flex-wrap: wrap;
+  min-height: 55px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(216, 208, 200, 0.56);
   color: var(--color-ink-900);
-  font-size: clamp(1.05rem, 2.3vw, 1.38rem);
+  font-size: 1.05rem;
   line-height: 1.2;
 }
 
-.earn-visibility__detail-row strong {
-  min-width: 84px;
-  font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  line-height: 1;
+.earn-visibility__detail-row:last-child {
+  border-bottom: 0;
 }
 
-.earn-visibility__detail-row > span:not(.earn-token-tooltip) {
+.earn-visibility__detail-row strong {
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: clamp(1.35rem, 2.4vw, 1.72rem);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.earn-visibility__metric-label {
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1d1815;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
 
 .earn-visibility__inline-action {
-  margin-left: auto;
+  justify-self: end;
+  margin-left: 21px;
   min-height: 38px;
 }
 
@@ -3876,6 +3900,10 @@ body {
     padding: 24px;
   }
 
+  .earn-visibility__detail-row {
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+  }
+
   .earn-row__content {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -3925,9 +3953,10 @@ body {
   }
 
   .earn-visibility__detail-row {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: center;
     gap: 8px;
+    min-height: 55px;
   }
 
   .earn-visibility__detail-row strong {
@@ -3935,6 +3964,8 @@ body {
   }
 
   .earn-visibility__inline-action {
+    grid-column: 1 / -1;
+    justify-self: stretch;
     margin-left: 0;
     width: 100%;
   }

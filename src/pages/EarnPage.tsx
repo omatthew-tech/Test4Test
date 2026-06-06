@@ -1003,7 +1003,7 @@ function EarnVisibilityPanel({
         <div className="earn-visibility__details">
           <div className="earn-visibility__detail-row">
             <strong>{summary ? `${summary.testBackRatePercent}%` : "..."}</strong>
-            <span>Test-back rate</span>
+            <span className="earn-visibility__metric-label">Test-back rate</span>
             {showImproveRate ? (
               <button
                 type="button"
@@ -1021,7 +1021,7 @@ function EarnVisibilityPanel({
 
           <div className="earn-visibility__detail-row earn-visibility__detail-row--action">
             <strong>{summary ? `${summary.satisfactionRatePercent}%` : "..."}</strong>
-            <span>Satisfaction rate</span>
+            <span className="earn-visibility__metric-label">Satisfaction rate</span>
             {showReviseReview ? (
               revisionTargetResponseId ? (
                 <Link
@@ -1053,18 +1053,20 @@ function EarnVisibilityPanel({
 
           <div className="earn-visibility__detail-row">
             <strong>{summary ? summary.tokenBalance : "..."}</strong>
-            <span>Credits</span>
-            <span className="earn-token-tooltip">
-              <button
-                type="button"
-                className="earn-token-tooltip__trigger"
-                aria-label="What credits do"
-                aria-describedby="earn-token-tooltip"
-              >
-                <Info size={14} />
-              </button>
-              <span id="earn-token-tooltip" className="earn-token-tooltip__bubble" role="tooltip">
-                The more credits you have, the more visibility your test gains
+            <span className="earn-visibility__metric-label">
+              Credits
+              <span className="earn-token-tooltip">
+                <button
+                  type="button"
+                  className="earn-token-tooltip__trigger"
+                  aria-label="What credits do"
+                  aria-describedby="earn-token-tooltip"
+                >
+                  <Info size={14} />
+                </button>
+                <span id="earn-token-tooltip" className="earn-token-tooltip__bubble" role="tooltip">
+                  The more credits you have, the more visibility your test gains
+                </span>
               </span>
             </span>
           </div>
