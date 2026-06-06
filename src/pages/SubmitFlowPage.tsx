@@ -206,6 +206,7 @@ export function SubmitFlowPage() {
   const [pendingScrollQuestionId, setPendingScrollQuestionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
+  const [pausedLiveSubmissionName, setPausedLiveSubmissionName] = useState("");
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const [draft, setDraft] = useState<SubmissionDraft>(initialState.draft);
@@ -342,6 +343,18 @@ export function SubmitFlowPage() {
     hasCurrentAiQuestions,
     isRecordingOnlyMode,
   ]);
+  const currentLiveSubmission = useMemo(
+    () =>
+      currentUser
+        ? state.submissions.find(
+            (submission) =>
+              submission.userId === currentUser.id &&
+              submission.status === "live" &&
+              submission.id !== submissionId,
+          ) ?? null
+        : null,
+    [currentUser, state.submissions, submissionId],
+  );
   const ownedSubmissionCount = useMemo(
     () =>
       currentUser
@@ -350,7 +363,9 @@ export function SubmitFlowPage() {
     [currentUser, state.submissions],
   );
   const submitSuccessMessage =
-    !currentUser || ownedSubmissionCount <= 1
+    pausedLiveSubmissionName
+      ? `${draft.productName || "Your app"} is now live. ${pausedLiveSubmissionName} was paused so only one test appears on Earn at a time.`
+      : !currentUser || ownedSubmissionCount <= 1
       ? "Congrats on submitting your first app! You're helping other founders, like yourself, make better apps."
       : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
 
@@ -767,8 +782,10 @@ export function SubmitFlowPage() {
       setIsSubmitting(true);
 
       try {
+        const replacedLiveSubmissionName = currentLiveSubmission?.productName ?? "";
         const createdId = await createSubmission(draft, isRecordingOnlyMode ? [] : displayedQuestions);
         setSubmissionId(createdId);
+        setPausedLiveSubmissionName(replacedLiveSubmissionName);
         setFlowPhase("email");
         setCurrentStep(steps.length);
       } catch (submissionError) {
@@ -1280,6 +1297,11 @@ export function SubmitFlowPage() {
                       <span className="eyebrow">Step 5</span>
                       <h2>Review before publishing</h2>
                     </div>
+                    {currentLiveSubmission ? (
+                      <div className="callout callout--soft">
+                        Submitting this app will make it your live Earn test and pause {currentLiveSubmission.productName}.
+                      </div>
+                    ) : null}
                     <div className="review-grid review-grid--single">
                       <div className="review-card review-card--highlight">
                         <span className="eyebrow">Submission</span>

@@ -129,6 +129,16 @@ export interface EarnSubmissionCard {
   reputation: EarnSubmissionReputation | null;
 }
 
+export interface EarnVisibilitySummary {
+  submissionId: string | null;
+  productName: string | null;
+  rank: number | null;
+  rankedSubmissionCount: number;
+  testBackRatePercent: number;
+  satisfactionRatePercent: number;
+  tokenBalance: number;
+}
+
 export interface SubmissionReportStatus {
   submissionId: string;
   status: TestReportStatus;

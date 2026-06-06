@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Copy, ExternalLink, Inbox, Mic, Share2, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { GooglePlayClosedTestOption } from "../components/GooglePlayClosedTestOption";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
@@ -87,6 +87,7 @@ async function copyTextToClipboard(value: string) {
 
 export function MyTestsPage() {
   const { state, updateSubmissionDetails } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   const submissions = getMySubmissions(state);
   const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<SubmissionDraft | null>(null);
@@ -111,6 +112,8 @@ export function MyTestsPage() {
     ? getActiveQuestionSet(state, sharingSubmission.id)
     : null;
   const sharingUrl = sharingSubmission ? buildShareUrl(sharingSubmission.id) : "";
+  const editSubmissionId = searchParams.get("edit");
+  const searchParamsKey = searchParams.toString();
   const closedTestParticipationsBySubmissionId = useMemo(() => {
     const grouped = new Map<string, typeof state.googlePlayClosedTestParticipations>();
 
@@ -127,6 +130,33 @@ export function MyTestsPage() {
     setEditDraft(buildEditDraft(submission));
     setEditError("");
   };
+
+  useEffect(() => {
+    if (!editSubmissionId || editingSubmissionId === editSubmissionId || editDraft) {
+      return;
+    }
+
+    const submission = submissions.find((item) => item.id === editSubmissionId);
+
+    if (!submission) {
+      return;
+    }
+
+    setEditingSubmissionId(submission.id);
+    setEditDraft(buildEditDraft(submission));
+    setEditError("");
+
+    const nextParams = new URLSearchParams(searchParamsKey);
+    nextParams.delete("edit");
+    setSearchParams(nextParams, { replace: true });
+  }, [
+    editDraft,
+    editingSubmissionId,
+    editSubmissionId,
+    searchParamsKey,
+    setSearchParams,
+    submissions,
+  ]);
 
   const closeEditTest = () => {
     if (isSavingEdit) {

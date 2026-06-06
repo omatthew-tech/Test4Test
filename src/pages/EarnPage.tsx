@@ -1,9 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Info,
+  PencilLine,
+  Share2,
+  X,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
+import { loadEarnVisibilitySummary } from "../lib/earnVisibility";
 import {
   formatDate,
   normalizeProductTypes,
@@ -11,13 +20,16 @@ import {
   productTypesBadges,
 } from "../lib/format";
 import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors";
+import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { loadMySubmissionReportStatuses } from "../lib/testReports";
 import { loadTestResponseDraft } from "../lib/testResponseDrafts";
 import {
   EarnSubmissionCard,
   EarnSubmissionReputation,
+  EarnVisibilitySummary,
   ProductType,
   Submission,
+  SubmittedFeedbackCard,
 } from "../types";
 
 const EARN_PLATFORM_FILTER_STORAGE_PREFIX = "test4test:earn-platform-filter:";
@@ -277,8 +289,50 @@ function formatSelectedPlatformSummary(productTypes: ProductType[]) {
   return normalized.map(earnPlatformLabel).join(", ");
 }
 
+function buildShareUrl(submissionId: string) {
+  if (typeof window === "undefined") {
+    return `/test/${submissionId}?shared=1`;
+  }
+
+  return `${window.location.origin}/test/${submissionId}?shared=1`;
+}
+
+async function copyTextToClipboard(value: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+function canReviseSubmittedFeedback(card: SubmittedFeedbackCard) {
+  return (
+    card.submissionStatus === "live" &&
+    (card.ratingValue === "frowny" || card.ratingValue === "neutral") &&
+    card.reportStatus !== "pending"
+  );
+}
+
 export function EarnPage() {
   const { state, currentUser, isConfigured, listEarnSubmissions } = useAppState();
+  const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [sortMode, setSortMode] = useState("recommended");
   const [selectedProductTypes, setSelectedProductTypes] = useState<ProductType[]>(() => {
     if (!currentUser) {
@@ -304,6 +358,11 @@ export function EarnPage() {
   const [serverEarnError, setServerEarnError] = useState("");
   const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
   const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
+  const [visibilitySummary, setVisibilitySummary] = useState<EarnVisibilitySummary | null>(null);
+  const [visibilityError, setVisibilityError] = useState("");
+  const [revisionTargetResponseId, setRevisionTargetResponseId] = useState<string | null>(null);
+  const [revisionTargetError, setRevisionTargetError] = useState("");
+  const [isLoadingRevisionTarget, setIsLoadingRevisionTarget] = useState(false);
   const available = getAvailableSubmissions(state);
 
   const defaultSelectedProductTypes = useMemo(
@@ -320,6 +379,107 @@ export function EarnPage() {
     () => getGooglePlayClosedTestPoolUserIds(state.submissions),
     [state.submissions],
   );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!currentUser || !isConfigured) {
+      setVisibilitySummary(null);
+      setVisibilityError("");
+      return undefined;
+    }
+
+    const loadSummary = async () => {
+      try {
+        const summary = await loadEarnVisibilitySummary();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setVisibilitySummary(summary);
+        setVisibilityError("");
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        console.error(error);
+        setVisibilitySummary(null);
+        setVisibilityError(
+          error instanceof Error
+            ? error.message
+            : "We could not load your Earn visibility summary right now.",
+        );
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id, isConfigured, state]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (
+      !currentUser ||
+      !isConfigured ||
+      !visibilitySummary ||
+      visibilitySummary.satisfactionRatePercent >= 100
+    ) {
+      setRevisionTargetResponseId(null);
+      setRevisionTargetError("");
+      setIsLoadingRevisionTarget(false);
+      return undefined;
+    }
+
+    const loadRevisionTarget = async () => {
+      setRevisionTargetResponseId(null);
+      setRevisionTargetError("");
+      setIsLoadingRevisionTarget(true);
+
+      try {
+        const submittedFeedbackCards = await loadSubmittedFeedbackCards();
+        const revisionTarget = submittedFeedbackCards.find(canReviseSubmittedFeedback);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setRevisionTargetResponseId(revisionTarget?.responseId ?? null);
+        setRevisionTargetError("");
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        console.error(error);
+        setRevisionTargetResponseId(null);
+        setRevisionTargetError(
+          error instanceof Error
+            ? error.message
+            : "We could not find a review to revise right now.",
+        );
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingRevisionTarget(false);
+        }
+      }
+    };
+
+    void loadRevisionTarget();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    currentUser?.id,
+    isConfigured,
+    visibilitySummary?.satisfactionRatePercent,
+  ]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -611,6 +771,26 @@ export function EarnPage() {
     [displayedSubmissions, reputationBySubmissionId],
   );
 
+  const firstTestBackCard = useMemo(
+    () => cards.find((card) => card.reputation?.ownerHasTestedYou === true) ?? null,
+    [cards],
+  );
+
+  const scrollToFirstTestBackTarget = () => {
+    if (!firstTestBackCard) {
+      return;
+    }
+
+    const target = reciprocalRowRefs.current[firstTestBackCard.submission.id];
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.focus({ preventScroll: true });
+  };
+
   return (
     <AppShell
       title="Earn credits"
@@ -618,6 +798,17 @@ export function EarnPage() {
       eyebrowLabel={null}
     >
       <div className="page-stack earn-page">
+        <EarnVisibilityPanel
+          summary={visibilitySummary}
+          error={visibilityError}
+          isSignedIn={Boolean(currentUser)}
+          hasTestBackTarget={Boolean(firstTestBackCard)}
+          revisionTargetResponseId={revisionTargetResponseId}
+          revisionTargetError={revisionTargetError}
+          isLoadingRevisionTarget={isLoadingRevisionTarget}
+          onImproveRate={scrollToFirstTestBackTarget}
+        />
+
         <Surface className="earn-controls">
           <div className="earn-controls__toolbar">
             <label className="earn-filter">
@@ -651,11 +842,19 @@ export function EarnPage() {
         {cards.length > 0 ? (
           <div className="earn-list">
             {cards.map((card) => (
-              <EarnRow
+              <div
                 key={card.submission.id}
-                card={card}
-                hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
-              />
+                ref={(element) => {
+                  reciprocalRowRefs.current[card.submission.id] = element;
+                }}
+                className="earn-row-anchor"
+                tabIndex={-1}
+              >
+                <EarnRow
+                  card={card}
+                  hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -688,6 +887,190 @@ export function EarnPage() {
         />
       ) : null}
     </AppShell>
+  );
+}
+
+function EarnVisibilityPanel({
+  summary,
+  error,
+  isSignedIn,
+  hasTestBackTarget,
+  revisionTargetResponseId,
+  revisionTargetError,
+  isLoadingRevisionTarget,
+  onImproveRate,
+}: {
+  summary: EarnVisibilitySummary | null;
+  error: string;
+  isSignedIn: boolean;
+  hasTestBackTarget: boolean;
+  revisionTargetResponseId: string | null;
+  revisionTargetError: string;
+  isLoadingRevisionTarget: boolean;
+  onImproveRate: () => void;
+}) {
+  const [shareCopyStatus, setShareCopyStatus] = useState("");
+  const hasLiveTest = Boolean(summary?.submissionId);
+  const showImproveRate = Boolean(summary && summary.testBackRatePercent < 100);
+  const showReviseReview = Boolean(summary && summary.satisfactionRatePercent < 100);
+  const rankValue = !summary
+    ? "..."
+    : hasLiveTest && summary.rank
+      ? `#${summary.rank}`
+      : "--";
+  const rankDetail = !summary
+    ? "Loading Rank"
+    : hasLiveTest && summary.rank
+      ? null
+      : hasLiveTest
+        ? "Not visible on Earn right now"
+        : "Submit an app to earn a Rank";
+  const appName = summary?.productName ?? (summary ? "No live test" : "Loading your visibility");
+  const shareUrl = summary?.submissionId ? buildShareUrl(summary.submissionId) : "";
+
+  useEffect(() => {
+    setShareCopyStatus("");
+  }, [summary?.submissionId]);
+
+  const copyShareLink = async () => {
+    if (!shareUrl) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(shareUrl);
+    setShareCopyStatus(copied ? "Copied" : "Copy failed");
+  };
+
+  if (!isSignedIn) {
+    return (
+      <Surface className="earn-visibility">
+        <div className="earn-visibility__app-bar">
+          <div className="earn-visibility__app-name">
+            <h2>Sign in to see your Rank</h2>
+          </div>
+          <Link to="/sign-in" className="button button--primary button--small">
+            Log in
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </Surface>
+    );
+  }
+
+  return (
+    <Surface className="earn-visibility">
+      <div className="earn-visibility__app-bar">
+        <div className="earn-visibility__app-name">
+          <h2>{appName}</h2>
+        </div>
+        {hasLiveTest && summary?.submissionId ? (
+          <div className="earn-visibility__app-actions">
+            <Link
+              to={`/my-tests?edit=${summary.submissionId}`}
+              className="button button--secondary button--small"
+            >
+              <PencilLine size={16} />
+              Edit
+            </Link>
+            <button
+              type="button"
+              className="button button--secondary button--small"
+              onClick={() => void copyShareLink()}
+            >
+              {shareCopyStatus === "Copied" ? <Check size={16} /> : <Share2 size={16} />}
+              {shareCopyStatus || "Share"}
+            </button>
+          </div>
+        ) : !hasLiveTest && summary ? (
+          <Link to="/submit" className="button button--primary button--small">
+            Submit app
+            <ArrowRight size={16} />
+          </Link>
+        ) : null}
+      </div>
+
+      {error ? <div className="callout callout--warning">{error}</div> : null}
+
+      <div className="earn-visibility__body" aria-label="Earn visibility metrics">
+        <div className="earn-visibility__rank-panel">
+          <span className="earn-visibility__rank-label">Rank</span>
+          <div className="earn-visibility__rank-value">
+            <strong>{rankValue}</strong>
+          </div>
+          {rankDetail ? <small>{rankDetail}</small> : null}
+        </div>
+
+        <div className="earn-visibility__details">
+          <div className="earn-visibility__detail-row">
+            <strong>{summary ? `${summary.testBackRatePercent}%` : "..."}</strong>
+            <span>Test-back rate</span>
+            {showImproveRate ? (
+              <button
+                type="button"
+                className="button button--secondary button--small earn-visibility__inline-action"
+                onClick={onImproveRate}
+                disabled={!hasTestBackTarget}
+              >
+                Improve rate
+              </button>
+            ) : null}
+          </div>
+          {showImproveRate && !hasTestBackTarget ? (
+            <small className="earn-visibility__detail-note">No available test-back target right now.</small>
+          ) : null}
+
+          <div className="earn-visibility__detail-row earn-visibility__detail-row--action">
+            <strong>{summary ? `${summary.satisfactionRatePercent}%` : "..."}</strong>
+            <span>Satisfaction rate</span>
+            {showReviseReview ? (
+              revisionTargetResponseId ? (
+                <Link
+                  to={`/submissions/${revisionTargetResponseId}/revise`}
+                  className="button button--secondary button--small earn-visibility__inline-action"
+                >
+                  Revise
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="button button--secondary button--small earn-visibility__inline-action"
+                  disabled
+                >
+                  Revise
+                </button>
+              )
+            ) : null}
+          </div>
+          {showReviseReview && isLoadingRevisionTarget ? (
+            <small className="earn-visibility__detail-note">Finding review...</small>
+          ) : null}
+          {showReviseReview && !isLoadingRevisionTarget && revisionTargetError ? (
+            <small className="earn-visibility__detail-note">{revisionTargetError}</small>
+          ) : null}
+          {showReviseReview && !isLoadingRevisionTarget && !revisionTargetResponseId && !revisionTargetError ? (
+            <small className="earn-visibility__detail-note">No revisable low or okay reviews right now.</small>
+          ) : null}
+
+          <div className="earn-visibility__detail-row">
+            <strong>{summary ? summary.tokenBalance : "..."}</strong>
+            <span>Credits</span>
+            <span className="earn-token-tooltip">
+              <button
+                type="button"
+                className="earn-token-tooltip__trigger"
+                aria-label="What credits do"
+                aria-describedby="earn-token-tooltip"
+              >
+                <Info size={14} />
+              </button>
+              <span id="earn-token-tooltip" className="earn-token-tooltip__bubble" role="tooltip">
+                The more credits you have, the more visibility your test gains
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </Surface>
   );
 }
 
