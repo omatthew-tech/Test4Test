@@ -3273,32 +3273,39 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 21px;
+  gap: 8px;
+  min-height: 230px;
   padding: 34px;
   border-right: 1px solid rgba(216, 208, 200, 0.9);
 }
 
 .earn-visibility__rank-label {
-  color: var(--color-ink-900);
+  order: 2;
+  color: #7a7068;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(1.35rem, 2.6vw, 1.8rem);
-  font-weight: 600;
+  font-size: clamp(0.82rem, 1.2vw, 0.96rem);
+  font-weight: 500;
 }
 
 .earn-visibility__rank-value {
+  order: 1;
   color: var(--color-ink-900);
+  text-align: center;
 }
 
 .earn-visibility__rank-value strong {
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+  font-size: clamp(4.15rem, 8vw, 6.25rem);
   line-height: 1;
 }
 
 .earn-visibility__rank-panel small {
+  order: 3;
   color: #6f655d;
   line-height: 1.45;
+  text-align: center;
 }
 
 .earn-visibility__details {
@@ -3907,6 +3914,7 @@ body {
   }
 
   .earn-visibility__rank-panel {
+    min-height: 190px;
     padding: 24px 18px;
     border-right: 0;
     border-bottom: 1px solid rgba(216, 208, 200, 0.74);
