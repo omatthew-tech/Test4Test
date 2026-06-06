@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useId, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -196,11 +196,13 @@ export function AppShell({
 
 export function Surface({
   className = "",
+  style,
   children,
 }: {
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 }) {
-  return <section className={`surface ${className}`.trim()}>{children}</section>;
+  return <section className={`surface ${className}`.trim()} style={style}>{children}</section>;
 }
 

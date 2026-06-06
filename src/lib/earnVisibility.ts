@@ -4,8 +4,11 @@ import { requireSupabase } from "./supabase";
 interface EarnVisibilitySummaryRpcRow {
   submission_id: string | null;
   product_name: string | null;
+  has_completed_test: boolean | null;
   rank: number | null;
   ranked_submission_count: number | null;
+  would_rank: number | null;
+  would_ranked_submission_count: number | null;
   token_balance: number | null;
   test_back_rate_percent: number | null;
   satisfaction_rate_percent: number | null;
@@ -49,8 +52,11 @@ export async function loadEarnVisibilitySummary() {
     return {
       submissionId: null,
       productName: null,
+      hasCompletedTest: false,
       rank: null,
       rankedSubmissionCount: 0,
+      wouldRank: null,
+      wouldRankedSubmissionCount: 0,
       testBackRatePercent: 100,
       satisfactionRatePercent: 100,
       tokenBalance: 0,
@@ -60,8 +66,11 @@ export async function loadEarnVisibilitySummary() {
   return {
     submissionId: row.submission_id ?? null,
     productName: row.product_name ?? null,
+    hasCompletedTest: row.has_completed_test === true,
     rank: normalizeRank(row.rank),
     rankedSubmissionCount: normalizeCount(row.ranked_submission_count),
+    wouldRank: normalizeRank(row.would_rank),
+    wouldRankedSubmissionCount: normalizeCount(row.would_ranked_submission_count),
     testBackRatePercent: normalizePercent(row.test_back_rate_percent),
     satisfactionRatePercent: normalizePercent(row.satisfaction_rate_percent),
     tokenBalance: normalizeCount(row.token_balance),

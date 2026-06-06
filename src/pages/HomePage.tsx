@@ -1,7 +1,8 @@
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell, type AudienceRole } from "../components/Layout";
+import { Test4TestLogoBurst } from "../components/Test4TestLogoBurst";
 import { trackEvent } from "../lib/analytics";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
@@ -39,7 +40,14 @@ const processSteps = [
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
+  const [showLogoBurst, setShowLogoBurst] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowLogoBurst(false), 1600);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
@@ -69,6 +77,9 @@ export function HomePage() {
       audienceRole="Founder"
       onAudienceRoleChange={handleAudienceRoleChange}
     >
+      {showLogoBurst ? (
+        <Test4TestLogoBurst className="test-success-burst--ephemeral home-logo-burst" />
+      ) : null}
       <div className="home-page">
         <section className="home-hero" aria-labelledby="home-hero-title">
           <div className="home-hero__copy">

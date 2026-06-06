@@ -132,8 +132,11 @@ export interface EarnSubmissionCard {
 export interface EarnVisibilitySummary {
   submissionId: string | null;
   productName: string | null;
+  hasCompletedTest: boolean;
   rank: number | null;
   rankedSubmissionCount: number;
+  wouldRank: number | null;
+  wouldRankedSubmissionCount: number;
   testBackRatePercent: number;
   satisfactionRatePercent: number;
   tokenBalance: number;

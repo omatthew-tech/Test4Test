@@ -10,6 +10,7 @@ import {
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
+import { consumeEarnPlacementSnapshot } from "../lib/earnPlacementCelebration";
 import { getOrderedAccessLinks, type AccessLinkItem } from "../lib/format";
 import {
   buildRecordingDraftPath,
@@ -2081,7 +2082,17 @@ export function TestSessionPage() {
         if (currentUser) {
           await clearTestResponseDraft(currentUser.id, submission.id);
         }
-        navigate(`/test/${submission.id}/success${currentUser ? "" : "?shared=1"}`);
+        if (currentUser && result.creditAwarded) {
+          navigate("/earn", {
+            replace: true,
+            state: {
+              kind: "earned-credit",
+              placementSnapshot: consumeEarnPlacementSnapshot(),
+            },
+          });
+        } else {
+          navigate(`/test/${submission.id}/success${currentUser ? "" : "?shared=1"}`);
+        }
       }
     } finally {
       setIsSubmitting(false);

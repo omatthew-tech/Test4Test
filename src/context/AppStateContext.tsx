@@ -206,7 +206,7 @@ interface AppStateContextValue {
     recording?: ResponseRecording | null,
     questionSetVersionId?: string,
     submissionVersionId?: string,
-  ) => Promise<{ ok: boolean; message: string }>;
+  ) => Promise<{ ok: boolean; message: string; creditAwarded: boolean }>;
   reviseTestResponse: (
     responseId: string,
     answers: TestAnswer[],
@@ -1542,10 +1542,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
           if (error) {
             if (isMissingSubmissionSchemaError(error.message)) {
-              return { ok: false, message: latestSubmissionSchemaMessage };
+              return {
+                ok: false,
+                message: latestSubmissionSchemaMessage,
+                creditAwarded: false,
+              };
             }
 
-            return { ok: false, message: error.message };
+            return { ok: false, message: error.message, creditAwarded: false };
           }
 
           const result = (data ?? {}) as SubmissionRpcResult;
@@ -1558,6 +1562,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return {
             ok: Boolean(result.ok),
             message: result.message ?? "Feedback submitted. Thanks for sharing your thoughts.",
+            creditAwarded: Boolean(result.creditAwarded),
           };
         }
 
@@ -1596,10 +1601,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           if (isMissingSubmissionSchemaError(error.message)) {
-            return { ok: false, message: latestSubmissionSchemaMessage };
+            return {
+              ok: false,
+              message: latestSubmissionSchemaMessage,
+              creditAwarded: false,
+            };
           }
 
-          return { ok: false, message: error.message };
+          return { ok: false, message: error.message, creditAwarded: false };
         }
 
         const result = (data ?? {}) as SubmissionRpcResult;
@@ -1620,6 +1629,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return {
           ok: Boolean(result.ok),
           message: result.message ?? "Test submitted.",
+          creditAwarded: result.creditAwarded === true,
         };
       },
       async reviseTestResponse(responseId, answers, durationSeconds) {
