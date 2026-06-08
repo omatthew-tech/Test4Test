@@ -3,7 +3,6 @@ import { useId, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
-import { getCreditBalance } from "../lib/selectors";
 
 const navItems = [
   { to: "/earn", label: "Earn", mobileLabel: "Earn" },
@@ -76,8 +75,7 @@ export function AppShell({
 }) {
   const mobileMenuId = useId();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { state, currentUser } = useAppState();
-  const credits = getCreditBalance(state, currentUser?.id ?? null);
+  const { currentUser } = useAppState();
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const showTopbarActions = !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
@@ -145,18 +143,6 @@ export function AppShell({
 
           {showTopbarActions ? (
             <div className="topbar__actions">
-              {showMemberNav ? (
-                <NavLink
-                  to="/credits"
-                  className={({ isActive }) =>
-                    `credit-chip credit-chip--link${isActive ? " credit-chip--active" : ""}`
-                  }
-                  aria-label={`${credits} credits. View credit balance details.`}
-                >
-                  <strong>{credits}</strong>
-                  <span className="credit-chip__label">credits</span>
-                </NavLink>
-              ) : null}
               <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
                 {currentUser ? "Profile" : "Log in"}
               </NavLink>
