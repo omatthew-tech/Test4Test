@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell, type AudienceRole } from "../components/Layout";
 import { trackEvent } from "../lib/analytics";
@@ -36,10 +36,108 @@ const processSteps = [
   },
 ];
 
+const homeBenefitCards = [
+  {
+    title: "More Users",
+    body: "Users love trying new things and sometimes, they'll stick around. Your first users are your most important users.",
+  },
+  {
+    title: "More Feedback",
+    body: "Have you ever gotten stuck and you're not sure what do next? User feedback helps you think of things you've never thought of before.",
+  },
+  {
+    title: "More Usage",
+    body: "Google and other search engines love how much time users spend on your app. Your engagement will soar and you'll start ranking higher.",
+  },
+];
+
+function clampProgress(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
+  const benefitsSectionRef = useRef<HTMLElement | null>(null);
+  const benefitCardRefs = useRef<Array<HTMLElement | null>>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const section = benefitsSectionRef.current;
+
+    if (!section || typeof window === "undefined") {
+      return undefined;
+    }
+
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let animationFrameId = 0;
+
+    const setCardReveal = (card: HTMLElement, progress: number) => {
+      const titleLeft = card.clientWidth / 2 - progress * (card.clientWidth / 2 - 22);
+      const titleX = -50 + progress * 50;
+      const copyOpacity = clampProgress((progress - 0.42) * 2.1);
+      const copyShift = 18 - progress * 18;
+
+      card.style.setProperty("--benefit-progress", progress.toFixed(4));
+      card.style.setProperty("--benefit-title-left", `${titleLeft.toFixed(2)}px`);
+      card.style.setProperty("--benefit-title-x", `${titleX.toFixed(2)}%`);
+      card.style.setProperty("--benefit-copy-opacity", copyOpacity.toFixed(4));
+      card.style.setProperty("--benefit-copy-shift", `${copyShift.toFixed(2)}px`);
+    };
+
+    const updateProgress = () => {
+      animationFrameId = 0;
+
+      if (reducedMotionQuery.matches) {
+        section.style.setProperty("--benefits-progress", "1");
+        benefitCardRefs.current.forEach((card) => {
+          if (card) {
+            setCardReveal(card, 1);
+          }
+        });
+        return;
+      }
+
+      const rect = section.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const startY = viewportHeight * 0.85;
+      const travelDistance = rect.height + viewportHeight * 0.25;
+      const sectionProgress = clampProgress((startY - rect.top) / travelDistance);
+
+      section.style.setProperty("--benefits-progress", sectionProgress.toFixed(4));
+      benefitCardRefs.current.forEach((card, index) => {
+        const cardStart = index * 0.16;
+        const cardProgress = clampProgress((sectionProgress - cardStart) / 0.5);
+
+        if (card) {
+          setCardReveal(card, cardProgress);
+        }
+      });
+    };
+
+    const requestProgressUpdate = () => {
+      if (animationFrameId) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateProgress);
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", requestProgressUpdate, { passive: true });
+    window.addEventListener("resize", requestProgressUpdate);
+    reducedMotionQuery.addEventListener("change", requestProgressUpdate);
+
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener("scroll", requestProgressUpdate);
+      window.removeEventListener("resize", requestProgressUpdate);
+      reducedMotionQuery.removeEventListener("change", requestProgressUpdate);
+    };
+  }, []);
 
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
@@ -164,6 +262,36 @@ export function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section
+          ref={benefitsSectionRef}
+          className="home-benefits"
+          aria-labelledby="home-benefits-title"
+        >
+          <div className="home-benefits__header">
+            <h2 id="home-benefits-title">Why Test4Test?</h2>
+          </div>
+          <div className="home-benefits__grid">
+            {homeBenefitCards.map(({ title, body }, index) => (
+              <article
+                ref={(element) => {
+                  benefitCardRefs.current[index] = element;
+                }}
+                className="home-benefit-card"
+                key={title}
+                style={{ "--benefit-index": index } as CSSProperties}
+              >
+                <div className="home-benefit-card__copy">
+                  <p>{body}</p>
+                </div>
+                <div className="home-benefit-card__title" aria-hidden="true">
+                  <h2>{title}</h2>
+                </div>
+                <h2 className="home-benefit-card__screen-title">{title}</h2>
+              </article>
+            ))}
           </div>
         </section>
 

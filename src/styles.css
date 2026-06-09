@@ -7531,6 +7531,143 @@ body {
   }
 }
 
+.home-benefits {
+  --benefits-progress: 0;
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  min-height: 100svh;
+  border-top: 1px solid rgba(216, 208, 200, 0.58);
+}
+
+.home-benefits__header {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding-top: clamp(72px, 10svh, 96px);
+  text-align: center;
+  z-index: 1;
+}
+
+.home-benefits__header h2 {
+  margin: 0;
+  max-width: none;
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: clamp(2.35rem, 4.6vw, 3.8rem);
+  line-height: 1.04;
+  letter-spacing: 0;
+  color: var(--color-ink-900);
+  white-space: nowrap;
+}
+
+.home-benefits__grid {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, auto);
+  gap: clamp(8px, 1.25svh, 12px);
+  align-items: stretch;
+  align-content: start;
+  min-height: 0;
+}
+
+.home-benefit-card {
+  --benefit-progress: 0;
+  --benefit-title-left: 50%;
+  --benefit-title-x: -50%;
+  --benefit-copy-opacity: 0;
+  --benefit-copy-shift: 18px;
+
+  position: relative;
+  min-height: clamp(148px, 18svh, 172px);
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-benefit-card__copy {
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: clamp(18px, 2.8svh, 30px) clamp(42px, 5vw, 72px) clamp(18px, 2.8svh, 30px) clamp(360px, 38%, 470px);
+  opacity: var(--benefit-copy-opacity);
+  transform: translateX(var(--benefit-copy-shift));
+  will-change: opacity, transform;
+}
+
+.home-benefit-card__copy p {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--color-ink-700);
+  font-size: clamp(1rem, 1.2vw, 1.14rem);
+  line-height: 1.58;
+}
+
+.home-benefit-card__title {
+  position: absolute;
+  left: var(--benefit-title-left);
+  top: 50%;
+  width: clamp(260px, 28vw, 360px);
+  min-height: clamp(86px, 12svh, 116px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 28px;
+  border: 1px solid rgba(245, 142, 86, 0.28);
+  border-radius: 14px;
+  background: var(--color-orange-050);
+  color: var(--color-ink-900);
+  text-align: center;
+  transform: translate(var(--benefit-title-x), -50%);
+  will-change: left, transform;
+}
+
+.home-benefit-card__title h2 {
+  margin: 0;
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: clamp(1.7rem, 2.4vw, 2.3rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.home-benefit-card__screen-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-benefit-card {
+    --benefit-title-left: 22px;
+    --benefit-title-x: 0%;
+    --benefit-copy-opacity: 1;
+    --benefit-copy-shift: 0px;
+  }
+
+  .home-benefit-card__copy,
+  .home-benefit-card__title {
+    will-change: auto;
+  }
+}
+
 .home-process {
   min-height: min(820px, calc(100svh - 40px));
   padding: var(--home-space-5) 0 120px;
@@ -7721,6 +7858,15 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .home-benefit-card,
+  .home-benefit-card__copy {
+    min-height: clamp(142px, 19svh, 164px);
+  }
+
+  .home-benefit-card__copy {
+    padding-left: clamp(320px, 38vw, 390px);
+  }
+
   .home-review-marquee {
     margin-top: -24px;
   }
@@ -7884,6 +8030,52 @@ body {
 
   .home-review-text {
     font-size: 1.05rem;
+  }
+
+  .home-benefits {
+    padding: 0;
+  }
+
+  .home-benefits__header {
+    padding-top: 62px;
+  }
+
+  .home-benefits__header h2 {
+    max-width: none;
+    font-size: clamp(2.15rem, 10vw, 2.8rem);
+    white-space: normal;
+  }
+
+  .home-benefits__grid {
+    gap: 8px;
+    align-content: start;
+    min-height: 0;
+  }
+
+  .home-benefit-card,
+  .home-benefit-card__copy {
+    min-height: clamp(148px, 19svh, 164px);
+  }
+
+  .home-benefit-card__copy {
+    align-items: flex-start;
+    padding: 108px 18px 14px;
+  }
+
+  .home-benefit-card__copy p {
+    font-size: clamp(0.88rem, 3.5vw, 0.98rem);
+    line-height: 1.45;
+  }
+
+  .home-benefit-card__title {
+    top: 54px;
+    width: min(260px, calc(100% - 44px));
+    min-height: 62px;
+    padding: 12px 18px;
+  }
+
+  .home-benefit-card__title h2 {
+    font-size: clamp(1.24rem, 6vw, 1.58rem);
   }
 
   .home-process {
