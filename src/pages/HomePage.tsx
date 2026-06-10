@@ -51,42 +51,200 @@ const homeBenefitCards = [
   },
 ];
 
-const creditBadgeSpots = {
-  desktop: [
-    { x: "44%", y: "32%", driftX: "24px", driftY: "-38px" },
-    { x: "63%", y: "28%", driftX: "-22px", driftY: "-34px" },
-    { x: "78%", y: "43%", driftX: "-28px", driftY: "-32px" },
-    { x: "58%", y: "58%", driftX: "18px", driftY: "-42px" },
-    { x: "84%", y: "31%", driftX: "-26px", driftY: "-36px" },
-  ],
-  mobile: [
-    { x: "72%", y: "23%", driftX: "-20px", driftY: "-32px" },
-    { x: "43%", y: "28%", driftX: "18px", driftY: "-30px" },
-    { x: "78%", y: "39%", driftX: "-24px", driftY: "-34px" },
-    { x: "56%", y: "52%", driftX: "14px", driftY: "-36px" },
-  ],
+const qualityCompetitors = [
+  { id: "launch-lab", name: "LaunchLab", rank: 1, credits: "5 credits" },
+  { id: "flow-pilot", name: "FlowPilot", rank: 7, credits: "4 credits" },
+  { id: "quick-cart", name: "QuickCart", rank: 16, credits: "3 credits" },
+  { id: "note-nest", name: "NoteNest", rank: 24, credits: "2 credits" },
+];
+
+// "Your app" rank after each overtake; entry 0 is the starting rank.
+const qualityRankLadder = [31, 24, 16, 7, 1];
+const qualityMaxStep = qualityCompetitors.length;
+const qualityRankRowDistance = 68;
+
+type QualityPhase = "intro" | "earn" | "climb" | "settle" | "celebrate" | "reset";
+
+// Phase lengths pace the loop; "climb" must outlast --quality-climb-duration in CSS.
+const qualityPhaseDurationsMs: Record<QualityPhase, number> = {
+  intro: 900,
+  earn: 800,
+  climb: 1000,
+  settle: 520,
+  celebrate: 2600,
+  reset: 520,
 };
 
-const qualityStartingRank = 34;
-const qualityVisibleRanks = [31, 32, 33];
-const qualityRankJumpOptions = [2, 3];
-const qualityRankRowDistance = 82;
+type QualityDemoState = {
+  phase: QualityPhase;
+  step: number;
+  cycle: number;
+};
+
+const qualityInitialDemoState: QualityDemoState = { phase: "intro", step: 0, cycle: 0 };
+// Frozen mid-climb frame shown when the user prefers reduced motion.
+const qualityStaticDemoState: QualityDemoState = { phase: "settle", step: 2, cycle: 0 };
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-function getRandomQualityRankJump() {
-  return qualityRankJumpOptions[Math.floor(Math.random() * qualityRankJumpOptions.length)];
+function advanceQualityDemo(state: QualityDemoState): QualityDemoState {
+  switch (state.phase) {
+    case "intro":
+    case "settle":
+      return { ...state, phase: "earn" };
+    case "earn":
+      return { ...state, phase: "climb", step: state.step + 1 };
+    case "climb":
+      return { ...state, phase: state.step >= qualityMaxStep ? "celebrate" : "settle" };
+    case "celebrate":
+      return { ...state, phase: "reset" };
+    case "reset":
+      return { phase: "intro", step: 0, cycle: state.cycle + 1 };
+  }
+}
+
+function getQualityRowStyle(slot: number) {
+  return {
+    "--quality-row-y": `${slot * qualityRankRowDistance}px`,
+  } as CSSProperties;
+}
+
+function QualityRankDemo() {
+  const demoRef = useRef<HTMLDivElement | null>(null);
+  const [isInView, setIsInView] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [demoState, setDemoState] = useState<QualityDemoState>(qualityInitialDemoState);
+
+  useEffect(() => {
+    const node = demoRef.current;
+
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => setIsInView(entries.some((entry) => entry.isIntersecting)),
+      { threshold: 0.3 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const applyPreference = () => setPrefersReducedMotion(reducedMotionQuery.matches);
+
+    applyPreference();
+    reducedMotionQuery.addEventListener("change", applyPreference);
+    return () => reducedMotionQuery.removeEventListener("change", applyPreference);
+  }, []);
+
+  useEffect(() => {
+    // Only run the loop while the demo is on screen so it never costs idle CPU.
+    if (!isInView || prefersReducedMotion) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(
+      () => setDemoState(advanceQualityDemo),
+      qualityPhaseDurationsMs[demoState.phase],
+    );
+
+    return () => window.clearTimeout(timerId);
+  }, [demoState, isInView, prefersReducedMotion]);
+
+  const { phase, step, cycle } = prefersReducedMotion ? qualityStaticDemoState : demoState;
+  const isClimbing = phase === "climb";
+  const appSlot = qualityMaxStep - step;
+  const appRank = qualityRankLadder[step];
+  const previousAppRank = qualityRankLadder[Math.max(0, step - 1)];
+  const appCredits = step + 1;
+  const youRowClassName = [
+    "quality-demo__rank-row",
+    "quality-demo__rank-row--you",
+    isClimbing ? "quality-demo__rank-row--climbing" : "",
+    phase === "celebrate" ? "quality-demo__rank-row--celebrating" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div ref={demoRef} className="quality-demo">
+      <div className="quality-demo__earn-board">
+        <div className="quality-demo__earn-header">
+          <span>Earn</span>
+        </div>
+
+        <div
+          key={cycle}
+          className={`quality-demo__rank-track${
+            phase === "reset" ? " quality-demo__rank-track--resetting" : ""
+          }`}
+        >
+          {qualityCompetitors.map(({ id, name, rank, credits }, index) => {
+            const isPassed = index >= appSlot;
+            const isDropping = isClimbing && index === appSlot;
+
+            return (
+              <div
+                className={`quality-demo__rank-row quality-demo__rank-row--demo${
+                  isDropping ? " quality-demo__rank-row--dropping" : ""
+                }`}
+                key={id}
+                style={getQualityRowStyle(isPassed ? index + 1 : index)}
+              >
+                <span className="quality-demo__rank-chip">#{isPassed ? rank + 1 : rank}</span>
+                <strong>{name}</strong>
+                <small>{credits}</small>
+              </div>
+            );
+          })}
+
+          <div className={youRowClassName} style={getQualityRowStyle(appSlot)}>
+            <span className="quality-demo__rank-chip">
+              {isClimbing ? (
+                <>
+                  <span className="quality-demo__rank-old">#{previousAppRank}</span>
+                  <span className="quality-demo__rank-new">#{appRank}</span>
+                </>
+              ) : (
+                <>#{appRank}</>
+              )}
+            </span>
+            <strong>Your app</strong>
+            <small>
+              <span key={appCredits} className="quality-demo__credit-count">
+                {appCredits} {appCredits === 1 ? "credit" : "credits"}
+              </span>
+            </small>
+            {phase === "earn" ? (
+              <span className="quality-demo__credit-badge" aria-hidden="true">
+                +1 credit
+              </span>
+            ) : null}
+            {phase === "celebrate" ? (
+              <span className="quality-demo__celebrate-ring" aria-hidden="true" />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
-  const [qualityRankJump, setQualityRankJump] = useState(() => getRandomQualityRankJump());
   const benefitsSectionRef = useRef<HTMLElement | null>(null);
   const benefitCardRefs = useRef<Array<HTMLElement | null>>([]);
-  const creditBadgeRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -166,59 +324,6 @@ export function HomePage() {
     };
   }, []);
 
-  useEffect(() => {
-    const badge = creditBadgeRef.current;
-
-    if (!badge || typeof window === "undefined") {
-      return undefined;
-    }
-
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const mobileQuery = window.matchMedia("(max-width: 760px)");
-    let previousSpotIndex = -1;
-
-    const setCreditBadgeSpot = () => {
-      const spots = mobileQuery.matches ? creditBadgeSpots.mobile : creditBadgeSpots.desktop;
-      let nextSpotIndex = Math.floor(Math.random() * spots.length);
-
-      if (spots.length > 1 && nextSpotIndex === previousSpotIndex) {
-        nextSpotIndex = (nextSpotIndex + 1) % spots.length;
-      }
-
-      previousSpotIndex = nextSpotIndex;
-      const spot = reducedMotionQuery.matches ? spots[0] : spots[nextSpotIndex];
-
-      badge.style.setProperty("--quality-credit-x", spot.x);
-      badge.style.setProperty("--quality-credit-y", spot.y);
-      badge.style.setProperty("--quality-credit-drift-x", spot.driftX);
-      badge.style.setProperty("--quality-credit-drift-y", spot.driftY);
-    };
-
-    const setRankJump = () => {
-      const nextRankJump = reducedMotionQuery.matches
-        ? qualityRankJumpOptions[qualityRankJumpOptions.length - 1]
-        : getRandomQualityRankJump();
-
-      setQualityRankJump(nextRankJump);
-    };
-
-    setCreditBadgeSpot();
-    const setNextCycle = () => {
-      setCreditBadgeSpot();
-      setRankJump();
-    };
-
-    badge.addEventListener("animationiteration", setNextCycle);
-    mobileQuery.addEventListener("change", setCreditBadgeSpot);
-    reducedMotionQuery.addEventListener("change", setNextCycle);
-
-    return () => {
-      badge.removeEventListener("animationiteration", setNextCycle);
-      mobileQuery.removeEventListener("change", setCreditBadgeSpot);
-      reducedMotionQuery.removeEventListener("change", setNextCycle);
-    };
-  }, []);
-
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
 
@@ -238,31 +343,6 @@ export function HomePage() {
     if (role === "Tester") {
       navigate("/get-paid-to-test");
     }
-  };
-
-  const qualityTargetRank = qualityStartingRank - qualityRankJump;
-  const qualityDemoStyle = {
-    "--quality-rank-rise": `${qualityRankJump * -qualityRankRowDistance}px`,
-  } as CSSProperties;
-  const qualityRankRows = qualityVisibleRanks.map((rank, index) => ({
-    rank,
-    productName: ["LaunchLab", "FlowPilot", "QuickCart"][index],
-    credits: ["3 credits", "2 credits", "2 credits"][index],
-    positionClassName: ["one", "two", "three"][index],
-    shiftsDown: rank >= qualityTargetRank,
-  }));
-
-  const renderQualityRankLabel = (rank: number, nextRank: number, isAnimated: boolean) => {
-    if (!isAnimated) {
-      return `#${rank}`;
-    }
-
-    return (
-      <>
-        <span className="quality-demo__rank-old">#{rank}</span>
-        <span className="quality-demo__rank-new">#{nextRank}</span>
-      </>
-    );
   };
 
   return (
@@ -405,48 +485,17 @@ export function HomePage() {
             <h2 id="home-quality-title">Quality Feedback Guaranteed</h2>
             <p>
               1 test = 1 credit. Every time you complete a test, someone will test-back your app.
-              The more you test, the more you&apos;ll rank up on the earn page and the more
-              feedback you&apos;ll receive.
+              The more you test, the more you&apos;ll rank up on Earn and the more feedback
+              you&apos;ll receive.
             </p>
           </div>
 
           <div
             className="home-quality__visual"
             role="img"
-            aria-label="A completed test earns one credit, then the user's test moves higher on Earn."
+            aria-label="Earn leaderboard demo: each completed test earns one credit and moves Your app up the rankings until it reaches number one."
           >
-            <div className="quality-demo" style={qualityDemoStyle}>
-              <div ref={creditBadgeRef} className="quality-demo__credit-badge">+1 credit</div>
-
-              <div className="quality-demo__earn-board">
-                <div className="quality-demo__earn-header">
-                  <span>Earn</span>
-                </div>
-
-                <div className="quality-demo__rank-track">
-                  {qualityRankRows.map(({ rank, productName, credits, positionClassName, shiftsDown }) => (
-                    <div
-                      className={`quality-demo__rank-row quality-demo__rank-row--${positionClassName}${
-                        shiftsDown ? " quality-demo__rank-row--shift" : ""
-                      }`}
-                      key={rank}
-                    >
-                      <span>{renderQualityRankLabel(rank, rank + 1, shiftsDown)}</span>
-                      <strong>{productName}</strong>
-                      <small>{credits}</small>
-                    </div>
-                  ))}
-                  <div className="quality-demo__rank-row quality-demo__rank-row--you">
-                    <span>
-                      <span className="quality-demo__rank-old">#{qualityStartingRank}</span>
-                      <span className="quality-demo__rank-new">#{qualityTargetRank}</span>
-                    </span>
-                    <strong>Your app</strong>
-                    <small>1 credit</small>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <QualityRankDemo />
           </div>
         </section>
 
