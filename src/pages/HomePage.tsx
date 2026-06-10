@@ -51,15 +51,42 @@ const homeBenefitCards = [
   },
 ];
 
+const creditBadgeSpots = {
+  desktop: [
+    { x: "44%", y: "32%", driftX: "24px", driftY: "-38px" },
+    { x: "63%", y: "28%", driftX: "-22px", driftY: "-34px" },
+    { x: "78%", y: "43%", driftX: "-28px", driftY: "-32px" },
+    { x: "58%", y: "58%", driftX: "18px", driftY: "-42px" },
+    { x: "84%", y: "31%", driftX: "-26px", driftY: "-36px" },
+  ],
+  mobile: [
+    { x: "72%", y: "23%", driftX: "-20px", driftY: "-32px" },
+    { x: "43%", y: "28%", driftX: "18px", driftY: "-30px" },
+    { x: "78%", y: "39%", driftX: "-24px", driftY: "-34px" },
+    { x: "56%", y: "52%", driftX: "14px", driftY: "-36px" },
+  ],
+};
+
+const qualityStartingRank = 34;
+const qualityVisibleRanks = [31, 32, 33];
+const qualityRankJumpOptions = [2, 3];
+const qualityRankRowDistance = 82;
+
 function clampProgress(value: number) {
   return Math.max(0, Math.min(1, value));
+}
+
+function getRandomQualityRankJump() {
+  return qualityRankJumpOptions[Math.floor(Math.random() * qualityRankJumpOptions.length)];
 }
 
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
+  const [qualityRankJump, setQualityRankJump] = useState(() => getRandomQualityRankJump());
   const benefitsSectionRef = useRef<HTMLElement | null>(null);
   const benefitCardRefs = useRef<Array<HTMLElement | null>>([]);
+  const creditBadgeRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -139,6 +166,59 @@ export function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const badge = creditBadgeRef.current;
+
+    if (!badge || typeof window === "undefined") {
+      return undefined;
+    }
+
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobileQuery = window.matchMedia("(max-width: 760px)");
+    let previousSpotIndex = -1;
+
+    const setCreditBadgeSpot = () => {
+      const spots = mobileQuery.matches ? creditBadgeSpots.mobile : creditBadgeSpots.desktop;
+      let nextSpotIndex = Math.floor(Math.random() * spots.length);
+
+      if (spots.length > 1 && nextSpotIndex === previousSpotIndex) {
+        nextSpotIndex = (nextSpotIndex + 1) % spots.length;
+      }
+
+      previousSpotIndex = nextSpotIndex;
+      const spot = reducedMotionQuery.matches ? spots[0] : spots[nextSpotIndex];
+
+      badge.style.setProperty("--quality-credit-x", spot.x);
+      badge.style.setProperty("--quality-credit-y", spot.y);
+      badge.style.setProperty("--quality-credit-drift-x", spot.driftX);
+      badge.style.setProperty("--quality-credit-drift-y", spot.driftY);
+    };
+
+    const setRankJump = () => {
+      const nextRankJump = reducedMotionQuery.matches
+        ? qualityRankJumpOptions[qualityRankJumpOptions.length - 1]
+        : getRandomQualityRankJump();
+
+      setQualityRankJump(nextRankJump);
+    };
+
+    setCreditBadgeSpot();
+    const setNextCycle = () => {
+      setCreditBadgeSpot();
+      setRankJump();
+    };
+
+    badge.addEventListener("animationiteration", setNextCycle);
+    mobileQuery.addEventListener("change", setCreditBadgeSpot);
+    reducedMotionQuery.addEventListener("change", setNextCycle);
+
+    return () => {
+      badge.removeEventListener("animationiteration", setNextCycle);
+      mobileQuery.removeEventListener("change", setCreditBadgeSpot);
+      reducedMotionQuery.removeEventListener("change", setNextCycle);
+    };
+  }, []);
+
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
 
@@ -158,6 +238,31 @@ export function HomePage() {
     if (role === "Tester") {
       navigate("/get-paid-to-test");
     }
+  };
+
+  const qualityTargetRank = qualityStartingRank - qualityRankJump;
+  const qualityDemoStyle = {
+    "--quality-rank-rise": `${qualityRankJump * -qualityRankRowDistance}px`,
+  } as CSSProperties;
+  const qualityRankRows = qualityVisibleRanks.map((rank, index) => ({
+    rank,
+    productName: ["LaunchLab", "FlowPilot", "QuickCart"][index],
+    credits: ["3 credits", "2 credits", "2 credits"][index],
+    positionClassName: ["one", "two", "three"][index],
+    shiftsDown: rank >= qualityTargetRank,
+  }));
+
+  const renderQualityRankLabel = (rank: number, nextRank: number, isAnimated: boolean) => {
+    if (!isAnimated) {
+      return `#${rank}`;
+    }
+
+    return (
+      <>
+        <span className="quality-demo__rank-old">#{rank}</span>
+        <span className="quality-demo__rank-new">#{nextRank}</span>
+      </>
+    );
   };
 
   return (
@@ -292,6 +397,56 @@ export function HomePage() {
                 <h2 className="home-benefit-card__screen-title">{title}</h2>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="home-quality" aria-labelledby="home-quality-title">
+          <div className="home-quality__copy">
+            <h2 id="home-quality-title">Quality Feedback Guaranteed</h2>
+            <p>
+              1 test = 1 credit. Every time you complete a test, someone will test-back your app.
+              The more you test, the more you&apos;ll rank up on the earn page and the more
+              feedback you&apos;ll receive.
+            </p>
+          </div>
+
+          <div
+            className="home-quality__visual"
+            role="img"
+            aria-label="A completed test earns one credit, then the user's test moves higher on Earn."
+          >
+            <div className="quality-demo" style={qualityDemoStyle}>
+              <div ref={creditBadgeRef} className="quality-demo__credit-badge">+1 credit</div>
+
+              <div className="quality-demo__earn-board">
+                <div className="quality-demo__earn-header">
+                  <span>Earn</span>
+                </div>
+
+                <div className="quality-demo__rank-track">
+                  {qualityRankRows.map(({ rank, productName, credits, positionClassName, shiftsDown }) => (
+                    <div
+                      className={`quality-demo__rank-row quality-demo__rank-row--${positionClassName}${
+                        shiftsDown ? " quality-demo__rank-row--shift" : ""
+                      }`}
+                      key={rank}
+                    >
+                      <span>{renderQualityRankLabel(rank, rank + 1, shiftsDown)}</span>
+                      <strong>{productName}</strong>
+                      <small>{credits}</small>
+                    </div>
+                  ))}
+                  <div className="quality-demo__rank-row quality-demo__rank-row--you">
+                    <span>
+                      <span className="quality-demo__rank-old">#{qualityStartingRank}</span>
+                      <span className="quality-demo__rank-new">#{qualityTargetRank}</span>
+                    </span>
+                    <strong>Your app</strong>
+                    <small>1 credit</small>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
