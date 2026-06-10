@@ -51,57 +51,146 @@ const homeBenefitCards = [
   },
 ];
 
-const qualityCompetitors = [
-  { id: "launch-lab", name: "LaunchLab", rank: 1, credits: "5 credits" },
-  { id: "flow-pilot", name: "FlowPilot", rank: 7, credits: "4 credits" },
-  { id: "quick-cart", name: "QuickCart", rank: 16, credits: "3 credits" },
-  { id: "note-nest", name: "NoteNest", rank: 24, credits: "2 credits" },
+const qualityRivalNames = [
+  "LaunchLab",
+  "FlowPilot",
+  "QuickCart",
+  "NoteNest",
+  "PixelPay",
+  "TaskTide",
+  "SnapShelf",
+  "FitQuest",
+  "MealMint",
+  "PageProse",
+  "BeaconGo",
+  "ChatterBox",
 ];
 
-// "Your app" rank after each overtake; entry 0 is the starting rank.
-const qualityRankLadder = [31, 24, 16, 7, 1];
-const qualityMaxStep = qualityCompetitors.length;
 const qualityRankRowDistance = 68;
+// "Your app" sits this many rows below the top of the window while the board scrolls.
+const qualityAppHomeSlot = 3;
+const qualityWindowRows = 5;
 
-type QualityPhase = "intro" | "earn" | "climb" | "settle" | "celebrate" | "reset";
+type QualityPhase = "intro" | "earn" | "climb" | "pan" | "settle" | "celebrate" | "reset";
 
-// Phase lengths pace the loop; "climb" must outlast --quality-climb-duration in CSS.
+// Phase lengths pace the loop; "climb" and "pan" must outlast their CSS transition durations.
 const qualityPhaseDurationsMs: Record<QualityPhase, number> = {
   intro: 900,
   earn: 800,
   climb: 1000,
+  pan: 950,
   settle: 520,
   celebrate: 2600,
   reset: 520,
+};
+
+type QualityCompetitor = {
+  id: string;
+  name: string;
+  rank: number;
+  credits: string;
+};
+
+type QualityLadder = {
+  // Rank of "Your app" after each overtake; entry 0 is the starting rank, the last entry is 1.
+  appRanks: number[];
+  // competitors[i] is the visible row "Your app" passes on its (i + 1)th overtake.
+  competitors: QualityCompetitor[];
 };
 
 type QualityDemoState = {
   phase: QualityPhase;
   step: number;
   cycle: number;
+  cameraRung: number;
+  ladder: QualityLadder;
 };
-
-const qualityInitialDemoState: QualityDemoState = { phase: "intro", step: 0, cycle: 0 };
-// Frozen mid-climb frame shown when the user prefers reduced motion.
-const qualityStaticDemoState: QualityDemoState = { phase: "settle", step: 2, cycle: 0 };
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
+function randomQualityInt(min: number, max: number) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function generateQualityLadder(): QualityLadder {
+  for (;;) {
+    const appRanks = [randomQualityInt(21, 27)];
+    let rank = appRanks[0];
+
+    while (rank > 1) {
+      rank -= Math.min(randomQualityInt(1, 5), rank - 1);
+      appRanks.push(rank);
+    }
+
+    // Keep the loop a reasonable length; an all-small-jumps run is extremely unlikely.
+    if (appRanks.length > 13) {
+      continue;
+    }
+
+    const nameOffset = randomQualityInt(0, qualityRivalNames.length - 1);
+    const competitors = appRanks.slice(1).map((nextRank, index) => {
+      // The visible rival's rank sits inside the span of ranks this jump clears.
+      const rivalRank = randomQualityInt(nextRank, appRanks[index] - 1);
+
+      return {
+        id: `rival-${index}`,
+        name: qualityRivalNames[(nameOffset + index) % qualityRivalNames.length],
+        rank: rivalRank,
+        credits: `${Math.max(2, 2 + Math.floor((30 - rivalRank) / 7))} credits`,
+      };
+    });
+
+    return { appRanks, competitors };
+  }
+}
+
+function getQualityCameraRung(step: number, maxStep: number) {
+  const appRung = maxStep - step;
+  const highestCameraRung = Math.max(maxStep + 1 - qualityWindowRows, 0);
+
+  return Math.min(Math.max(appRung - qualityAppHomeSlot, 0), highestCameraRung);
+}
+
+function createQualityDemoState(cycle: number): QualityDemoState {
+  const ladder = generateQualityLadder();
+
+  return {
+    phase: "intro",
+    step: 0,
+    cycle,
+    cameraRung: getQualityCameraRung(0, ladder.appRanks.length - 1),
+    ladder,
+  };
+}
+
 function advanceQualityDemo(state: QualityDemoState): QualityDemoState {
+  const maxStep = state.ladder.appRanks.length - 1;
+
   switch (state.phase) {
     case "intro":
+    case "pan":
     case "settle":
       return { ...state, phase: "earn" };
     case "earn":
       return { ...state, phase: "climb", step: state.step + 1 };
-    case "climb":
-      return { ...state, phase: state.step >= qualityMaxStep ? "celebrate" : "settle" };
+    case "climb": {
+      if (state.step >= maxStep) {
+        return { ...state, phase: "celebrate" };
+      }
+
+      const nextCameraRung = getQualityCameraRung(state.step, maxStep);
+
+      // Pan the board down to keep "Your app" at its home slot, revealing the next rival above.
+      return nextCameraRung === state.cameraRung
+        ? { ...state, phase: "settle" }
+        : { ...state, phase: "pan", cameraRung: nextCameraRung };
+    }
     case "celebrate":
       return { ...state, phase: "reset" };
     case "reset":
-      return { phase: "intro", step: 0, cycle: state.cycle + 1 };
+      return createQualityDemoState(state.cycle + 1);
   }
 }
 
@@ -115,7 +204,7 @@ function QualityRankDemo() {
   const demoRef = useRef<HTMLDivElement | null>(null);
   const [isInView, setIsInView] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [demoState, setDemoState] = useState<QualityDemoState>(qualityInitialDemoState);
+  const [demoState, setDemoState] = useState<QualityDemoState>(() => createQualityDemoState(0));
 
   useEffect(() => {
     const node = demoRef.current;
@@ -161,11 +250,21 @@ function QualityRankDemo() {
     return () => window.clearTimeout(timerId);
   }, [demoState, isInView, prefersReducedMotion]);
 
-  const { phase, step, cycle } = prefersReducedMotion ? qualityStaticDemoState : demoState;
+  const { cycle, ladder } = demoState;
+  const maxStep = ladder.appRanks.length - 1;
+  const staticStep = Math.min(2, maxStep);
+  // Reduced motion shows a frozen mid-climb frame instead of running the loop.
+  const { phase, step, cameraRung } = prefersReducedMotion
+    ? {
+        phase: "settle" as const,
+        step: staticStep,
+        cameraRung: getQualityCameraRung(staticStep, maxStep),
+      }
+    : demoState;
   const isClimbing = phase === "climb";
-  const appSlot = qualityMaxStep - step;
-  const appRank = qualityRankLadder[step];
-  const previousAppRank = qualityRankLadder[Math.max(0, step - 1)];
+  const appRung = maxStep - step;
+  const appRank = ladder.appRanks[step];
+  const previousAppRank = ladder.appRanks[Math.max(0, step - 1)];
   const appCredits = step + 1;
   const youRowClassName = [
     "quality-demo__rank-row",
@@ -189,50 +288,60 @@ function QualityRankDemo() {
             phase === "reset" ? " quality-demo__rank-track--resetting" : ""
           }`}
         >
-          {qualityCompetitors.map(({ id, name, rank, credits }, index) => {
-            const isPassed = index >= appSlot;
-            const isDropping = isClimbing && index === appSlot;
+          <div
+            className="quality-demo__rank-ladder"
+            style={
+              {
+                "--quality-camera-y": `${-cameraRung * qualityRankRowDistance}px`,
+              } as CSSProperties
+            }
+          >
+            {ladder.competitors.map(({ id, name, rank, credits }, index) => {
+              const isPassed = index < step;
+              const isDropping = isClimbing && index === step - 1;
+              const rung = isPassed ? maxStep - index : maxStep - 1 - index;
 
-            return (
-              <div
-                className={`quality-demo__rank-row quality-demo__rank-row--demo${
-                  isDropping ? " quality-demo__rank-row--dropping" : ""
-                }`}
-                key={id}
-                style={getQualityRowStyle(isPassed ? index + 1 : index)}
-              >
-                <span className="quality-demo__rank-chip">#{isPassed ? rank + 1 : rank}</span>
-                <strong>{name}</strong>
-                <small>{credits}</small>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  className={`quality-demo__rank-row quality-demo__rank-row--demo${
+                    isDropping ? " quality-demo__rank-row--dropping" : ""
+                  }`}
+                  key={id}
+                  style={getQualityRowStyle(rung)}
+                >
+                  <span className="quality-demo__rank-chip">#{isPassed ? rank + 1 : rank}</span>
+                  <strong>{name}</strong>
+                  <small>{credits}</small>
+                </div>
+              );
+            })}
 
-          <div className={youRowClassName} style={getQualityRowStyle(appSlot)}>
-            <span className="quality-demo__rank-chip">
-              {isClimbing ? (
-                <>
-                  <span className="quality-demo__rank-old">#{previousAppRank}</span>
-                  <span className="quality-demo__rank-new">#{appRank}</span>
-                </>
-              ) : (
-                <>#{appRank}</>
-              )}
-            </span>
-            <strong>Your app</strong>
-            <small>
-              <span key={appCredits} className="quality-demo__credit-count">
-                {appCredits} {appCredits === 1 ? "credit" : "credits"}
+            <div className={youRowClassName} style={getQualityRowStyle(appRung)}>
+              <span className="quality-demo__rank-chip">
+                {isClimbing ? (
+                  <>
+                    <span className="quality-demo__rank-old">#{previousAppRank}</span>
+                    <span className="quality-demo__rank-new">#{appRank}</span>
+                  </>
+                ) : (
+                  <>#{appRank}</>
+                )}
               </span>
-            </small>
-            {phase === "earn" ? (
-              <span className="quality-demo__credit-badge" aria-hidden="true">
-                +1 credit
-              </span>
-            ) : null}
-            {phase === "celebrate" ? (
-              <span className="quality-demo__celebrate-ring" aria-hidden="true" />
-            ) : null}
+              <strong>Your app</strong>
+              <small>
+                <span key={appCredits} className="quality-demo__credit-count">
+                  {appCredits} {appCredits === 1 ? "credit" : "credits"}
+                </span>
+              </small>
+              {phase === "earn" ? (
+                <span className="quality-demo__credit-badge" aria-hidden="true">
+                  +1 credit
+                </span>
+              ) : null}
+              {phase === "celebrate" ? (
+                <span className="quality-demo__celebrate-ring" aria-hidden="true" />
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -493,7 +602,7 @@ export function HomePage() {
           <div
             className="home-quality__visual"
             role="img"
-            aria-label="Earn leaderboard demo: each completed test earns one credit and moves Your app up the rankings until it reaches number one."
+            aria-label="Earn leaderboard demo: each completed test earns one credit and jumps Your app several ranks, passing other apps as new ones scroll in from above, until it reaches number one."
           >
             <QualityRankDemo />
           </div>
