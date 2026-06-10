@@ -7761,8 +7761,10 @@ body {
 
 .quality-demo__rank-track {
   position: relative;
-  min-height: 342px;
-  margin-top: 18px;
+  /* Wider than the rows (negative side margins, matching row offsets) so the
+     climb/celebrate scale-ups and ring aren't clipped at the sides. */
+  min-height: 344px;
+  margin: 18px -16px 0;
   overflow: hidden;
   transition: opacity 420ms ease, transform 420ms ease;
   animation: quality-track-enter 520ms ease both;
@@ -7783,9 +7785,11 @@ body {
 
 .quality-demo__rank-row {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  /* The 8px top inset keeps the celebrate ring inside the track's clip box;
+     hidden rows above still end exactly at the clip edge. */
+  top: 8px;
+  left: 16px;
+  right: 16px;
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
@@ -7901,6 +7905,11 @@ body {
 
 .quality-demo__rank-new {
   animation: quality-rank-roll-in var(--quality-climb-duration) ease both;
+}
+
+/* The credits cell never truncates, so let the count's pop scale paint outside its box. */
+.quality-demo__rank-row--you small {
+  overflow: visible;
 }
 
 .quality-demo__credit-count {
@@ -8531,8 +8540,8 @@ body {
   }
 
   .quality-demo__rank-track {
-    min-height: 342px;
-    margin-top: 14px;
+    min-height: 344px;
+    margin: 14px -16px 0;
   }
 
   .quality-demo__rank-row {
