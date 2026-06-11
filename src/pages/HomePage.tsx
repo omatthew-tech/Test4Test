@@ -12,13 +12,52 @@ const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
 const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
 
-const homeReviews = [
-  "Test4Test helped me get my first useful feedback from real users.",
-  "I found issues in my signup flow that I never would have caught alone.",
-  "The credit system made user testing possible before I had a research budget.",
-  "I finally understood where people were getting stuck.",
-  "Other user testing sites were expensive. Test4Test gave me premium-feeling feedback for free.",
-  "The reviews helped me fix things I never would have thought of.",
+// Illustrative placeholders — swap in real, permissioned user quotes before launch.
+const homeTestimonials = [
+  {
+    quote: "I found issues in my signup flow that I never would have caught alone.",
+    name: "Maya",
+    detail: "Founder, meal-planning app",
+  },
+  {
+    quote: "The credit system made user testing possible before I had a research budget.",
+    name: "Daniel",
+    detail: "Solo developer, productivity app",
+  },
+  {
+    quote:
+      "Other user testing sites were expensive. Test4Test gave me premium-feeling feedback for free.",
+    name: "Priya",
+    detail: "Indie founder, e-commerce app",
+  },
+];
+
+const homeFaqs = [
+  {
+    question: "Is it really free?",
+    answer:
+      "Yes. Test4Test runs on credits instead of cash: complete one test and you earn one credit, which gets your app tested by someone else. No subscription, no credit card.",
+  },
+  {
+    question: "Who tests my app?",
+    answer:
+      "Real founders, makers, and testers on Test4Test — people who care about good feedback because they collect it too. Testers use your live app and answer the questions you set.",
+  },
+  {
+    question: "What stops lazy or low-quality feedback?",
+    answer:
+      "Accountability. Testers build a reputation from the work they submit, you rate every review you receive, and you can report anything that misses the bar — reports get reviewed and made right.",
+  },
+  {
+    question: "How fast will I get feedback?",
+    answer:
+      "Your app enters the Earn rankings as soon as you have credits. The more you test, the higher you rank — and the sooner the test-backs arrive.",
+  },
+  {
+    question: "Is my unreleased app safe to share?",
+    answer:
+      "You control exactly what testers see. Share a live link or a closed test (like Google Play closed testing) — testers only access what you give them.",
+  },
 ];
 
 const processSteps = [
@@ -539,23 +578,83 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-review-marquee" aria-label="Test4Test user reviews">
-          <div className="home-review-marquee__viewport">
-            <div className="home-review-marquee__track">
-              {[0, 1].map((groupIndex) => (
-                <div
-                  className="home-review-marquee__group"
-                  key={groupIndex}
-                  aria-hidden={groupIndex === 1}
-                >
-                  {homeReviews.map((quote) => (
-                    <span className="home-review-text" key={`${quote}-${groupIndex}`}>
-                      &ldquo;{quote}&rdquo;
-                    </span>
-                  ))}
-                </div>
+        <section className="home-process" aria-labelledby="home-process-title">
+          <div className="home-process__header">
+            <h2 id="home-process-title">How it works</h2>
+          </div>
+
+          <div className="home-process__body">
+            <div className="home-process__art" aria-hidden="true">
+              <img src={groupLogoPath} alt="" className="home-process__logo" />
+            </div>
+            <div className="simple-steps">
+              {processSteps.map(({ title, body }, index) => (
+                <article className="simple-step" key={title}>
+                  <div className="simple-step__heading">
+                    <span className="simple-step__number">{index + 1}</span>
+                    <h3>{title}</h3>
+                  </div>
+                  <p>{body}</p>
+                </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="home-feedback" aria-labelledby="home-feedback-title">
+          <div className="home-feedback__copy">
+            <h2 id="home-feedback-title">Feedback you can act on</h2>
+            <p>
+              Every test gives you written answers to your own questions &mdash; a summary of what
+              worked, where people got stuck, and the raw response from every tester. Specifics
+              you can fix tomorrow, not scores to guess at.
+            </p>
+          </div>
+
+          <div className="home-feedback__visual" aria-hidden="true">
+            <div className="feedback-demo">
+              <div className="feedback-demo__header">
+                <strong>Feedback report</strong>
+                <span>Your app &middot; Test #3</span>
+              </div>
+              <div className="feedback-demo__section">
+                <h3>What worked</h3>
+                <p>
+                  &ldquo;The onboarding checklist made it obvious what to do first &mdash; I was
+                  set up in under a minute.&rdquo;
+                </p>
+              </div>
+              <div className="feedback-demo__section feedback-demo__section--stuck">
+                <h3>Where they got stuck</h3>
+                <p>
+                  &ldquo;On the plans screen I didn&apos;t realize the plan names were buttons. I
+                  tapped Continue three times before anything happened.&rdquo;
+                </p>
+              </div>
+              <div className="feedback-demo__meta">
+                <span>Answered 6 questions</span>
+                <span>11 min session</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="home-quality" aria-labelledby="home-quality-title">
+          <div className="home-quality__copy">
+            <h2 id="home-quality-title">Quality Feedback Guaranteed</h2>
+            <p>
+              1 test = 1 credit. Every time you complete a test, someone will test-back your app.
+              The more you test, the more you&apos;ll rank up on Earn and the more feedback
+              you&apos;ll receive.
+            </p>
+          </div>
+
+          <div
+            className="home-quality__visual"
+            role="img"
+            aria-label="Earn leaderboard demo: each completed test earns one credit and jumps Your app several ranks, passing other apps as new ones scroll in from above, until it reaches number one."
+          >
+            <QualityRankDemo />
           </div>
         </section>
 
@@ -589,46 +688,53 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-quality" aria-labelledby="home-quality-title">
-          <div className="home-quality__copy">
-            <h2 id="home-quality-title">Quality Feedback Guaranteed</h2>
-            <p>
-              1 test = 1 credit. Every time you complete a test, someone will test-back your app.
-              The more you test, the more you&apos;ll rank up on Earn and the more feedback
-              you&apos;ll receive.
-            </p>
+        <section className="home-testimonials" aria-labelledby="home-testimonials-title">
+          <div className="home-testimonials__header">
+            <h2 id="home-testimonials-title">What founders say</h2>
           </div>
-
-          <div
-            className="home-quality__visual"
-            role="img"
-            aria-label="Earn leaderboard demo: each completed test earns one credit and jumps Your app several ranks, passing other apps as new ones scroll in from above, until it reaches number one."
-          >
-            <QualityRankDemo />
+          <div className="home-testimonials__grid">
+            {homeTestimonials.map(({ quote, name, detail }) => (
+              <figure className="home-testimonial" key={name}>
+                <blockquote>&ldquo;{quote}&rdquo;</blockquote>
+                <figcaption>
+                  <span className="home-testimonial__avatar" aria-hidden="true">
+                    {name.charAt(0)}
+                  </span>
+                  <span className="home-testimonial__person">
+                    <strong>{name}</strong>
+                    <small>{detail}</small>
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </section>
 
-        <section className="home-process" aria-labelledby="home-process-title">
-          <div className="home-process__header">
-            <h2 id="home-process-title">How it works</h2>
+        <section className="home-faq" aria-labelledby="home-faq-title">
+          <div className="home-faq__header">
+            <h2 id="home-faq-title">Frequently asked questions</h2>
           </div>
+          <div className="home-faq__list">
+            {homeFaqs.map(({ question, answer }) => (
+              <details className="home-faq__item" key={question}>
+                <summary>{question}</summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
 
-          <div className="home-process__body">
-            <div className="home-process__art" aria-hidden="true">
-              <img src={groupLogoPath} alt="" className="home-process__logo" />
-            </div>
-            <div className="simple-steps">
-              {processSteps.map(({ title, body }, index) => (
-                <article className="simple-step" key={title}>
-                  <div className="simple-step__heading">
-                    <span className="simple-step__number">{index + 1}</span>
-                    <h3>{title}</h3>
-                  </div>
-                  <p>{body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
+        <section className="home-final-cta" aria-labelledby="home-final-cta-title">
+          <h2 id="home-final-cta-title">Ready to hear what real users think?</h2>
+          <p>Submit your app in minutes. Your first feedback is only a few tests away.</p>
+          <button
+            type="button"
+            className="button button--primary home-final-cta__button"
+            onClick={continueSubmission}
+          >
+            Get my app tested
+            <ArrowRight size={18} />
+          </button>
         </section>
       </div>
     </AppShell>

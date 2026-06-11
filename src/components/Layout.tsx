@@ -48,6 +48,64 @@ function HeaderAudienceToggle({
   );
 }
 
+const supportEmail = "support@test4test.io";
+
+function SiteFooter() {
+  return (
+    <footer className="site-footer">
+      <div className="site-footer__inner site-footer__columns">
+        <div className="site-footer__brand">
+          <NavLink to="/" className="brandmark site-footer__brandmark" aria-label="Test4Test home">
+            <img
+              src={brandLogoPath}
+              alt=""
+              className="brandmark__image"
+              loading="lazy"
+              decoding="async"
+            />
+            <span className="brandmark__wordmark">Test4Test</span>
+          </NavLink>
+          <p className="site-footer__copyright">
+            &copy; {new Date().getFullYear()} Test4Test. All rights reserved.
+          </p>
+        </div>
+
+        <nav className="site-footer__column" aria-label="Product">
+          <h3 className="site-footer__heading">Product</h3>
+          <ul className="site-footer__list">
+            <li>
+              <NavLink to="/submit" className="site-footer__link">
+                Get your app tested
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/get-paid-to-test" className="site-footer__link">
+                Get paid to test
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/sign-in" className="site-footer__link">
+                Sign in
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <div className="site-footer__column">
+          <h3 className="site-footer__heading">Support</h3>
+          <ul className="site-footer__list">
+            <li>
+              <a href={`mailto:${supportEmail}`} className="site-footer__link">
+                {supportEmail}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export function AppShell({
   title,
   description,
@@ -176,6 +234,8 @@ export function AppShell({
         ) : null}
         {children}
       </main>
+
+      {variant === "marketing" ? <SiteFooter /> : null}
     </div>
   );
 }

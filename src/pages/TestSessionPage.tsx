@@ -813,6 +813,14 @@ export function TestSessionPage() {
           --pip-paper: #fffefc;
           --pip-success: #4e9d72;
           --pip-error: #c95b5b;
+          --space-025: 2px;
+          --space-050: 4px;
+          --space-075: 6px;
+          --space-100: 8px;
+          --space-150: 12px;
+          --space-200: 16px;
+          --space-250: 20px;
+          --space-300: 24px;
           color-scheme: light;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
@@ -834,16 +842,16 @@ export function TestSessionPage() {
         }
 
         body {
-          padding: 13px;
+          padding: var(--space-150);
         }
 
         .recording-pip {
           display: flex;
-          min-height: calc(100vh - 26px);
+          min-height: calc(100vh - 24px);
           flex-direction: column;
           justify-content: space-between;
-          gap: 13px;
-          padding: 16px;
+          gap: var(--space-150);
+          padding: var(--space-200);
           border: 1px solid rgba(245, 142, 86, 0.24);
           border-radius: 24px;
           background:
@@ -856,14 +864,14 @@ export function TestSessionPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 13px;
+          gap: var(--space-150);
           min-width: 0;
         }
 
         .recording-pip__badge {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: var(--space-100);
           min-width: 0;
           color: var(--pip-ink);
           font-family: Sora, Inter, ui-sans-serif, system-ui, sans-serif;
@@ -898,7 +906,7 @@ export function TestSessionPage() {
         .recording-pip__timer {
           flex: 0 0 auto;
           min-height: 28px;
-          padding: 5px 10px;
+          padding: var(--space-075) var(--space-150);
           border-radius: 999px;
           background: rgba(255, 241, 230, 0.88);
           color: #8a5c3f;
@@ -925,14 +933,14 @@ export function TestSessionPage() {
         .recording-pip__status {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: var(--space-100);
         }
 
         .recording-pip__pill {
           display: inline-flex;
           align-items: center;
           min-height: 30px;
-          padding: 0 12px;
+          padding: 0 var(--space-150);
           border-radius: 999px;
           background: rgba(246, 242, 238, 0.92);
           color: var(--pip-graphite);
@@ -962,7 +970,7 @@ export function TestSessionPage() {
           font-size: 0.9rem;
           font-weight: 700;
           line-height: 1.2;
-          padding: 0 14px;
+          padding: 0 var(--space-200);
           white-space: nowrap;
           box-shadow: 0 6px 18px rgba(245, 142, 86, 0.22);
           transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
@@ -986,7 +994,7 @@ export function TestSessionPage() {
         .recording-pip__pill-icon {
           width: 1em;
           height: 1em;
-          margin-left: 6px;
+          margin-left: var(--space-075);
           flex: 0 0 auto;
         }
 
@@ -1031,8 +1039,8 @@ export function TestSessionPage() {
         .recording-pip__main {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          padding: 12px;
+          gap: var(--space-150);
+          padding: var(--space-150);
           border: 1px solid rgba(216, 208, 200, 0.74);
           border-radius: 16px;
           background: rgba(255, 254, 252, 0.78);
@@ -1046,13 +1054,13 @@ export function TestSessionPage() {
         .recording-pip__actions {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          gap: 8px;
+          gap: var(--space-100);
           align-items: center;
         }
 
         .recording-pip__actions .recording-pip__button {
           font-size: 0.84rem;
-          padding: 0 8px;
+          padding: 0 var(--space-100);
         }
 
         .recording-pip__button--secondary,
@@ -1060,7 +1068,7 @@ export function TestSessionPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: var(--space-100);
           border: 1px solid rgba(216, 208, 200, 0.92);
           background: rgba(255, 254, 252, 0.9);
           color: var(--pip-ink);

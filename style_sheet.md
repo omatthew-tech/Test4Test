@@ -183,53 +183,132 @@ Use the visual rhythm of the system as the starting point, with practical except
 ---
 
 ## 4. Spacing and sizing system
-Use a simplified Fibonacci spacing scale as the main rhythm of the product. Keep the number of official values small so the system stays easy to apply.
+Use a hybrid arithmetic spacing system as the main rhythm of the product. The system should feel simple in practice but flexible enough for real interfaces: an `8px` backbone for layout, `4px` precision for dense UI, and `2px` / `6px` optical steps for small alignment moments.
 
-### Core spacing scale
-- `8px`
-- `13px`
-- `21px`
-- `34px`
-- `55px`
-- `89px`
+Use two layers:
+1. **Raw tokens** for implementation truth. These values are static and should not change by breakpoint.
+2. **Semantic aliases** for layout meaning. These aliases may shift by breakpoint for page insets, gutters, cards, stacks, sections, and hero spacing.
 
-This should drive most spacing, padding, section rhythm, gap values, and major sizing decisions.
+Do not use Fibonacci values such as `13px`, `21px`, `34px`, `55px`, or `89px` as core spacing tokens. They can feel distinctive in composition, but they are too irregular for everyday product UI.
+
+### Raw spacing scale
+| Token | Value | Rem | Primary use |
+|---|---:|---:|---|
+| `space.0` | `0px` | `0` | Resets and intentional collapse |
+| `space.025` | `2px` | `0.125rem` | Optical nudges, divider offsets, tiny alignment fixes |
+| `space.050` | `4px` | `0.25rem` | Micro gaps, icon alignment, compact control details |
+| `space.075` | `6px` | `0.375rem` | Dense control interiors and small icon-to-text adjustments |
+| `space.100` | `8px` | `0.5rem` | Default small spacing, icon-to-label gaps |
+| `space.150` | `12px` | `0.75rem` | Compact stacks, label-to-field gaps, helper text |
+| `space.200` | `16px` | `1rem` | Default control padding, input padding, compact card padding |
+| `space.250` | `20px` | `1.25rem` | Roomier component padding and subsection gutters |
+| `space.300` | `24px` | `1.5rem` | Standard component separation, form groups, card padding |
+| `space.400` | `32px` | `2rem` | Card-to-card spacing, modal padding, larger groups |
+| `space.500` | `40px` | `2.5rem` | Small-screen section separation |
+| `space.600` | `48px` | `3rem` | Larger section separation and safe touch-related layouts |
+| `space.800` | `64px` | `4rem` | Major page bands and standard desktop section rhythm |
+| `space.1000` | `80px` | `5rem` | Hero spacing and page-intro separation |
+| `space.1200` | `96px` | `6rem` | Large desktop banding |
+| `space.1600` | `128px` | `8rem` | Extra-wide marketing or dashboard breathing room |
+
+### Semantic spacing aliases
+Use these aliases before reaching for raw tokens in layout work.
+
+| Alias | Mobile | Tablet | Desktop | Use |
+|---|---:|---:|---:|---|
+| `inset.page` | `16px` | `24px` | `32px` | Standard page-side padding |
+| `gutter.grid` | `16px` | `24px` | `24px` | Multi-column grids and dashboard layouts |
+| `pad.card` | `16px` | `20px` | `24px` | Cards, panels, and tiles |
+| `gap.stack.tight` | `8px` | `8px` | `12px` | Dense stacks, labels, helper text |
+| `gap.stack.default` | `12px` | `16px` | `16px` | Most vertical stacks |
+| `gap.form.group` | `16px` | `20px` | `24px` | Between related form controls |
+| `gap.form.section` | `24px` | `32px` | `40px` | Between form sections |
+| `gap.content.block` | `24px` | `32px` | `40px` | Between content blocks, media, and supporting copy |
+| `gap.section` | `40px` | `48px` | `64px` | Between major page sections |
+| `gap.hero` | `48px` | `64px` | `80px` | Hero-to-body transition and page-intro rhythm |
 
 ### Usage guidance
-- `8px`: tight gaps, icon-to-label spacing, small internal alignment
-- `13px`: compact control groups, dense UI clusters
-- `21px`: default vertical rhythm inside forms, cards, and content blocks
-- `34px`: card padding, medium group spacing, larger component gaps
-- `55px`: standard section spacing
-- `89px`: hero spacing and major layout separation
-
-### Support values
-Use these only when truly needed:
-- `4px` for micro-adjustments
-- `16px` for common control sizing or where an even value is important for implementation
-
-These are support values, not the core rhythm.
+- `2px–6px`: optical spacing only, such as icon alignment, border compensation, and very dense control details
+- `8px–16px`: local component spacing, including icon-to-label gaps, chip interiors, input padding, and compact stacks
+- `20px–32px`: component separation, card groups, form groups, drawers, and modal interiors
+- `40px–64px`: section spacing, dashboard module spacing, and major content zones
+- `80px–128px`: hero spacing, editorial bands, and extra-wide breathing room
 
 ### Spacing rules
-- default to `21px` or `34px` for most component and content spacing
-- use `55px` for most section spacing
-- reserve `89px` for hero layouts or major page breaks
-- icon-to-label spacing should usually be `8px`
-- avoid introducing one-off values unless a component truly requires it
+- use raw tokens for fixed implementation values
+- use semantic aliases for page insets, grid gutters, card padding, stack gaps, section gaps, and hero spacing
+- keep raw tokens static; make only semantic aliases responsive
+- prefer `gap`, stack utilities, and parent layout primitives over ad hoc child margins
+- keep component-internal padding discrete; avoid fluid `clamp()` values inside controls
+- use `clamp()` only for macro spacing such as hero bands or large page sections, and keep it bounded by raw tokens
+- icon-to-label spacing should usually be `8px`, with `6px` allowed in dense controls
+- card and panel padding should usually be `16px`, `20px`, or `24px`
+- form groups should usually use `16px`, `20px`, or `24px`; form sections should usually use `24px`, `32px`, or `40px`
+- section spacing should usually use `40px`, `48px`, or `64px`; reserve `80px+` for hero or editorial moments
 - do not mix more than 3 spacing steps inside a single component
+- avoid arbitrary values unless a specific component truly requires optical correction
+- validate spacing against readable line length, resilient text spacing, and `44px–48px` minimum interactive targets
 
 ### Suggested tokens
 ```css
 :root {
-  --space-1: 8px;
-  --space-2: 13px;
-  --space-3: 21px;
-  --space-4: 34px;
-  --space-5: 55px;
-  --space-6: 89px;
+  --space-0: 0;
+  --space-025: 2px;
+  --space-050: 4px;
+  --space-075: 6px;
+  --space-100: 8px;
+  --space-150: 12px;
+  --space-200: 16px;
+  --space-250: 20px;
+  --space-300: 24px;
+  --space-400: 32px;
+  --space-500: 40px;
+  --space-600: 48px;
+  --space-800: 64px;
+  --space-1000: 80px;
+  --space-1200: 96px;
+  --space-1600: 128px;
 
-  --space-xs: 4px;
-  --space-even: 16px;
+  --inset-page: var(--space-200);
+  --gutter-grid: var(--space-200);
+  --pad-card: var(--space-200);
+  --gap-stack-tight: var(--space-100);
+  --gap-stack-default: var(--space-150);
+  --gap-form-group: var(--space-200);
+  --gap-form-section: var(--space-300);
+  --gap-content-block: var(--space-300);
+  --gap-section: var(--space-500);
+  --gap-hero: var(--space-600);
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --inset-page: var(--space-300);
+    --gutter-grid: var(--space-300);
+    --pad-card: var(--space-250);
+    --gap-stack-tight: var(--space-100);
+    --gap-stack-default: var(--space-200);
+    --gap-form-group: var(--space-250);
+    --gap-form-section: var(--space-400);
+    --gap-content-block: var(--space-400);
+    --gap-section: var(--space-600);
+    --gap-hero: var(--space-800);
+  }
+}
+
+@media (min-width: 80rem) {
+  :root {
+    --inset-page: var(--space-400);
+    --gutter-grid: var(--space-300);
+    --pad-card: var(--space-300);
+    --gap-stack-tight: var(--space-150);
+    --gap-stack-default: var(--space-200);
+    --gap-form-group: var(--space-300);
+    --gap-form-section: var(--space-500);
+    --gap-content-block: var(--space-500);
+    --gap-section: var(--space-800);
+    --gap-hero: var(--space-1000);
+  }
 }
 ```
 
@@ -249,9 +328,11 @@ The product should feel roomy but not wasteful. Layout should support quick scan
 - dashboards should breathe; avoid overfilling rows with too many cards
 
 ### Section rhythm
-- top-level sections: `55px` to `89px` vertical padding
-- card groups: `21px` gaps
-- dense UI groups: `13px` gaps
+- top-level sections: use `gap.section`, usually `40px` mobile, `48px` tablet, and `64px` desktop
+- hero and page-intro spacing: use `gap.hero`, usually `48px` mobile, `64px` tablet, and `80px` desktop
+- card groups: usually `24px` gaps, with `32px` for roomier dashboard or modal layouts
+- dense UI groups: usually `8px` to `12px` gaps
+- form groups: usually `16px` to `24px`; form sections usually `24px` to `40px`
 
 ### Alignment rules
 - align cards, controls, and copy blocks on the same grid whenever possible
@@ -467,7 +548,7 @@ These should stay consistent across the whole app.
 2. Orange is the anchor color.
 3. Raspberry is an accent, not a second primary.
 4. Surfaces should stay light, warm, and quiet.
-5. Use the simplified Fibonacci spacing system of `8, 13, 21, 34, 55, 89` as the main layout rhythm.
+5. Use the hybrid arithmetic spacing system of `0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128` as the raw scale, with responsive semantic aliases for page insets, gutters, cards, stacks, sections, and hero spacing.
 6. Prefer a small set of reusable values over custom one-off styling.
 7. Rounded corners should feel soft, but never toy-like.
 8. Decorative styling should never interfere with comprehension.
@@ -475,4 +556,4 @@ These should stay consistent across the whole app.
 ---
 
 ## 15. Short implementation brief
-Build a visual system that feels warm, minimal, and recognizable. Use soft neutrals for most surfaces, creamsicle orange for primary action and focus, raspberry only in small accent moments, Sora for headlines, Inter for UI and body text, warm dividers instead of sharp gray lines, light shadows, `16px–24px` radii for most controls and cards, and a simplified Fibonacci spacing rhythm of `8, 13, 21, 34, 55, 89` for most layout decisions. The result should feel polished and specific to this brand without looking overly cute, templated, or synthetic.
+Build a visual system that feels warm, minimal, and recognizable. Use soft neutrals for most surfaces, creamsicle orange for primary action and focus, raspberry only in small accent moments, Sora for headlines, Inter for UI and body text, warm dividers instead of sharp gray lines, light shadows, `16px–24px` radii for most controls and cards, and a hybrid arithmetic spacing rhythm anchored by `8px`, supported by `2px`, `4px`, and `6px` precision steps plus responsive semantic aliases for major layout spacing. The result should feel polished and specific to this brand without looking overly cute, templated, or synthetic.
