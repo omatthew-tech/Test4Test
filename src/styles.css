@@ -7253,6 +7253,8 @@ body {
 }
 
 .home-page {
+  /* One shared vertical rhythm for every full-bleed home section. */
+  --home-section-pad: clamp(var(--space-800), 9svh, var(--space-1200));
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -7653,8 +7655,7 @@ body {
   grid-template-columns: minmax(320px, 0.86fr) minmax(520px, 1.14fr);
   align-items: center;
   gap: clamp(var(--gap-section), 6vw, var(--gap-hero));
-  min-height: min(820px, calc(100svh - 36px));
-  padding: clamp(var(--space-800), 10svh, var(--space-1200)) 0;
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
@@ -8063,8 +8064,7 @@ body {
 }
 
 .home-process {
-  min-height: min(820px, calc(100svh - 40px));
-  padding: var(--gap-section) 0 var(--space-1200);
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
@@ -8179,7 +8179,7 @@ body {
   grid-template-columns: minmax(520px, 1.1fr) minmax(320px, 0.9fr);
   align-items: center;
   gap: clamp(var(--gap-section), 6vw, var(--gap-hero));
-  padding: clamp(var(--space-800), 10svh, var(--space-1200)) 0;
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
@@ -8282,7 +8282,7 @@ body {
 }
 
 .home-testimonials {
-  padding: clamp(var(--space-800), 9svh, var(--space-1200)) 0;
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
@@ -8359,7 +8359,7 @@ body {
 }
 
 .home-faq {
-  padding: clamp(var(--space-800), 9svh, var(--space-1200)) 0;
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
@@ -8617,7 +8617,6 @@ body {
   .home-quality {
     grid-template-columns: 1fr;
     gap: var(--gap-section);
-    min-height: auto;
   }
 
   .home-quality__copy {
@@ -8842,7 +8841,7 @@ body {
   }
 
   .home-feedback {
-    padding: var(--gap-section) 0 var(--gap-hero);
+    padding: var(--gap-section) 0;
   }
 
   .home-feedback__copy h2 {
@@ -8930,7 +8929,7 @@ body {
   }
 
   .home-quality {
-    padding: var(--gap-section) 0 var(--gap-hero);
+    padding: var(--gap-section) 0;
   }
 
   .home-quality__copy h2 {
@@ -8980,8 +8979,7 @@ body {
   }
 
   .home-process {
-    min-height: auto;
-    padding: var(--gap-section) 0 var(--gap-hero);
+    padding: var(--gap-section) 0;
   }
 
   .home-process__header h2 {
