@@ -8107,6 +8107,26 @@ body {
   background: rgba(255, 254, 252, 0.9);
   box-shadow: 0 18px 36px rgba(29, 24, 21, 0.04);
   overflow: hidden;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+/* Scroll-driven highlight: warm orange active state, one step at a time. */
+.simple-step--glow {
+  border-color: rgba(245, 142, 86, 0.55);
+  background: rgba(255, 250, 244, 0.98);
+  box-shadow:
+    0 0 0 4px rgba(245, 142, 86, 0.14),
+    0 10px 28px rgba(242, 105, 33, 0.12);
+  transform: translateY(-2px);
+}
+
+.simple-step--glow .simple-step__number {
+  border-color: rgba(245, 142, 86, 0.45);
+  background: rgba(255, 208, 174, 0.6);
 }
 
 .simple-step::before {
@@ -8141,6 +8161,14 @@ body {
   color: var(--color-orange-500);
   font-weight: 700;
   flex-shrink: 0;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simple-step,
+  .simple-step__number {
+    transition: none;
+  }
 }
 
 .simple-step p {

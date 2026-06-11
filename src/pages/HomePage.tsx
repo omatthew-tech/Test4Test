@@ -367,7 +367,95 @@ function QualityRankDemo() {
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
+  const processGridRef = useRef<HTMLDivElement | null>(null);
+  const processStepRefs = useRef<Array<HTMLElement | null>>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const cardsGrid = processGridRef.current;
+
+    if (!cardsGrid || typeof window === "undefined") {
+      return undefined;
+    }
+
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let hasUserScrolled = false;
+    let isInView = false;
+    let timerId = 0;
+    let activeIndex = -1;
+
+    const setGlowStep = (index: number) => {
+      activeIndex = index;
+      processStepRefs.current.forEach((card, cardIndex) => {
+        card?.classList.toggle("simple-step--glow", cardIndex === index);
+      });
+    };
+
+    const stopGlowCycle = () => {
+      if (timerId) {
+        window.clearInterval(timerId);
+        timerId = 0;
+      }
+
+      setGlowStep(-1);
+    };
+
+    // Submit, Test, and Review each hold the glow for an equal third of the
+    // time the section spends on screen, looping while it stays in view.
+    const startGlowCycle = () => {
+      if (timerId) {
+        return;
+      }
+
+      setGlowStep(0);
+      timerId = window.setInterval(() => {
+        setGlowStep((activeIndex + 1) % processSteps.length);
+      }, processGlowStepMs);
+    };
+
+    const syncGlowCycle = () => {
+      // Stays dark until the visitor starts scrolling; pauses off screen.
+      if (isInView && hasUserScrolled && !reducedMotionQuery.matches) {
+        startGlowCycle();
+      } else {
+        stopGlowCycle();
+      }
+    };
+
+    const handleScroll = () => {
+      if (!hasUserScrolled) {
+        hasUserScrolled = true;
+        syncGlowCycle();
+      }
+    };
+
+    let observer: IntersectionObserver | undefined;
+
+    if (typeof IntersectionObserver === "undefined") {
+      isInView = true;
+    } else {
+      observer = new IntersectionObserver(
+        (entries) => {
+          isInView = entries.some((entry) => entry.isIntersecting);
+          syncGlowCycle();
+        },
+        { threshold: 0.35 },
+      );
+      // Watch the card grid itself, not the whole section, so the cycle only
+      // runs while the Submit/Test/Review cards are actually on screen.
+      observer.observe(cardsGrid);
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    reducedMotionQuery.addEventListener("change", syncGlowCycle);
+
+    return () => {
+      stopGlowCycle();
+      observer?.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+      reducedMotionQuery.removeEventListener("change", syncGlowCycle);
+    };
+  }, []);
 
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
@@ -484,9 +572,15 @@ export function HomePage() {
             <div className="home-process__art" aria-hidden="true">
               <img src={groupLogoPath} alt="" className="home-process__logo" />
             </div>
-            <div className="simple-steps">
+            <div className="simple-steps" ref={processGridRef}>
               {processSteps.map(({ title, body }, index) => (
-                <article className="simple-step" key={title}>
+                <article
+                  ref={(element) => {
+                    processStepRefs.current[index] = element;
+                  }}
+                  className="simple-step"
+                  key={title}
+                >
                   <div className="simple-step__heading">
                     <span className="simple-step__number">{index + 1}</span>
                     <h3>{title}</h3>
