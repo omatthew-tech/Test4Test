@@ -1269,8 +1269,6 @@ function EarnVisibilityPanel({
               type="button"
               className="button button--secondary button--small"
               onClick={() => onShareLiveTest(liveSubmissionId)}
-              disabled={isListingLocked}
-              title={isListingLocked ? "Complete a test before sharing your app." : undefined}
             >
               <Share2 size={16} />
               Share

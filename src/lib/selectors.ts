@@ -101,19 +101,6 @@ export function getCreditBalance(state: AppState, userId: string | null) {
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 }
 
-export function hasUserCompletedCreditedTest(state: AppState, userId: string | null) {
-  if (!userId) {
-    return false;
-  }
-
-  return state.responses.some(
-    (response) =>
-      response.testerUserId === userId &&
-      response.status === "approved" &&
-      response.creditAwarded,
-  );
-}
-
 export function getSubmissionVersions(
   state: AppState,
   submissionId: string,
@@ -210,10 +197,6 @@ export function getAvailableSubmissions(state: AppState) {
       }
 
       if (submission.userId === state.currentUserId) {
-        return false;
-      }
-
-      if (!hasUserCompletedCreditedTest(state, submission.userId)) {
         return false;
       }
 
