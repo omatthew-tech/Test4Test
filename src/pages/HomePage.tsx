@@ -54,6 +54,10 @@ const processSteps = [
     body: "Monitor your app's feedback with detailed summaries and raw responses.",
   },
 ];
+const processGlowLeadInSlots = 1;
+const processGlowSlotsPerStep = 3;
+const processGlowTotalSlots =
+  processGlowLeadInSlots + processSteps.length * processGlowSlotsPerStep;
 
 const homeBenefitCards = [
   {
@@ -379,81 +383,79 @@ export function HomePage() {
     }
 
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let hasUserScrolled = false;
-    let isInView = false;
-    let timerId = 0;
-    let activeIndex = -1;
+    let animationFrameId = 0;
+    let activeIndex = -2;
 
     const setGlowStep = (index: number) => {
+      if (activeIndex === index) {
+        return;
+      }
+
       activeIndex = index;
       processStepRefs.current.forEach((card, cardIndex) => {
         card?.classList.toggle("simple-step--glow", cardIndex === index);
       });
     };
 
-    const stopGlowCycle = () => {
-      if (timerId) {
-        window.clearInterval(timerId);
-        timerId = 0;
-      }
+    const syncGlowStep = () => {
+      animationFrameId = 0;
 
-      setGlowStep(-1);
-    };
-
-    // Submit, Test, and Review each hold the glow for an equal third of the
-    // time the section spends on screen, looping while it stays in view.
-    const startGlowCycle = () => {
-      if (timerId) {
+      if (reducedMotionQuery.matches) {
+        setGlowStep(-1);
         return;
       }
 
-      setGlowStep(0);
-      timerId = window.setInterval(() => {
-        setGlowStep((activeIndex + 1) % processSteps.length);
-      }, processGlowStepMs);
-    };
+      const rect = cardsGrid.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 
-    const syncGlowCycle = () => {
-      // Stays dark until the visitor starts scrolling; pauses off screen.
-      if (isInView && hasUserScrolled && !reducedMotionQuery.matches) {
-        startGlowCycle();
-      } else {
-        stopGlowCycle();
+      if (rect.bottom <= 0 || rect.top >= viewportHeight) {
+        setGlowStep(-1);
+        return;
       }
-    };
 
-    const handleScroll = () => {
-      if (!hasUserScrolled) {
-        hasUserScrolled = true;
-        syncGlowCycle();
-      }
-    };
-
-    let observer: IntersectionObserver | undefined;
-
-    if (typeof IntersectionObserver === "undefined") {
-      isInView = true;
-    } else {
-      observer = new IntersectionObserver(
-        (entries) => {
-          isInView = entries.some((entry) => entry.isIntersecting);
-          syncGlowCycle();
-        },
-        { threshold: 0.35 },
+      const firstGlowY = viewportHeight * 0.72;
+      const finalGlowY = Math.min(-rect.height * 0.24, -64);
+      const progress = Math.max(
+        0,
+        Math.min(0.999, (firstGlowY - rect.top) / (firstGlowY - finalGlowY)),
       );
-      // Watch the card grid itself, not the whole section, so the cycle only
-      // runs while the Submit/Test/Review cards are actually on screen.
-      observer.observe(cardsGrid);
-    }
+      const slot = Math.floor(progress * processGlowTotalSlots);
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    reducedMotionQuery.addEventListener("change", syncGlowCycle);
+      if (slot < processGlowLeadInSlots) {
+        setGlowStep(-1);
+        return;
+      }
+
+      setGlowStep(
+        Math.min(
+          processSteps.length - 1,
+          Math.floor((slot - processGlowLeadInSlots) / processGlowSlotsPerStep),
+        ),
+      );
+    };
+
+    const requestGlowSync = () => {
+      if (animationFrameId) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(syncGlowStep);
+    };
+
+    syncGlowStep();
+    window.addEventListener("scroll", requestGlowSync, { passive: true });
+    window.addEventListener("resize", requestGlowSync);
+    reducedMotionQuery.addEventListener("change", requestGlowSync);
 
     return () => {
-      stopGlowCycle();
-      observer?.disconnect();
-      window.removeEventListener("scroll", handleScroll);
-      reducedMotionQuery.removeEventListener("change", syncGlowCycle);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener("scroll", requestGlowSync);
+      window.removeEventListener("resize", requestGlowSync);
+      reducedMotionQuery.removeEventListener("change", requestGlowSync);
+      setGlowStep(-1);
     };
   }, []);
 
