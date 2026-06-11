@@ -7254,7 +7254,7 @@ body {
 
 .home-page {
   /* One shared vertical rhythm for every full-bleed home section. */
-  --home-section-pad: clamp(var(--space-800), 9svh, var(--space-1200));
+  --home-section-pad: clamp(var(--space-800), 8svh, var(--space-1000));
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -7262,12 +7262,12 @@ body {
 
 .home-hero {
   position: relative;
-  min-height: max(700px, calc(100svh - 142px));
+  min-height: clamp(640px, calc(100svh - 176px), 740px);
   display: grid;
   grid-template-columns: minmax(360px, 0.9fr) minmax(580px, 1.1fr);
   align-items: center;
-  gap: var(--gap-hero);
-  padding: var(--space-250) 0 var(--gap-section);
+  gap: clamp(var(--gap-content-block), 5vw, var(--gap-hero));
+  padding: var(--gap-content-block) 0 var(--gap-section);
 }
 
 .home-hero__copy {
@@ -7353,7 +7353,7 @@ body {
   justify-content: flex-end;
   align-items: center;
   min-width: 0;
-  min-height: 620px;
+  min-height: 600px;
   isolation: isolate;
 }
 
@@ -7452,6 +7452,21 @@ body {
   }
 }
 
+@media (max-width: 1320px) and (min-width: 1121px) {
+  .home-hero {
+    grid-template-columns: minmax(340px, 0.86fr) minmax(540px, 1.14fr);
+  }
+
+  .home-hero h1 {
+    font-size: clamp(4.45rem, 6.1vw, 4.85rem);
+  }
+
+  .home-hero__visual {
+    --mascot-left: -34px;
+    --mascot-width: clamp(224px, 17vw, 248px);
+  }
+}
+
 .simple-start-card__label {
   display: block;
   margin: 0;
@@ -7514,114 +7529,89 @@ body {
 }
 
 .home-benefits {
-  --benefits-progress: 0;
   position: relative;
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-content-block);
+  padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
 }
 
 .home-benefits__header {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: start;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  padding-top: clamp(var(--space-1000), 10svh, var(--space-1200));
-  text-align: center;
-  z-index: 1;
+  max-width: 720px;
 }
 
 .home-benefits__header h2 {
   margin: 0;
-  max-width: none;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(2.35rem, 4.6vw, 3.8rem);
-  line-height: 1.04;
+  font-size: clamp(2.1rem, 3.2vw, 2.8rem);
+  line-height: 1.08;
   letter-spacing: 0;
   color: var(--color-ink-900);
-  white-space: nowrap;
+  text-wrap: balance;
 }
 
 .home-benefits__grid {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
   display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: repeat(3, auto);
-  gap: clamp(var(--space-100), 1.25svh, var(--space-150));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gutter-grid);
   align-items: stretch;
-  align-content: start;
-  min-height: 0;
 }
 
 .home-benefit-card {
-  --benefit-progress: 0;
-  --benefit-title-left: 50%;
-  --benefit-title-x: -50%;
-  --benefit-copy-opacity: 0;
-  --benefit-copy-shift: 18px;
-
   position: relative;
-  min-height: clamp(148px, 18svh, 172px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-stack-default);
+  min-height: 100%;
+  padding: var(--pad-card);
   overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border: 1px solid rgba(216, 208, 200, 0.82);
+  border-radius: 18px;
+  background: var(--color-surface-000);
+  box-shadow: 0 14px 30px rgba(29, 24, 21, 0.045);
 }
 
 .home-benefit-card__copy {
-  min-height: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: clamp(var(--space-250), 2.8svh, var(--space-400)) clamp(var(--space-500), 5vw, var(--space-1000)) clamp(var(--space-250), 2.8svh, var(--space-400)) clamp(360px, 38%, 470px);
-  opacity: var(--benefit-copy-opacity);
-  transform: translateX(var(--benefit-copy-shift));
-  will-change: opacity, transform;
+  min-height: 0;
+  height: auto;
+  display: block;
+  padding: 0;
+  opacity: 1;
+  transform: none;
 }
 
 .home-benefit-card__copy p {
   margin: 0;
-  max-width: 68ch;
+  max-width: none;
   color: var(--color-ink-700);
-  font-size: clamp(1rem, 1.2vw, 1.14rem);
-  line-height: 1.58;
+  font-size: 1rem;
+  line-height: 1.62;
 }
 
 .home-benefit-card__title {
-  position: absolute;
-  left: var(--benefit-title-left);
-  top: 50%;
-  width: clamp(260px, 28vw, 360px);
-  min-height: clamp(86px, 12svh, 116px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-300) var(--space-400);
-  border: 1px solid rgba(245, 142, 86, 0.28);
-  border-radius: 14px;
-  background: var(--color-orange-050);
+  order: -1;
+  position: static;
+  width: auto;
+  min-height: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--color-ink-900);
-  text-align: center;
-  transform: translate(var(--benefit-title-x), -50%);
-  will-change: left, transform;
+  text-align: left;
+  transform: none;
 }
 
 .home-benefit-card__title h2 {
   margin: 0;
   font-family: "Sora", system-ui, sans-serif;
-  font-size: clamp(1.7rem, 2.4vw, 2.3rem);
-  line-height: 1.12;
+  font-size: 1.2rem;
+  line-height: 1.22;
   letter-spacing: 0;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .home-benefit-card__screen-title {
@@ -7634,20 +7624,6 @@ body {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-benefit-card {
-    --benefit-title-left: 22px;
-    --benefit-title-x: 0%;
-    --benefit-copy-opacity: 1;
-    --benefit-copy-shift: 0px;
-  }
-
-  .home-benefit-card__copy,
-  .home-benefit-card__title {
-    will-change: auto;
-  }
 }
 
 .home-quality {
@@ -8281,83 +8257,6 @@ body {
   font-weight: 700;
 }
 
-.home-testimonials {
-  padding: var(--home-section-pad) 0;
-  border-top: 1px solid rgba(216, 208, 200, 0.58);
-}
-
-.home-testimonials__header {
-  max-width: 720px;
-  margin-bottom: var(--gap-content-block);
-}
-
-.home-testimonials__header h2 {
-  margin: 0;
-  font-family: "Sora", system-ui, sans-serif;
-  font-size: 2.8rem;
-  line-height: 1.06;
-}
-
-.home-testimonials__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--gutter-grid);
-}
-
-.home-testimonial {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--gap-form-group);
-  margin: 0;
-  padding: var(--pad-card);
-  border: 1px solid rgba(216, 208, 200, 0.82);
-  border-radius: 18px;
-  background: var(--color-surface-000);
-  box-shadow: 0 14px 30px rgba(29, 24, 21, 0.05);
-}
-
-.home-testimonial blockquote {
-  margin: 0;
-  color: var(--color-ink-900);
-  font-size: 1.06rem;
-  line-height: 1.6;
-}
-
-.home-testimonial figcaption {
-  display: flex;
-  align-items: center;
-  gap: var(--space-150);
-}
-
-.home-testimonial__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(245, 142, 86, 0.3);
-  border-radius: 50%;
-  background: var(--color-orange-050);
-  color: #f26921;
-  font-weight: 800;
-}
-
-.home-testimonial__person {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-025);
-}
-
-.home-testimonial__person strong {
-  font-size: 0.98rem;
-}
-
-.home-testimonial__person small {
-  color: var(--color-ink-500);
-  font-size: 0.86rem;
-}
-
 .home-faq {
   padding: var(--home-section-pad) 0;
   border-top: 1px solid rgba(216, 208, 200, 0.58);
@@ -8685,15 +8584,6 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .home-benefit-card,
-  .home-benefit-card__copy {
-    min-height: clamp(142px, 19svh, 164px);
-  }
-
-  .home-benefit-card__copy {
-    padding-left: clamp(320px, 38vw, 390px);
-  }
-
   .home-quality {
     gap: var(--gap-content-block);
   }
@@ -8774,9 +8664,9 @@ body {
   .home-hero__visual {
     display: block;
     min-height: 0;
-    padding-top: clamp(218px, 56vw, 260px);
-    --mobile-mascot-top: clamp(20px, 5.8vw, 26px);
-    --mobile-mascot-width: clamp(220px, 56vw, 244px);
+    padding-top: clamp(188px, 50vw, 224px);
+    --mobile-mascot-top: clamp(14px, 4.5vw, 22px);
+    --mobile-mascot-width: clamp(204px, 52vw, 232px);
   }
 
   .home-hero__device {
@@ -8858,12 +8748,10 @@ body {
     padding: var(--pad-card);
   }
 
-  .home-testimonials,
   .home-faq {
     padding: var(--gap-section) 0;
   }
 
-  .home-testimonials__header h2,
   .home-faq__header h2 {
     font-size: 2rem;
   }
@@ -8883,49 +8771,30 @@ body {
   }
 
   .home-benefits {
-    padding: 0;
-  }
-
-  .home-benefits__header {
-    padding-top: var(--gap-section);
+    gap: var(--gap-content-block);
+    padding: var(--gap-section) 0;
   }
 
   .home-benefits__header h2 {
-    max-width: none;
-    font-size: clamp(2.15rem, 10vw, 2.8rem);
-    white-space: normal;
+    font-size: 2rem;
   }
 
   .home-benefits__grid {
-    gap: var(--space-100);
-    align-content: start;
-    min-height: 0;
-  }
-
-  .home-benefit-card,
-  .home-benefit-card__copy {
-    min-height: clamp(148px, 19svh, 164px);
-  }
-
-  .home-benefit-card__copy {
-    align-items: flex-start;
-    padding: var(--space-1200) var(--space-250) var(--space-150);
+    grid-template-columns: 1fr;
+    gap: var(--gap-stack-default);
   }
 
   .home-benefit-card__copy p {
-    font-size: clamp(0.88rem, 3.5vw, 0.98rem);
-    line-height: 1.45;
+    font-size: 1rem;
+    line-height: 1.6;
   }
 
-  .home-benefit-card__title {
-    top: 54px;
-    width: min(260px, calc(100% - var(--gap-section)));
-    min-height: 62px;
-    padding: var(--space-150) var(--space-250);
+  .home-benefit-card {
+    padding: var(--space-250);
   }
 
   .home-benefit-card__title h2 {
-    font-size: clamp(1.24rem, 6vw, 1.58rem);
+    font-size: 1.12rem;
   }
 
   .home-quality {
@@ -11007,8 +10876,14 @@ select {
     flex-wrap: nowrap;
   }
 
+  .topbar--marketing.topbar--guest .topbar__actions .button,
+  .topbar--marketing.topbar--guest .topbar__actions .profile-menu {
+    flex: 0 0 auto;
+  }
+
   .topbar--marketing.topbar--guest .topbar__actions .button--small {
     padding: var(--space-150) var(--space-200);
+    white-space: nowrap;
   }
 
   .topbar--marketing.topbar--guest .topbar-audience {
@@ -11020,6 +10895,7 @@ select {
 
 @media (max-width: 520px) {
   .topbar--marketing.topbar--guest {
+    position: relative;
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
@@ -11032,6 +10908,7 @@ select {
   .topbar--marketing.topbar--guest .brandmark {
     grid-column: 1;
     justify-self: start;
+    padding-right: 88px;
   }
 
   .topbar--marketing.topbar--guest .brandmark__image {
@@ -11044,11 +10921,7 @@ select {
   }
 
   .topbar--marketing.topbar--guest .topbar__actions {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
-    justify-content: flex-end;
-    width: auto;
+    display: none;
   }
 
   .topbar--marketing.topbar--guest .topbar-audience {

@@ -12,26 +12,6 @@ const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
 const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
 
-// Illustrative placeholders — swap in real, permissioned user quotes before launch.
-const homeTestimonials = [
-  {
-    quote: "I found issues in my signup flow that I never would have caught alone.",
-    name: "Maya",
-    detail: "Founder, meal-planning app",
-  },
-  {
-    quote: "The credit system made user testing possible before I had a research budget.",
-    name: "Daniel",
-    detail: "Solo developer, productivity app",
-  },
-  {
-    quote:
-      "Other user testing sites were expensive. Test4Test gave me premium-feeling feedback for free.",
-    name: "Priya",
-    detail: "Indie founder, e-commerce app",
-  },
-];
-
 const homeFaqs = [
   {
     question: "Is it really free?",
@@ -144,10 +124,6 @@ type QualityDemoState = {
   cameraRung: number;
   ladder: QualityLadder;
 };
-
-function clampProgress(value: number) {
-  return Math.max(0, Math.min(1, value));
-}
 
 function randomQualityInt(min: number, max: number) {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -391,86 +367,7 @@ function QualityRankDemo() {
 export function HomePage() {
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
-  const benefitsSectionRef = useRef<HTMLElement | null>(null);
-  const benefitCardRefs = useRef<Array<HTMLElement | null>>([]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const section = benefitsSectionRef.current;
-
-    if (!section || typeof window === "undefined") {
-      return undefined;
-    }
-
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let animationFrameId = 0;
-
-    const setCardReveal = (card: HTMLElement, progress: number) => {
-      const titleLeft = card.clientWidth / 2 - progress * (card.clientWidth / 2 - 22);
-      const titleX = -50 + progress * 50;
-      const copyOpacity = clampProgress((progress - 0.42) * 2.1);
-      const copyShift = 18 - progress * 18;
-
-      card.style.setProperty("--benefit-progress", progress.toFixed(4));
-      card.style.setProperty("--benefit-title-left", `${titleLeft.toFixed(2)}px`);
-      card.style.setProperty("--benefit-title-x", `${titleX.toFixed(2)}%`);
-      card.style.setProperty("--benefit-copy-opacity", copyOpacity.toFixed(4));
-      card.style.setProperty("--benefit-copy-shift", `${copyShift.toFixed(2)}px`);
-    };
-
-    const updateProgress = () => {
-      animationFrameId = 0;
-
-      if (reducedMotionQuery.matches) {
-        section.style.setProperty("--benefits-progress", "1");
-        benefitCardRefs.current.forEach((card) => {
-          if (card) {
-            setCardReveal(card, 1);
-          }
-        });
-        return;
-      }
-
-      const rect = section.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const startY = viewportHeight * 0.85;
-      const travelDistance = rect.height + viewportHeight * 0.25;
-      const sectionProgress = clampProgress((startY - rect.top) / travelDistance);
-
-      section.style.setProperty("--benefits-progress", sectionProgress.toFixed(4));
-      benefitCardRefs.current.forEach((card, index) => {
-        const cardStart = index * 0.16;
-        const cardProgress = clampProgress((sectionProgress - cardStart) / 0.5);
-
-        if (card) {
-          setCardReveal(card, cardProgress);
-        }
-      });
-    };
-
-    const requestProgressUpdate = () => {
-      if (animationFrameId) {
-        return;
-      }
-
-      animationFrameId = window.requestAnimationFrame(updateProgress);
-    };
-
-    updateProgress();
-    window.addEventListener("scroll", requestProgressUpdate, { passive: true });
-    window.addEventListener("resize", requestProgressUpdate);
-    reducedMotionQuery.addEventListener("change", requestProgressUpdate);
-
-    return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId);
-      }
-
-      window.removeEventListener("scroll", requestProgressUpdate);
-      window.removeEventListener("resize", requestProgressUpdate);
-      reducedMotionQuery.removeEventListener("change", requestProgressUpdate);
-    };
-  }, []);
 
   const startSubmission = () => {
     const trimmedProductName = productName.trim();
@@ -658,24 +555,13 @@ export function HomePage() {
           </div>
         </section>
 
-        <section
-          ref={benefitsSectionRef}
-          className="home-benefits"
-          aria-labelledby="home-benefits-title"
-        >
+        <section className="home-benefits" aria-labelledby="home-benefits-title">
           <div className="home-benefits__header">
             <h2 id="home-benefits-title">Why Test4Test?</h2>
           </div>
           <div className="home-benefits__grid">
-            {homeBenefitCards.map(({ title, body }, index) => (
-              <article
-                ref={(element) => {
-                  benefitCardRefs.current[index] = element;
-                }}
-                className="home-benefit-card"
-                key={title}
-                style={{ "--benefit-index": index } as CSSProperties}
-              >
+            {homeBenefitCards.map(({ title, body }) => (
+              <article className="home-benefit-card" key={title}>
                 <div className="home-benefit-card__copy">
                   <p>{body}</p>
                 </div>
@@ -684,28 +570,6 @@ export function HomePage() {
                 </div>
                 <h2 className="home-benefit-card__screen-title">{title}</h2>
               </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="home-testimonials" aria-labelledby="home-testimonials-title">
-          <div className="home-testimonials__header">
-            <h2 id="home-testimonials-title">What founders say</h2>
-          </div>
-          <div className="home-testimonials__grid">
-            {homeTestimonials.map(({ quote, name, detail }) => (
-              <figure className="home-testimonial" key={name}>
-                <blockquote>&ldquo;{quote}&rdquo;</blockquote>
-                <figcaption>
-                  <span className="home-testimonial__avatar" aria-hidden="true">
-                    {name.charAt(0)}
-                  </span>
-                  <span className="home-testimonial__person">
-                    <strong>{name}</strong>
-                    <small>{detail}</small>
-                  </span>
-                </figcaption>
-              </figure>
             ))}
           </div>
         </section>
