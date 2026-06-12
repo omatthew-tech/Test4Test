@@ -8285,81 +8285,6 @@ body {
   font-weight: 700;
 }
 
-.home-faq {
-  padding: var(--home-section-pad) 0;
-  border-top: 1px solid rgba(216, 208, 200, 0.58);
-}
-
-.home-faq__header {
-  max-width: 720px;
-  margin-bottom: var(--gap-content-block);
-}
-
-.home-faq__header h2 {
-  margin: 0;
-  font-family: "Sora", system-ui, sans-serif;
-  font-size: 2.8rem;
-  line-height: 1.06;
-}
-
-.home-faq__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-stack-tight);
-  max-width: 820px;
-}
-
-.home-faq__item {
-  border: 1px solid rgba(216, 208, 200, 0.82);
-  border-radius: 14px;
-  background: var(--color-surface-000);
-}
-
-.home-faq__item summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-200);
-  padding: var(--space-250) var(--space-300);
-  cursor: pointer;
-  list-style: none;
-  color: var(--color-ink-900);
-  font-size: 1.04rem;
-  font-weight: 700;
-}
-
-.home-faq__item summary::-webkit-details-marker {
-  display: none;
-}
-
-.home-faq__item summary::after {
-  content: "+";
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(216, 208, 200, 0.9);
-  border-radius: 50%;
-  color: var(--color-ink-500);
-  font-size: 1.1rem;
-  font-weight: 600;
-  line-height: 1;
-  transition: transform 200ms ease;
-}
-
-.home-faq__item[open] summary::after {
-  transform: rotate(45deg);
-}
-
-.home-faq__item > p {
-  margin: 0;
-  padding: 0 var(--space-800) var(--space-250) var(--space-300);
-  color: var(--color-ink-700);
-  line-height: 1.7;
-}
-
 .home-final-cta {
   display: flex;
   flex-direction: column;
@@ -8395,12 +8320,6 @@ body {
   color: #fffefc;
   background: linear-gradient(180deg, #ff7b39 0%, #ff641f 100%);
   box-shadow: 0 14px 28px rgba(242, 105, 33, 0.2);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-faq__item summary::after {
-    transition: none;
-  }
 }
 
 .site-footer {
@@ -8774,23 +8693,6 @@ body {
 
   .feedback-demo {
     padding: var(--pad-card);
-  }
-
-  .home-faq {
-    padding: var(--gap-section) 0;
-  }
-
-  .home-faq__header h2 {
-    font-size: 2rem;
-  }
-
-  .home-faq__item summary {
-    padding: var(--space-200) var(--space-250);
-    font-size: 1rem;
-  }
-
-  .home-faq__item > p {
-    padding: 0 var(--space-250) var(--space-200);
   }
 
   .home-final-cta {

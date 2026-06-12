@@ -12,34 +12,6 @@ const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
 const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
 
-const homeFaqs = [
-  {
-    question: "Is it really free?",
-    answer:
-      "Yes. Test4Test runs on credits instead of cash: complete one test and you earn one credit, which gets your app tested by someone else. No subscription, no credit card.",
-  },
-  {
-    question: "Who tests my app?",
-    answer:
-      "Real founders, makers, and testers on Test4Test — people who care about good feedback because they collect it too. Testers use your live app and answer the questions you set.",
-  },
-  {
-    question: "What stops lazy or low-quality feedback?",
-    answer:
-      "Accountability. Testers build a reputation from the work they submit, you rate every review you receive, and you can report anything that misses the bar — reports get reviewed and made right.",
-  },
-  {
-    question: "How fast will I get feedback?",
-    answer:
-      "Your app enters the Earn rankings as soon as you have credits. The more you test, the higher you rank — and the sooner the test-backs arrive.",
-  },
-  {
-    question: "Is my unreleased app safe to share?",
-    answer:
-      "You control exactly what testers see. Share a live link or a closed test (like Google Play closed testing) — testers only access what you give them.",
-  },
-];
-
 const processSteps = [
   {
     title: "Submit",
@@ -385,6 +357,8 @@ export function HomePage() {
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animationFrameId = 0;
     let activeIndex = -2;
+    let previousScrollY = window.scrollY;
+    let isScrollingUp = false;
 
     const setGlowStep = (index: number) => {
       if (activeIndex === index) {
@@ -400,7 +374,7 @@ export function HomePage() {
     const syncGlowStep = () => {
       animationFrameId = 0;
 
-      if (reducedMotionQuery.matches) {
+      if (reducedMotionQuery.matches || isScrollingUp) {
         setGlowStep(-1);
         return;
       }
@@ -434,7 +408,13 @@ export function HomePage() {
       );
     };
 
-    const requestGlowSync = () => {
+    const requestGlowSync = (scrollingUp = false) => {
+      isScrollingUp = scrollingUp;
+
+      if (isScrollingUp) {
+        setGlowStep(-1);
+      }
+
       if (animationFrameId) {
         return;
       }
@@ -442,19 +422,30 @@ export function HomePage() {
       animationFrameId = window.requestAnimationFrame(syncGlowStep);
     };
 
+    const handleScroll = () => {
+      const nextScrollY = window.scrollY;
+      const scrollingUp = nextScrollY < previousScrollY;
+
+      previousScrollY = nextScrollY;
+      requestGlowSync(scrollingUp);
+    };
+
+    const handleResize = () => requestGlowSync(false);
+    const handleReducedMotionChange = () => requestGlowSync(false);
+
     syncGlowStep();
-    window.addEventListener("scroll", requestGlowSync, { passive: true });
-    window.addEventListener("resize", requestGlowSync);
-    reducedMotionQuery.addEventListener("change", requestGlowSync);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+    reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
 
     return () => {
       if (animationFrameId) {
         window.cancelAnimationFrame(animationFrameId);
       }
 
-      window.removeEventListener("scroll", requestGlowSync);
-      window.removeEventListener("resize", requestGlowSync);
-      reducedMotionQuery.removeEventListener("change", requestGlowSync);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      reducedMotionQuery.removeEventListener("change", handleReducedMotionChange);
       setGlowStep(-1);
     };
   }, []);
@@ -666,20 +657,6 @@ export function HomePage() {
                 </div>
                 <h2 className="home-benefit-card__screen-title">{title}</h2>
               </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="home-faq" aria-labelledby="home-faq-title">
-          <div className="home-faq__header">
-            <h2 id="home-faq-title">Frequently asked questions</h2>
-          </div>
-          <div className="home-faq__list">
-            {homeFaqs.map(({ question, answer }) => (
-              <details className="home-faq__item" key={question}>
-                <summary>{question}</summary>
-                <p>{answer}</p>
-              </details>
             ))}
           </div>
         </section>
