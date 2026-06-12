@@ -223,6 +223,7 @@ export function SubmitFlowPage() {
     initialState.aiQuestionSourceKey,
   );
   const hasTrackedSubmitProductNameRef = useRef(false);
+  const hasAppliedStepFourDefaultModeRef = useRef(initialState.currentStep >= 3);
 
 
   useEffect(() => {
@@ -380,6 +381,19 @@ export function SubmitFlowPage() {
       setAiQuestionNotice("");
     }
   }, [aiQuestionStatus, draft.questionMode, hasCurrentAiQuestions]);
+
+  useEffect(() => {
+    if (currentStep !== 3 || hasAppliedStepFourDefaultModeRef.current) {
+      return;
+    }
+
+    hasAppliedStepFourDefaultModeRef.current = true;
+    setDraft((current) =>
+      current.requiresRecording || current.questionMode !== "general"
+        ? current
+        : { ...current, requiresRecording: true },
+    );
+  }, [currentStep]);
 
   const hasResumeData =
     currentStep > 0 ||
