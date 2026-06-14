@@ -625,11 +625,10 @@ export function HomePage() {
 
         <section className="home-quality" aria-labelledby="home-quality-title">
           <div className="home-quality__copy">
-            <h2 id="home-quality-title">Quality Feedback Guaranteed</h2>
+            <h2 id="home-quality-title">1 Test = 1 Credit</h2>
             <p>
-              1 test = 1 credit. Every time you complete a test, someone will test-back your app.
-              The more you test, the more you&apos;ll rank up on Earn and the more feedback
-              you&apos;ll receive.
+              Every time you complete a test, someone will test-back your app. The more you test,
+              the more you&apos;ll rank up and the more feedback you&apos;ll receive.
             </p>
           </div>
 
