@@ -123,7 +123,7 @@ function getGooglePlayClosedTestPoolUserIds(submissions: Submission[]) {
 }
 
 function getReputationScore(reputation: EarnSubmissionReputation | null | undefined) {
-  if (!reputation) {
+  if (!reputation || reputation.ownerHasCompletedTest === false) {
     return null;
   }
 
@@ -1552,7 +1552,8 @@ function EarnRow({
   placementSnapshot: EarnPlacementSnapshot | null;
 }) {
   const { submission, reputation } = card;
-  const showReputation = reputation?.ownerHasTestedYou === true;
+  const showReciprocalTag = reputation?.ownerHasTestedYou === true;
+  const showRateReputation = reputation?.ownerHasCompletedTest === true;
 
   const savePlacementSnapshot = () => {
     if (!placementSnapshot) {
@@ -1570,7 +1571,7 @@ function EarnRow({
       <div className="earn-row__content">
         <div className="earn-row__main">
           <div className="earn-row__pills">
-            {showReputation ? (
+            {showReciprocalTag ? (
               <span className="tag tag--warm earn-row__reciprocal-tag">
                 <span className="earn-row__reciprocal-tag-label">This user tested your app</span>
               </span>
@@ -1613,7 +1614,7 @@ function EarnRow({
         </div>
       </div>
 
-      {showReputation && reputation ? (
+      {showRateReputation && reputation ? (
         <div className="earn-row__footer">
           {reputation.ownerAvatarUrl ? (
             <img
