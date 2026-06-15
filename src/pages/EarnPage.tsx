@@ -1589,11 +1589,6 @@ function EarnRow({
           <div className="earn-row__head">
             <h3>{submission.productName}</h3>
             <p>{submission.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
-            {submission.requiresRecording ? (
-              <p className="earn-row__recording-note">
-                Screen + voice recording required. Record locally during the session, then upload the video after testing.
-              </p>
-            ) : null}
             {submission.needsGooglePlayClosedTesters ? (
               <p className="earn-row__closed-test-note">
                 Google Play closed test: join the Android test and check in once a day for 14 consecutive days.
