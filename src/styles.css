@@ -9560,10 +9560,57 @@ select {
 }
 
 .recording-recovery-upload {
+  padding-top: var(--space-050);
+}
+
+.recording-recovery-upload__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  width: fit-content;
+  color: var(--color-ink-700);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.recording-recovery-upload__summary::-webkit-details-marker {
+  display: none;
+}
+
+.recording-recovery-upload__summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.recording-recovery-upload[open] .recording-recovery-upload__summary::after {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+
+.recording-recovery-upload__summary:hover {
+  color: var(--color-ink-900);
+}
+
+.recording-recovery-upload__summary:focus-visible {
+  outline: 3px solid rgba(245, 142, 86, 0.24);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.recording-recovery-upload__body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr);
   gap: var(--space-200);
   align-items: center;
+  margin-top: var(--space-150);
   padding: var(--space-200) var(--space-250);
   border-radius: 18px;
   border: 1px solid rgba(221, 212, 204, 0.9);
@@ -10013,7 +10060,7 @@ select {
     flex-direction: column;
   }
 
-  .recording-recovery-upload {
+  .recording-recovery-upload__body {
     grid-template-columns: 1fr;
   }
 
