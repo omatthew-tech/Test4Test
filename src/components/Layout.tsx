@@ -114,6 +114,7 @@ export function AppShell({
   variant = "default",
   headerVariant = variant,
   hideMemberChrome = false,
+  hideSiteHeader = false,
   showAudienceToggle = false,
   audienceRole = "Founder",
   onAudienceRoleChange,
@@ -126,6 +127,7 @@ export function AppShell({
   variant?: "default" | "marketing";
   headerVariant?: "default" | "marketing";
   hideMemberChrome?: boolean;
+  hideSiteHeader?: boolean;
   showAudienceToggle?: boolean;
   audienceRole?: AudienceRole;
   onAudienceRoleChange?: (role: AudienceRole) => void;
@@ -146,80 +148,82 @@ export function AppShell({
 
   return (
     <div className={shellClassName}>
-      <div className={siteHeaderClassName}>
-        <header className={topbarClassName}>
-          <NavLink to="/" className="brandmark" aria-label="Test4Test home">
-            <img
-              src={brandLogoPath}
-              alt=""
-              className="brandmark__image"
-              loading="eager"
-              decoding="sync"
-              fetchPriority="high"
-            />
-            <span className="brandmark__wordmark">Test4Test</span>
-          </NavLink>
+      {hideSiteHeader ? null : (
+        <div className={siteHeaderClassName}>
+          <header className={topbarClassName}>
+            <NavLink to="/" className="brandmark" aria-label="Test4Test home">
+              <img
+                src={brandLogoPath}
+                alt=""
+                className="brandmark__image"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
+              />
+              <span className="brandmark__wordmark">Test4Test</span>
+            </NavLink>
 
-          {shouldShowAudienceToggle ? (
-            <HeaderAudienceToggle
-              audienceRole={audienceRole}
-              onAudienceRoleChange={onAudienceRoleChange}
-            />
-          ) : null}
+            {shouldShowAudienceToggle ? (
+              <HeaderAudienceToggle
+                audienceRole={audienceRole}
+                onAudienceRoleChange={onAudienceRoleChange}
+              />
+            ) : null}
 
-          {showMemberNav ? (
-            <nav
-              id={mobileMenuId}
-              className={`topnav${isMobileMenuOpen ? " topnav--open" : ""}`}
-              aria-label="Primary navigation"
-            >
-              {navItems.map(({ to, label, mobileLabel }) => (
+            {showMemberNav ? (
+              <nav
+                id={mobileMenuId}
+                className={`topnav${isMobileMenuOpen ? " topnav--open" : ""}`}
+                aria-label="Primary navigation"
+              >
+                {navItems.map(({ to, label, mobileLabel }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      `topnav__link${isActive ? " topnav__link--active" : ""}`
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="topnav__label topnav__label--desktop">{label}</span>
+                    <span className="topnav__label topnav__label--mobile">{mobileLabel}</span>
+                  </NavLink>
+                ))}
                 <NavLink
-                  key={to}
-                  to={to}
+                  to={profileHref}
                   className={({ isActive }) =>
-                    `topnav__link${isActive ? " topnav__link--active" : ""}`
+                    `topnav__link topnav__profile-link${isActive ? " topnav__link--active" : ""}`
                   }
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className="topnav__label topnav__label--desktop">{label}</span>
-                  <span className="topnav__label topnav__label--mobile">{mobileLabel}</span>
+                  <span className="topnav__label topnav__label--desktop">Profile</span>
+                  <span className="topnav__label topnav__label--mobile">Profile</span>
                 </NavLink>
-              ))}
-              <NavLink
-                to={profileHref}
-                className={({ isActive }) =>
-                  `topnav__link topnav__profile-link${isActive ? " topnav__link--active" : ""}`
-                }
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <span className="topnav__label topnav__label--desktop">Profile</span>
-                <span className="topnav__label topnav__label--mobile">Profile</span>
-              </NavLink>
-            </nav>
-          ) : null}
+              </nav>
+            ) : null}
 
-          {showTopbarActions ? (
-            <div className="topbar__actions">
-              <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
-                {currentUser ? "Profile" : "Log in"}
-              </NavLink>
-              {showMemberNav ? (
-                <button
-                  type="button"
-                  className="mobile-menu-button"
-                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-                  aria-expanded={isMobileMenuOpen}
-                  aria-controls={mobileMenuId}
-                  onClick={() => setIsMobileMenuOpen((current) => !current)}
-                >
-                  {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </header>
-      </div>
+            {showTopbarActions ? (
+              <div className="topbar__actions">
+                <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
+                  {currentUser ? "Profile" : "Log in"}
+                </NavLink>
+                {showMemberNav ? (
+                  <button
+                    type="button"
+                    className="mobile-menu-button"
+                    aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls={mobileMenuId}
+                    onClick={() => setIsMobileMenuOpen((current) => !current)}
+                  >
+                    {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </header>
+        </div>
+      )}
 
       <main className={pageShellClassName}>
         {title || description || actions ? (

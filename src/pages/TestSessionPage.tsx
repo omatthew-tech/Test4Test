@@ -2450,20 +2450,23 @@ export function TestSessionPage() {
     nativeRecoveryUploadEnabled &&
     !uploadedRecording &&
     !nativeRecordingBlob;
-  const testSessionHeaderCopy = isRecordingTest
-    ? isNativeDesktopRecording
-      ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
-      : ""
-    : isPublicTester
-      ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
-      : "";
+  const testSessionHeaderCopy = isSharedPublicVisit
+    ? ""
+    : isRecordingTest
+      ? isNativeDesktopRecording
+        ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
+        : ""
+      : isPublicTester
+        ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
+        : "";
   const testSessionTitle = isSharedPublicVisit
     ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
     : `Test ${submission.productName}`;
   const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
+  const shouldShowBackToTests = !isSharedPublicVisit;
 
   return (
-    <AppShell eyebrowLabel={null}>
+    <AppShell eyebrowLabel={null} hideSiteHeader={isSharedPublicVisit}>
       <div className="test-layout test-layout--single">
         <div className="test-session__header">
           <h1>{testSessionTitle}</h1>
@@ -2770,9 +2773,11 @@ export function TestSessionPage() {
                     >
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </button>
-                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                      {backToTestsLabel}
-                    </button>
+                    {shouldShowBackToTests ? (
+                      <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                        {backToTestsLabel}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -3041,9 +3046,11 @@ export function TestSessionPage() {
 
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
                 {isRecordingTest && !hasQuestions ? (
-                  <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
-                    {backToTestsLabel}
-                  </button>
+                  shouldShowBackToTests ? (
+                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                      {backToTestsLabel}
+                    </button>
+                  ) : null
                 ) : (
                   <div className="test-session__progress">
                     <strong>{progressLabel}</strong>
@@ -3056,11 +3063,11 @@ export function TestSessionPage() {
                   </div>
                 )}
                 <div className="inline-actions">
-                  {isRecordingTest && !hasQuestions ? null : (
+                  {shouldShowBackToTests && !(isRecordingTest && !hasQuestions) ? (
                     <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
                       {backToTestsLabel}
                     </button>
-                  )}
+                  ) : null}
                   <button type="button" className="button button--primary" onClick={() => void submit()} disabled={submitDisabled}>
                     Submit test
                   </button>
