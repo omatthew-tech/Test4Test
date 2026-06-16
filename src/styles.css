@@ -5591,6 +5591,41 @@ body {
   line-height: 1.25;
 }
 
+.share-test-message-label {
+  color: var(--color-ink-700);
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.share-test-message-label span {
+  color: var(--color-ink-500);
+  font-weight: 400;
+}
+
+.share-test-message-input {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  border: 1px solid rgba(216, 208, 200, 0.92);
+  border-radius: 12px;
+  background: rgba(246, 242, 238, 0.64);
+  color: var(--color-ink-900);
+  font: inherit;
+  line-height: 1.5;
+  padding: var(--space-150) var(--space-200);
+}
+
+.share-test-message-input:focus {
+  outline: none;
+  border-color: rgba(245, 142, 86, 0.65);
+  box-shadow: 0 0 0 2px rgba(245, 142, 86, 0.12);
+}
+
+.share-test-message-input::placeholder {
+  color: var(--color-ink-500);
+}
+
 .share-test-modal__copy p {
   margin: 0;
   color: var(--color-ink-700);
@@ -5602,6 +5637,12 @@ body {
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1;
+}
+
+.share-test-preview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
 }
 
 .share-test-page-preview {

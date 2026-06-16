@@ -1745,6 +1745,25 @@ export function TestSessionPage() {
     navigate("/earn");
   };
 
+  const navigateAfterSuccessfulSubmit = (creditAwarded: boolean) => {
+    if (!currentUser) {
+      navigate(`/test/${submission?.id ?? submissionId}/success?shared=1`);
+      return;
+    }
+
+    returnToTestSessionWindow();
+    closeRecordingPipWindow();
+    navigate("/earn", {
+      replace: true,
+      state: creditAwarded
+        ? {
+            kind: "earned-credit",
+            placementSnapshot: consumeEarnPlacementSnapshot(),
+          }
+        : undefined,
+    });
+  };
+
   useEffect(() => {
     if (!draftIdentity || !questionSet) {
       setLoadedDraftKey("");
@@ -2090,17 +2109,7 @@ export function TestSessionPage() {
         if (currentUser) {
           await clearTestResponseDraft(currentUser.id, submission.id);
         }
-        if (currentUser && result.creditAwarded) {
-          navigate("/earn", {
-            replace: true,
-            state: {
-              kind: "earned-credit",
-              placementSnapshot: consumeEarnPlacementSnapshot(),
-            },
-          });
-        } else {
-          navigate(`/test/${submission.id}/success${currentUser ? "" : "?shared=1"}`);
-        }
+        navigateAfterSuccessfulSubmit(result.creditAwarded);
       }
     } finally {
       setIsSubmitting(false);

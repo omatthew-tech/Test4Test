@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, Copy, ExternalLink, Mic, X } from "lucide-react";
 import { Surface } from "./Layout";
 import { getOrderedAccessLinks } from "../lib/format";
@@ -25,6 +26,8 @@ export function ShareTestModal({
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
   const sharedTestTitle = `Congrats! You've been selected to try ${submission.productName}`;
+  const [customMessage, setCustomMessage] = useState("");
+  const previewTitle = customMessage.trim() ? customMessage.trim() : sharedTestTitle;
 
   return (
     <div className="results-modal-backdrop" role="presentation" onClick={onClose}>
@@ -63,96 +66,107 @@ export function ShareTestModal({
         </div>
 
         <div className="share-test-modal__copy">
-          <h3>Share your test with anyone!</h3>
-          <p>No sign ups required. Simply share this link, look out for email notifications and review test results.</p>
+          <label className="share-test-message-label" htmlFor="share-test-message-input">
+            Add a custom message <span>(optional)</span>
+          </label>
+          <textarea
+            id="share-test-message-input"
+            className="share-test-message-input"
+            value={customMessage}
+            onChange={(event) => setCustomMessage(event.target.value)}
+            placeholder={sharedTestTitle}
+            rows={2}
+          />
         </div>
 
-        <div className="share-test-preview-label">preview</div>
-        <div className="share-test-page-preview" aria-label="Shared test preview">
-          <div className="test-layout test-layout--single share-test-page-preview__layout">
-            <div className="test-session__header">
-              <h1>{sharedTestTitle}</h1>
-            </div>
-
-            <Surface className="test-questions test-questions--full">
-              <div className="test-session__intro-card">
-                <div className="test-session__resource">
-                  <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
-                  {accessLinks.length > 0 ? (
-                    <div className="test-session__link-list">
-                      {accessLinks.map((link) => (
-                        <div key={link.productType} className="test-session__link share-test-page-preview__link">
-                          <span className="test-session__link-label">{link.label}</span>
-                          <span>{link.displayUrl}</span>
-                          <ExternalLink size={15} aria-hidden="true" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p>No public app links were provided for this test.</p>
-                  )}
-                </div>
-
-                <div className="test-session__resource">
-                  <span className="test-session__label">Tester instructions</span>
-                  <p>{testerInstructions}</p>
-                </div>
+        <div className="share-test-preview-stack">
+          <div className="share-test-preview-label">Preview</div>
+          <div className="share-test-page-preview" aria-label="Shared test preview">
+            <div className="test-layout test-layout--single share-test-page-preview__layout">
+              <div className="test-session__header">
+                <h1>{previewTitle}</h1>
               </div>
 
-              {submission.requiresRecording ? (
-                <div className="callout callout--soft recording-test-callout share-test-page-preview__recording-callout">
-                  <div className="recording-test-callout__copy">
-                    <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
-                    <strong>This session needs a screen and voice recording.</strong>
-                    <p>Open the app, think out loud, and upload the recording with your feedback.</p>
-                  </div>
-                  <Mic size={20} aria-hidden="true" />
-                </div>
-              ) : null}
-
-              {previewQuestions.length > 0 ? (
-                <div className="question-list test-session__questions">
-                  {previewQuestions.map((question) => (
-                    <article key={question.id} className="question-card question-card--spacious">
-                      <div className="test-session__question-body">
-                        <h3>{question.sortOrder}. {question.title}</h3>
-                        {question.type === "multiple" ? (
-                          <div className="radio-list" aria-hidden="true">
-                            {(question.options ?? []).map((option) => (
-                              <label key={option} className="radio-card">
-                                <input
-                                  className="radio-card__control"
-                                  type="radio"
-                                  name={`preview-${question.id}`}
-                                  tabIndex={-1}
-                                  disabled
-                                />
-                                <span>{option}</span>
-                              </label>
-                            ))}
+              <Surface className="test-questions test-questions--full">
+                <div className="test-session__intro-card">
+                  <div className="test-session__resource">
+                    <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+                    {accessLinks.length > 0 ? (
+                      <div className="test-session__link-list">
+                        {accessLinks.map((link) => (
+                          <div key={link.productType} className="test-session__link share-test-page-preview__link">
+                            <span className="test-session__link-label">{link.label}</span>
+                            <span>{link.displayUrl}</span>
+                            <ExternalLink size={15} aria-hidden="true" />
                           </div>
-                        ) : (
-                          <label className="field">
-                            <textarea
-                              rows={5}
-                              tabIndex={-1}
-                              disabled
-                              placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
-                            />
-                            <small className="helper-text">0 / 40 recommended minimum characters</small>
-                          </label>
-                        )}
+                        ))}
                       </div>
-                    </article>
-                  ))}
+                    ) : (
+                      <p>No public app links were provided for this test.</p>
+                    )}
+                  </div>
+
+                  <div className="test-session__resource">
+                    <span className="test-session__label">Tester instructions</span>
+                    <p>{testerInstructions}</p>
+                  </div>
                 </div>
-              ) : submission.requiresRecording ? (
-                <div className="recording-questionless-note">
-                  <strong>No written questionnaire for this test.</strong>
-                  <p>Once the recording is ready, you can submit this test from the footer below.</p>
-                </div>
-              ) : null}
-            </Surface>
+
+                {submission.requiresRecording ? (
+                  <div className="callout callout--soft recording-test-callout share-test-page-preview__recording-callout">
+                    <div className="recording-test-callout__copy">
+                      <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                      <strong>This session needs a screen and voice recording.</strong>
+                      <p>Open the app, think out loud, and upload the recording with your feedback.</p>
+                    </div>
+                    <Mic size={20} aria-hidden="true" />
+                  </div>
+                ) : null}
+
+                {previewQuestions.length > 0 ? (
+                  <div className="question-list test-session__questions">
+                    {previewQuestions.map((question) => (
+                      <article key={question.id} className="question-card question-card--spacious">
+                        <div className="test-session__question-body">
+                          <h3>{question.sortOrder}. {question.title}</h3>
+                          {question.type === "multiple" ? (
+                            <div className="radio-list" aria-hidden="true">
+                              {(question.options ?? []).map((option) => (
+                                <label key={option} className="radio-card">
+                                  <input
+                                    className="radio-card__control"
+                                    type="radio"
+                                    name={`preview-${question.id}`}
+                                    tabIndex={-1}
+                                    disabled
+                                  />
+                                  <span>{option}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <label className="field">
+                              <textarea
+                                rows={5}
+                                tabIndex={-1}
+                                disabled
+                                placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
+                              />
+                              <small className="helper-text">0 / 40 recommended minimum characters</small>
+                            </label>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : submission.requiresRecording ? (
+                  <div className="recording-questionless-note">
+                    <strong>No written questionnaire for this test.</strong>
+                    <p>Once the recording is ready, you can submit this test from the footer below.</p>
+                  </div>
+                ) : null}
+              </Surface>
+            </div>
           </div>
         </div>
       </div>
