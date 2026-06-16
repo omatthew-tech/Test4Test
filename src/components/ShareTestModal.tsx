@@ -28,6 +28,10 @@ export function ShareTestModal({
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
   const sharedTestTitle = `Congrats! You've been selected to try ${submission.productName}`;
+  const isResettableCustomMessage = (value: string) => {
+    const trimmedValue = value.trim();
+    return trimmedValue.length > 0 && trimmedValue !== sharedTestTitle;
+  };
   const [customMessage, setCustomMessage] = useState(() => submission.publicShareMessage ?? "");
   const [savedShareUrl, setSavedShareUrl] = useState("");
   const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -36,6 +40,8 @@ export function ShareTestModal({
   const previewTitle = customMessage.trim() ? customMessage.trim() : sharedTestTitle;
   const visibleShareUrl = savedShareUrl || shareUrl;
   const isCopying = copyStatus === "Copying...";
+  const hasResettableCustomMessage = isResettableCustomMessage(customMessage);
+  const shouldShowResetButton = hasResettableCustomMessage && messageSaveStatus === "idle";
   const messageSaveStatusLabel =
     messageSaveStatus === "saving"
       ? "Saving..."
@@ -67,7 +73,7 @@ export function ShareTestModal({
 
         lastSavedMessageRef.current = customMessage;
         setSavedShareUrl(nextShareUrl);
-        setMessageSaveStatus("saved");
+        setMessageSaveStatus(isResettableCustomMessage(customMessage) ? "saved" : "idle");
       });
     }, 650);
 
@@ -80,8 +86,12 @@ export function ShareTestModal({
     if (nextShareUrl) {
       lastSavedMessageRef.current = customMessage;
       setSavedShareUrl(nextShareUrl);
-      setMessageSaveStatus("saved");
+      setMessageSaveStatus(isResettableCustomMessage(customMessage) ? "saved" : "idle");
     }
+  };
+
+  const handleResetCustomMessage = () => {
+    setCustomMessage("");
   };
 
   return (
@@ -130,7 +140,15 @@ export function ShareTestModal({
             <label className="share-test-message-label" htmlFor="share-test-message-input">
               Add a custom message <span>(optional)</span>
             </label>
-            {messageSaveStatusLabel ? (
+            {shouldShowResetButton ? (
+              <button
+                type="button"
+                className="share-test-reset-button"
+                onClick={handleResetCustomMessage}
+              >
+                Reset
+              </button>
+            ) : messageSaveStatusLabel ? (
               <span
                 className={`share-test-save-status share-test-save-status--${messageSaveStatus}`}
                 role="status"

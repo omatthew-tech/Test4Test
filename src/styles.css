@@ -5630,6 +5630,24 @@ body {
   color: var(--color-error);
 }
 
+.share-test-reset-button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--color-orange-500);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 0;
+}
+
+.share-test-reset-button:hover,
+.share-test-reset-button:focus-visible {
+  color: var(--color-ink-900);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .share-test-message-input {
   width: 100%;
   min-height: 78px;
