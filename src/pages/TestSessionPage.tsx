@@ -406,7 +406,7 @@ function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRec
 }
 
 export function TestSessionPage() {
-  const { submissionId = "" } = useParams();
+  const { submissionId: testRef = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const {
@@ -417,8 +417,16 @@ export function TestSessionPage() {
     recordGooglePlayClosedTestCheckIn,
   } = useAppState();
   const isPublicTester = !currentUser;
-  const isSharedPublicVisit = isPublicTester && searchParams.get("shared") === "1";
-  const initialRecordingSessionRef = useRef(loadRecordingTestSession(submissionId));
+  const submissionById = state.submissions.find((item) => item.id === testRef) ?? null;
+  const submissionBySlug = state.submissions.find((item) => item.publicShareSlug === testRef) ?? null;
+  const submission = submissionById ?? submissionBySlug;
+  const resolvedSubmissionId = submission?.id ?? testRef;
+  const isSlugSharedVisit = Boolean(submissionBySlug && !submissionById);
+  const isSharedPublicVisit =
+    isPublicTester && (isSlugSharedVisit || searchParams.get("shared") === "1");
+  const sharedCustomMessage =
+    submission?.publicShareMessage?.trim() || searchParams.get("message")?.trim() || "";
+  const initialRecordingSessionRef = useRef(loadRecordingTestSession(testRef));
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
   const microphoneAudioContextRef = useRef<AudioContext | null>(null);
@@ -436,7 +444,6 @@ export function TestSessionPage() {
   const draftSaveSequenceRef = useRef(0);
   const draftServerUnavailableRef = useRef(false);
   const draftEditedKeyRef = useRef("");
-  const submission = state.submissions.find((item) => item.id === submissionId);
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
   const activeSubmissionVersion = submission ? getActiveSubmissionVersion(state, submission.id) : null;
   const accessLinks = useMemo(
@@ -444,6 +451,10 @@ export function TestSessionPage() {
     [submission],
   );
   const isRecordingTest = submission?.requiresRecording === true;
+  const recordingSessionStorageIds = useMemo(
+    () => Array.from(new Set([resolvedSubmissionId, testRef].filter(Boolean))),
+    [resolvedSubmissionId, testRef],
+  );
   const defaultProductType = accessLinks.length === 1 ? accessLinks[0].productType : null;
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -1747,7 +1758,7 @@ export function TestSessionPage() {
 
   const navigateAfterSuccessfulSubmit = (creditAwarded: boolean) => {
     if (!currentUser) {
-      navigate(`/test/${submission?.id ?? submissionId}/success?shared=1`);
+      navigate(`/test/${submission?.id ?? resolvedSubmissionId}/success?shared=1`);
       return;
     }
 
@@ -1873,7 +1884,7 @@ export function TestSessionPage() {
 
   useEffect(() => {
     if (!isRecordingTest) {
-      clearRecordingTestSession(submissionId);
+      recordingSessionStorageIds.forEach(clearRecordingTestSession);
       return;
     }
 
@@ -1883,13 +1894,15 @@ export function TestSessionPage() {
         : null
       : null;
 
-    saveRecordingTestSession({
-      submissionId,
-      sessionId: recordingSessionId,
-      phase: recordingPhase,
-      chosenProductType: validChosenProductType,
-      confirmedRecording,
-      recording: uploadedRecording,
+    recordingSessionStorageIds.forEach((storageSubmissionId) => {
+      saveRecordingTestSession({
+        submissionId: storageSubmissionId,
+        sessionId: recordingSessionId,
+        phase: recordingPhase,
+        chosenProductType: validChosenProductType,
+        confirmedRecording,
+        recording: uploadedRecording,
+      });
     });
   }, [
     accessLinks,
@@ -1897,8 +1910,8 @@ export function TestSessionPage() {
     isRecordingTest,
     recordingPhase,
     recordingSessionId,
+    recordingSessionStorageIds,
     selectedProductType,
-    submissionId,
     uploadedRecording,
   ]);
 
@@ -2104,7 +2117,7 @@ export function TestSessionPage() {
       setMessage(result.message);
       if (result.ok) {
         if (isRecordingTest) {
-          clearRecordingTestSession(submission.id);
+          recordingSessionStorageIds.forEach(clearRecordingTestSession);
         }
         if (currentUser) {
           await clearTestResponseDraft(currentUser.id, submission.id);
@@ -2445,7 +2458,7 @@ export function TestSessionPage() {
       ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
       : "";
   const testSessionTitle = isSharedPublicVisit
-    ? `Congrats! You've been selected to try ${submission.productName}`
+    ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
     : `Test ${submission.productName}`;
   const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
 

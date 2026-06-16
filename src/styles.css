@@ -5591,6 +5591,14 @@ body {
   line-height: 1.25;
 }
 
+.share-test-message-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-150);
+}
+
 .share-test-message-label {
   color: var(--color-ink-700);
   font-size: 0.94rem;
@@ -5601,6 +5609,25 @@ body {
 .share-test-message-label span {
   color: var(--color-ink-500);
   font-weight: 400;
+}
+
+.share-test-save-status {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-050);
+  color: var(--color-ink-500);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.share-test-save-status--saved {
+  color: var(--color-success);
+}
+
+.share-test-save-status--error {
+  color: var(--color-error);
 }
 
 .share-test-message-input {

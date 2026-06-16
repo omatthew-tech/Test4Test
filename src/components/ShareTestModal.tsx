@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, Mic, X } from "lucide-react";
 import { Surface } from "./Layout";
 import { getOrderedAccessLinks } from "../lib/format";
@@ -10,13 +10,15 @@ export function ShareTestModal({
   shareUrl,
   copyStatus,
   onCopy,
+  onSaveMessage,
   onClose,
 }: {
   submission: Submission;
   questionSet: QuestionSetVersion | null;
   shareUrl: string;
   copyStatus: string;
-  onCopy: () => void;
+  onCopy: (customMessage: string) => Promise<string | null | undefined>;
+  onSaveMessage: (customMessage: string) => Promise<string | null | undefined>;
   onClose: () => void;
 }) {
   const accessLinks = getOrderedAccessLinks(submission.accessLinks, submission.productTypes);
@@ -26,8 +28,61 @@ export function ShareTestModal({
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
   const sharedTestTitle = `Congrats! You've been selected to try ${submission.productName}`;
-  const [customMessage, setCustomMessage] = useState("");
+  const [customMessage, setCustomMessage] = useState(() => submission.publicShareMessage ?? "");
+  const [savedShareUrl, setSavedShareUrl] = useState("");
+  const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const lastSavedMessageRef = useRef(submission.publicShareMessage ?? "");
+  const saveSequenceRef = useRef(0);
   const previewTitle = customMessage.trim() ? customMessage.trim() : sharedTestTitle;
+  const visibleShareUrl = savedShareUrl || shareUrl;
+  const isCopying = copyStatus === "Copying...";
+  const messageSaveStatusLabel =
+    messageSaveStatus === "saving"
+      ? "Saving..."
+      : messageSaveStatus === "saved"
+        ? "Saved"
+        : messageSaveStatus === "error"
+          ? "Could not save"
+          : "";
+
+  useEffect(() => {
+    if (customMessage === lastSavedMessageRef.current) {
+      return undefined;
+    }
+
+    const saveSequence = saveSequenceRef.current + 1;
+    saveSequenceRef.current = saveSequence;
+    setMessageSaveStatus("saving");
+
+    const timeoutId = window.setTimeout(() => {
+      void onSaveMessage(customMessage).then((nextShareUrl) => {
+        if (saveSequenceRef.current !== saveSequence) {
+          return;
+        }
+
+        if (!nextShareUrl) {
+          setMessageSaveStatus("error");
+          return;
+        }
+
+        lastSavedMessageRef.current = customMessage;
+        setSavedShareUrl(nextShareUrl);
+        setMessageSaveStatus("saved");
+      });
+    }, 650);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [customMessage, onSaveMessage]);
+
+  const handleCopy = async () => {
+    const nextShareUrl = await onCopy(customMessage);
+
+    if (nextShareUrl) {
+      lastSavedMessageRef.current = customMessage;
+      setSavedShareUrl(nextShareUrl);
+      setMessageSaveStatus("saved");
+    }
+  };
 
   return (
     <div className="results-modal-backdrop" role="presentation" onClick={onClose}>
@@ -54,21 +109,40 @@ export function ShareTestModal({
 
         <div className="share-test-link-row">
           <input
-            value={shareUrl}
+            value={visibleShareUrl}
             readOnly
             aria-label="Share test link"
             onFocus={(event) => event.currentTarget.select()}
           />
-          <button type="button" className="button button--secondary" onClick={onCopy}>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => void handleCopy()}
+            disabled={isCopying}
+          >
             {copyStatus === "Copied" ? <Check size={16} /> : <Copy size={16} />}
             {copyStatus || "Copy link"}
           </button>
         </div>
 
         <div className="share-test-modal__copy">
-          <label className="share-test-message-label" htmlFor="share-test-message-input">
-            Add a custom message <span>(optional)</span>
-          </label>
+          <div className="share-test-message-header">
+            <label className="share-test-message-label" htmlFor="share-test-message-input">
+              Add a custom message <span>(optional)</span>
+            </label>
+            {messageSaveStatusLabel ? (
+              <span
+                className={`share-test-save-status share-test-save-status--${messageSaveStatus}`}
+                role="status"
+                aria-live="polite"
+              >
+                {messageSaveStatusLabel}
+                {messageSaveStatus === "saved" ? (
+                  <Check size={14} strokeWidth={2.4} aria-hidden="true" />
+                ) : null}
+              </span>
+            ) : null}
+          </div>
           <textarea
             id="share-test-message-input"
             className="share-test-message-input"

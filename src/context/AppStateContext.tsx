@@ -75,6 +75,8 @@ interface SubmissionRow {
   access_method: string;
   requires_recording?: boolean | null;
   needs_google_play_closed_testers?: boolean | null;
+  public_share_slug?: string | null;
+  public_share_message?: string | null;
   status: Submission["status"];
   question_mode: Submission["questionMode"];
   is_open_for_more_tests: boolean;
@@ -181,6 +183,11 @@ interface SubmissionRpcResult {
   creditAwarded?: boolean;
 }
 
+interface ShareLinkRpcResult {
+  slug?: string;
+  message?: string | null;
+}
+
 interface GooglePlayClosedTestActionResult {
   ok: boolean;
   message: string;
@@ -199,6 +206,10 @@ interface AppStateContextValue {
   updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
   createSubmissionVersion: (submissionId: string, title: string, description: string) => Promise<string>;
   deleteSubmissionVersion: (submissionId: string, versionId: string) => Promise<string>;
+  upsertSubmissionShareLink: (
+    submissionId: string,
+    customMessage: string,
+  ) => Promise<{ slug: string; message: string | null }>;
   completeTest: (
     submissionId: string,
     answers: TestAnswer[],
@@ -417,6 +428,8 @@ function mapSubmission(row: SubmissionRow): Submission {
     accessLinks,
     requiresRecording: row.requires_recording === true,
     needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
+    publicShareSlug: row.public_share_slug ?? null,
+    publicShareMessage: row.public_share_message ?? null,
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
@@ -662,6 +675,8 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
     normalized.includes('column "needs_google_play_closed_testers" of relation "submissions" does not exist') ||
     normalized.includes('column "google_play_closed_test_instructions" of relation "submissions" does not exist') ||
+    normalized.includes('column "public_share_slug" of relation "submissions" does not exist') ||
+    normalized.includes('column "public_share_message" of relation "submissions" does not exist') ||
     normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
     normalized.includes('column "public_tester_key" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
@@ -676,6 +691,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('update_question_set') ||
     normalized.includes('submit_test_response') ||
     normalized.includes('submit_public_test_response') ||
+    normalized.includes('upsert_submission_share_link') ||
     normalized.includes('list_earn_submissions') ||
     normalized.includes('start_google_play_closed_test_participation') ||
     normalized.includes('record_google_play_closed_test_check_in') ||
@@ -1162,6 +1178,39 @@ async function persistDeleteSubmissionVersion(
 
   return data;
 }
+
+async function persistSubmissionShareLink(
+  submissionId: string,
+  customMessage: string,
+) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before sharing your test.",
+  );
+  const { data, error } = await supabase.rpc("upsert_submission_share_link", {
+    p_submission_id: submissionId,
+    p_custom_message: customMessage,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  const result = (data ?? {}) as ShareLinkRpcResult;
+  const slug = typeof result.slug === "string" ? result.slug.trim() : "";
+
+  if (!slug) {
+    throw new Error("The share link could not be created.");
+  }
+
+  return {
+    slug,
+    message: typeof result.message === "string" ? result.message : null,
+  };
+}
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     ...emptyState,
@@ -1527,6 +1576,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const nextVersionId = await persistDeleteSubmissionVersion(submissionId, versionId);
         await refreshState();
         return nextVersionId;
+      },
+      async upsertSubmissionShareLink(submissionId, customMessage) {
+        const shareLink = await persistSubmissionShareLink(submissionId, customMessage);
+        await refreshState();
+        return shareLink;
       },
       async completeTest(submissionId, answers, durationSeconds, recording, questionSetVersionId, submissionVersionId) {
         if (!currentUser) {

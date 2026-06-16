@@ -29,6 +29,7 @@ import {
   productTypesBadges,
 } from "../lib/format";
 import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors";
+import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { loadMySubmissionReportStatuses } from "../lib/testReports";
 import { loadTestResponseDraft } from "../lib/testResponseDrafts";
@@ -300,14 +301,6 @@ function formatSelectedPlatformSummary(productTypes: ProductType[]) {
   return normalized.map(earnPlatformLabel).join(", ");
 }
 
-function buildShareUrl(submissionId: string) {
-  if (typeof window === "undefined") {
-    return `/test/${submissionId}?shared=1`;
-  }
-
-  return `${window.location.origin}/test/${submissionId}?shared=1`;
-}
-
 async function copyTextToClipboard(value: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -349,7 +342,14 @@ function canReviseSubmittedFeedback(card: SubmittedFeedbackCard) {
 }
 
 export function EarnPage() {
-  const { state, currentUser, isConfigured, listEarnSubmissions, updateSubmissionDetails } = useAppState();
+  const {
+    state,
+    currentUser,
+    isConfigured,
+    listEarnSubmissions,
+    updateSubmissionDetails,
+    upsertSubmissionShareLink,
+  } = useAppState();
   const location = useLocation();
   const navigate = useNavigate();
   const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -426,7 +426,7 @@ export function EarnPage() {
     ? getActiveQuestionSet(state, sharingVisibilitySubmission.id)
     : null;
   const sharingVisibilityUrl = sharingVisibilitySubmission
-    ? buildShareUrl(sharingVisibilitySubmission.id)
+    ? buildReadableShareUrl(sharingVisibilitySubmission)
     : "";
 
   useEffect(() => {
@@ -962,13 +962,37 @@ export function EarnPage() {
     setVisibilityShareCopyStatus("");
   };
 
-  const copyVisibilityShareUrl = async () => {
-    if (!sharingVisibilityUrl) {
-      return;
+  const saveVisibilityShareMessage = async (customMessage: string) => {
+    if (!sharingVisibilitySubmission) {
+      return null;
     }
 
-    const copied = await copyTextToClipboard(sharingVisibilityUrl);
-    setVisibilityShareCopyStatus(copied ? "Copied" : "Copy failed");
+    try {
+      const { slug } = await upsertSubmissionShareLink(sharingVisibilitySubmission.id, customMessage);
+      return buildShareUrlFromSlug(slug);
+    } catch {
+      return null;
+    }
+  };
+
+  const copyVisibilityShareUrl = async (customMessage: string) => {
+    setVisibilityShareCopyStatus("Copying...");
+
+    try {
+      const shareUrlToCopy = await saveVisibilityShareMessage(customMessage);
+
+      if (!shareUrlToCopy) {
+        setVisibilityShareCopyStatus("Copy failed");
+        return null;
+      }
+
+      const copied = await copyTextToClipboard(shareUrlToCopy);
+      setVisibilityShareCopyStatus(copied ? "Copied" : "Copy failed");
+      return copied ? shareUrlToCopy : null;
+    } catch {
+      setVisibilityShareCopyStatus("Copy failed");
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -1158,7 +1182,8 @@ export function EarnPage() {
           questionSet={sharingVisibilityQuestionSet}
           shareUrl={sharingVisibilityUrl}
           copyStatus={visibilityShareCopyStatus}
-          onCopy={() => void copyVisibilityShareUrl()}
+          onCopy={copyVisibilityShareUrl}
+          onSaveMessage={saveVisibilityShareMessage}
           onClose={closeVisibilityShareModal}
         />
       ) : null}

@@ -104,6 +104,8 @@ export interface Submission {
   accessLinks: AccessLinks;
   requiresRecording: boolean;
   needsGooglePlayClosedTesters: boolean;
+  publicShareSlug?: string | null;
+  publicShareMessage?: string | null;
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;

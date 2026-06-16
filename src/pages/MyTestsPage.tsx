@@ -7,6 +7,7 @@ import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { formatDate } from "../lib/format";
 import { getActiveQuestionSet, getMySubmissions } from "../lib/selectors";
+import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
 import { Submission, SubmissionStatus } from "../types";
 
 function submissionStatusLabel(status: SubmissionStatus) {
@@ -22,14 +23,6 @@ function submissionStatusLabel(status: SubmissionStatus) {
     default:
       return "Draft";
   }
-}
-
-function buildShareUrl(submissionId: string) {
-  if (typeof window === "undefined") {
-    return `/test/${submissionId}?shared=1`;
-  }
-
-  return `${window.location.origin}/test/${submissionId}?shared=1`;
 }
 
 async function copyTextToClipboard(value: string) {
@@ -58,7 +51,7 @@ async function copyTextToClipboard(value: string) {
 }
 
 export function MyTestsPage() {
-  const { state, updateSubmissionDetails } = useAppState();
+  const { state, updateSubmissionDetails, upsertSubmissionShareLink } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
   const submissions = getMySubmissions(state);
   const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
@@ -76,7 +69,7 @@ export function MyTestsPage() {
   const sharingQuestionSet = sharingSubmission
     ? getActiveQuestionSet(state, sharingSubmission.id)
     : null;
-  const sharingUrl = sharingSubmission ? buildShareUrl(sharingSubmission.id) : "";
+  const sharingUrl = sharingSubmission ? buildReadableShareUrl(sharingSubmission) : "";
   const editSubmissionId = searchParams.get("edit");
   const searchParamsKey = searchParams.toString();
   const closedTestParticipationsBySubmissionId = useMemo(() => {
@@ -135,13 +128,37 @@ export function MyTestsPage() {
     setShareCopyStatus("");
   };
 
-  const copyShareUrl = async () => {
-    if (!sharingUrl) {
-      return;
+  const saveShareMessage = async (customMessage: string) => {
+    if (!sharingSubmission) {
+      return null;
     }
 
-    const copied = await copyTextToClipboard(sharingUrl);
-    setShareCopyStatus(copied ? "Copied" : "Copy failed");
+    try {
+      const { slug } = await upsertSubmissionShareLink(sharingSubmission.id, customMessage);
+      return buildShareUrlFromSlug(slug);
+    } catch {
+      return null;
+    }
+  };
+
+  const copyShareUrl = async (customMessage: string) => {
+    setShareCopyStatus("Copying...");
+
+    try {
+      const shareUrlToCopy = await saveShareMessage(customMessage);
+
+      if (!shareUrlToCopy) {
+        setShareCopyStatus("Copy failed");
+        return null;
+      }
+
+      const copied = await copyTextToClipboard(shareUrlToCopy);
+      setShareCopyStatus(copied ? "Copied" : "Copy failed");
+      return copied ? shareUrlToCopy : null;
+    } catch {
+      setShareCopyStatus("Copy failed");
+      return null;
+    }
   };
 
   return (
@@ -250,7 +267,8 @@ export function MyTestsPage() {
           questionSet={sharingQuestionSet}
           shareUrl={sharingUrl}
           copyStatus={shareCopyStatus}
-          onCopy={() => void copyShareUrl()}
+          onCopy={copyShareUrl}
+          onSaveMessage={saveShareMessage}
           onClose={closeShareTest}
         />
       ) : null}
