@@ -84,6 +84,11 @@ function SiteFooter() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/blog" className="site-footer__link">
+                Blog
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/sign-in" className="site-footer__link">
                 Sign in
               </NavLink>
@@ -204,6 +209,11 @@ export function AppShell({
 
             {showTopbarActions ? (
               <div className="topbar__actions">
+                {hasMarketingHeader && !showMemberNav ? (
+                  <NavLink to="/blog" className="topbar-blog-link">
+                    Blog
+                  </NavLink>
+                ) : null}
                 <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
                   {currentUser ? "Profile" : "Log in"}
                 </NavLink>

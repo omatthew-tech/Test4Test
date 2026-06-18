@@ -1,0 +1,269 @@
+export type BlogPostStatus = "draft" | "published";
+export type BlogAudience = "Founders" | "Testers" | "Everyone";
+
+export interface BlogImage {
+  src: string;
+  alt: string;
+  caption?: string;
+}
+
+export interface BlogTextLink {
+  text: string;
+  href: string;
+}
+
+export type BlogBlock =
+  | {
+      type: "paragraph";
+      text: string;
+      links?: BlogTextLink[];
+    }
+  | {
+      type: "heading";
+      level: 2 | 3;
+      text: string;
+      links?: BlogTextLink[];
+    }
+  | {
+      type: "list";
+      items: string[];
+    }
+  | {
+      type: "quote";
+      text: string;
+      attribution?: string;
+    }
+  | {
+      type: "callout";
+      title?: string;
+      text: string;
+    }
+  | {
+      type: "image";
+      image: BlogImage;
+    };
+
+export interface BlogPost {
+  slug: string;
+  title: string;
+  excerpt: string;
+  publishedAt: string;
+  updatedAt?: string;
+  audience?: BlogAudience;
+  tags?: string[];
+  readTimeMinutes: number;
+  previewImage?: BlogImage;
+  coverImage?: BlogImage;
+  status: BlogPostStatus;
+  featured?: boolean;
+  body: BlogBlock[];
+}
+
+export const blogPosts: BlogPost[] = [
+  {
+    slug: "top-5-free-user-testing-platforms-2026",
+    title: "Top 5 Free User Testing Platforms in 2026",
+    excerpt:
+      "An every day founder guide to five free user testing platforms that give you real user feedback.",
+    publishedAt: "2026-06-18",
+    audience: "Founders",
+    tags: ["User testing", "Usability testing", "Founder research"],
+    readTimeMinutes: 5,
+    previewImage: {
+      src: "/blog/top-5-free-user-testing-platforms-2026/test4test-homepage.png",
+      alt: "Test4Test homepage showing the free user testing signup experience.",
+    },
+    status: "published",
+    featured: true,
+    body: [
+      {
+        type: "paragraph",
+        text: 'With the rise of AI-generated apps and websites, it is no surprise why founders are clinging to human feedback. The question is no longer, "How can I build xyz?" It is, "What even should I build?"',
+      },
+      {
+        type: "paragraph",
+        text: "However, if you are not an enterprise, you probably realize how hard it is to get real user feedback. The most popular site, UserTesting.com, will not even let you sign up without speaking to their enterprise sales team. Or, you can spend $250 to get started on Maze.co, which equates to 2 moderated tests. And you will also need a $99/month subscription to use simple tools, like screen recording.",
+        links: [
+          { text: "UserTesting.com", href: "https://www.usertesting.com/" },
+          { text: "Maze.co", href: "https://maze.co/" },
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "Let's say you already found the perfect product-market fit. If your app is poorly designed or looks AI-generated, users are not going to recommend your product to their friends and family. They will also be reluctant to give helpful feedback.",
+      },
+      {
+        type: "paragraph",
+        text: "So...",
+      },
+      {
+        type: "paragraph",
+        text: "Here are my favorite free user testing platforms to help get your app off the ground.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Test4Test - The best free usability testing platform",
+      },
+      {
+        type: "image",
+        image: {
+          src: "/blog/top-5-free-user-testing-platforms-2026/test4test-homepage.png",
+          alt: "Test4Test homepage showing the free user testing signup experience.",
+        },
+      },
+      {
+        type: "paragraph",
+        text: "Test4Test is the only platform that gives you access to a whole community of testers for free. It also gives you access to the most impactful user testing tool: screen recordings.",
+        links: [{ text: "Test4Test", href: "https://test4test.io/" }],
+      },
+      {
+        type: "paragraph",
+        text: "The tester community on Test4Test is supported by an advanced test-back and satisfaction rating system. You earn credits by testing other users' apps and websites. 1 credit = 1 test. There is no middleman that profits from your efforts. When you complete a test, your test moves up the ranks and is seen by more testers. Also, if you receive good feedback, your test will also move up the ranks.",
+      },
+      {
+        type: "paragraph",
+        text: "Screen recordings let you see how users actually use your app firsthand. Most services charge for this. With Test4Test, it is 100% free. No trials. No credit card. No limits! This is one of the most important parts of usability testing, and any senior UX researcher will repeat this.",
+      },
+      {
+        type: "paragraph",
+        text: "Test4Test does not currently offer a paid version, so take advantage while you can.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Userbrain",
+      },
+      {
+        type: "image",
+        image: {
+          src: "/blog/top-5-free-user-testing-platforms-2026/userbrain-sessions.jpg",
+          alt: "Userbrain dashboard showing a list of recorded user testing sessions.",
+        },
+      },
+      {
+        type: "paragraph",
+        text: "Userbrain is a well-kept secret! It is not as popular as sites like UserTesting or Userlytics. However, they offer 2 free unmoderated usability tests without any payment necessary. It was shocking how fast I received feedback. I added a few screeners, and within 5-10 minutes, I had two 40-year-old men trying out my app. The feedback was great too.",
+        links: [
+          { text: "Userbrain", href: "https://www.userbrain.com/en/" },
+          { text: "UserTesting", href: "https://www.usertesting.com/" },
+          { text: "Userlytics", href: "https://www.userlytics.com/" },
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "They have other features, like bringing up to 100 of your own users, AI user testing, user testing templates, and the ability to test websites, prototypes, and mobile apps.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Lookback | lookback.com",
+      },
+      {
+        type: "image",
+        image: {
+          src: "/blog/top-5-free-user-testing-platforms-2026/lookback-homepage.png",
+          alt: "Lookback homepage showing its user research product positioning.",
+        },
+      },
+      {
+        type: "paragraph",
+        text: "Lookback offers a lot of variety. They have a generous 60-day free trial. This includes moderated, unmoderated, user research, and other UX research tools.",
+        links: [{ text: "Lookback", href: "https://www.lookback.com/" }],
+      },
+      {
+        type: "paragraph",
+        text: "However, once the free trial runs out, it is $25/month for a limited plan and $344/month for the normal plan. This will give you 300 sessions, but most startups do not need that many, especially if you are just starting out.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Lyssna",
+      },
+      {
+        type: "image",
+        image: {
+          src: "/blog/top-5-free-user-testing-platforms-2026/lyssna-homepage.png",
+          alt: "Lyssna homepage presenting the user research platform.",
+        },
+      },
+      {
+        type: "paragraph",
+        text: "Lyssna, formerly UsabilityHub, lets you run unique usability tests, like first-click and five-second tests. You also have access to surveys, preference tests, and more tools to get a better understanding of your users' intent.",
+        links: [
+          { text: "Lyssna", href: "https://www.lyssna.com/" },
+          { text: "UsabilityHub", href: "https://www.usabilityhub.com/" },
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "All tests under 2 minutes are free. However, you have to bring your own testers, and setup is quite complicated. If you are able to get something up and running, you will be limited by not having screen or audio recordings. Also, running surveys is $1 per answer. That is not cheap when you have hundreds of answers.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Listen Labs",
+      },
+      {
+        type: "image",
+        image: {
+          src: "/blog/top-5-free-user-testing-platforms-2026/listen-labs-research.png",
+          alt: "Listen Labs product page describing qualitative interviews and quantitative surveys.",
+        },
+      },
+      {
+        type: "paragraph",
+        text: "Listen Labs recently raised $100M in Series B funding as a fast-growing user research company. It automates user interviews by recruiting from a massive user pool and interviewing them live.",
+        links: [
+          { text: "Listen Labs", href: "https://listenlabs.ai/" },
+          { text: "Series B funding", href: "https://listenlabs.ai/founders-letter" },
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "New users get 5 free AI-moderated interviews. I was shocked by how fast it found live people to talk about pain points and to bounce ideas off of. Creating the research study was also very quick and easy with the help of AI agents guiding me through everything.",
+      },
+      {
+        type: "paragraph",
+        text: "The results came back in 5 minutes. I am not joking. Within seconds, it was already interviewing live participants that were screened and fit my ideal user persona. The interviews can be viewed raw, or it does a great job of summarizing the results.",
+      },
+      {
+        type: "paragraph",
+        text: "I highly recommend Listen Labs. It is great for enterprises and startups alike. I felt like I was not missing any features. And if I decide to keep using it, I can pay per test at a very affordable rate.",
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Which free user testing platform should you choose?",
+      },
+      {
+        type: "paragraph",
+        text: "In conclusion, Test4Test takes the cake for accessing a large tester community and accessing a live recording feature within seconds of signing up. Userbrain is not far behind. They offer two free unmoderated user testing sessions, and you do not have to pay at all. Lastly, Listen Labs is extremely useful for primary research. Although it does not offer user recordings yet, conducting automated AI interviews with real participants in seconds is honestly amazing.",
+      },
+    ],
+  },
+];
+
+function comparePostsByPublishedDate(first: BlogPost, second: BlogPost) {
+  return new Date(second.publishedAt).getTime() - new Date(first.publishedAt).getTime();
+}
+
+export function getPublishedBlogPosts() {
+  return blogPosts
+    .filter((post) => post.status === "published")
+    .sort(comparePostsByPublishedDate);
+}
+
+export function getFeaturedBlogPost(posts = getPublishedBlogPosts()) {
+  return posts.find((post) => post.featured) ?? posts[0] ?? null;
+}
+
+export function getLatestBlogPosts(posts = getPublishedBlogPosts()) {
+  const featuredPost = getFeaturedBlogPost(posts);
+
+  return featuredPost ? posts.filter((post) => post.slug !== featuredPost.slug) : posts;
+}
+
+export function getPublishedBlogPostBySlug(slug: string) {
+  return blogPosts.find((post) => post.slug === slug && post.status === "published") ?? null;
+}
