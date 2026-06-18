@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getPublishedBlogPostBySlug, type BlogBlock, type BlogTextLink } from "../data/blogPosts";
 import { formatCalendarDate, minutesLabel } from "../lib/format";
+import { getBlogPostPageMetadata } from "../lib/blogSeo";
 import { usePageMetadata } from "../lib/pageMetadata";
 import { AppShell } from "../components/Layout";
 
@@ -90,10 +91,7 @@ export function BlogPostPage() {
   const { slug } = useParams();
   const post = slug ? getPublishedBlogPostBySlug(slug) : null;
 
-  usePageMetadata({
-    title: post?.title ?? "Article not found",
-    description: post?.excerpt ?? "The Test4Test article you are looking for could not be found.",
-  });
+  usePageMetadata(getBlogPostPageMetadata(post));
 
   if (!post) {
     return (

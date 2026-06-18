@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "dev:tina": "tinacms dev -c \"vite\"",
+    "generate:seo": "node scripts/generate-seo-files.mjs",
+    "prerender:blog": "node scripts/prerender-blog.mjs",
+    "build": "npm run generate:seo && tsc && vite build && npm run prerender:blog",
+    "build:tina": "tinacms build --local --skip-cloud-checks",
     "preview": "vite preview"
   },
   "keywords": [
@@ -24,9 +28,11 @@
     "react-router-dom": "^7.13.2"
   },
   "devDependencies": {
+    "@tinacms/cli": "^2.5.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "tinacms": "^3.9.3",
     "typescript": "^6.0.2",
     "vite": "^8.0.3"
   }

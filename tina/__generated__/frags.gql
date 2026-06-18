@@ -1,0 +1,69 @@
+fragment BlogPostParts on BlogPost {
+  __typename
+  title
+  slug
+  excerpt
+  publishedAt
+  updatedAt
+  status
+  featured
+  noindex
+  readTimeMinutes
+  audience
+  tags
+  seoTitle
+  metaDescription
+  canonicalPath
+  ogImage {
+    __typename
+    src
+    alt
+    caption
+  }
+  previewImage {
+    __typename
+    src
+    alt
+    caption
+  }
+  coverImage {
+    __typename
+    src
+    alt
+    caption
+  }
+  body {
+    __typename
+    ... on BlogPostBodyParagraph {
+      text
+      links {
+        __typename
+        text
+        href
+      }
+    }
+    ... on BlogPostBodyHeading {
+      level
+      text
+    }
+    ... on BlogPostBodyImage {
+      image {
+        __typename
+        src
+        alt
+        caption
+      }
+    }
+    ... on BlogPostBodyList {
+      items
+    }
+    ... on BlogPostBodyQuote {
+      text
+      attribution
+    }
+    ... on BlogPostBodyCallout {
+      title
+      text
+    }
+  }
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://test4test.io/sitemap.xml

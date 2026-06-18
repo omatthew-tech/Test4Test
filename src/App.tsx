@@ -84,8 +84,8 @@ export default function App() {
             <Route path="/submit" element={<BanRedirectRoute><SubmitFlowPage /></BanRedirectRoute>} />
             <Route path="/verify" element={<BanRedirectRoute><VerifyPage /></BanRedirectRoute>} />
             <Route path="/get-paid-to-test" element={<BanRedirectRoute><TesterLandingPage /></BanRedirectRoute>} />
-            <Route path="/blog" element={<BanRedirectRoute><BlogPage /></BanRedirectRoute>} />
-            <Route path="/blog/:slug" element={<BanRedirectRoute><BlogPostPage /></BanRedirectRoute>} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/earn" element={<BanRedirectRoute><EarnPage /></BanRedirectRoute>} />
             <Route path="/test/:submissionId" element={<BanRedirectRoute><TestSessionPage /></BanRedirectRoute>} />
             <Route path="/test/:submissionId/success" element={<BanRedirectRoute><TestSuccessPage /></BanRedirectRoute>} />

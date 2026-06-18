@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useId, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 
 const navItems = [
@@ -84,9 +84,9 @@ function SiteFooter() {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/blog" className="site-footer__link">
+              <Link to="/blog" className="site-footer__link">
                 Blog
-              </NavLink>
+              </Link>
             </li>
             <li>
               <NavLink to="/sign-in" className="site-footer__link">
@@ -210,9 +210,9 @@ export function AppShell({
             {showTopbarActions ? (
               <div className="topbar__actions">
                 {hasMarketingHeader && !showMemberNav ? (
-                  <NavLink to="/blog" className="topbar-blog-link">
+                  <Link to="/blog" className="topbar-blog-link">
                     Blog
-                  </NavLink>
+                  </Link>
                 ) : null}
                 <NavLink to={profileHref} className="button button--secondary button--small topbar-profile-link">
                   {currentUser ? "Profile" : "Log in"}

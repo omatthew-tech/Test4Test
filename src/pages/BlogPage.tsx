@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { getPublishedBlogPosts, type BlogPost } from "../data/blogPosts";
 import { formatCalendarDate, minutesLabel } from "../lib/format";
 import { usePageMetadata } from "../lib/pageMetadata";
+import { getBlogIndexPageMetadata } from "../lib/blogSeo";
 import { AppShell } from "../components/Layout";
 
 function BlogPostCard({ post }: { post: BlogPost }) {
@@ -45,10 +46,7 @@ export function BlogPage() {
   const publishedPosts = getPublishedBlogPosts();
   const visiblePosts = publishedPosts.slice(0, 3);
 
-  usePageMetadata({
-    title: "Blog",
-    description: "Usability testing tips and tricks for every day founders.",
-  });
+  usePageMetadata(getBlogIndexPageMetadata(publishedPosts));
 
   return (
     <AppShell variant="marketing">
