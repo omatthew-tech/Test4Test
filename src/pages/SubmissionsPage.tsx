@@ -331,7 +331,7 @@ export function SubmissionsPage() {
 
   if (!currentUser) {
     return (
-      <AppShell title="My Feedback" eyebrowLabel={null}>
+      <AppShell eyebrowLabel={null}>
         <div className="page-stack submissions-page">
           <Surface>
             <div className="empty-state">
@@ -346,7 +346,7 @@ export function SubmissionsPage() {
   }
 
   return (
-    <AppShell title="My Feedback" eyebrowLabel={null}>
+    <AppShell eyebrowLabel={null}>
       <div className="page-stack submissions-page">
         <Surface className="earn-controls submissions-switcher">
           <div className="results-toggle" role="tablist" aria-label="Feedback view">

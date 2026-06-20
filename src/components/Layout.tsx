@@ -1,15 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useId, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
-
-const navItems = [
-  { to: "/earn", label: "Earn", mobileLabel: "Earn" },
-  { to: "/my-tests", label: "My Apps", mobileLabel: "My Apps" },
-  { to: "/submit", label: "New App", mobileLabel: "New App" },
-  { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews" },
-];
+import { getMySubmissions } from "../lib/selectors";
 
 const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
 const audienceRoleOptions = ["Founder", "Tester"] as const;
@@ -140,7 +134,21 @@ export function AppShell({
 }) {
   const mobileMenuId = useId();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { currentUser } = useAppState();
+  const location = useLocation();
+  const { currentUser, state } = useAppState();
+  const myFeedbackSubmission = getMySubmissions(state)[0] ?? null;
+  const myFeedbackHref = myFeedbackSubmission ? `/my-tests/${myFeedbackSubmission.id}` : "/my-tests";
+  const navItems = [
+    { to: "/earn", label: "Earn", mobileLabel: "Earn" },
+    {
+      to: myFeedbackHref,
+      label: "My Feedback",
+      mobileLabel: "My Feedback",
+      activePathPrefix: "/my-tests",
+    },
+    { to: "/submit", label: "New App", mobileLabel: "New App" },
+    { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews" },
+  ];
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const showTopbarActions = !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
@@ -181,13 +189,18 @@ export function AppShell({
                 className={`topnav${isMobileMenuOpen ? " topnav--open" : ""}`}
                 aria-label="Primary navigation"
               >
-                {navItems.map(({ to, label, mobileLabel }) => (
+                {navItems.map(({ to, label, mobileLabel, activePathPrefix }) => (
                   <NavLink
                     key={to}
                     to={to}
-                    className={({ isActive }) =>
-                      `topnav__link${isActive ? " topnav__link--active" : ""}`
-                    }
+                    className={({ isActive }) => {
+                      const isPrefixActive = activePathPrefix
+                        ? location.pathname === activePathPrefix ||
+                          location.pathname.startsWith(`${activePathPrefix}/`)
+                        : false;
+
+                      return `topnav__link${isActive || isPrefixActive ? " topnav__link--active" : ""}`;
+                    }}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <span className="topnav__label topnav__label--desktop">{label}</span>

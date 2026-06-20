@@ -114,14 +114,6 @@ export function SignInPage() {
             <div className="inline-actions verify-actions">
               <button
                 type="button"
-                className="button button--primary"
-                onClick={() => void handleVerify()}
-                disabled={isVerifying || isSendingCode || !code.trim()}
-              >
-                Verify and continue
-              </button>
-              <button
-                type="button"
                 className="button button--secondary"
                 onClick={() => void handleRequestCode()}
                 disabled={isSendingCode || isVerifying}
@@ -132,6 +124,14 @@ export function SignInPage() {
                   <RefreshCcw size={16} />
                 )}
                 {isSendingCode ? "Sending..." : "Resend code"}
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => void handleVerify()}
+                disabled={isVerifying || isSendingCode || !code.trim()}
+              >
+                Verify and continue
               </button>
             </div>
           </>

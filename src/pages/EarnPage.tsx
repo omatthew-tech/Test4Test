@@ -1030,11 +1030,7 @@ export function EarnPage() {
     : [];
 
   return (
-    <AppShell
-      title="Earn credits"
-      description={undefined}
-      eyebrowLabel={null}
-    >
+    <AppShell eyebrowLabel={null}>
       {showEarnLogoBurst ? (
         <Test4TestLogoBurst className="test-success-burst--ephemeral earn-logo-burst" />
       ) : null}
