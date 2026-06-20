@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
+import { useLocation } from "react-router-dom";
 import { getPrimaryAccessLink, normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "../lib/format";
 import {
   clearPendingSubmission,
@@ -545,6 +546,31 @@ function mapGooglePlayClosedTestCheckIn(
 
 function mergeUniqueById<T extends { id: string }>(items: T[]) {
   return [...new Map(items.map((item) => [item.id, item])).values()];
+}
+
+function normalizePathname(pathname: string) {
+  return pathname.replace(/\/+$/g, "") || "/";
+}
+
+function shouldLoadFullStateForPath(pathname: string, currentUserId: string | null) {
+  const normalizedPathname = normalizePathname(pathname);
+
+  if (normalizedPathname === "/test" || normalizedPathname.startsWith("/test/")) {
+    return true;
+  }
+
+  if (!currentUserId) {
+    return false;
+  }
+
+  return !(
+    normalizedPathname === "/" ||
+    normalizedPathname === "/sign-in" ||
+    normalizedPathname === "/verify" ||
+    normalizedPathname === "/get-paid-to-test" ||
+    normalizedPathname === "/blog" ||
+    normalizedPathname.startsWith("/blog/")
+  );
 }
 
 function hasUsableSession(session: Session | null | undefined): session is Session {
@@ -1212,32 +1238,30 @@ async function persistSubmissionShareLink(
   };
 }
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
   const [state, setState] = useState<AppState>({
     ...emptyState,
     otpChallenge: getStoredOtpChallenge(),
   });
   const [isLoading, setIsLoading] = useState(true);
   const loadIdRef = useRef(0);
-  const hasCompletedInitialLoadRef = useRef(false);
+  const loadedStateModeRef = useRef<"none" | "light" | "full">("none");
   const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
   const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(new Map());
 
   const refreshState = useCallback(async (authUserOverride?: SupabaseAuthUser | null) => {
     const loadId = ++loadIdRef.current;
-    const shouldShowLoading = !hasCompletedInitialLoadRef.current;
+    let attemptedStateMode: "light" | "full" =
+      shouldLoadFullStateForPath(pathname, null) ? "full" : "light";
 
     if (!hasSupabaseConfig) {
       setState({
         ...emptyState,
         otpChallenge: getStoredOtpChallenge(),
       });
-      hasCompletedInitialLoadRef.current = true;
+      loadedStateModeRef.current = "light";
       setIsLoading(false);
       return;
-    }
-
-    if (shouldShowLoading) {
-      setIsLoading(true);
     }
 
     try {
@@ -1248,6 +1272,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           : (await supabase.auth.getUser()).data.user;
       const currentUserId = authUser?.id ?? null;
       const currentProfile = authUser ? await ensureProfile(authUser) : null;
+      const shouldLoadFullState = shouldLoadFullStateForPath(pathname, currentUserId);
+      const nextStateMode = shouldLoadFullState ? "full" : "light";
+      attemptedStateMode = nextStateMode;
+      const shouldShowLoading =
+        loadedStateModeRef.current === "none" ||
+        (nextStateMode === "full" && loadedStateModeRef.current !== "full");
+
+      if (shouldShowLoading) {
+        setIsLoading(true);
+      }
 
       if (currentProfile) {
         trackAuthenticatedVisit(currentProfile.id);
@@ -1273,22 +1307,56 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           moderationActions: [],
           otpChallenge: getStoredOtpChallenge(),
         });
+        loadedStateModeRef.current = "light";
+        return;
+      }
+
+      if (!shouldLoadFullState) {
+        if (loadId !== loadIdRef.current) {
+          return;
+        }
+
+        setState({
+          currentUserId,
+          users: currentProfile ? [currentProfile] : [],
+          submissions: [],
+          submissionVersions: [],
+          questionSetVersions: [],
+          responses: [],
+          feedbackRatings: [],
+          creditTransactions: [],
+          googlePlayClosedTestParticipations: [],
+          googlePlayClosedTestCheckIns: [],
+          emailLogs: [],
+          moderationActions: [],
+          otpChallenge: getStoredOtpChallenge(),
+        });
+        loadedStateModeRef.current = "light";
         return;
       }
 
       const submissions = await loadVisibleSubmissions(currentUserId);
-      const submissionVersions = await loadVisibleSubmissionVersions(submissions.map((submission) => submission.id));
-      const questionSetVersions = await loadVisibleQuestionSets(submissions.map((submission) => submission.id));
+      const submissionIds = submissions.map((submission) => submission.id);
       const ownedSubmissionIds = currentUserId
         ? submissions
             .filter((submission) => submission.userId === currentUserId)
             .map((submission) => submission.id)
         : [];
-      const responses = await loadResponses(currentUserId, ownedSubmissionIds);
-      const feedbackRatings = await loadFeedbackRatings(currentUserId);
-      const creditTransactions = await loadCreditTransactions(currentUserId);
-      const googlePlayClosedTestParticipations =
-        await loadGooglePlayClosedTestParticipations(currentUserId);
+      const [
+        submissionVersions,
+        questionSetVersions,
+        responses,
+        feedbackRatings,
+        creditTransactions,
+        googlePlayClosedTestParticipations,
+      ] = await Promise.all([
+        loadVisibleSubmissionVersions(submissionIds),
+        loadVisibleQuestionSets(submissionIds),
+        loadResponses(currentUserId, ownedSubmissionIds),
+        loadFeedbackRatings(currentUserId),
+        loadCreditTransactions(currentUserId),
+        loadGooglePlayClosedTestParticipations(currentUserId),
+      ]);
       const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
         googlePlayClosedTestParticipations.map((participation) => participation.id),
       );
@@ -1312,6 +1380,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         moderationActions: [],
         otpChallenge: getStoredOtpChallenge(),
       });
+      loadedStateModeRef.current = "full";
     } catch (error) {
       if (loadId !== loadIdRef.current) {
         return;
@@ -1322,13 +1391,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ...emptyState,
         otpChallenge: getStoredOtpChallenge(),
       });
+      loadedStateModeRef.current = attemptedStateMode;
     } finally {
       if (loadId === loadIdRef.current) {
-        hasCompletedInitialLoadRef.current = true;
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     void refreshState();
@@ -1351,11 +1420,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppStateContextValue>(() => {
     const currentUser = getCurrentUser(state);
+    const shouldWaitForFullState = shouldLoadFullStateForPath(pathname, currentUser?.id ?? null);
+    const effectiveIsLoading =
+      isLoading || (shouldWaitForFullState && loadedStateModeRef.current !== "full");
 
     return {
       state,
       currentUser,
-      isLoading,
+      isLoading: effectiveIsLoading,
       isConfigured: hasSupabaseConfig,
       async requestOtp(email, submissionId) {
         const normalizedEmail = email.trim().toLowerCase();
@@ -2086,7 +2158,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState(null);
       },
     };
-  }, [isLoading, refreshState, state]);
+  }, [isLoading, pathname, refreshState, state]);
 
   return (
     <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

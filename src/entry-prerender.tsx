@@ -33,14 +33,14 @@ export function renderBlogRoute(path: string) {
   const pathname = getPathname(path);
   const metadata = getBlogRouteMetadata(pathname);
   const appHtml = renderToString(
-    <AppStateProvider>
-      <MemoryRouter initialEntries={[pathname]}>
+    <MemoryRouter initialEntries={[pathname]}>
+      <AppStateProvider>
         <Routes>
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
         </Routes>
-      </MemoryRouter>
-    </AppStateProvider>,
+      </AppStateProvider>
+    </MemoryRouter>,
   );
 
   return {

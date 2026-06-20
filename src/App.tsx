@@ -75,8 +75,8 @@ export default function App() {
   }, []);
 
   return (
-    <AppStateProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AppStateProvider>
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<RootPage />} />
@@ -100,7 +100,7 @@ export default function App() {
             <Route path="*" element={<BanRedirectRoute><HomePage /></BanRedirectRoute>} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
-    </AppStateProvider>
+      </AppStateProvider>
+    </BrowserRouter>
   );
 }

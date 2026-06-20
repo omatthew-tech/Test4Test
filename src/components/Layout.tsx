@@ -5,7 +5,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAppState } from "../context/AppStateContext";
 import { getMySubmissions } from "../lib/selectors";
 
-const brandLogoPath = "/branding/Test4Test%20Regular%20Logo.png";
+const brandLogoPath = "/branding/test4test-popsicle-logo.v1.svg";
 const audienceRoleOptions = ["Founder", "Tester"] as const;
 
 export type AudienceRole = (typeof audienceRoleOptions)[number];
