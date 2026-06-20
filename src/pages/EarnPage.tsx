@@ -123,14 +123,6 @@ function getGooglePlayClosedTestPoolUserIds(submissions: Submission[]) {
   );
 }
 
-function getReputationScore(reputation: EarnSubmissionReputation | null | undefined) {
-  if (!reputation || reputation.ownerHasCompletedTest === false) {
-    return null;
-  }
-
-  return reputation.ownerTestBackRatePercent + reputation.ownerSatisfactionRatePercent;
-}
-
 function compareEarnSubmissions(
   first: Submission,
   second: Submission,
@@ -138,6 +130,10 @@ function compareEarnSubmissions(
   firstReputation: EarnSubmissionReputation | null | undefined,
   secondReputation: EarnSubmissionReputation | null | undefined,
 ) {
+  if (first.promoted !== second.promoted) {
+    return first.promoted ? -1 : 1;
+  }
+
   if (sortMode !== "recommended") {
     return compareEarnSubmissionsByMode(first, second, sortMode);
   }
@@ -149,26 +145,30 @@ function compareEarnSubmissions(
     return secondCreditBalance - firstCreditBalance;
   }
 
-  if (first.promoted !== second.promoted) {
-    return first.promoted ? -1 : 1;
+  const firstTestBackRate =
+    firstReputation?.ownerHasCompletedTest === false
+      ? 0
+      : firstReputation?.ownerTestBackRatePercent ?? 0;
+  const secondTestBackRate =
+    secondReputation?.ownerHasCompletedTest === false
+      ? 0
+      : secondReputation?.ownerTestBackRatePercent ?? 0;
+
+  if (firstTestBackRate !== secondTestBackRate) {
+    return secondTestBackRate - firstTestBackRate;
   }
 
-  const firstOwnerTestedYou = firstReputation?.ownerHasTestedYou === true;
-  const secondOwnerTestedYou = secondReputation?.ownerHasTestedYou === true;
+  const firstSatisfactionRate =
+    firstReputation?.ownerHasCompletedTest === false
+      ? 0
+      : firstReputation?.ownerSatisfactionRatePercent ?? 0;
+  const secondSatisfactionRate =
+    secondReputation?.ownerHasCompletedTest === false
+      ? 0
+      : secondReputation?.ownerSatisfactionRatePercent ?? 0;
 
-  if (firstOwnerTestedYou !== secondOwnerTestedYou) {
-    return firstOwnerTestedYou ? -1 : 1;
-  }
-
-  const firstScore = getReputationScore(firstReputation);
-  const secondScore = getReputationScore(secondReputation);
-
-  if (firstScore !== null && secondScore !== null && firstScore !== secondScore) {
-    return secondScore - firstScore;
-  }
-
-  if (firstScore !== secondScore) {
-    return secondScore === null ? -1 : 1;
+  if (firstSatisfactionRate !== secondSatisfactionRate) {
+    return secondSatisfactionRate - firstSatisfactionRate;
   }
 
   return compareEarnSubmissionsByMode(first, second, sortMode);
