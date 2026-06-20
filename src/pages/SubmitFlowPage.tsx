@@ -857,63 +857,12 @@ export function SubmitFlowPage() {
       <div className="page-stack">
         {currentStep < steps.length ? (
           <div className="wizard-layout">
-            <aside className="wizard-rail">
-              <Surface className="wizard-rail__surface">
-                <StepIndicator steps={steps} currentStep={currentStep} />
-                <div className="wizard-preview">
-                  <span className="eyebrow">Live preview</span>
-                  <h3>{draft.productName || "Untitled app"}</h3>
-                  {draft.description.trim() ? <p>{draft.description}</p> : null}
-
-                  <div className="wizard-preview__stack">
-                    <div className="wizard-preview__item">
-                      <small>{selectedProductTypes.length > 1 ? "App links" : "App link"}</small>
-                      {orderedAccessLinks.length > 0 ? (
-                        <div className="wizard-link-list">
-                          {orderedAccessLinks.map((link) => (
-                            <a
-                              key={link.productType}
-                              href={link.normalizedUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="wizard-preview__link"
-                            >
-                              <span className="wizard-preview__link-label">{link.label}</span>
-                              <span>{link.displayUrl}</span>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <strong>
-                          {selectedProductTypes.length > 1
-                            ? "Add a link for each selected platform"
-                            : "Add your live app link"}
-                        </strong>
-                      )}
-                    </div>
-                    <div className="wizard-preview__item">
-                      <small>Platforms</small>
-                      {draft.productTypes.length > 0 ? (
-                        <strong>{productTypesLabel(draft.productTypes)}</strong>
-                      ) : (
-                        <strong>Select at least one platform</strong>
-                      )}
-                    </div>
-                    <div className="wizard-preview__item">
-                      <small>Question setup</small>
-                      <strong>{questionSetupLabel}</strong>
-                    </div>
-                  </div>
-                </div>
-              </Surface>
-            </aside>
-
             <div className="wizard-stage">
               <Surface className="wizard-stage__surface">
                 {currentStep === 0 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <span className="eyebrow">Step 1</span>
+                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>What&apos;s the name of your app?</h2>
                     </div>
                     <label className="field">
@@ -943,7 +892,7 @@ export function SubmitFlowPage() {
                 {currentStep === 1 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <span className="eyebrow">Step 2</span>
+                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>What kind of app is it?</h2>
                       <p>Choose every platform testers can use right now.</p>
                     </div>
@@ -985,7 +934,7 @@ export function SubmitFlowPage() {
                 {currentStep === 2 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <span className="eyebrow">Step 3</span>
+                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
                       {selectedProductTypes.length > 1 ? (
                         <p>Add one public link for each selected platform.</p>
@@ -1051,7 +1000,7 @@ export function SubmitFlowPage() {
                 {currentStep === 3 ? (
                   <div className="form-stack form-stack--question-studio">
                     <div className="section-heading">
-                      <span className="eyebrow">Step 4</span>
+                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>Set up your questions</h2>
                     </div>
                     <div className="question-studio">
@@ -1308,7 +1257,7 @@ export function SubmitFlowPage() {
                 {currentStep === 4 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <span className="eyebrow">Step 5</span>
+                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>Review before publishing</h2>
                     </div>
                     {currentLiveSubmission ? (
