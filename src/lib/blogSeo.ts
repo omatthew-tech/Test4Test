@@ -44,7 +44,7 @@ export function getBlogIndexPageMetadata(posts = getPublishedBlogPosts()): PageM
 
   return {
     title: "Blog",
-    description: "Usability testing tips and tricks for every day founders.",
+    description: "Usability tips and tricks for every day founders.",
     canonicalPath: "/blog",
     image: firstPost?.previewImage?.src ?? firstPost?.coverImage?.src,
     type: "website",
