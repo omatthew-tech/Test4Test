@@ -3585,22 +3585,30 @@ body {
   position: relative;
 }
 
-.earn-filter select {
+.earn-filter select,
+.earn-platform-summary-button {
   min-width: 0;
-  cursor: pointer;
-  padding: var(--space-200) var(--space-600) var(--space-200) var(--space-200);
   border-radius: 14px;
   border-color: rgba(216, 208, 200, 0.95);
   background: #fffefc;
   color: #2d2622;
+  font-size: 1rem;
   font-weight: 600;
+  box-shadow: none;
+}
+
+.earn-filter select {
+  cursor: pointer;
+  padding: var(--space-200) var(--space-600) var(--space-200) var(--space-200);
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
 
-.earn-filter__control:hover select {
+.earn-filter__control:hover select,
+.earn-platform-summary-button:hover:not(:disabled) {
   border-color: rgba(245, 142, 86, 0.32);
+  background: #fffefc;
 }
 
 .earn-filter__icon {
@@ -3619,12 +3627,18 @@ body {
 }
 
 .earn-platform-summary-button {
-  min-height: 48px;
+  min-height: 0;
   max-width: 100%;
   justify-content: flex-start;
   gap: var(--space-100);
-  padding: var(--space-150) var(--space-200);
+  padding: var(--space-200);
   text-align: left;
+}
+
+.earn-platform-summary-button:focus-visible {
+  outline: none;
+  border-color: rgba(245, 142, 86, 0.8);
+  box-shadow: 0 0 0 4px rgba(245, 142, 86, 0.16);
 }
 
 .earn-platform-summary-button strong {
@@ -4322,9 +4336,9 @@ body {
   display: none;
 }
 
-.submission-feedback-card__top {
+.submission-feedback-card__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-200);
 }
@@ -4348,8 +4362,8 @@ body {
 }
 
 .submission-feedback-card__bookmark {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -4361,6 +4375,11 @@ body {
   flex-shrink: 0;
   cursor: pointer;
   transition: color 140ms ease, opacity 140ms ease;
+}
+
+.submission-feedback-card__bookmark svg {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .submission-feedback-card__bookmark:hover {
@@ -4426,7 +4445,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--space-100);
-  width: fit-content;
+  min-width: 0;
+  flex: 1 1 auto;
   max-width: 100%;
 }
 
@@ -4445,10 +4465,12 @@ body {
   color: rgba(29, 24, 21, 1);
 }
 
-.submission-feedback-card__copy h3 {
+.submission-feedback-card__title-row h3 {
+  min-width: 0;
   margin: 0;
   font-family: "Sora", system-ui, sans-serif;
   font-size: clamp(1.28rem, 2vw, 1.48rem);
+  line-height: 1.12;
 }
 
 .submission-feedback-card__copy p {
@@ -4582,7 +4604,7 @@ body {
     padding: var(--space-250) var(--space-250) 0;
   }
 
-  .submission-feedback-card__top {
+  .submission-feedback-card__header {
     align-items: center;
   }
 
@@ -9092,7 +9114,6 @@ select {
   .results-header-card__title-row,
   .results-section__header--split,
   .submission-card__header,
-  .submission-feedback-card__header,
   .my-test-row__footer,
   .profile-account-row,
   .profile-payment-fields,
@@ -9115,7 +9136,6 @@ select {
   .results-header-card__title-row,
   .results-section__header--split,
   .submission-card__header,
-  .submission-feedback-card__header,
   .results-individual-shell__header,
   .profile-account-row,
   .my-test-row__footer {

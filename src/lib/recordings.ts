@@ -3,7 +3,7 @@ import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
-export const RECORDING_STORAGE_DAYS = 7;
+export const RECORDING_STORAGE_DAYS = 60;
 export const RECORDING_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
 export const RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
 const RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES = 10 * 1024 * 1024;

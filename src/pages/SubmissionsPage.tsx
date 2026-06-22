@@ -476,8 +476,21 @@ function SubmissionFeedbackRow({
 
   return (
     <Surface className={`submission-feedback-card submission-feedback-card--${tone}`}>
-      <div className="submission-feedback-card__top">
-        <div className="submission-feedback-card__badges" aria-hidden="true" />
+      <div className="submission-feedback-card__header">
+        <div className="submission-feedback-card__title-row">
+          <h3>{card.productName}</h3>
+          {primaryAccessUrl ? (
+            <a
+              href={primaryAccessUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="submission-feedback-card__title-link"
+              aria-label={`Open ${card.productName}`}
+            >
+              <ExternalLink size={16} />
+            </a>
+          ) : null}
+        </div>
         {showBookmark ? (
           <button
             type="button"
@@ -487,27 +500,13 @@ function SubmissionFeedbackRow({
             disabled={isFavoritePending}
             onClick={() => void onToggleFavorite(card.responseId)}
           >
-            <Bookmark size={18} fill={isFavorite ? "currentColor" : "none"} stroke={isFavorite ? "none" : "currentColor"} />
+            <Bookmark size={24} fill={isFavorite ? "currentColor" : "none"} stroke={isFavorite ? "none" : "currentColor"} />
           </button>
         ) : null}
       </div>
 
       <div className="submission-feedback-card__body">
         <div className="submission-feedback-card__copy">
-          <div className="submission-feedback-card__title-row">
-            <h3>{card.productName}</h3>
-            {primaryAccessUrl ? (
-              <a
-                href={primaryAccessUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="submission-feedback-card__title-link"
-                aria-label={`Open ${card.productName}`}
-              >
-                <ExternalLink size={16} />
-              </a>
-            ) : null}
-          </div>
           <p>{card.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
           {card.needsGooglePlayClosedTesters ? (
             <span className="tag tag--warm">Google Play closed test</span>

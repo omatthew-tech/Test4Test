@@ -351,7 +351,7 @@ export function EditSubmissionModal({
                 <span>Require testers to record their screen and voice</span>
               </label>
               <small>
-                Recording uploads stay available for 7 days, then Test4Test deletes them automatically.
+                Recording uploads stay available for 60 days, then Test4Test deletes them automatically.
               </small>
             </div>
           </div>

@@ -1137,7 +1137,7 @@ export function SubmissionDetailPage() {
                         <strong>{recordingIsExpired ? "Expired" : `Available until ${formatDateTime(selectedRecording.expiresAt)}`}</strong>
                         <p className={recordingIsExpired ? undefined : "results-recording-panel__file-meta"}>
                           {recordingIsExpired
-                            ? "This recording has already been deleted or passed its 7-day retention window."
+                            ? "This recording has already been deleted or passed its 60-day retention window."
                             : `${selectedRecording.fileName} / ${formatRecordingSize(selectedRecording.fileSizeBytes)}`}
                         </p>
                       </>
