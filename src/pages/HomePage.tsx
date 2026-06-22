@@ -624,7 +624,7 @@ export function HomePage() {
 
         <section className="home-final-cta" aria-labelledby="home-final-cta-title">
           <h2 id="home-final-cta-title">Ready for feedback?</h2>
-          <p>Submit your app in minutes and start getting user feedback fast.</p>
+          <p>It takes minutes to submit your app and start seeing real user feedback</p>
           <button
             type="button"
             className="button button--primary home-final-cta__button"
