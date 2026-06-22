@@ -1023,6 +1023,8 @@ export function TestSessionPage() {
           height: 100%;
           border-radius: inherit;
           background: linear-gradient(90deg, var(--pip-orange), #f67e42);
+          transition: width 220ms linear;
+          will-change: width;
         }
 
         .recording-pip__progress-fill--uploading {
@@ -1233,7 +1235,6 @@ export function TestSessionPage() {
         <section class="recording-pip" aria-label="Uploading recording">
           <div class="recording-pip__top">
             <div class="recording-pip__badge">
-              <span class="recording-pip__dot recording-pip__dot--uploading" aria-hidden="true"></span>
               <span>Uploading recording</span>
             </div>
           </div>
@@ -3107,7 +3108,7 @@ export function TestSessionPage() {
                 </span>
                 <h2 id="test-report-title">Report submitted</h2>
                 <p id="test-report-description">
-                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a problem with the app, you&apos;ll get a free credit and won&apos;t need to test it.
+                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a problem with the app, you&apos;ll receive a free credit.
                 </p>
                 <div className="inline-actions inline-actions--compact">
                   <button type="button" className="button button--secondary" onClick={closeReportModal}>

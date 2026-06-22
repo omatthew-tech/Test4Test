@@ -81,6 +81,12 @@ interface MultipartUploadCacheEntry {
   completedParts: Array<{ partNumber: number; etag: string }>;
 }
 
+interface SignedUploadResponse {
+  headers: {
+    get: (name: string) => string | null;
+  };
+}
+
 interface NavigatorWithUserAgentData extends Navigator {
   userAgentData?: {
     mobile?: boolean;
@@ -390,36 +396,81 @@ async function callRecordingUploadR2(payload: Record<string, unknown>) {
   return result;
 }
 
+function sendFileToSignedUrl(
+  uploadUrl: string,
+  body: Blob,
+  options: {
+    contentType?: string;
+    retryLabel?: string;
+    onUploadProgress?: (bytesUploaded: number) => void;
+  } = {},
+) {
+  return new Promise<SignedUploadResponse>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open("PUT", uploadUrl);
+
+    if (options.contentType) {
+      request.setRequestHeader("Content-Type", options.contentType);
+    }
+
+    request.upload.onprogress = (event) => {
+      options.onUploadProgress?.(Math.min(body.size, Math.max(0, event.loaded)));
+    };
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        options.onUploadProgress?.(body.size);
+        resolve({
+          headers: {
+            get: (name: string) => request.getResponseHeader(name),
+          },
+        });
+        return;
+      }
+
+      reject(
+        new Error(
+          request.responseText ||
+            `${options.retryLabel ?? "Recording upload"} failed (${request.status}).`,
+        ),
+      );
+    };
+
+    request.onerror = () => {
+      reject(new Error(`${options.retryLabel ?? "Recording upload"} failed. Check your connection and try again.`));
+    };
+
+    request.onabort = () => {
+      reject(new Error(`${options.retryLabel ?? "Recording upload"} was cancelled.`));
+    };
+
+    request.send(body);
+  });
+}
+
 async function uploadFileToSignedUrl(
   uploadUrl: string,
   body: Blob,
   options: {
     contentType?: string;
     retryLabel?: string;
+    onUploadProgress?: (bytesUploaded: number) => void;
   } = {},
 ) {
   let lastError: Error | null = null;
+  let maxReportedBytes = 0;
 
   for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
     try {
-      const headers = new Headers();
-
-      if (options.contentType) {
-        headers.set("Content-Type", options.contentType);
-      }
-
-      const response = await fetch(uploadUrl, {
-        method: "PUT",
-        headers,
-        body,
+      return await sendFileToSignedUrl(uploadUrl, body, {
+        contentType: options.contentType,
+        retryLabel: options.retryLabel,
+        onUploadProgress: (bytesUploaded) => {
+          maxReportedBytes = Math.max(maxReportedBytes, Math.min(body.size, bytesUploaded));
+          options.onUploadProgress?.(maxReportedBytes);
+        },
       });
-
-      if (!response.ok) {
-        const responseBody = await response.text().catch(() => "");
-        throw new Error(responseBody || `${options.retryLabel ?? "Recording upload"} failed (${response.status}).`);
-      }
-
-      return response;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("The recording upload failed.");
 
@@ -453,9 +504,15 @@ async function uploadRecordingObjectSingle(
     throw new Error("The recording upload URL could not be created.");
   }
 
+  let maxBytesUploaded = 0;
+
   await uploadFileToSignedUrl(createResult.uploadUrl, file, {
     contentType,
     retryLabel: "Recording upload",
+    onUploadProgress: (bytesUploaded) => {
+      maxBytesUploaded = Math.max(maxBytesUploaded, Math.min(file.size, bytesUploaded));
+      onProgress?.(buildUploadProgress(maxBytesUploaded, file.size, "uploading"));
+    },
   });
   onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 
@@ -520,7 +577,8 @@ async function uploadRecordingObjectMultipart(
     const partStart = (partNumber - 1) * cacheEntry.partSizeBytes;
     const partEnd = Math.min(file.size, partStart + cacheEntry.partSizeBytes);
     const partBlob = file.slice(partStart, partEnd);
-    let partResponse: Response | null = null;
+    let partResponse: SignedUploadResponse | null = null;
+    let maxPartBytesUploaded = 0;
 
     for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
       const signedPart = await callRecordingUploadR2({
@@ -544,6 +602,13 @@ async function uploadRecordingObjectMultipart(
 
         partResponse = await uploadFileToSignedUrl(signedPart.uploadUrl, partBlob, {
           retryLabel: `Recording upload part ${partNumber}`,
+          onUploadProgress: (partBytesUploaded) => {
+            maxPartBytesUploaded = Math.max(
+              maxPartBytesUploaded,
+              Math.min(partBlob.size, partBytesUploaded),
+            );
+            onProgress?.(buildUploadProgress(uploadedBytes + maxPartBytesUploaded, file.size, "uploading"));
+          },
         });
         break;
       } catch (error) {
