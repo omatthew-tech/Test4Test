@@ -295,6 +295,10 @@ textarea {
   display: none;
 }
 
+.guest-mobile-menu {
+  display: none;
+}
+
 .topnav__link--active {
   background: var(--color-orange-050);
   color: var(--color-ink-900);
@@ -10858,6 +10862,12 @@ select {
     width: auto;
     margin-left: 0;
     flex-wrap: nowrap;
+    gap: var(--space-100);
+  }
+
+  .topbar--marketing.topbar--guest .topbar-blog-link,
+  .topbar--marketing.topbar--guest .topbar-profile-link {
+    display: none;
   }
 
   .topbar--marketing.topbar--guest .topbar__actions .button,
@@ -10874,6 +10884,59 @@ select {
     grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
+    display: none;
+  }
+
+  .topbar--marketing.topbar--guest .mobile-menu-button {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(216, 208, 200, 0.9);
+    border-radius: 12px;
+    background: var(--color-surface-000);
+    color: var(--color-ink-900);
+    box-shadow: 0 4px 10px rgba(29, 24, 21, 0.04);
+  }
+
+  .topbar--marketing.topbar--guest .mobile-menu-button:focus-visible {
+    outline: 2px solid rgba(245, 142, 86, 0.46);
+    outline-offset: 2px;
+  }
+
+  .topbar--marketing.topbar--guest .guest-mobile-menu {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    position: relative;
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: var(--space-150);
+    padding: var(--space-150);
+    border: 1px solid rgba(216, 208, 200, 0.78);
+    border-radius: 16px;
+    background: rgba(255, 254, 252, 0.98);
+    box-shadow: 0 10px 22px rgba(29, 24, 21, 0.06);
+  }
+
+  .topbar--marketing.topbar--guest .guest-mobile-menu::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 20px;
+    width: 14px;
+    height: 14px;
+    border-top: 1px solid rgba(216, 208, 200, 0.78);
+    border-left: 1px solid rgba(216, 208, 200, 0.78);
+    background: rgba(255, 254, 252, 0.98);
+    transform: rotate(45deg);
+  }
+
+  .topbar--marketing.topbar--guest .guest-mobile-menu--open {
+    display: grid;
   }
 }
 
@@ -10892,7 +10955,7 @@ select {
   .topbar--marketing.topbar--guest .brandmark {
     grid-column: 1;
     justify-self: start;
-    padding-right: 88px;
+    padding-right: 0;
   }
 
   .topbar--marketing.topbar--guest .brandmark__image {
@@ -10905,12 +10968,25 @@ select {
   }
 
   .topbar--marketing.topbar--guest .topbar__actions {
-    display: none;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-self: end;
   }
 
   .topbar--marketing.topbar--guest .topbar-audience {
     grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .topbar--marketing.topbar--guest .guest-mobile-menu {
     grid-row: 2;
+  }
+
+  .topbar--marketing.topbar--guest .mobile-menu-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
   }
 }
 
@@ -11054,6 +11130,74 @@ select {
 .topbar-blog-link:hover {
   background: var(--color-orange-050);
   color: var(--color-ink-900);
+}
+
+.guest-mobile-menu__item,
+.guest-mobile-menu__button {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border-radius: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.guest-mobile-menu__item {
+  justify-content: flex-start;
+  gap: var(--space-100);
+  padding: var(--space-150) var(--space-200);
+  color: #625850;
+  font-size: 0.96rem;
+}
+
+.guest-mobile-menu__item + .guest-mobile-menu__item {
+  border-top: 1px solid rgba(216, 208, 200, 0.7);
+  border-radius: 0;
+}
+
+.guest-mobile-menu__item--tester {
+  color: #514942;
+}
+
+.guest-mobile-menu__item-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  color: #746b63;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: scaleX(1.3);
+}
+
+.guest-mobile-menu__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-100);
+  margin-top: var(--space-150);
+  padding: var(--space-200) 0 var(--space-100);
+  border-top: 1px solid rgba(216, 208, 200, 0.7);
+}
+
+.guest-mobile-menu__button {
+  justify-content: center;
+  min-width: 0;
+  min-height: 46px;
+  padding: var(--space-150) var(--space-075);
+  border: 1px solid rgba(216, 208, 200, 0.86);
+  background: #fffefc;
+  color: var(--color-ink-900);
+  font-size: 0.92rem;
+  box-shadow: 0 6px 16px rgba(29, 24, 21, 0.05);
+  white-space: nowrap;
+}
+
+.guest-mobile-menu__button--start {
+  border-color: transparent;
+  background: var(--color-orange-500);
 }
 
 .blog-page {

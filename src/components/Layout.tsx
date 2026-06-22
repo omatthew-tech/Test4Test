@@ -153,6 +153,7 @@ export function AppShell({
   const showTopbarActions = !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
   const hasMarketingHeader = headerVariant === "marketing";
+  const showGuestMarketingMenu = hasMarketingHeader && !showMemberNav && showTopbarActions;
   const shouldShowAudienceToggle = showAudienceToggle && hasMarketingHeader && !showMemberNav;
   const shellClassName = `app-shell${variant === "marketing" ? " app-shell--marketing" : ""}`;
   const siteHeaderClassName = `site-header${hasMarketingHeader ? " site-header--marketing" : ""}`;
@@ -220,6 +221,47 @@ export function AppShell({
               </nav>
             ) : null}
 
+            {showGuestMarketingMenu ? (
+              <nav
+                id={mobileMenuId}
+                className={`guest-mobile-menu${isMobileMenuOpen ? " guest-mobile-menu--open" : ""}`}
+                aria-label="Mobile navigation"
+              >
+                <Link
+                  to="/blog"
+                  className="guest-mobile-menu__item"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Blog
+                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true">&gt;</span>
+                </Link>
+                <Link
+                  to="/get-paid-to-test"
+                  className="guest-mobile-menu__item guest-mobile-menu__item--tester"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Want to get paid to test?
+                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true">&gt;</span>
+                </Link>
+                <div className="guest-mobile-menu__actions">
+                  <NavLink
+                    to="/sign-in"
+                    className="guest-mobile-menu__button guest-mobile-menu__button--login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Log in
+                  </NavLink>
+                  <Link
+                    to="/submit"
+                    className="guest-mobile-menu__button guest-mobile-menu__button--start"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get started -&gt;
+                  </Link>
+                </div>
+              </nav>
+            ) : null}
+
             {showTopbarActions ? (
               <div className="topbar__actions">
                 {hasMarketingHeader && !showMemberNav ? (
@@ -234,6 +276,18 @@ export function AppShell({
                   <button
                     type="button"
                     className="mobile-menu-button"
+                    aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls={mobileMenuId}
+                    onClick={() => setIsMobileMenuOpen((current) => !current)}
+                  >
+                    {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+                  </button>
+                ) : null}
+                {showGuestMarketingMenu ? (
+                  <button
+                    type="button"
+                    className="mobile-menu-button guest-mobile-menu-toggle"
                     aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                     aria-expanded={isMobileMenuOpen}
                     aria-controls={mobileMenuId}
