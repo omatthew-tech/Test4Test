@@ -233,7 +233,7 @@ export function AppShell({
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Blog
-                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true">&gt;</span>
+                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true" />
                 </Link>
                 <Link
                   to="/get-paid-to-test"
@@ -241,7 +241,7 @@ export function AppShell({
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Want to get paid to test?
-                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true">&gt;</span>
+                  <span className="guest-mobile-menu__item-arrow" aria-hidden="true" />
                 </Link>
                 <div className="guest-mobile-menu__actions">
                   <NavLink
