@@ -11136,7 +11136,6 @@ select {
 .guest-mobile-menu__button {
   display: flex;
   align-items: center;
-  min-height: 46px;
   border-radius: 12px;
   font-weight: 600;
   line-height: 1;
@@ -11145,7 +11144,8 @@ select {
 .guest-mobile-menu__item {
   justify-content: flex-start;
   gap: var(--space-100);
-  padding: var(--space-150) var(--space-200);
+  height: 46px;
+  padding: 0 var(--space-200);
   color: #625850;
   font-size: 0.96rem;
 }
@@ -11177,7 +11177,7 @@ select {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-100);
-  margin-top: var(--space-150);
+  margin-top: 0;
   padding: var(--space-200) 0 var(--space-100);
   border-top: 1px solid rgba(216, 208, 200, 0.7);
 }
