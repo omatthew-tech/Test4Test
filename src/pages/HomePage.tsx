@@ -585,44 +585,6 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-feedback" aria-labelledby="home-feedback-title">
-          <div className="home-feedback__copy">
-            <h2 id="home-feedback-title">Feedback you can act on</h2>
-            <p>
-              Every test gives you written answers to your own questions &mdash; a summary of what
-              worked, where people got stuck, and the raw response from every tester. Specifics
-              you can fix tomorrow, not scores to guess at.
-            </p>
-          </div>
-
-          <div className="home-feedback__visual" aria-hidden="true">
-            <div className="feedback-demo">
-              <div className="feedback-demo__header">
-                <strong>Feedback report</strong>
-                <span>Your app &middot; Test #3</span>
-              </div>
-              <div className="feedback-demo__section">
-                <h3>What worked</h3>
-                <p>
-                  &ldquo;The onboarding checklist made it obvious what to do first &mdash; I was
-                  set up in under a minute.&rdquo;
-                </p>
-              </div>
-              <div className="feedback-demo__section feedback-demo__section--stuck">
-                <h3>Where they got stuck</h3>
-                <p>
-                  &ldquo;On the plans screen I didn&apos;t realize the plan names were buttons. I
-                  tapped Continue three times before anything happened.&rdquo;
-                </p>
-              </div>
-              <div className="feedback-demo__meta">
-                <span>Answered 6 questions</span>
-                <span>11 min session</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="home-quality" aria-labelledby="home-quality-title">
           <div className="home-quality__copy">
             <h2 id="home-quality-title">1 Test = 1 Credit</h2>
@@ -661,14 +623,14 @@ export function HomePage() {
         </section>
 
         <section className="home-final-cta" aria-labelledby="home-final-cta-title">
-          <h2 id="home-final-cta-title">Ready to hear what real users think?</h2>
-          <p>Submit your app in minutes. Your first feedback is only a few tests away.</p>
+          <h2 id="home-final-cta-title">Ready for feedback?</h2>
+          <p>Submit your app in minutes and start getting user feedback fast.</p>
           <button
             type="button"
             className="button button--primary home-final-cta__button"
             onClick={continueSubmission}
           >
-            Get my app tested
+            Get started
             <ArrowRight size={18} />
           </button>
         </section>

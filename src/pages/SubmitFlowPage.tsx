@@ -858,11 +858,11 @@ export function SubmitFlowPage() {
         {currentStep < steps.length ? (
           <div className="wizard-layout">
             <div className="wizard-stage">
+              <StepIndicator steps={steps} currentStep={currentStep} />
               <Surface className="wizard-stage__surface">
                 {currentStep === 0 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>What&apos;s the name of your app?</h2>
                     </div>
                     <label className="field">
@@ -892,7 +892,6 @@ export function SubmitFlowPage() {
                 {currentStep === 1 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>What kind of app is it?</h2>
                       <p>Choose every platform testers can use right now.</p>
                     </div>
@@ -934,7 +933,6 @@ export function SubmitFlowPage() {
                 {currentStep === 2 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
                       {selectedProductTypes.length > 1 ? (
                         <p>Add one public link for each selected platform.</p>
@@ -1000,7 +998,6 @@ export function SubmitFlowPage() {
                 {currentStep === 3 ? (
                   <div className="form-stack form-stack--question-studio">
                     <div className="section-heading">
-                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>Set up your questions</h2>
                     </div>
                     <div className="question-studio">
@@ -1257,7 +1254,6 @@ export function SubmitFlowPage() {
                 {currentStep === 4 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <StepIndicator steps={steps} currentStep={currentStep} />
                       <h2>Review before publishing</h2>
                     </div>
                     {currentLiveSubmission ? (
