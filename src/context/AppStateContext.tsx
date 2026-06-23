@@ -27,6 +27,7 @@ import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotificati
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
+import { getPublicTesterKey } from "../lib/publicTesterKey";
 import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
 import {
   AppState,
@@ -251,8 +252,6 @@ interface AppStateContextValue {
 }
 
 const OTP_REQUEST_DEDUPE_WINDOW_MS = 10000;
-const PUBLIC_TESTER_KEY_STORAGE_KEY = "test4test_public_tester_key";
-
 const emptyState: AppState = {
   currentUserId: null,
   users: [],
@@ -371,34 +370,6 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
     expiresAt: row.recording_expires_at,
     deletedAt: row.recording_deleted_at,
   };
-}
-
-function createPublicTesterKey() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
-}
-
-function getPublicTesterKey() {
-  if (typeof window === "undefined") {
-    return createPublicTesterKey();
-  }
-
-  try {
-    const stored = window.localStorage.getItem(PUBLIC_TESTER_KEY_STORAGE_KEY)?.trim();
-
-    if (stored && stored.length >= 16 && stored.length <= 128) {
-      return stored;
-    }
-
-    const next = createPublicTesterKey();
-    window.localStorage.setItem(PUBLIC_TESTER_KEY_STORAGE_KEY, next);
-    return next;
-  } catch {
-    return createPublicTesterKey();
-  }
 }
 
 function mapSubmission(row: SubmissionRow): Submission {
@@ -1657,14 +1628,37 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       async completeTest(submissionId, answers, durationSeconds, recording, questionSetVersionId, submissionVersionId) {
         if (!currentUser) {
           const supabase = requireSupabase();
-          const { data, error } = await supabase.rpc("submit_public_test_response", {
+          let { data, error } = await supabase.rpc("submit_public_test_response", {
             p_submission_id: submissionId,
             p_answers: answers,
             p_duration_seconds: durationSeconds,
             p_public_tester_key: getPublicTesterKey(),
+            p_recording_bucket: recording?.bucket ?? null,
+            p_recording_path: recording?.path ?? null,
             p_question_set_version_id: questionSetVersionId ?? null,
             p_submission_version_id: submissionVersionId ?? null,
           });
+
+          if (
+            error &&
+            !recording &&
+            (
+              error.message.includes("p_recording_bucket") ||
+              error.message.includes("p_recording_path") ||
+              error.message.includes("Could not find the function")
+            )
+          ) {
+            const retry = await supabase.rpc("submit_public_test_response", {
+              p_submission_id: submissionId,
+              p_answers: answers,
+              p_duration_seconds: durationSeconds,
+              p_public_tester_key: getPublicTesterKey(),
+              p_question_set_version_id: questionSetVersionId ?? null,
+              p_submission_version_id: submissionVersionId ?? null,
+            });
+            data = retry.data;
+            error = retry.error;
+          }
 
           if (error) {
             if (isMissingSubmissionSchemaError(error.message)) {

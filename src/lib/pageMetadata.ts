@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export const siteTitle = "Test4Test";
 export const siteUrl = "https://test4test.io";
 export const defaultDescription =
-  "Test4Test is a warm, fast usability testing platform where users earn feedback credits by testing other products.";
+  "A Free User Testing Platform where founders exchange meaningful feedback";
 
 export interface PageMetadata {
   title?: string;

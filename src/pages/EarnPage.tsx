@@ -366,10 +366,7 @@ export function EarnPage() {
   });
   const [pendingProductTypes, setPendingProductTypes] = useState<ProductType[]>(selectedProductTypes);
   const [hasConfirmedPlatformFilter, setHasConfirmedPlatformFilter] = useState(() =>
-    currentUser
-      ? readStoredPlatformConfirmation(currentUser.id) &&
-        readStoredProductTypes(currentUser.id) !== null
-      : false,
+    currentUser ? readStoredPlatformConfirmation(currentUser.id) : false,
   );
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
@@ -569,8 +566,7 @@ export function EarnPage() {
     }
 
     const storedProductTypes = readStoredProductTypes(currentUser.id);
-    const hasStoredConfirmation = readStoredPlatformConfirmation(currentUser.id);
-    const isConfirmed = hasStoredConfirmation && storedProductTypes !== null;
+    const isConfirmed = readStoredPlatformConfirmation(currentUser.id);
     const nextSelectedProductTypes = storedProductTypes ?? defaultSelectedProductTypes;
 
     setSelectedProductTypes(nextSelectedProductTypes);

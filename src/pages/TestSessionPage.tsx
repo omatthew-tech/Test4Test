@@ -35,6 +35,7 @@ import {
 } from "../lib/recordings";
 import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
 import { trackEventOncePerSession } from "../lib/analytics";
+import { getPublicTesterKey } from "../lib/publicTesterKey";
 import {
   clearLocalTestResponseDraft,
   clearTestResponseDraft,
@@ -424,6 +425,14 @@ export function TestSessionPage() {
   const isSlugSharedVisit = Boolean(submissionBySlug && !submissionById);
   const isSharedPublicVisit =
     isPublicTester && (isSlugSharedVisit || searchParams.get("shared") === "1");
+  const recordingUploadPublicTesterKey = useMemo(
+    () => (isSharedPublicVisit ? getPublicTesterKey() : ""),
+    [isSharedPublicVisit],
+  );
+  const recordingUploadIdentity = currentUser?.id ?? recordingUploadPublicTesterKey;
+  const recordingUploadIdentityOptions = recordingUploadPublicTesterKey
+    ? { publicTesterKey: recordingUploadPublicTesterKey }
+    : {};
   const sharedCustomMessage =
     submission?.publicShareMessage?.trim() || searchParams.get("message")?.trim() || "";
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(testRef));
@@ -1514,7 +1523,7 @@ export function TestSessionPage() {
   };
 
   const uploadManualRecordingFile = async (file: File, successMessage: string) => {
-    if (!currentUser) {
+    if (!recordingUploadIdentity) {
       setMessage("Verify your email before uploading a recording.");
       return false;
     }
@@ -1535,11 +1544,12 @@ export function TestSessionPage() {
 
     try {
       const nextRecording = await uploadRecordingDraft(
-        currentUser.id,
+        recordingUploadIdentity,
         recordingSessionId,
         file,
         uploadedRecording,
         {
+          ...recordingUploadIdentityOptions,
           onProgress: setRecordingUploadProgress,
         },
       );
@@ -1582,7 +1592,7 @@ export function TestSessionPage() {
       return;
     }
 
-    if (!currentUser) {
+    if (!recordingUploadIdentity) {
       setRecordingPhase("return_and_submit");
       setNativeUploadError("Verify your email before the browser recording can upload.");
       setMessage("Verify your email before the browser recording can upload.");
@@ -1599,16 +1609,17 @@ export function TestSessionPage() {
     try {
       const uploadPath =
         pendingRecordingUploadPath ||
-        buildRecordingDraftPath(currentUser.id, recordingSessionId, generatedFile.name);
+        buildRecordingDraftPath(recordingUploadIdentity, recordingSessionId, generatedFile.name);
       setPendingRecordingUploadPath(uploadPath);
 
       const nextRecording = await uploadGeneratedRecordingDraft(
-        currentUser.id,
+        recordingUploadIdentity,
         recordingSessionId,
         blob,
         resolvedMimeType,
         uploadedRecording,
         {
+          ...recordingUploadIdentityOptions,
           path: uploadPath,
           onProgress: setRecordingUploadProgress,
         },
@@ -2194,7 +2205,7 @@ export function TestSessionPage() {
       return;
     }
 
-    if (!currentUser) {
+    if (!recordingUploadIdentity) {
       setMessage("Verify your email before starting a recording test.");
       return;
     }
@@ -2363,7 +2374,7 @@ export function TestSessionPage() {
       return;
     }
 
-    if (!currentUser) {
+    if (!recordingUploadIdentity) {
       setMessage("Verify your email before deleting a recording.");
       if (options?.returnToTestPage) {
         returnToTestSessionWindow();
@@ -2381,7 +2392,7 @@ export function TestSessionPage() {
     setRecordingPipDeleteConfirm(false);
 
     try {
-      await deleteRecordingDraft(uploadedRecording);
+      await deleteRecordingDraft(uploadedRecording, recordingUploadIdentityOptions);
       cleanupActiveCaptureStreams();
       setUploadedRecording(null);
       setNativeRecordingBlob(null);
