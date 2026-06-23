@@ -1053,7 +1053,7 @@ export function SubmitFlowPage() {
                           <div className="recording-setup-copy">
                             <div className="recording-setup-insight">
                               <Lightbulb size={13} aria-hidden="true" />
-                              <span>This option usually produces more insights and better results</span>
+                              <span>This option usually produces the best insights</span>
                             </div>
                             <p>
                               Testers will record their screen and voice while using your app. Please ensure tester

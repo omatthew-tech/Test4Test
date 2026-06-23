@@ -4,7 +4,7 @@ import { getRecordingEnvironment } from "./response-recordings.ts";
 export const R2_RECORDING_PROVIDER = "r2";
 export const R2_RECORDING_BUCKET_NAME = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `${R2_RECORDING_PROVIDER}:${R2_RECORDING_BUCKET_NAME}`;
-export const R2_RECORDING_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+export const R2_RECORDING_MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024;
 export const R2_RECORDING_STORAGE_DAYS = 60;
 export const R2_RECORDING_ALLOWED_MIME_TYPES = new Set([
   "video/mp4",
@@ -115,7 +115,7 @@ export function validateR2RecordingObjectInput(input: {
   }
 
   if (input.fileSizeBytes > R2_RECORDING_MAX_FILE_SIZE_BYTES) {
-    throw new Error("Recording must be 500 MB or smaller.");
+    throw new Error("Recording must be 1 GB or smaller.");
   }
 
   const mimeType = normalizeR2RecordingMimeType(input.fileName, input.mimeType);

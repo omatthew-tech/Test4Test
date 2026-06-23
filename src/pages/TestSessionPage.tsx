@@ -2920,7 +2920,7 @@ export function TestSessionPage() {
                         disabled={isUploadingRecording}
                       />
                       <small className="helper-text">
-                        Accepted: MP4, MOV, or WEBM up to 500 MB.
+                        Accepted: MP4, MOV, or WEBM up to 1 GB.
                       </small>
                     </label>
                   ) : null}

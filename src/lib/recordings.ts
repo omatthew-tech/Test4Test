@@ -4,7 +4,7 @@ import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
 export const RECORDING_STORAGE_DAYS = 60;
-export const RECORDING_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+export const RECORDING_MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024;
 export const RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
 const RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES = 10 * 1024 * 1024;
 const RECORDING_UPLOAD_RETRY_DELAYS_MS = [750, 1500, 3000];
@@ -329,7 +329,7 @@ export function validateRecordingFile(file: File) {
   if (file.size > RECORDING_MAX_FILE_SIZE_BYTES) {
     return {
       ok: false,
-      message: "Recording must be 500 MB or smaller.",
+      message: "Recording must be 1 GB or smaller.",
     };
   }
 
