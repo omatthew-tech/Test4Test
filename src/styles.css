@@ -3553,12 +3553,6 @@ body {
   outline: none;
 }
 
-.earn-row-anchor:focus-visible .earn-row,
-.earn-row-anchor:focus .earn-row {
-  border-color: rgba(245, 142, 86, 0.52);
-  box-shadow: 0 0 0 4px rgba(245, 142, 86, 0.14);
-}
-
 .earn-controls {
   padding: var(--space-250) var(--space-300);
   background:
@@ -3783,11 +3777,6 @@ body {
   box-shadow: none;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   overflow: hidden;
-}
-
-.earn-row:hover {
-  border-color: rgba(245, 142, 86, 0.26);
-  box-shadow: 0 8px 20px rgba(29, 24, 21, 0.035);
 }
 
 .earn-row-anchor--private-placement {
