@@ -13,6 +13,7 @@ const CreditsPage = lazy(() => import("./pages/CreditsPage").then((m) => ({ defa
 const EarnPage = lazy(() => import("./pages/EarnPage").then((m) => ({ default: m.EarnPage })));
 const MyTestsPage = lazy(() => import("./pages/MyTestsPage").then((m) => ({ default: m.MyTestsPage })));
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const ReportsPage = lazy(() => import("./pages/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const ReviseSubmissionPage = lazy(() => import("./pages/ReviseSubmissionPage").then((m) => ({ default: m.ReviseSubmissionPage })));
 const SignInPage = lazy(() => import("./pages/SignInPage").then((m) => ({ default: m.SignInPage })));
 const SubmissionDetailPage = lazy(() => import("./pages/SubmissionDetailPage").then((m) => ({ default: m.SubmissionDetailPage })));
@@ -91,6 +92,8 @@ export default function App() {
             <Route path="/test/:submissionId/success" element={<BanRedirectRoute><TestSuccessPage /></BanRedirectRoute>} />
             <Route path="/my-tests" element={<BanRedirectRoute><MyTestsPage /></BanRedirectRoute>} />
             <Route path="/my-tests/:submissionId" element={<BanRedirectRoute><SubmissionDetailPage /></BanRedirectRoute>} />
+            <Route path="/reports" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
+            <Route path="/reports/:reportId" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
             <Route path="/submissions" element={<BanRedirectRoute><SubmissionsPage /></BanRedirectRoute>} />
             <Route path="/submissions/:responseId/revise" element={<BanRedirectRoute><ReviseSubmissionPage /></BanRedirectRoute>} />
             <Route path="/credits" element={<BanRedirectRoute><CreditsPage /></BanRedirectRoute>} />

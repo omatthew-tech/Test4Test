@@ -148,6 +148,7 @@ export function AppShell({
     },
     { to: "/submit", label: "New App", mobileLabel: "New App" },
     { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews" },
+    { to: "/reports", label: "Report", mobileLabel: "Report", activePathPrefix: "/reports" },
   ];
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const showTopbarActions = !hideMemberChrome;

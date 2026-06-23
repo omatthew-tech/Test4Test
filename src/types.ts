@@ -329,4 +329,36 @@ export interface SubmissionDraft {
   questionMode: QuestionMode;
 }
 
+export type UsabilityReportStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface UsabilityReport {
+  id: string;
+  submissionId: string;
+  submissionProductName: string;
+  status: UsabilityReportStatus;
+  errorMessage?: string | null;
+  sourceResponseCount: number;
+  frameCount: number;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export interface UsabilityReportFrame {
+  id: string;
+  reportId: string;
+  testResponseId: string;
+  testerLabel?: string | null;
+  frameIndex: number;
+  /** Exact offset of this screenshot within the source recording, in milliseconds. */
+  timestampMs: number;
+  /** Short-lived signed URL for the screenshot image. */
+  url: string;
+  width?: number | null;
+  height?: number | null;
+}
+
+export interface UsabilityReportDetail extends UsabilityReport {
+  frames: UsabilityReportFrame[];
+}
+
 
