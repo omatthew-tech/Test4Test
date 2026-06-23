@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell, type AudienceRole } from "../components/Layout";
 import { trackEvent } from "../lib/analytics";
+import { defaultImage, getAbsoluteUrl, siteTitle, siteUrl, usePageMetadata } from "../lib/pageMetadata";
 import { getSubmitFlowResume } from "../lib/pendingSubmission";
 
 const groupLogoPath = "/branding/Test4Test%20Group%20Logo.png";
@@ -11,6 +12,17 @@ const formHolderLogoPath = "/branding/Raspberry.png";
 const formHolderArmPath = "/branding/raspberry-arm-foreground-364x607.png";
 const mobileFormHolderLogoPath = "/branding/Short%20Popsicle.png";
 const mobileFormHolderArmsPath = "/branding/short-popsicle-arms-foreground-1024x1536.png";
+
+const homeOrganizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: siteTitle,
+  url: siteUrl,
+  logo: {
+    "@type": "ImageObject",
+    url: getAbsoluteUrl(defaultImage),
+  },
+};
 
 const processSteps = [
   {
@@ -341,6 +353,12 @@ function QualityRankDemo() {
 }
 
 export function HomePage() {
+  usePageMetadata({
+    canonicalPath: "/",
+    image: defaultImage,
+    jsonLd: homeOrganizationJsonLd,
+  });
+
   const [productName, setProductName] = useState("");
   const [hasResumeSubmission] = useState(() => Boolean(getSubmitFlowResume()));
   const processGridRef = useRef<HTMLDivElement | null>(null);
