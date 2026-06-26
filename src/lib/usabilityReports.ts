@@ -160,7 +160,7 @@ export async function getUsabilityReport(reportId: string): Promise<UsabilityRep
 export interface PollOptions {
   /** Milliseconds between status checks. Default 2500. */
   intervalMs?: number;
-  /** Maximum total wait before giving up. Default 5 minutes. */
+  /** Maximum total wait before giving up. Default 20 minutes. */
   timeoutMs?: number;
   /** Called after every status check (useful for progress UI). */
   onTick?: (status: UsabilityReportStatus, frameCount: number) => void;
@@ -177,7 +177,7 @@ export async function pollUsabilityReportUntilDone(
   options: PollOptions = {},
 ): Promise<{ status: UsabilityReportStatus; frameCount: number; errorMessage?: string | null }> {
   const intervalMs = options.intervalMs ?? 2500;
-  const timeoutMs = options.timeoutMs ?? 5 * 60 * 1000;
+  const timeoutMs = options.timeoutMs ?? 20 * 60 * 1000;
   const deadline = Date.now() + timeoutMs;
 
   while (true) {
@@ -193,7 +193,7 @@ export async function pollUsabilityReportUntilDone(
     }
 
     if (Date.now() >= deadline) {
-      throw new Error("Report generation is taking longer than expected. Check back shortly.");
+      throw new Error("This report is still processing. Check Previous reports again in a few minutes.");
     }
 
     await new Promise<void>((resolve, reject) => {

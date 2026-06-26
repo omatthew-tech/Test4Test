@@ -32,6 +32,7 @@
    - `supabase/functions/list-usability-reports`
    - `supabase/functions/get-usability-report-status`
    - `supabase/functions/get-usability-report`
+   - `supabase/functions/complete-usability-report`
 9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.
 10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
 11. The final test-back reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
