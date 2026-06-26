@@ -6,8 +6,10 @@ import sharp from "sharp";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
+const ffmpegBinaryPath = ffmpegPath as unknown as string | null;
+
+if (ffmpegBinaryPath) {
+  ffmpeg.setFfmpegPath(ffmpegBinaryPath);
 }
 ffmpeg.setFfprobePath(ffprobeStatic.path);
 

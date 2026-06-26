@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { trackEventOncePerSession } from "./lib/analytics";
 import { HomePage } from "./pages/HomePage";
@@ -70,6 +70,12 @@ function BannedOnlyRoute({ children }: { children: ReactElement }) {
   return children;
 }
 
+function ReportsRedirect() {
+  const { reportId } = useParams();
+
+  return <Navigate to={reportId ? `/ai-analysis/${reportId}` : "/ai-analysis"} replace />;
+}
+
 export default function App() {
   useEffect(() => {
     trackEventOncePerSession("site_visited");
@@ -92,8 +98,10 @@ export default function App() {
             <Route path="/test/:submissionId/success" element={<BanRedirectRoute><TestSuccessPage /></BanRedirectRoute>} />
             <Route path="/my-tests" element={<BanRedirectRoute><MyTestsPage /></BanRedirectRoute>} />
             <Route path="/my-tests/:submissionId" element={<BanRedirectRoute><SubmissionDetailPage /></BanRedirectRoute>} />
-            <Route path="/reports" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
-            <Route path="/reports/:reportId" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
+            <Route path="/ai-analysis" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
+            <Route path="/ai-analysis/:reportId" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
+            <Route path="/reports" element={<BanRedirectRoute><ReportsRedirect /></BanRedirectRoute>} />
+            <Route path="/reports/:reportId" element={<BanRedirectRoute><ReportsRedirect /></BanRedirectRoute>} />
             <Route path="/submissions" element={<BanRedirectRoute><SubmissionsPage /></BanRedirectRoute>} />
             <Route path="/submissions/:responseId/revise" element={<BanRedirectRoute><ReviseSubmissionPage /></BanRedirectRoute>} />
             <Route path="/credits" element={<BanRedirectRoute><CreditsPage /></BanRedirectRoute>} />

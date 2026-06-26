@@ -148,7 +148,7 @@ export function AppShell({
     },
     { to: "/submit", label: "New App", mobileLabel: "New App" },
     { to: "/submissions", label: "My Reviews", mobileLabel: "My Reviews" },
-    { to: "/reports", label: "Report", mobileLabel: "Report", activePathPrefix: "/reports" },
+    { to: "/ai-analysis", label: "AI Analysis", mobileLabel: "AI Analysis", activePathPrefix: "/ai-analysis" },
   ];
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const showTopbarActions = !hideMemberChrome;

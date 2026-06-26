@@ -8,8 +8,8 @@ export function ReportsPage() {
 
   return (
     <AppShell
-      title="Report"
-      description="Turn tester screen recordings into timestamped, AI-analyzed usability reports."
+      title="AI Analysis"
+      description="Turn tester screen recordings into timestamped usability snapshots."
     >
       {reportId ? <ReportView reportId={reportId} /> : <ReportDashboard />}
     </AppShell>

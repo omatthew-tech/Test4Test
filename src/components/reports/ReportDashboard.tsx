@@ -11,13 +11,22 @@ import {
   listMyUsabilityReports,
   pollUsabilityReportUntilDone,
 } from "../../lib/usabilityReports";
-import { UsabilityReport } from "../../types";
+import { ResponseRecording, UsabilityReport } from "../../types";
 import { ProcessingScreen } from "./ProcessingScreen";
 
 const NO_RECORDINGS_MESSAGE =
   "No usability test recordings found for this app yet. Turn on screen recording for the test and wait for testers to complete it before generating a report.";
 
 type DashboardPhase = "dashboard" | "processing";
+
+function isAnalyzableRecording(recording: ResponseRecording | null) {
+  return Boolean(
+    recording?.bucket?.trim() &&
+      recording.path?.trim() &&
+      !recording.deletedAt &&
+      new Date(recording.expiresAt).getTime() > Date.now(),
+  );
+}
 
 function reportStatusLabel(status: UsabilityReport["status"]) {
   switch (status) {
@@ -47,7 +56,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const recordingCountBySubmission = useMemo(() => {
     const counts = new Map<string, number>();
     for (const response of state.responses) {
-      if (response.recording) {
+      if (isAnalyzableRecording(response.recording)) {
         counts.set(response.submissionId, (counts.get(response.submissionId) ?? 0) + 1);
       }
     }
@@ -101,6 +110,20 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const selectedRecordingCount = selectedSubmission
     ? recordingCountBySubmission.get(selectedSubmission.id) ?? 0
     : 0;
+  const filteredHistory = useMemo(
+    () =>
+      history
+        .filter((report) => report.submissionId === selectedSubmissionId)
+        .sort((first, second) => {
+          if (first.reportNumber !== second.reportNumber) {
+            return second.reportNumber - first.reportNumber;
+          }
+
+          return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+        }),
+    [history, selectedSubmissionId],
+  );
+  const hasMultipleSubmissions = submissions.length > 1;
 
   async function handleGenerate() {
     setError(null);
@@ -120,7 +143,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
     abortRef.current = controller;
 
     setPhase("processing");
-    setStatusLabel("Fetching your usability recordings…");
+    setStatusLabel("Fetching your usability recordings...");
 
     try {
       const { reportId } = await generateUsabilityReport(selectedSubmission.id);
@@ -131,8 +154,8 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
           if (status === "processing" || status === "pending") {
             setStatusLabel(
               frameCount > 0
-                ? `Captured ${frameCount} unique screen${frameCount === 1 ? "" : "s"} so far…`
-                : "Scanning each recording for unique app pages…",
+                ? `Captured ${frameCount} unique screen${frameCount === 1 ? "" : "s"} so far...`
+                : "Scanning each recording for unique app pages...",
             );
           }
         },
@@ -140,7 +163,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
 
       if (result.status === "completed") {
         // Requirement: redirect to the specific report view on success.
-        navigate(`/reports/${reportId}`);
+        navigate(`/ai-analysis/${reportId}`);
         return;
       }
 
@@ -174,11 +197,11 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
         <div className="report-dashboard__hero-text">
           <span className="report-dashboard__eyebrow">
             <Sparkles size={16} strokeWidth={2.4} />
-            AI usability report
+            AI Analysis
           </span>
-          <h2 className="report-dashboard__title">Generate a usability report</h2>
+          <h2 className="report-dashboard__title">Generate report</h2>
           <p className="report-dashboard__subtitle">
-            We analyze your testers' screen recordings and pull out every unique app page as a
+            We scan your testers' screen recordings and pull out every unique app page as a
             timestamped screenshot, so you can see exactly what testers saw and when.
           </p>
         </div>
@@ -190,39 +213,47 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
           </div>
         ) : (
           <div className="report-dashboard__controls">
-            <label className="field report-dashboard__select">
-              <span className="field__label">App</span>
-              <select
-                value={selectedSubmissionId}
-                onChange={(event) => {
-                  setSelectedSubmissionId(event.target.value);
-                  setError(null);
-                }}
-              >
-                {submissions.map((submission) => {
-                  const count = recordingCountBySubmission.get(submission.id) ?? 0;
-                  return (
-                    <option key={submission.id} value={submission.id}>
-                      {submission.productName} ({count} recording{count === 1 ? "" : "s"})
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
+            {hasMultipleSubmissions ? (
+              <label className="field report-dashboard__select">
+                <span className="field__label">App</span>
+                <select
+                  value={selectedSubmissionId}
+                  onChange={(event) => {
+                    setSelectedSubmissionId(event.target.value);
+                    setError(null);
+                  }}
+                >
+                  {submissions.map((submission) => {
+                    const count = recordingCountBySubmission.get(submission.id) ?? 0;
+                    return (
+                      <option key={submission.id} value={submission.id}>
+                        {submission.productName} ({count} recording{count === 1 ? "" : "s"})
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+            ) : (
+              <div className="report-dashboard__selected-app">
+                <span className="field__label">App</span>
+                <strong>{selectedSubmission?.productName}</strong>
+              </div>
+            )}
 
             <div className="report-dashboard__recording-hint">
               <Video size={16} strokeWidth={2.2} />
               {selectedRecordingCount > 0
                 ? `${selectedRecordingCount} recording${selectedRecordingCount === 1 ? "" : "s"} available to analyze`
-                : "No recordings available for this app yet"}
+                : "You don't have any recordings for this app yet"}
             </div>
 
             <button
               type="button"
               className="button button--primary report-dashboard__generate"
               onClick={handleGenerate}
+              disabled={!selectedSubmission || selectedRecordingCount === 0}
             >
-              Generate Report
+              Generate report
               <ArrowRight size={18} strokeWidth={2.2} />
             </button>
           </div>
@@ -236,43 +267,45 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
         ) : null}
       </Surface>
 
-      <Surface className="report-dashboard__history">
-        <h3 className="report-dashboard__history-title">Report history</h3>
-        {history.length === 0 ? (
-          <div className="empty-state empty-state--left">
-            <p>No reports yet. Generate your first report above.</p>
-          </div>
-        ) : (
-          <ul className="report-history">
-            {history.map((report) => {
-              const isReady = report.status === "completed";
-              return (
-                <li key={report.id} className="report-history__item">
-                  <button
-                    type="button"
-                    className="report-history__link"
-                    onClick={() => navigate(`/reports/${report.id}`)}
-                    disabled={!isReady}
-                  >
-                    <span className="report-history__main">
-                      <span className="report-history__name">{report.submissionProductName}</span>
-                      <span className="report-history__meta">
-                        {formatDateTime(report.createdAt)} · {report.frameCount} screenshot
-                        {report.frameCount === 1 ? "" : "s"}
-                      </span>
-                    </span>
-                    <span
-                      className={`report-history__status report-history__status--${report.status}`}
+      {submissions.length > 0 ? (
+        <Surface className="report-dashboard__history">
+          <h3 className="report-dashboard__history-title">Previous reports</h3>
+          {filteredHistory.length === 0 ? (
+            <div className="empty-state empty-state--left">
+              <p>No reports yet for this app. Generate your first report above.</p>
+            </div>
+          ) : (
+            <ul className="report-history">
+              {filteredHistory.map((report) => {
+                const isReady = report.status === "completed";
+                return (
+                  <li key={report.id} className="report-history__item">
+                    <button
+                      type="button"
+                      className="report-history__link"
+                      onClick={() => navigate(`/ai-analysis/${report.id}`)}
+                      disabled={!isReady}
                     >
-                      {reportStatusLabel(report.status)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Surface>
+                      <span className="report-history__main">
+                        <span className="report-history__name">Report {report.reportNumber}</span>
+                        <span className="report-history__meta">
+                          {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
+                          {report.sourceResponseCount === 1 ? "" : "s"} analyzed
+                        </span>
+                      </span>
+                      <span
+                        className={`report-history__status report-history__status--${report.status}`}
+                      >
+                        {reportStatusLabel(report.status)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Surface>
+      ) : null}
     </div>
   );
 }

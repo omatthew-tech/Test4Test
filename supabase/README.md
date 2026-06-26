@@ -16,6 +16,11 @@
    - `APP_BASE_URL` (for example `https://test4test.io`)
    - `TEST_REPORT_SUPPORT_EMAIL` (optional, defaults to `support@test4test.io`)
    - `TEST_BACK_REMINDER_CRON_SECRET`
+   - `VIDEO_PROCESSOR_URL`
+   - `VIDEO_PROCESSOR_SHARED_SECRET` (must match `WORKER_SHARED_SECRET` in `services/video-processor`)
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
 8. Deploy the edge functions from:
    - `supabase/functions/generate-ai-questions`
    - `supabase/functions/send-test-results-notification`
@@ -23,6 +28,10 @@
    - `supabase/functions/send-google-play-closed-test-reminders`
    - `supabase/functions/report-test`
    - `supabase/functions/manage-test-reports`
+   - `supabase/functions/generate-usability-report`
+   - `supabase/functions/list-usability-reports`
+   - `supabase/functions/get-usability-report-status`
+   - `supabase/functions/get-usability-report`
 9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.
 10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
 11. The final test-back reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.

@@ -89,7 +89,7 @@ export function ReportView({ reportId }: ReportViewProps) {
     return (
       <Surface className="report-view__state">
         <span className="button__spinner" aria-hidden="true" />
-        <p>Loading report…</p>
+        <p>Loading report...</p>
       </Surface>
     );
   }
@@ -102,9 +102,9 @@ export function ReportView({ reportId }: ReportViewProps) {
           <span>{error ?? "That report could not be loaded."}</span>
         </div>
         <div className="report-view__state-actions">
-          <button type="button" className="button button--secondary" onClick={() => navigate("/reports")}>
+          <button type="button" className="button button--secondary" onClick={() => navigate("/ai-analysis")}>
             <ArrowLeft size={16} strokeWidth={2.2} />
-            Back to reports
+            Back to AI Analysis
           </button>
           <button
             type="button"
@@ -122,37 +122,46 @@ export function ReportView({ reportId }: ReportViewProps) {
   return (
     <div className="report-view page-stack">
       <Surface className="report-view__header">
-        <button type="button" className="report-view__back" onClick={() => navigate("/reports")}>
+        <button type="button" className="report-view__back" onClick={() => navigate("/ai-analysis")}>
           <ArrowLeft size={16} strokeWidth={2.2} />
-          All reports
+          AI Analysis
         </button>
-        <h2 className="report-view__title">{report.submissionProductName}</h2>
+        <h2 className="report-view__title">Report {report.reportNumber}</h2>
         <p className="report-view__meta">
-          Generated {report.completedAt ? formatDateTime(report.completedAt) : formatDateTime(report.createdAt)} ·{" "}
-          {report.frameCount} unique screenshot{report.frameCount === 1 ? "" : "s"} ·{" "}
-          {report.sourceResponseCount} recording{report.sourceResponseCount === 1 ? "" : "s"}
+          {report.submissionProductName} - Generated{" "}
+          {report.completedAt ? formatDateTime(report.completedAt) : formatDateTime(report.createdAt)} -{" "}
+          {report.sourceResponseCount} recording{report.sourceResponseCount === 1 ? "" : "s"} analyzed -{" "}
+          {report.frameCount} unique screenshot{report.frameCount === 1 ? "" : "s"}
         </p>
       </Surface>
 
-      {groups.map((group) => (
-        <Surface key={group.responseId} className="report-view__group">
-          <h3 className="report-view__group-title">{group.label}</h3>
-          <div className="report-frames">
-            {group.frames.map((frame) => (
-              <figure key={frame.id} className="report-frame">
-                <div className="report-frame__media">
-                  <img className="report-frame__image" src={frame.url} alt={`App screen at ${formatTimestamp(frame.timestampMs)}`} loading="lazy" />
-                  <span className="report-frame__timestamp">
-                    <Clock size={13} strokeWidth={2.4} />
-                    {formatTimestamp(frame.timestampMs)}
-                  </span>
-                </div>
-                <figcaption className="report-frame__caption">Screen {frame.frameIndex + 1}</figcaption>
-              </figure>
-            ))}
+      {groups.length === 0 ? (
+        <Surface className="report-view__group">
+          <div className="empty-state empty-state--left">
+            <p>This report does not have screenshots yet.</p>
           </div>
         </Surface>
-      ))}
+      ) : (
+        groups.map((group) => (
+          <Surface key={group.responseId} className="report-view__group">
+            <h3 className="report-view__group-title">{group.label}</h3>
+            <div className="report-frames">
+              {group.frames.map((frame) => (
+                <figure key={frame.id} className="report-frame">
+                  <div className="report-frame__media">
+                    <img className="report-frame__image" src={frame.url} alt={`App screen at ${formatTimestamp(frame.timestampMs)}`} loading="lazy" />
+                    <span className="report-frame__timestamp">
+                      <Clock size={13} strokeWidth={2.4} />
+                      {formatTimestamp(frame.timestampMs)}
+                    </span>
+                  </div>
+                  <figcaption className="report-frame__caption">Screen {frame.frameIndex + 1}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </Surface>
+        ))
+      )}
     </div>
   );
 }
