@@ -536,6 +536,7 @@ function shouldLoadFullStateForPath(pathname: string, currentUserId: string | nu
 
   return !(
     normalizedPathname === "/" ||
+    normalizedPathname === "/earn" ||
     normalizedPathname === "/sign-in" ||
     normalizedPathname === "/verify" ||
     normalizedPathname === "/get-paid-to-test" ||

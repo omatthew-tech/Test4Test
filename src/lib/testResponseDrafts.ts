@@ -36,6 +36,11 @@ interface TestResponseDraftRow {
   updated_at: string;
 }
 
+interface TestResponseDraftProgressRow {
+  submission_id: string;
+  answer_values: unknown;
+}
+
 interface StoredTestResponseDraft {
   userId?: unknown;
   submissionId?: unknown;
@@ -64,6 +69,10 @@ function normalizeAnswerValues(value: unknown) {
       .filter(([questionId, answer]) => typeof questionId === "string" && typeof answer === "string")
       .map(([questionId, answer]) => [questionId, answer]),
   );
+}
+
+function hasSavedAnswerValues(answerValues: Record<string, string>) {
+  return Object.values(answerValues).some((value) => value.trim().length > 0);
 }
 
 function normalizeStartedAt(value: unknown) {
@@ -161,6 +170,47 @@ export function loadLocalTestResponseDraft(
   }
 }
 
+export function loadLocalTestResponseDraftProgress(
+  userId: string,
+  submissionIds: string[],
+) {
+  const progress = Object.fromEntries(
+    submissionIds.map((submissionId) => [submissionId, false]),
+  ) as Record<string, boolean>;
+
+  if (typeof window === "undefined") {
+    return progress;
+  }
+
+  try {
+    submissionIds.forEach((submissionId) => {
+      const prefix = buildDraftStoragePrefix(userId, submissionId);
+
+      for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+        const key = window.localStorage.key(index);
+
+        if (!key?.startsWith(prefix)) {
+          continue;
+        }
+
+        const stored = window.localStorage.getItem(key);
+        const draft = stored
+          ? mapStoredDraft(JSON.parse(stored) as StoredTestResponseDraft)
+          : null;
+
+        if (draft && hasSavedAnswerValues(draft.answerValues)) {
+          progress[submissionId] = true;
+          break;
+        }
+      }
+    });
+  } catch {
+    // Local draft progress is best-effort.
+  }
+
+  return progress;
+}
+
 export function saveLocalTestResponseDraft(input: SaveTestResponseDraftInput) {
   if (typeof window === "undefined") {
     return;
@@ -249,6 +299,42 @@ export async function loadTestResponseDraft(
   } catch {
     return localDraft;
   }
+}
+
+export async function loadTestResponseDraftProgress(
+  userId: string,
+  submissionIds: string[],
+) {
+  const uniqueSubmissionIds = [...new Set(submissionIds)].filter(Boolean);
+  const progress = loadLocalTestResponseDraftProgress(userId, uniqueSubmissionIds);
+
+  if (uniqueSubmissionIds.length === 0 || !hasSupabaseConfig) {
+    return progress;
+  }
+
+  try {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from("test_response_drafts")
+      .select("submission_id, answer_values")
+      .eq("tester_user_id", userId)
+      .in("submission_id", uniqueSubmissionIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    ((data ?? []) as TestResponseDraftProgressRow[]).forEach((row) => {
+      if (row.submission_id) {
+        progress[row.submission_id] =
+          progress[row.submission_id] || hasSavedAnswerValues(normalizeAnswerValues(row.answer_values));
+      }
+    });
+  } catch {
+    return progress;
+  }
+
+  return progress;
 }
 
 export async function saveTestResponseDraft(

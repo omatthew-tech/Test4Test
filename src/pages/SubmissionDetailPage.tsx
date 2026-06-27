@@ -698,6 +698,13 @@ export function SubmissionDetailPage() {
     }
   };
 
+  const handleRecordingVideoError = () => {
+    setRecordingPreviewUrl("");
+    setRecordingActionError(
+      "The recording video could not be loaded. Refresh the video link to try again. If this keeps happening, the file may have been deleted from storage.",
+    );
+  };
+
   const refreshPreset = (mode: QuestionMode) => {
     if (!submission) {
       return;
@@ -1153,10 +1160,12 @@ export function SubmissionDetailPage() {
                       <div className="results-recording-player">
                         {recordingPreviewUrl ? (
                           <video
+                            key={recordingPreviewUrl}
                             src={recordingPreviewUrl}
                             title={recordingPreviewFileName || selectedRecording.fileName}
                             controls
                             preload="metadata"
+                            onError={handleRecordingVideoError}
                           >
                             Your browser does not support embedded video playback.
                           </video>

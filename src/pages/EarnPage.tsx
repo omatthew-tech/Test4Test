@@ -21,7 +21,11 @@ import {
   saveEarnPlacementSnapshot,
 } from "../lib/earnPlacementCelebration";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
-import { loadEarnVisibilitySummary } from "../lib/earnVisibility";
+import {
+  loadEarnVisibilityQuestionSet,
+  loadEarnVisibilitySubmission,
+  loadEarnVisibilitySummary,
+} from "../lib/earnVisibility";
 import {
   formatDate,
   normalizeProductTypes,
@@ -32,13 +36,15 @@ import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors"
 import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { loadMySubmissionReportStatuses } from "../lib/testReports";
-import { loadTestResponseDraft } from "../lib/testResponseDrafts";
+import { loadTestResponseDraftProgress } from "../lib/testResponseDrafts";
 import {
   EarnSubmissionCard,
   EarnSubmissionReputation,
   EarnVisibilitySummary,
   ProductType,
+  QuestionSetVersion,
   Submission,
+  SubmissionDraft,
   SubmittedFeedbackCard,
 } from "../types";
 
@@ -172,10 +178,6 @@ function compareEarnSubmissions(
   }
 
   return compareEarnSubmissionsByMode(first, second, sortMode);
-}
-
-function hasSavedDraftAnswers(answerValues: Record<string, string>) {
-  return Object.values(answerValues).some((value) => value.trim().length > 0);
 }
 
 function earnPlatformLabel(productType: ProductType) {
@@ -373,10 +375,13 @@ export function EarnPage() {
     Record<string, EarnSubmissionReputation>
   >({});
   const [serverEarnSubmissions, setServerEarnSubmissions] = useState<Submission[] | null>(null);
+  const [isLoadingServerEarnSubmissions, setIsLoadingServerEarnSubmissions] = useState(false);
   const [serverEarnError, setServerEarnError] = useState("");
   const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
   const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
   const [visibilitySummary, setVisibilitySummary] = useState<EarnVisibilitySummary | null>(null);
+  const [visibilitySubmission, setVisibilitySubmission] = useState<Submission | null>(null);
+  const [visibilityQuestionSet, setVisibilityQuestionSet] = useState<QuestionSetVersion | null>(null);
   const [visibilityError, setVisibilityError] = useState("");
   const [revisionTargetResponseId, setRevisionTargetResponseId] = useState<string | null>(null);
   const [revisionTargetError, setRevisionTargetError] = useState("");
@@ -408,23 +413,41 @@ export function EarnPage() {
   const editingVisibilitySubmission = useMemo(
     () =>
       editingVisibilitySubmissionId
-        ? state.submissions.find((submission) => submission.id === editingVisibilitySubmissionId) ?? null
+        ? state.submissions.find((submission) => submission.id === editingVisibilitySubmissionId) ??
+          (visibilitySubmission?.id === editingVisibilitySubmissionId ? visibilitySubmission : null)
         : null,
-    [editingVisibilitySubmissionId, state.submissions],
+    [editingVisibilitySubmissionId, state.submissions, visibilitySubmission],
   );
   const sharingVisibilitySubmission = useMemo(
     () =>
       sharingVisibilitySubmissionId
-        ? state.submissions.find((submission) => submission.id === sharingVisibilitySubmissionId) ?? null
+        ? state.submissions.find((submission) => submission.id === sharingVisibilitySubmissionId) ??
+          (visibilitySubmission?.id === sharingVisibilitySubmissionId ? visibilitySubmission : null)
         : null,
-    [sharingVisibilitySubmissionId, state.submissions],
+    [sharingVisibilitySubmissionId, state.submissions, visibilitySubmission],
   );
   const sharingVisibilityQuestionSet = sharingVisibilitySubmission
-    ? getActiveQuestionSet(state, sharingVisibilitySubmission.id)
+    ? visibilityQuestionSet?.submissionId === sharingVisibilitySubmission.id
+      ? visibilityQuestionSet
+      : getActiveQuestionSet(state, sharingVisibilitySubmission.id)
     : null;
   const sharingVisibilityUrl = sharingVisibilitySubmission
     ? buildReadableShareUrl(sharingVisibilitySubmission)
     : "";
+  const stateVisibilitySubmission = useMemo(
+    () =>
+      visibilitySummary?.submissionId
+        ? state.submissions.find((submission) => submission.id === visibilitySummary.submissionId) ?? null
+        : null,
+    [state.submissions, visibilitySummary?.submissionId],
+  );
+  const stateVisibilityQuestionSet = useMemo(
+    () =>
+      visibilitySummary?.submissionId
+        ? getActiveQuestionSet(state, visibilitySummary.submissionId)
+        : null,
+    [state, visibilitySummary?.submissionId],
+  );
 
   useEffect(() => {
     const nextCelebration = parseEarnCreditCelebrationState(location.state);
@@ -494,7 +517,68 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, isConfigured, state]);
+  }, [currentUser?.id, isConfigured]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const submissionId = visibilitySummary?.submissionId;
+
+    if (!currentUser || !isConfigured || !submissionId) {
+      setVisibilitySubmission(null);
+      setVisibilityQuestionSet(null);
+      return undefined;
+    }
+
+    if (stateVisibilitySubmission) {
+      setVisibilitySubmission(stateVisibilitySubmission);
+    }
+
+    if (stateVisibilityQuestionSet) {
+      setVisibilityQuestionSet(stateVisibilityQuestionSet);
+    }
+
+    if (stateVisibilitySubmission && stateVisibilityQuestionSet) {
+      return undefined;
+    }
+
+    const loadVisibilitySubmissionDetails = async () => {
+      try {
+        const [submission, questionSet] = await Promise.all([
+          stateVisibilitySubmission
+            ? Promise.resolve(stateVisibilitySubmission)
+            : loadEarnVisibilitySubmission(submissionId),
+          stateVisibilityQuestionSet
+            ? Promise.resolve(stateVisibilityQuestionSet)
+            : loadEarnVisibilityQuestionSet(submissionId),
+        ]);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setVisibilitySubmission(submission);
+        setVisibilityQuestionSet(questionSet);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error(error);
+          setVisibilitySubmission(stateVisibilitySubmission);
+          setVisibilityQuestionSet(stateVisibilityQuestionSet);
+        }
+      }
+    };
+
+    void loadVisibilitySubmissionDetails();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    currentUser?.id,
+    isConfigured,
+    stateVisibilityQuestionSet,
+    stateVisibilitySubmission,
+    visibilitySummary?.submissionId,
+  ]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -580,17 +664,21 @@ export function EarnPage() {
 
     if (!currentUser || !isConfigured) {
       setServerEarnSubmissions(null);
+      setIsLoadingServerEarnSubmissions(false);
       setServerEarnError("");
       return undefined;
     }
 
     if (selectedProductTypes.length === 0) {
       setServerEarnSubmissions([]);
+      setIsLoadingServerEarnSubmissions(false);
       setServerEarnError("");
       return undefined;
     }
 
     const loadServerEarnSubmissions = async () => {
+      setIsLoadingServerEarnSubmissions(true);
+
       try {
         const submissions = await listEarnSubmissions(selectedProductTypes);
 
@@ -612,6 +700,10 @@ export function EarnPage() {
             ? error.message
             : "We could not load pool-filtered tests right now.",
         );
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingServerEarnSubmissions(false);
+        }
       }
     };
 
@@ -808,25 +900,13 @@ export function EarnPage() {
     }
 
     const loadDraftProgress = async () => {
-      const entries = await Promise.all(
-        submissionIds.map(async (submissionId) => {
-          const questionSet = getActiveQuestionSet(state, submissionId);
-
-          if (!questionSet) {
-            return [submissionId, false] as const;
-          }
-
-          const draft = await loadTestResponseDraft(currentUser.id, submissionId, questionSet.id);
-
-          return [submissionId, Boolean(draft && hasSavedDraftAnswers(draft.answerValues))] as const;
-        }),
-      );
+      const progress = await loadTestResponseDraftProgress(currentUser.id, submissionIds);
 
       if (isCancelled) {
         return;
       }
 
-      setDraftProgressBySubmissionId(Object.fromEntries(entries));
+      setDraftProgressBySubmissionId(progress);
     };
 
     void loadDraftProgress();
@@ -834,7 +914,7 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, displayedSubmissionIdsKey, state]);
+  }, [currentUser?.id, displayedSubmissionIdsKey]);
 
   const cards = useMemo<EarnSubmissionCard[]>(
     () =>
@@ -846,10 +926,10 @@ export function EarnPage() {
   );
   const privatePlacementSubmission = useMemo(
     () =>
-      visibilitySummary?.submissionId
-        ? state.submissions.find((submission) => submission.id === visibilitySummary.submissionId) ?? null
-        : null,
-    [state.submissions, visibilitySummary?.submissionId],
+      visibilitySummary?.submissionId && visibilitySubmission?.id === visibilitySummary.submissionId
+        ? visibilitySubmission
+        : stateVisibilitySubmission,
+    [stateVisibilitySubmission, visibilitySubmission, visibilitySummary?.submissionId],
   );
   const privatePlacementRank = visibilitySummary?.wouldRank ?? visibilitySummary?.rank ?? null;
   const privatePlacementRankedCount =
@@ -940,6 +1020,28 @@ export function EarnPage() {
     target.focus({ preventScroll: true });
   };
 
+  const saveVisibilitySubmissionDetails = async (
+    submissionId: string,
+    draft: SubmissionDraft,
+  ) => {
+    await updateSubmissionDetails(submissionId, draft);
+
+    try {
+      const updatedSubmission = await loadEarnVisibilitySubmission(submissionId);
+      setVisibilitySubmission(updatedSubmission);
+
+      if (updatedSubmission) {
+        setVisibilitySummary((current) =>
+          current?.submissionId === submissionId
+            ? { ...current, productName: updatedSubmission.productName }
+            : current,
+        );
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const openVisibilityEditModal = (submissionId: string) => {
     setEditingVisibilitySubmissionId(submissionId);
   };
@@ -1024,6 +1126,11 @@ export function EarnPage() {
   const trailingCards = shouldShowPrivatePlacement
     ? cards.slice(privatePlacementIndex)
     : [];
+  const isShowingInitialEarnLoad =
+    isLoadingServerEarnSubmissions &&
+    serverEarnSubmissions === null &&
+    cards.length === 0 &&
+    selectedProductTypes.length > 0;
 
   return (
     <AppShell eyebrowLabel={null}>
@@ -1132,6 +1239,12 @@ export function EarnPage() {
               </div>
             ))}
           </div>
+        ) : isShowingInitialEarnLoad ? (
+          <Surface>
+            <div className="empty-state">
+              <h3>Loading tests...</h3>
+            </div>
+          </Surface>
         ) : (
           <Surface>
             <div className="empty-state">
@@ -1165,7 +1278,7 @@ export function EarnPage() {
         <EditSubmissionModal
           submission={editingVisibilitySubmission}
           onClose={closeVisibilityEditModal}
-          onSave={updateSubmissionDetails}
+          onSave={saveVisibilitySubmissionDetails}
         />
       ) : null}
       {sharingVisibilitySubmission ? (

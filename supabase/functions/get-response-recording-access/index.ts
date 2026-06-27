@@ -8,6 +8,7 @@ import {
   buildDownloadContentDisposition,
   createR2PresignedUrl,
   getR2RecordingEnvironment,
+  r2Fetch,
 } from "../_shared/r2-recordings.ts";
 
 interface RecordingAccessRequest {
@@ -125,6 +126,19 @@ Deno.serve(async (request) => {
 
     if (responseRecord.recording_bucket !== r2Env.providerBucket) {
       return recordingJson({ error: "Recording storage bucket is not configured." }, 500);
+    }
+
+    const objectHead = await r2Fetch(r2Env, responseRecord.recording_path, { method: "HEAD" });
+
+    if (objectHead.status === 404) {
+      return recordingJson(
+        { error: "Recording file was not found in Cloudflare R2. It may have been deleted from storage." },
+        404,
+      );
+    }
+
+    if (!objectHead.ok) {
+      return recordingJson({ error: "Recording file could not be verified in storage." }, 502);
     }
 
     signedUrl = await createR2PresignedUrl(r2Env, "GET", responseRecord.recording_path, {
