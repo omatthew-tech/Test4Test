@@ -352,14 +352,45 @@ export interface UsabilityReportFrame {
   frameIndex: number;
   /** Exact offset of this screenshot within the source recording, in milliseconds. */
   timestampMs: number;
+  /**
+   * Optional explicit display window for this screenshot, in milliseconds.
+   * When omitted, the window is derived as [timestampMs, next frame's timestampMs)
+   * for the same recording (see lib/quoteMatching).
+   */
+  startMs?: number | null;
+  endMs?: number | null;
   /** Short-lived signed URL for the screenshot image. */
   url: string;
   width?: number | null;
   height?: number | null;
 }
 
+/**
+ * A verbatim tester quote captured at an exact moment in a recording, linked to
+ * the screenshot that was on screen at that time. Used on both the summary view
+ * (all testers) and individual response pages.
+ */
+export interface UsabilityReportQuote {
+  id: string;
+  reportId: string;
+  /** The recording / tester this quote came from. */
+  testResponseId: string;
+  testerLabel?: string | null;
+  /** Exact offset of the quote within the source recording, in milliseconds. */
+  timestampMs: number;
+  /** The verbatim quote text. */
+  text: string;
+  /** Optional speaker/source label (e.g. "Tester", "Moderator"). */
+  speaker?: string | null;
+  /** Linked screenshot id (usability_report_frames.id). Null if no frame matched. */
+  linkedFrameId?: string | null;
+  /** Convenience: short-lived signed URL for the linked screenshot. */
+  linkedFrameUrl?: string | null;
+}
+
 export interface UsabilityReportDetail extends UsabilityReport {
   frames: UsabilityReportFrame[];
+  quotes?: UsabilityReportQuote[];
 }
 
 
