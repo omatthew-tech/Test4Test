@@ -60,8 +60,11 @@ export interface RecordingUploadProgress {
 
 export interface RecordingUploadOptions {
   path?: string;
+  publicTesterKey?: string;
   onProgress?: (progress: RecordingUploadProgress) => void;
 }
+
+type RecordingUploadIdentityOptions = Pick<RecordingUploadOptions, "publicTesterKey">;
 
 interface RecordingUploadR2Response {
   ok?: boolean;
@@ -368,20 +371,32 @@ async function getCurrentAccessToken() {
   return session.access_token;
 }
 
-async function callRecordingUploadR2(payload: Record<string, unknown>) {
+async function callRecordingUploadR2(
+  payload: Record<string, unknown>,
+  options: RecordingUploadIdentityOptions = {},
+) {
   if (!supabaseUrl || !supabasePublishableKey) {
     throw new Error("Recording uploads are not available in the current environment.");
   }
 
-  const accessToken = await getCurrentAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    apikey: supabasePublishableKey,
+  };
+  const publicTesterKey = options.publicTesterKey?.trim();
+  const body = publicTesterKey
+    ? { ...payload, publicTesterKey }
+    : payload;
+
+  if (!publicTesterKey) {
+    const accessToken = await getCurrentAccessToken();
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
   const response = await fetch(`${supabaseUrl}/functions/v1/recording-upload-r2`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: supabasePublishableKey,
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body: JSON.stringify(body),
   });
   const result = (await response.json().catch(() => null)) as RecordingUploadR2Response | null;
 
@@ -490,6 +505,7 @@ async function uploadRecordingObjectSingle(
   file: File,
   contentType: string,
   onProgress?: RecordingUploadOptions["onProgress"],
+  options: RecordingUploadIdentityOptions = {},
 ) {
   onProgress?.(buildUploadProgress(0, file.size, "uploading"));
   const createResult = await callRecordingUploadR2({
@@ -498,7 +514,7 @@ async function uploadRecordingObjectSingle(
     fileName: file.name,
     mimeType: contentType,
     fileSizeBytes: file.size,
-  });
+  }, options);
 
   if (!createResult.uploadUrl) {
     throw new Error("The recording upload URL could not be created.");
@@ -522,7 +538,7 @@ async function uploadRecordingObjectSingle(
     fileName: file.name,
     mimeType: contentType,
     fileSizeBytes: file.size,
-  });
+  }, options);
 }
 
 function getMultipartCacheKey(path: string, file: File, contentType: string) {
@@ -534,6 +550,7 @@ async function uploadRecordingObjectMultipart(
   file: File,
   contentType: string,
   onProgress?: RecordingUploadOptions["onProgress"],
+  options: RecordingUploadIdentityOptions = {},
 ) {
   const cacheKey = getMultipartCacheKey(path, file, contentType);
   let cacheEntry = multipartUploadCache.get(cacheKey);
@@ -545,7 +562,7 @@ async function uploadRecordingObjectMultipart(
       fileName: file.name,
       mimeType: contentType,
       fileSizeBytes: file.size,
-    });
+    }, options);
 
     if (!initiateResult.uploadId) {
       throw new Error("The multipart recording upload could not start.");
@@ -589,7 +606,7 @@ async function uploadRecordingObjectMultipart(
         fileSizeBytes: file.size,
         uploadId: cacheEntry.uploadId,
         partNumber,
-      });
+      }, options);
 
       if (!signedPart.uploadUrl) {
         throw new Error("The recording upload part URL could not be created.");
@@ -641,7 +658,7 @@ async function uploadRecordingObjectMultipart(
     fileSizeBytes: file.size,
     uploadId: cacheEntry.uploadId,
     parts: cacheEntry.completedParts,
-  });
+  }, options);
   multipartUploadCache.delete(cacheKey);
   onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 }
@@ -658,13 +675,13 @@ async function uploadRecordingObject(
   const shouldUseMultipartUpload = file.size > RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES;
 
   if (shouldUseMultipartUpload) {
-    await uploadRecordingObjectMultipart(path, file, contentType, options.onProgress);
+    await uploadRecordingObjectMultipart(path, file, contentType, options.onProgress, options);
   } else {
-    await uploadRecordingObjectSingle(path, file, contentType, options.onProgress);
+    await uploadRecordingObjectSingle(path, file, contentType, options.onProgress, options);
   }
 
   if (previousRecording?.path) {
-    await deleteRecordingDraft(previousRecording).catch(() => undefined);
+    await deleteRecordingDraft(previousRecording, options).catch(() => undefined);
   }
 
   const uploadedAt = new Date().toISOString();
@@ -728,7 +745,10 @@ export async function uploadGeneratedRecordingDraft(
   return uploadRecordingObject(userId, sessionId, recordingFile, previousRecording, options);
 }
 
-export async function deleteRecordingDraft(recording?: ResponseRecording | null) {
+export async function deleteRecordingDraft(
+  recording?: ResponseRecording | null,
+  options: RecordingUploadIdentityOptions = {},
+) {
   if (!recording?.path) {
     return;
   }
@@ -740,7 +760,7 @@ export async function deleteRecordingDraft(recording?: ResponseRecording | null)
       fileName: recording.fileName,
       mimeType: recording.mimeType,
       fileSizeBytes: recording.fileSizeBytes,
-    });
+    }, options);
     return;
   }
 

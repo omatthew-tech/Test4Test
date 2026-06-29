@@ -3,7 +3,8 @@ import { useEffect } from "react";
 export const siteTitle = "Test4Test";
 export const siteUrl = "https://test4test.io";
 export const defaultDescription =
-  "Test4Test is a warm, fast usability testing platform where users earn feedback credits by testing other products.";
+  "A Free User Testing Platform where founders exchange meaningful feedback";
+export const defaultImage = "/branding/Square%20Logo.png";
 
 export interface PageMetadata {
   title?: string;
@@ -95,12 +96,13 @@ export function resolvePageMetadata(
 ): ResolvedPageMetadata {
   const formattedTitle = title?.includes("|") ? title : formatPageTitle(title);
   const resolvedDescription = description ?? defaultDescription;
+  const resolvedImage = image ?? defaultImage;
 
   return {
     title: formattedTitle,
     description: resolvedDescription,
     canonicalUrl: getAbsoluteUrl(canonicalPath ?? fallbackPath),
-    imageUrl: image ? getAbsoluteUrl(image) : undefined,
+    imageUrl: getAbsoluteUrl(resolvedImage),
     noindex,
     type,
     jsonLd,

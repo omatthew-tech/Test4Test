@@ -371,6 +371,9 @@ deno_version = 2
 [functions.get-response-recording-access]
 verify_jwt = false
 
+[functions.recording-upload-r2]
+verify_jwt = false
+
 [functions.cleanup-response-recordings]
 verify_jwt = false
 

@@ -26,6 +26,7 @@ type RecordingUploadAction =
 interface RecordingUploadRequest {
   action?: RecordingUploadAction;
   path?: string;
+  publicTesterKey?: string;
   fileName?: string;
   mimeType?: string;
   fileSizeBytes?: number;
@@ -49,6 +50,10 @@ function normalizeFileSize(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
 }
 
+function isValidPublicTesterKey(value: string) {
+  return /^[a-zA-Z0-9-]{16,128}$/.test(value);
+}
+
 async function verifyR2ObjectExists(env: ReturnType<typeof getR2RecordingEnvironment>, objectKey: string) {
   const headResponse = await r2Fetch(env, objectKey, { method: "HEAD" });
 
@@ -60,7 +65,8 @@ async function verifyR2ObjectExists(env: ReturnType<typeof getR2RecordingEnviron
 async function upsertUploadRow(
   admin: ReturnType<typeof createRecordingAdminClient>,
   input: {
-    userId: string;
+    userId: string | null;
+    publicTesterKey: string | null;
     providerBucket: string;
     objectKey: string;
     uploadMode: "single" | "multipart";
@@ -95,6 +101,7 @@ async function upsertUploadRow(
     .upsert(
       {
         tester_user_id: input.userId,
+        public_tester_key: input.publicTesterKey,
         storage_provider: "r2",
         storage_bucket: input.providerBucket,
         object_key: input.objectKey,
@@ -133,24 +140,30 @@ Deno.serve(async (request) => {
     return recordingJson({ error: error instanceof Error ? error.message : "Recording upload setup is incomplete." }, 500);
   }
 
+  const admin = createRecordingAdminClient(env);
+  const payload = (await request.json().catch(() => ({}))) as RecordingUploadRequest;
   const authHeader = request.headers.get("Authorization") ?? "";
   const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const publicTesterKey = normalizeText(payload.publicTesterKey);
+  let userId: string | null = null;
 
-  if (!accessToken) {
+  if (accessToken) {
+    const {
+      data: { user },
+      error: userError,
+    } = await admin.auth.getUser(accessToken);
+
+    if (userError || !user) {
+      return recordingJson({ error: userError?.message ?? "Unauthorized." }, 401);
+    }
+
+    userId = user.id;
+  } else if (!isValidPublicTesterKey(publicTesterKey)) {
     return recordingJson({ error: "Unauthorized." }, 401);
   }
 
-  const admin = createRecordingAdminClient(env);
-  const {
-    data: { user },
-    error: userError,
-  } = await admin.auth.getUser(accessToken);
-
-  if (userError || !user) {
-    return recordingJson({ error: userError?.message ?? "Unauthorized." }, 401);
-  }
-
-  const payload = (await request.json().catch(() => ({}))) as RecordingUploadRequest;
+  const uploadOwnerKey = userId ?? publicTesterKey;
+  const uploadOwnerColumn = userId ? "tester_user_id" : "public_tester_key";
   const action = payload.action;
   const objectKey = normalizePath(payload.path);
   const fileName = normalizeText(payload.fileName);
@@ -164,7 +177,7 @@ Deno.serve(async (request) => {
 
     if (action === "create_single") {
       const mimeType = validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName,
         mimeType: rawMimeType,
@@ -172,7 +185,8 @@ Deno.serve(async (request) => {
       });
 
       await upsertUploadRow(admin, {
-        userId: user.id,
+        userId,
+        publicTesterKey: userId ? null : publicTesterKey,
         providerBucket: env.providerBucket,
         objectKey,
         uploadMode: "single",
@@ -198,7 +212,7 @@ Deno.serve(async (request) => {
 
     if (action === "complete_single") {
       const mimeType = validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName,
         mimeType: rawMimeType,
@@ -208,7 +222,8 @@ Deno.serve(async (request) => {
       await verifyR2ObjectExists(env, objectKey);
 
       await upsertUploadRow(admin, {
-        userId: user.id,
+        userId,
+        publicTesterKey: userId ? null : publicTesterKey,
         providerBucket: env.providerBucket,
         objectKey,
         uploadMode: "single",
@@ -224,7 +239,7 @@ Deno.serve(async (request) => {
 
     if (action === "initiate_multipart") {
       const mimeType = validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName,
         mimeType: rawMimeType,
@@ -253,7 +268,8 @@ Deno.serve(async (request) => {
       }
 
       await upsertUploadRow(admin, {
-        userId: user.id,
+        userId,
+        publicTesterKey: userId ? null : publicTesterKey,
         providerBucket: env.providerBucket,
         objectKey,
         uploadMode: "multipart",
@@ -282,7 +298,7 @@ Deno.serve(async (request) => {
       }
 
       validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName: fileName || "screen-recording.webm",
         mimeType: rawMimeType || "video/webm",
@@ -294,7 +310,7 @@ Deno.serve(async (request) => {
         .select("id")
         .eq("storage_bucket", env.providerBucket)
         .eq("object_key", objectKey)
-        .eq("tester_user_id", user.id)
+        .eq(uploadOwnerColumn, uploadOwnerKey)
         .eq("upload_id", uploadId)
         .eq("status", "uploading")
         .maybeSingle();
@@ -322,7 +338,7 @@ Deno.serve(async (request) => {
       const uploadId = normalizeText(payload.uploadId);
       const parts = Array.isArray(payload.parts) ? payload.parts : [];
       const mimeType = validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName,
         mimeType: rawMimeType,
@@ -352,7 +368,8 @@ Deno.serve(async (request) => {
       await verifyR2ObjectExists(env, objectKey);
 
       await upsertUploadRow(admin, {
-        userId: user.id,
+        userId,
+        publicTesterKey: userId ? null : publicTesterKey,
         providerBucket: env.providerBucket,
         objectKey,
         uploadMode: "multipart",
@@ -383,7 +400,7 @@ Deno.serve(async (request) => {
           .update({ status: "aborted", updated_at: new Date().toISOString() })
           .eq("storage_bucket", env.providerBucket)
           .eq("object_key", objectKey)
-          .eq("tester_user_id", user.id)
+          .eq(uploadOwnerColumn, uploadOwnerKey)
           .is("attached_response_id", null);
       }
 
@@ -392,7 +409,7 @@ Deno.serve(async (request) => {
 
     if (action === "delete") {
       validateR2RecordingObjectInput({
-        userId: user.id,
+        userId: uploadOwnerKey,
         objectKey,
         fileName: fileName || "screen-recording.webm",
         mimeType: rawMimeType || "video/webm",
@@ -404,7 +421,7 @@ Deno.serve(async (request) => {
         .select("id, attached_response_id")
         .eq("storage_bucket", env.providerBucket)
         .eq("object_key", objectKey)
-        .eq("tester_user_id", user.id)
+        .eq(uploadOwnerColumn, uploadOwnerKey)
         .maybeSingle();
 
       if (uploadError) {
@@ -422,7 +439,7 @@ Deno.serve(async (request) => {
         .update({ status: "deleted", updated_at: new Date().toISOString() })
         .eq("storage_bucket", env.providerBucket)
         .eq("object_key", objectKey)
-        .eq("tester_user_id", user.id)
+        .eq(uploadOwnerColumn, uploadOwnerKey)
         .is("attached_response_id", null);
 
       return recordingJson({ ok: true });
