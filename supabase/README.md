@@ -8,6 +8,7 @@
 6. Add client env vars to `.env.local` or your deploy platform:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_TEST_ACCOUNT_EMAIL` (use `test@test4test.io` for the shared test account)
 7. Add Supabase Edge Function secrets:
    - `OPENAI_API_KEY`
    - `OPENAI_MODEL` (optional, defaults to `gpt-5-mini`)
@@ -16,6 +17,10 @@
    - `APP_BASE_URL` (for example `https://test4test.io`)
    - `TEST_REPORT_SUPPORT_EMAIL` (optional, defaults to `support@test4test.io`)
    - `TEST_BACK_REMINDER_CRON_SECRET`
+   - `TEST_ACCOUNT_ENABLED=true`
+   - `TEST_ACCOUNT_EMAIL=test@test4test.io`
+   - `TEST_ACCOUNT_PASSWORD`
+   - `TEST_ACCOUNT_OTP_CODE`
 8. Deploy the edge functions from:
    - `supabase/functions/generate-ai-questions`
    - `supabase/functions/send-test-results-notification`
@@ -23,10 +28,14 @@
    - `supabase/functions/send-google-play-closed-test-reminders`
    - `supabase/functions/report-test`
    - `supabase/functions/manage-test-reports`
+   - `supabase/functions/test-account-login` with `--no-verify-jwt`
 9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.
 10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
 11. The final test-back reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
 12. Google Play closed-test matching uses a separate 14-day self-attested participation table. Earn discovery and test-back reminders stay pool-aware; direct/shared test URLs remain accessible for live submissions.
+13. Seed the shared test fixture after secrets are set:
+   - Dry run/list mode: `npm run seed:test-account`
+   - Live seed: `npm run seed:test-account -- --apply`
 
 Recommended free-stack deployment:
 - Supabase free project for Auth, Postgres, and Edge Functions

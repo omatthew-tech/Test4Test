@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
+import { isTestAccountEmail } from "../lib/supabase";
 import { wait } from "../lib/timing";
 
 function sanitizeReturnTo(value: string | null) {
@@ -21,6 +22,7 @@ export function SignInPage() {
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
   const activeChallenge = state.otpChallenge && !state.otpChallenge.submissionId ? state.otpChallenge : null;
   const [email, setEmail] = useState(activeChallenge?.email ?? "");
+  const isCurrentEmailTestAccount = isTestAccountEmail(email);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
@@ -49,11 +51,16 @@ export function SignInPage() {
 
     setIsSendingCode(true);
     try {
-      await Promise.all([requestOtp(nextEmail), wait(5000)]);
+      const waitForSendUi = isTestAccountEmail(nextEmail) ? Promise.resolve() : wait(5000);
+      await Promise.all([requestOtp(nextEmail), waitForSendUi]);
       setEmail(nextEmail);
       setHasRequestedCode(true);
       setCode("");
-      setMessage("We sent a one-time code to your email.");
+      setMessage(
+        isTestAccountEmail(nextEmail)
+          ? "Enter the configured test account passcode."
+          : "We sent a one-time code to your email.",
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not send a sign-in code right now.");
     } finally {
@@ -93,12 +100,18 @@ export function SignInPage() {
               <ArrowLeft size={16} />
               Change email
             </button>
-            <h2>Check your email</h2>
-            <p>
-              We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it below to sign in.
-            </p>
+            <h2>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h2>
+            {isCurrentEmailTestAccount ? (
+              <p>
+                Enter the configured test account passcode for <strong>{email || "your email"}</strong>.
+              </p>
+            ) : (
+              <p>
+                We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it below to sign in.
+              </p>
+            )}
             <label className="field field--otp">
-              <span>One-time passcode</span>
+              <span>{isCurrentEmailTestAccount ? "Test account passcode" : "One-time passcode"}</span>
               <div className="otp-row">
                 <MailCheck size={18} />
                 <input
@@ -123,7 +136,13 @@ export function SignInPage() {
                 ) : (
                   <RefreshCcw size={16} />
                 )}
-                {isSendingCode ? "Sending..." : "Resend code"}
+                {isSendingCode
+                  ? isCurrentEmailTestAccount
+                    ? "Resetting..."
+                    : "Sending..."
+                  : isCurrentEmailTestAccount
+                    ? "Restart"
+                    : "Resend code"}
               </button>
               <button
                 type="button"
@@ -138,7 +157,11 @@ export function SignInPage() {
         ) : (
           <>
             <h2>Sign in with email</h2>
-            <p>Enter your email and we&apos;ll send you a one-time code.</p>
+            <p>
+              {isCurrentEmailTestAccount
+                ? "Enter the test account email to continue."
+                : "Enter your email and we'll send you a one-time code."}
+            </p>
             <label className="field sign-in-panel__field">
               <span>Email address</span>
               <input
@@ -162,7 +185,13 @@ export function SignInPage() {
                 ) : (
                   <Mail size={16} />
                 )}
-                {isSendingCode ? "Sending..." : "Send one-time code"}
+                {isSendingCode
+                  ? isCurrentEmailTestAccount
+                    ? "Opening..."
+                    : "Sending..."
+                  : isCurrentEmailTestAccount
+                    ? "Continue"
+                    : "Send one-time code"}
               </button>
             </div>
             <div className="sign-in-panel__footer">

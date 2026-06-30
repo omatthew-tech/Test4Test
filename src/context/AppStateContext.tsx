@@ -28,7 +28,7 @@ import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
-import { hasSupabaseConfig, requireSupabase } from "../lib/supabase";
+import { hasSupabaseConfig, isTestAccountEmail, requireSupabase } from "../lib/supabase";
 import {
   AppState,
   CreditTransaction,
@@ -151,6 +151,13 @@ interface CreditTransactionRow {
   reason: string;
   related_test_response_id?: string | null;
   created_at: string;
+}
+
+interface TestAccountLoginResponse {
+  ok?: boolean;
+  message?: string;
+  error?: string;
+  session?: Session | null;
 }
 
 interface GooglePlayClosedTestParticipationRow {
@@ -582,6 +589,71 @@ async function ensureAuthenticatedSession(
     supabase,
     session: refreshed.session,
   };
+}
+
+async function getFunctionErrorMessage(error: unknown, fallbackMessage: string) {
+  const context = typeof error === "object" && error !== null && "context" in error
+    ? (error as { context?: unknown }).context
+    : null;
+
+  if (context instanceof Response) {
+    const payload = await context
+      .clone()
+      .json()
+      .catch(() => null) as { error?: unknown; message?: unknown } | null;
+    const message =
+      typeof payload?.error === "string"
+        ? payload.error
+        : typeof payload?.message === "string"
+          ? payload.message
+          : "";
+
+    if (message) {
+      return message;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
+
+async function signInWithTestAccountPasscode(email: string, passcode: string) {
+  const supabase = requireSupabase();
+  const fallbackMessage = "The test account could not be signed in. Check the passcode and try again.";
+  const { data, error } = await supabase.functions.invoke<TestAccountLoginResponse>("test-account-login", {
+    body: {
+      email,
+      passcode: passcode.trim(),
+    },
+  });
+
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error, fallbackMessage));
+  }
+
+  if (!data?.ok || !data.session?.access_token || !data.session.refresh_token) {
+    throw new Error(data?.error ?? data?.message ?? fallbackMessage);
+  }
+
+  const { error: setSessionError } = await supabase.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+
+  if (setSessionError) {
+    throw new Error(
+      "We verified the test account passcode, but could not finish signing you in. Please try again.",
+    );
+  }
+
+  const { session } = await ensureAuthenticatedSession(
+    "We verified the test account passcode, but could not finish signing you in. Please try again.",
+  );
+
+  return session;
 }
 
 const latestSubmissionSchemaMessage =
@@ -1436,15 +1508,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         const sendPromise = (async () => {
           const supabase = requireSupabase();
-          const { error } = await supabase.auth.signInWithOtp({
-            email: normalizedEmail,
-            options: {
-              shouldCreateUser: true,
-            },
-          });
 
-          if (error) {
-            throw new Error(error.message);
+          if (!isTestAccountEmail(normalizedEmail)) {
+            const { error } = await supabase.auth.signInWithOtp({
+              email: normalizedEmail,
+              options: {
+                shouldCreateUser: true,
+              },
+            });
+
+            if (error) {
+              throw new Error(error.message);
+            }
           }
 
           const challenge = createOtpChallenge(normalizedEmail, submissionId);
@@ -1469,7 +1544,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         } finally {
           otpRequestInFlightRef.current.delete(requestKey);
         }
-      },      async verifyOtp(code) {
+      },
+      async verifyOtp(code) {
         const challenge = state.otpChallenge ?? getStoredOtpChallenge();
 
         if (!challenge) {
@@ -1485,28 +1561,63 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: "That code expired. Please request a new one." };
         }
 
-        const supabase = requireSupabase();
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: challenge.email,
-          token: code.trim(),
-          type: "email",
-        });
+        let authUser: SupabaseAuthUser;
 
-        if (error) {
-          if (isMissingSubmissionSchemaError(error.message)) {
-            return { ok: false, message: latestSubmissionSchemaMessage };
+        if (isTestAccountEmail(challenge.email)) {
+          try {
+            const session = await signInWithTestAccountPasscode(challenge.email, code);
+            authUser = session.user;
+          } catch (testAccountError) {
+            return {
+              ok: false,
+              message:
+                testAccountError instanceof Error
+                  ? testAccountError.message
+                  : "The test account could not be signed in. Check the passcode and try again.",
+            };
           }
-
-          return { ok: false, message: error.message };
-        }
-
-        if (data.session?.access_token && data.session.refresh_token) {
-          const { error: setSessionError } = await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
+        } else {
+          const supabase = requireSupabase();
+          const { data, error } = await supabase.auth.verifyOtp({
+            email: challenge.email,
+            token: code.trim(),
+            type: "email",
           });
 
-          if (setSessionError) {
+          if (error) {
+            if (isMissingSubmissionSchemaError(error.message)) {
+              return { ok: false, message: latestSubmissionSchemaMessage };
+            }
+
+            return { ok: false, message: error.message };
+          }
+
+          if (data.session?.access_token && data.session.refresh_token) {
+            const { error: setSessionError } = await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            });
+
+            if (setSessionError) {
+              clearStoredOtpChallenge();
+              setState((current) => ({
+                ...current,
+                otpChallenge: null,
+              }));
+              return {
+                ok: false,
+                message:
+                  "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+              };
+            }
+          }
+
+          try {
+            const { session } = await ensureAuthenticatedSession(
+              "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+            );
+            authUser = session.user;
+          } catch (sessionError) {
             clearStoredOtpChallenge();
             setState((current) => ({
               ...current,
@@ -1515,31 +1626,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             return {
               ok: false,
               message:
-                "We verified your email, but could not finish signing you in. Please request a new code and try again.",
+                sessionError instanceof Error
+                  ? sessionError.message
+                  : "We verified your email, but could not finish signing you in. Please request a new code and try again.",
             };
           }
-        }
-
-        let authUser: SupabaseAuthUser;
-
-        try {
-          const { session } = await ensureAuthenticatedSession(
-            "We verified your email, but could not finish signing you in. Please request a new code and try again.",
-          );
-          authUser = session.user;
-        } catch (sessionError) {
-          clearStoredOtpChallenge();
-          setState((current) => ({
-            ...current,
-            otpChallenge: null,
-          }));
-          return {
-            ok: false,
-            message:
-              sessionError instanceof Error
-                ? sessionError.message
-                : "We verified your email, but could not finish signing you in. Please request a new code and try again.",
-          };
         }
 
         const verifiedProfile = await ensureProfile(authUser);
