@@ -149,7 +149,11 @@ async function buildPreviewFrames(
     timestampMs: frame.timestampMs,
     frameIndex: frame.frameIndex,
   }));
-  const candidates = [...thumbnailCandidates, ...workerCandidates].slice(0, 12);
+  const candidates = (
+    workerCandidates.length > 0
+      ? [...workerCandidates, ...thumbnailCandidates]
+      : [...thumbnailCandidates]
+  ).slice(0, 12);
 
   if (candidates.length === 0) {
     return [];

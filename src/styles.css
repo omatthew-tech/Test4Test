@@ -12114,12 +12114,15 @@ select {
 }
 
 .report-screen {
+  --screen-width: 150px;
+  --screen-height: 270px;
+  --screen-x: 0px;
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 150px;
-  height: 270px;
-  margin: -135px 0 0 -75px;
+  width: var(--screen-width);
+  height: var(--screen-height);
+  margin: calc(var(--screen-height) / -2) 0 0 calc(var(--screen-width) / -2);
   border-radius: 18px;
   background: var(--color-surface-000);
   border: 1px solid var(--color-line-200);
@@ -12131,6 +12134,12 @@ select {
   animation-delay: calc(var(--screen-index) * -0.42s);
 }
 
+.report-screen--landscape {
+  --screen-width: 230px;
+  --screen-height: 132px;
+  border-radius: 14px;
+}
+
 .report-screen__shot,
 .report-screen__mock {
   width: 100%;
@@ -12138,7 +12147,8 @@ select {
 }
 
 .report-screen__shot {
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--color-surface-000);
   display: block;
   animation: report-screen-shot-reveal 420ms ease both;
 }
@@ -12396,11 +12406,11 @@ select {
 @keyframes report-screen-oscillate {
   0%,
   100% {
-    transform: translateX(calc(var(--screen-offset) * 66px - 16px))
+    transform: translateX(calc(var(--screen-x) - 16px))
       rotate(calc(var(--screen-offset) * 5deg - 1.5deg));
   }
   50% {
-    transform: translateX(calc(var(--screen-offset) * 66px + 16px))
+    transform: translateX(calc(var(--screen-x) + 16px))
       rotate(calc(var(--screen-offset) * 5deg + 1.5deg));
   }
 }
@@ -12417,7 +12427,7 @@ select {
     opacity: 1;
   }
   100% {
-    transform: translateY(264px);
+    transform: translateY(calc(var(--screen-height) - 6px));
     opacity: 0;
   }
 }

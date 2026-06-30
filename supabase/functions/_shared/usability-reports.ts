@@ -339,7 +339,7 @@ export async function createReportFrameSignedUrl(
   env: ReportFrameR2Environment,
   bucket: string,
   objectKey: string,
-  expiresInSeconds = 300,
+  expiresInSeconds = 60 * 60,
 ) {
   const r2 = new AwsClient({
     accessKeyId: env.accessKeyId,

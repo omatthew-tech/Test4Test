@@ -24,6 +24,10 @@ export interface ProcessingScreenProps {
   screenshots?: UsabilityReportPreviewFrame[];
 }
 
+function isLandscapeFrame(frame: UsabilityReportPreviewFrame | null) {
+  return Boolean(frame?.width && frame?.height && frame.width >= frame.height);
+}
+
 export function ProcessingScreen({ productName, screenshots }: ProcessingScreenProps) {
   const screens = Array.from({ length: SCREEN_COUNT }, (_, index) => index);
   const [slots, setSlots] = useState<Array<UsabilityReportPreviewFrame | null>>(
@@ -34,10 +38,18 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
     [screenshots],
   );
   const previewFramesRef = useRef<UsabilityReportPreviewFrame[]>(previewFrames);
+  const failedUrlsRef = useRef<Set<string>>(new Set());
   const cursorRef = useRef(0);
   const replacementSlotRef = useRef(0);
 
   useEffect(() => {
+    const activeUrls = new Set(previewFrames.map((frame) => frame.url));
+    failedUrlsRef.current.forEach((url) => {
+      if (!activeUrls.has(url)) {
+        failedUrlsRef.current.delete(url);
+      }
+    });
+
     previewFramesRef.current = previewFrames;
     const latestById = new Map(previewFrames.map((frame) => [frame.id, frame]));
 
@@ -47,7 +59,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
   useEffect(() => {
     const timer = window.setInterval(() => {
       setSlots((current) => {
-        const frames = previewFramesRef.current;
+        const frames = previewFramesRef.current.filter((frame) => !failedUrlsRef.current.has(frame.url));
 
         if (frames.length === 0) {
           return current;
@@ -90,6 +102,22 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
     return () => window.clearInterval(timer);
   }, []);
 
+  function handleScreenshotError(index: number, screenshot: UsabilityReportPreviewFrame) {
+    failedUrlsRef.current.add(screenshot.url);
+
+    setSlots((current) => {
+      const currentSlot = current[index];
+
+      if (currentSlot?.id !== screenshot.id || currentSlot.url !== screenshot.url) {
+        return current;
+      }
+
+      const next = [...current];
+      next[index] = null;
+      return next;
+    });
+  }
+
   return (
     <section
       className="report-processing"
@@ -104,9 +132,12 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
           {screens.map((index) => {
             const offset = index - (SCREEN_COUNT - 1) / 2;
             const screenshot = slots[index];
+            const isLandscape = isLandscapeFrame(screenshot);
+            const screenSpread = isLandscape ? 86 : 66;
             const style = {
               "--screen-index": index,
               "--screen-offset": offset,
+              "--screen-x": `${offset * screenSpread}px`,
               "--screen-abs": Math.abs(offset),
               "--screen-count": SCREEN_COUNT,
             } as CSSProperties;
@@ -114,16 +145,23 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
             return (
               <div
                 key={index}
-                className={`report-screen${screenshot ? " report-screen--filled" : ""}`}
+                className={[
+                  "report-screen",
+                  screenshot ? "report-screen--filled" : "",
+                  screenshot && isLandscape ? "report-screen--landscape" : "",
+                ].filter(Boolean).join(" ")}
                 style={style}
               >
                 {screenshot ? (
                   <img
-                    key={screenshot.id}
+                    key={`${screenshot.id}:${screenshot.url}`}
                     className="report-screen__shot"
                     src={screenshot.url}
                     alt=""
-                    loading="lazy"
+                    loading="eager"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => handleScreenshotError(index, screenshot)}
                   />
                 ) : (
                   <div className="report-screen__mock">
@@ -145,7 +183,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
 
       <div className="report-processing__copy">
         <h2 className="report-processing__title">
-          Analyzing {productName ? <strong>{productName}</strong> : "your recordings"}…
+          Analyzing {productName ? <strong>{productName}</strong> : "your recordings"}...
         </h2>
         <p className="report-processing__hint">You can close this tab and check back later</p>
       </div>
