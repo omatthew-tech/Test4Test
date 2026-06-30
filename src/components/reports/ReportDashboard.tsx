@@ -19,7 +19,7 @@ import {
   listMyUsabilityReports,
   pollUsabilityReportUntilDone,
 } from "../../lib/usabilityReports";
-import { ResponseRecording, UsabilityReport } from "../../types";
+import { ResponseRecording, UsabilityReport, UsabilityReportPreviewFrame } from "../../types";
 import { ProcessingScreen } from "./ProcessingScreen";
 
 const NO_RECORDINGS_MESSAGE =
@@ -91,6 +91,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [statusLabel, setStatusLabel] = useState<string>("");
   const [history, setHistory] = useState<UsabilityReport[]>([]);
+  const [previewFrames, setPreviewFrames] = useState<UsabilityReportPreviewFrame[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -163,15 +164,21 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    setPreviewFrames([]);
     setPhase("processing");
     setStatusLabel("Fetching your usability recordings...");
 
     try {
-      const { reportId } = await generateUsabilityReport(selectedSubmission.id);
+      const { reportId, previewFrames: initialPreviewFrames } = await generateUsabilityReport(selectedSubmission.id);
+      setPreviewFrames(initialPreviewFrames);
 
       const result = await pollUsabilityReportUntilDone(reportId, {
         signal: controller.signal,
-        onTick: (status, frameCount) => {
+        onTick: (status, frameCount, nextPreviewFrames) => {
+          if (nextPreviewFrames.length > 0) {
+            setPreviewFrames(nextPreviewFrames);
+          }
+
           if (status === "processing" || status === "pending") {
             setStatusLabel(
               frameCount > 0
@@ -197,6 +204,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
 
       const message = caught instanceof Error ? caught.message : "Something went wrong.";
       setError(message === NO_RECORDINGS_ERROR ? NO_RECORDINGS_MESSAGE : message);
+      setPreviewFrames([]);
       setPhase("dashboard");
     } finally {
       abortRef.current = null;
@@ -208,6 +216,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
       <ProcessingScreen
         productName={selectedSubmission?.productName}
         statusLabel={statusLabel}
+        screenshots={previewFrames}
       />
     );
   }

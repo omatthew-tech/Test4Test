@@ -13,6 +13,7 @@ import {
 } from "./r2Client.js";
 import type {
   ExtractedFrame,
+  ProcessReportHooks,
   ProcessReportInput,
   ProcessReportResult,
   VideoSource,
@@ -46,7 +47,12 @@ async function downloadSource(source: VideoSource, destPath: string): Promise<vo
   throw new Error(`Source for response ${source.responseId} has neither url nor objectKey.`);
 }
 
-async function processSource(reportId: string, source: VideoSource, workDir: string): Promise<ExtractedFrame[]> {
+async function processSource(
+  reportId: string,
+  source: VideoSource,
+  workDir: string,
+  hooks: ProcessReportHooks = {},
+): Promise<ExtractedFrame[]> {
   const localPath = join(workDir, `${source.responseId}.video`);
   await downloadSource(source, localPath);
 
@@ -76,7 +82,7 @@ async function processSource(reportId: string, source: VideoSource, workDir: str
       },
     });
 
-    frames.push({
+    const frame: ExtractedFrame = {
       responseId: source.responseId,
       frameIndex,
       timestampMs: candidate.timestampMs,
@@ -87,7 +93,10 @@ async function processSource(reportId: string, source: VideoSource, workDir: str
       contentType: "image/webp",
       sizeBytes: candidate.buffer.byteLength,
       perceptualHash: candidate.perceptualHash,
-    });
+    };
+
+    frames.push(frame);
+    await hooks.onFrame?.(frame);
   }
 
   return frames;
@@ -98,7 +107,10 @@ async function processSource(reportId: string, source: VideoSource, workDir: str
  * timestamped frames, upload them to R2, then write a manifest. Returns the full
  * frame list so the caller (or a completion webhook) can persist references.
  */
-export async function processReport(input: ProcessReportInput): Promise<ProcessReportResult> {
+export async function processReport(
+  input: ProcessReportInput,
+  hooks: ProcessReportHooks = {},
+): Promise<ProcessReportResult> {
   if (!input.reportId) {
     throw new Error("reportId is required.");
   }
@@ -113,7 +125,7 @@ export async function processReport(input: ProcessReportInput): Promise<ProcessR
   try {
     for (const source of input.sources) {
       logger.info("Processing source", { reportId: input.reportId, responseId: source.responseId });
-      const sourceFrames = await processSource(input.reportId, source, workDir);
+      const sourceFrames = await processSource(input.reportId, source, workDir, hooks);
       frames.push(...sourceFrames);
     }
 

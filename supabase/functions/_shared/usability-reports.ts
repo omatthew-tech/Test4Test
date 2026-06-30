@@ -65,10 +65,22 @@ export interface WorkerResult {
   manifestKey?: string;
 }
 
+export interface ReportPreviewFrame {
+  id: string;
+  testResponseId: string;
+  source: "thumbnail" | "worker";
+  url: string;
+  width?: number | null;
+  height?: number | null;
+  timestampMs?: number | null;
+  frameIndex?: number | null;
+}
+
 export interface WorkerJob {
   id: string;
   reportId: string;
   status: "queued" | "processing" | "completed" | "failed";
+  partialFrames?: WorkerFrame[];
   result?: WorkerResult;
   error?: string;
 }

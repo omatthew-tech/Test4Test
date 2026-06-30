@@ -74,6 +74,9 @@ interface RecordingUploadR2Response {
   uploadId?: string;
   partSizeBytes?: number;
   expiresInSeconds?: number;
+  contentType?: string;
+  width?: number;
+  height?: number;
   error?: string;
   message?: string;
 }
@@ -88,6 +91,13 @@ interface SignedUploadResponse {
   headers: {
     get: (name: string) => string | null;
   };
+}
+
+interface GeneratedRecordingThumbnail {
+  blob: Blob;
+  contentType: string;
+  width: number;
+  height: number;
 }
 
 interface NavigatorWithUserAgentData extends Navigator {
@@ -346,6 +356,128 @@ function sanitizeFileName(fileName: string) {
 
 export function buildRecordingDraftPath(userId: string, sessionId: string, fileName: string) {
   return `draft/${userId}/${sessionId}/${Date.now()}-${sanitizeFileName(fileName)}`;
+}
+
+function getThumbnailExtension(contentType: string) {
+  if (contentType.includes("png")) {
+    return "png";
+  }
+
+  if (contentType.includes("webp")) {
+    return "webp";
+  }
+
+  return "jpg";
+}
+
+function buildRecordingThumbnailPath(recordingPath: string, contentType: string) {
+  const extension = getThumbnailExtension(contentType);
+  const slashIndex = recordingPath.lastIndexOf("/");
+  const directory = slashIndex >= 0 ? recordingPath.slice(0, slashIndex + 1) : "";
+  const fileName = slashIndex >= 0 ? recordingPath.slice(slashIndex + 1) : recordingPath;
+  const baseName = fileName.replace(/\.[^/.]+$/, "") || "screen-recording";
+
+  return `${directory}${baseName}.thumbnail.${extension}`;
+}
+
+function waitForVideoEvent(video: HTMLVideoElement, eventName: keyof HTMLMediaElementEventMap, timeoutMs = 10000) {
+  return new Promise<void>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Timed out while preparing recording thumbnail."));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      video.removeEventListener(eventName, handleEvent);
+      video.removeEventListener("error", handleError);
+    };
+
+    const handleEvent = () => {
+      cleanup();
+      resolve();
+    };
+
+    const handleError = () => {
+      cleanup();
+      reject(new Error("The recording thumbnail could not be generated."));
+    };
+
+    video.addEventListener(eventName, handleEvent, { once: true });
+    video.addEventListener("error", handleError, { once: true });
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, contentType: string, quality = 0.78) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), contentType, quality);
+  });
+}
+
+async function captureRecordingThumbnail(file: File): Promise<GeneratedRecordingThumbnail | null> {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+
+  const objectUrl = window.URL.createObjectURL(file);
+  const video = document.createElement("video");
+
+  try {
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = objectUrl;
+
+    await waitForVideoEvent(video, "loadedmetadata");
+
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    const targetTime = duration > 0 ? Math.min(Math.max(duration * 0.08, 0.6), Math.max(0, duration - 0.1)) : 0;
+
+    if (targetTime > 0) {
+      video.currentTime = targetTime;
+      await waitForVideoEvent(video, "seeked");
+    } else if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await waitForVideoEvent(video, "loadeddata");
+    }
+
+    if (!video.videoWidth || !video.videoHeight) {
+      return null;
+    }
+
+    const maxWidth = 520;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    const width = Math.max(1, Math.round(video.videoWidth * scale));
+    const height = Math.max(1, Math.round(video.videoHeight * scale));
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return null;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    context.drawImage(video, 0, 0, width, height);
+
+    const webp = await canvasToBlob(canvas, "image/webp", 0.76);
+    const jpeg = webp ? null : await canvasToBlob(canvas, "image/jpeg", 0.78);
+    const blob = webp ?? jpeg;
+
+    if (!blob) {
+      return null;
+    }
+
+    return {
+      blob,
+      contentType: blob.type || (webp ? "image/webp" : "image/jpeg"),
+      width,
+      height,
+    };
+  } finally {
+    video.removeAttribute("src");
+    video.load();
+    window.URL.revokeObjectURL(objectUrl);
+  }
 }
 
 function buildUploadProgress(bytesUploaded: number, bytesTotal: number, state: RecordingUploadProgress["state"]) {
@@ -663,6 +795,60 @@ async function uploadRecordingObjectMultipart(
   onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 }
 
+async function uploadRecordingThumbnail(
+  recordingPath: string,
+  file: File,
+  recordingContentType: string,
+  options: RecordingUploadIdentityOptions = {},
+): Promise<ResponseRecording["thumbnail"] | null> {
+  const thumbnail = await captureRecordingThumbnail(file);
+
+  if (!thumbnail) {
+    return null;
+  }
+
+  const thumbnailPath = buildRecordingThumbnailPath(recordingPath, thumbnail.contentType);
+  const payload = {
+    path: recordingPath,
+    fileName: file.name,
+    mimeType: recordingContentType,
+    fileSizeBytes: file.size,
+    thumbnailPath,
+    thumbnailContentType: thumbnail.contentType,
+    thumbnailSizeBytes: thumbnail.blob.size,
+    thumbnailWidth: thumbnail.width,
+    thumbnailHeight: thumbnail.height,
+  };
+
+  const createResult = await callRecordingUploadR2({
+    action: "create_thumbnail",
+    ...payload,
+  }, options);
+
+  if (!createResult.uploadUrl) {
+    throw new Error("The recording thumbnail upload URL could not be created.");
+  }
+
+  await uploadFileToSignedUrl(createResult.uploadUrl, thumbnail.blob, {
+    contentType: thumbnail.contentType,
+    retryLabel: "Recording thumbnail upload",
+  });
+
+  const completeResult = await callRecordingUploadR2({
+    action: "complete_thumbnail",
+    ...payload,
+  }, options);
+
+  return {
+    bucket: completeResult.bucket ?? R2_RECORDING_BUCKET_ID,
+    path: completeResult.path ?? thumbnailPath,
+    contentType: completeResult.contentType ?? thumbnail.contentType,
+    sizeBytes: thumbnail.blob.size,
+    width: completeResult.width ?? thumbnail.width,
+    height: completeResult.height ?? thumbnail.height,
+  };
+}
+
 async function uploadRecordingObject(
   userId: string,
   sessionId: string,
@@ -685,6 +871,7 @@ async function uploadRecordingObject(
   }
 
   const uploadedAt = new Date().toISOString();
+  const thumbnail = await uploadRecordingThumbnail(path, file, contentType, options).catch(() => null);
 
   return {
     bucket: R2_RECORDING_BUCKET_ID,
@@ -695,6 +882,7 @@ async function uploadRecordingObject(
     uploadedAt,
     expiresAt: calculateRecordingExpiry(new Date(uploadedAt)),
     deletedAt: null,
+    thumbnail,
   } satisfies ResponseRecording;
 }
 

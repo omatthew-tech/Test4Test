@@ -12140,6 +12140,12 @@ select {
 .report-screen__shot {
   object-fit: cover;
   display: block;
+  animation: report-screen-shot-reveal 420ms ease both;
+}
+
+.report-screen--filled {
+  border-color: rgba(245, 142, 86, 0.24);
+  box-shadow: 0 14px 34px rgba(37, 30, 25, 0.13);
 }
 
 .report-screen__mock {
@@ -12413,6 +12419,17 @@ select {
   100% {
     transform: translateY(264px);
     opacity: 0;
+  }
+}
+
+@keyframes report-screen-shot-reveal {
+  from {
+    opacity: 0;
+    transform: scale(1.025);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

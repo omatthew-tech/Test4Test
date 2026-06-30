@@ -11,6 +11,7 @@ import {
   parseR2UploadId,
   r2Fetch,
   validateR2RecordingObjectInput,
+  validateR2RecordingThumbnailInput,
   type R2CompletedPart,
 } from "../_shared/r2-recordings.ts";
 
@@ -20,6 +21,8 @@ type RecordingUploadAction =
   | "initiate_multipart"
   | "sign_part"
   | "complete_multipart"
+  | "create_thumbnail"
+  | "complete_thumbnail"
   | "abort"
   | "delete";
 
@@ -33,6 +36,11 @@ interface RecordingUploadRequest {
   uploadId?: string;
   partNumber?: number;
   parts?: R2CompletedPart[];
+  thumbnailPath?: string;
+  thumbnailContentType?: string;
+  thumbnailSizeBytes?: number;
+  thumbnailWidth?: number;
+  thumbnailHeight?: number;
 }
 
 const MULTIPART_PART_SIZE_BYTES = 10 * 1024 * 1024;
@@ -50,6 +58,10 @@ function normalizeFileSize(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
 }
 
+function normalizePositiveInteger(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+}
+
 function isValidPublicTesterKey(value: string) {
   return /^[a-zA-Z0-9-]{16,128}$/.test(value);
 }
@@ -60,6 +72,39 @@ async function verifyR2ObjectExists(env: ReturnType<typeof getR2RecordingEnviron
   if (!headResponse.ok) {
     throw new Error("The uploaded recording could not be verified.");
   }
+}
+
+async function loadUploadRow(
+  admin: ReturnType<typeof createRecordingAdminClient>,
+  input: {
+    providerBucket: string;
+    objectKey: string;
+    ownerColumn: "tester_user_id" | "public_tester_key";
+    ownerKey: string;
+    required?: boolean;
+  },
+) {
+  const { data, error } = await admin
+    .from("test_response_recording_uploads")
+    .select("id, attached_response_id, thumbnail_path")
+    .eq("storage_bucket", input.providerBucket)
+    .eq("object_key", input.objectKey)
+    .eq(input.ownerColumn, input.ownerKey)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data && input.required !== false) {
+    throw new Error("Recording upload session not found.");
+  }
+
+  return data as {
+    id: string;
+    attached_response_id?: string | null;
+    thumbnail_path?: string | null;
+  } | null;
 }
 
 async function upsertUploadRow(
@@ -169,6 +214,11 @@ Deno.serve(async (request) => {
   const fileName = normalizeText(payload.fileName);
   const rawMimeType = normalizeText(payload.mimeType);
   const fileSizeBytes = normalizeFileSize(payload.fileSizeBytes);
+  const thumbnailPath = normalizePath(payload.thumbnailPath);
+  const thumbnailContentType = normalizeText(payload.thumbnailContentType);
+  const thumbnailSizeBytes = normalizeFileSize(payload.thumbnailSizeBytes);
+  const thumbnailWidth = normalizePositiveInteger(payload.thumbnailWidth);
+  const thumbnailHeight = normalizePositiveInteger(payload.thumbnailHeight);
 
   try {
     if (!action) {
@@ -235,6 +285,121 @@ Deno.serve(async (request) => {
       });
 
       return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
+    }
+
+    if (action === "create_thumbnail") {
+      validateR2RecordingObjectInput({
+        userId: uploadOwnerKey,
+        objectKey,
+        fileName: fileName || "screen-recording.webm",
+        mimeType: rawMimeType || "video/webm",
+        fileSizeBytes: fileSizeBytes || 1,
+      });
+
+      const thumbnail = validateR2RecordingThumbnailInput({
+        userId: uploadOwnerKey,
+        recordingObjectKey: objectKey,
+        thumbnailObjectKey: thumbnailPath,
+        contentType: thumbnailContentType,
+        fileSizeBytes: thumbnailSizeBytes,
+        width: thumbnailWidth,
+        height: thumbnailHeight,
+      });
+
+      await loadUploadRow(admin, {
+        providerBucket: env.providerBucket,
+        objectKey,
+        ownerColumn: uploadOwnerColumn,
+        ownerKey: uploadOwnerKey,
+      });
+
+      const uploadUrl = await createR2PresignedUrl(env, "PUT", thumbnailPath, {
+        expiresInSeconds: PRESIGNED_UPLOAD_EXPIRES_SECONDS,
+        contentType: thumbnail.contentType,
+      });
+
+      return recordingJson({
+        ok: true,
+        bucket: env.providerBucket,
+        path: thumbnailPath,
+        uploadUrl,
+        expiresInSeconds: PRESIGNED_UPLOAD_EXPIRES_SECONDS,
+      });
+    }
+
+    if (action === "complete_thumbnail") {
+      validateR2RecordingObjectInput({
+        userId: uploadOwnerKey,
+        objectKey,
+        fileName: fileName || "screen-recording.webm",
+        mimeType: rawMimeType || "video/webm",
+        fileSizeBytes: fileSizeBytes || 1,
+      });
+
+      const thumbnail = validateR2RecordingThumbnailInput({
+        userId: uploadOwnerKey,
+        recordingObjectKey: objectKey,
+        thumbnailObjectKey: thumbnailPath,
+        contentType: thumbnailContentType,
+        fileSizeBytes: thumbnailSizeBytes,
+        width: thumbnailWidth,
+        height: thumbnailHeight,
+      });
+
+      await verifyR2ObjectExists(env, thumbnailPath);
+
+      const uploadRow = await loadUploadRow(admin, {
+        providerBucket: env.providerBucket,
+        objectKey,
+        ownerColumn: uploadOwnerColumn,
+        ownerKey: uploadOwnerKey,
+      });
+
+      if (!uploadRow) {
+        throw new Error("Recording upload session not found.");
+      }
+
+      const thumbnailUpdate = {
+        thumbnail_storage_bucket: env.providerBucket,
+        thumbnail_path: thumbnailPath,
+        thumbnail_content_type: thumbnail.contentType,
+        thumbnail_size_bytes: thumbnail.fileSizeBytes,
+        thumbnail_width: thumbnail.width,
+        thumbnail_height: thumbnail.height,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: updateError } = await admin
+        .from("test_response_recording_uploads")
+        .update(thumbnailUpdate)
+        .eq("id", uploadRow.id);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      if (uploadRow.attached_response_id) {
+        await admin
+          .from("test_responses")
+          .update({
+            recording_thumbnail_bucket: env.providerBucket,
+            recording_thumbnail_path: thumbnailPath,
+            recording_thumbnail_content_type: thumbnail.contentType,
+            recording_thumbnail_size_bytes: thumbnail.fileSizeBytes,
+            recording_thumbnail_width: thumbnail.width,
+            recording_thumbnail_height: thumbnail.height,
+          })
+          .eq("id", uploadRow.attached_response_id);
+      }
+
+      return recordingJson({
+        ok: true,
+        bucket: env.providerBucket,
+        path: thumbnailPath,
+        contentType: thumbnail.contentType,
+        width: thumbnail.width,
+        height: thumbnail.height,
+      });
     }
 
     if (action === "initiate_multipart") {
@@ -416,23 +581,22 @@ Deno.serve(async (request) => {
         fileSizeBytes: fileSizeBytes || 1,
       });
 
-      const { data: uploadRow, error: uploadError } = await admin
-        .from("test_response_recording_uploads")
-        .select("id, attached_response_id")
-        .eq("storage_bucket", env.providerBucket)
-        .eq("object_key", objectKey)
-        .eq(uploadOwnerColumn, uploadOwnerKey)
-        .maybeSingle();
-
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
+      const uploadRow = await loadUploadRow(admin, {
+        providerBucket: env.providerBucket,
+        objectKey,
+        ownerColumn: uploadOwnerColumn,
+        ownerKey: uploadOwnerKey,
+        required: false,
+      });
 
       if (uploadRow?.attached_response_id) {
         throw new Error("Submitted recordings cannot be deleted from this page.");
       }
 
       await r2Fetch(env, objectKey, { method: "DELETE" }).catch(() => null);
+      if (uploadRow?.thumbnail_path) {
+        await r2Fetch(env, uploadRow.thumbnail_path, { method: "DELETE" }).catch(() => null);
+      }
 
       await admin
         .from("test_response_recording_uploads")

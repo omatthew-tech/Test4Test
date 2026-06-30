@@ -1,6 +1,8 @@
 import {
   enqueueWorkerReport,
+  createReportFrameSignedUrl,
   getAuthenticatedReportUser,
+  getReportFrameR2Environment,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
   createReportAdminClient,
@@ -8,6 +10,7 @@ import {
   reportCorsHeaders,
   reportJson,
   workerStatusToReportStatus,
+  type ReportPreviewFrame,
   type WorkerSource,
 } from "../_shared/usability-reports.ts";
 
@@ -25,6 +28,12 @@ interface RecordingResponseRow {
   id: string;
   recording_bucket: string;
   recording_path: string;
+  recording_thumbnail_bucket?: string | null;
+  recording_thumbnail_path?: string | null;
+  recording_thumbnail_content_type?: string | null;
+  recording_thumbnail_size_bytes?: number | null;
+  recording_thumbnail_width?: number | null;
+  recording_thumbnail_height?: number | null;
 }
 
 async function responseFromAuthError(error: unknown) {
@@ -78,6 +87,47 @@ async function buildWorkerSources(
   }
 
   return sources;
+}
+
+async function buildInitialPreviewFrames(rows: RecordingResponseRow[]) {
+  const thumbnailRows = rows.filter((row) => row.recording_thumbnail_bucket && row.recording_thumbnail_path);
+
+  if (thumbnailRows.length === 0) {
+    return [];
+  }
+
+  let r2Env: ReturnType<typeof getReportFrameR2Environment>;
+
+  try {
+    r2Env = getReportFrameR2Environment();
+  } catch (_error) {
+    return [];
+  }
+
+  const previews = await Promise.all(thumbnailRows.slice(0, 8).map(async (row) => {
+    try {
+      const url = await createReportFrameSignedUrl(
+        r2Env,
+        row.recording_thumbnail_bucket!,
+        row.recording_thumbnail_path!,
+      );
+
+      return {
+        id: `thumbnail:${row.id}`,
+        testResponseId: row.id,
+        source: "thumbnail",
+        url,
+        width: row.recording_thumbnail_width ?? null,
+        height: row.recording_thumbnail_height ?? null,
+        timestampMs: 0,
+        frameIndex: null,
+      } satisfies ReportPreviewFrame;
+    } catch (_error) {
+      return null;
+    }
+  }));
+
+  return previews.filter((preview): preview is ReportPreviewFrame => Boolean(preview?.url));
 }
 
 async function createReportRow(
@@ -182,7 +232,17 @@ Deno.serve(async (request) => {
   const now = new Date().toISOString();
   const { data: responseRows, error: responseError } = await admin
     .from("test_responses")
-    .select("id, recording_bucket, recording_path")
+    .select(`
+      id,
+      recording_bucket,
+      recording_path,
+      recording_thumbnail_bucket,
+      recording_thumbnail_path,
+      recording_thumbnail_content_type,
+      recording_thumbnail_size_bytes,
+      recording_thumbnail_width,
+      recording_thumbnail_height
+    `)
     .eq("submission_id", submission.id)
     .not("recording_bucket", "is", null)
     .not("recording_path", "is", null)
@@ -214,6 +274,12 @@ Deno.serve(async (request) => {
     test_response_id: row.id,
     recording_bucket: row.recording_bucket,
     recording_path: row.recording_path,
+    thumbnail_bucket: row.recording_thumbnail_bucket ?? null,
+    thumbnail_path: row.recording_thumbnail_path ?? null,
+    thumbnail_content_type: row.recording_thumbnail_content_type ?? null,
+    thumbnail_size_bytes: row.recording_thumbnail_size_bytes ?? null,
+    thumbnail_width: row.recording_thumbnail_width ?? null,
+    thumbnail_height: row.recording_thumbnail_height ?? null,
   }));
   const { error: sourceError } = await admin.from("usability_report_sources").insert(sourceRows);
 
@@ -253,6 +319,7 @@ Deno.serve(async (request) => {
       reportId: report.id,
       reportNumber: report.report_number,
       status,
+      previewFrames: await buildInitialPreviewFrames(recordings),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The video processor could not start this report.";

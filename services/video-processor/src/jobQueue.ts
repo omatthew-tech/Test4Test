@@ -73,10 +73,15 @@ class JobQueue {
     this.active += 1;
     job.status = "processing";
     job.startedAt = new Date().toISOString();
+    job.partialFrames = [];
     logger.info("Job started", { jobId, reportId: job.reportId });
 
     try {
-      const result = await processReport(input);
+      const result = await processReport(input, {
+        onFrame: (frame) => {
+          job.partialFrames = [...(job.partialFrames ?? []), frame];
+        },
+      });
       job.status = "completed";
       job.result = result;
       job.finishedAt = new Date().toISOString();

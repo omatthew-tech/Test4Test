@@ -90,6 +90,14 @@ export interface ResponseRecording {
   uploadedAt: string;
   expiresAt: string;
   deletedAt?: string | null;
+  thumbnail?: {
+    bucket: string;
+    path: string;
+    contentType: string;
+    sizeBytes: number;
+    width: number;
+    height: number;
+  } | null;
 }
 
 export interface Submission {
@@ -330,6 +338,17 @@ export interface SubmissionDraft {
 }
 
 export type UsabilityReportStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface UsabilityReportPreviewFrame {
+  id: string;
+  testResponseId: string;
+  source: "thumbnail" | "worker";
+  url: string;
+  width?: number | null;
+  height?: number | null;
+  timestampMs?: number | null;
+  frameIndex?: number | null;
+}
 
 export interface UsabilityReport {
   id: string;

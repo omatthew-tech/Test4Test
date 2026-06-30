@@ -131,6 +131,12 @@ interface TestResponseRow {
   recording_uploaded_at?: string | null;
   recording_expires_at?: string | null;
   recording_deleted_at?: string | null;
+  recording_thumbnail_bucket?: string | null;
+  recording_thumbnail_path?: string | null;
+  recording_thumbnail_content_type?: string | null;
+  recording_thumbnail_size_bytes?: number | null;
+  recording_thumbnail_width?: number | null;
+  recording_thumbnail_height?: number | null;
   internal_flags: string[];
 }
 
@@ -369,6 +375,22 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
     uploadedAt: row.recording_uploaded_at,
     expiresAt: row.recording_expires_at,
     deletedAt: row.recording_deleted_at,
+    thumbnail:
+      row.recording_thumbnail_bucket &&
+      row.recording_thumbnail_path &&
+      row.recording_thumbnail_content_type &&
+      typeof row.recording_thumbnail_size_bytes === "number" &&
+      typeof row.recording_thumbnail_width === "number" &&
+      typeof row.recording_thumbnail_height === "number"
+        ? {
+            bucket: row.recording_thumbnail_bucket,
+            path: row.recording_thumbnail_path,
+            contentType: row.recording_thumbnail_content_type,
+            sizeBytes: row.recording_thumbnail_size_bytes,
+            width: row.recording_thumbnail_width,
+            height: row.recording_thumbnail_height,
+          }
+        : null,
   };
 }
 

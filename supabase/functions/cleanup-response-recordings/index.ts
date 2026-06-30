@@ -17,6 +17,8 @@ interface ExpiredRecordingRow {
   id: string;
   recording_bucket: string | null;
   recording_path: string | null;
+  recording_thumbnail_bucket: string | null;
+  recording_thumbnail_path: string | null;
 }
 
 interface StaleDraftRow {
@@ -27,6 +29,7 @@ interface StaleDraftRow {
 interface R2UploadRow {
   id: string;
   object_key: string;
+  thumbnail_path: string | null;
   upload_id: string | null;
   status: string;
 }
@@ -67,7 +70,7 @@ Deno.serve(async (request) => {
 
   const { data: expiredRows, error: expiredError } = await admin
     .from("test_responses")
-    .select("id, recording_bucket, recording_path")
+    .select("id, recording_bucket, recording_path, recording_thumbnail_bucket, recording_thumbnail_path")
     .not("recording_bucket", "is", null)
     .not("recording_path", "is", null)
     .is("recording_deleted_at", null)
@@ -99,10 +102,16 @@ Deno.serve(async (request) => {
     if (row.recording_bucket!.startsWith("r2:")) {
       const removeResult = await r2Fetch(getR2Env(), row.recording_path!, { method: "DELETE" });
       removed = removeResult.ok || removeResult.status === 404;
+      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket?.startsWith("r2:")) {
+        await r2Fetch(getR2Env(), row.recording_thumbnail_path, { method: "DELETE" }).catch(() => null);
+      }
     } else {
       const removeResult = await admin.storage.from(row.recording_bucket!).remove([row.recording_path!]);
       const missingObject = removeResult.error?.message?.toLowerCase().includes("not found") === true;
       removed = !removeResult.error || missingObject;
+      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket === row.recording_bucket) {
+        await admin.storage.from(row.recording_bucket!).remove([row.recording_thumbnail_path]).catch(() => null);
+      }
     }
 
     if (removed) {
@@ -153,7 +162,7 @@ Deno.serve(async (request) => {
   const staleCutoffIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: staleR2Rows, error: staleR2Error } = await admin
     .from("test_response_recording_uploads")
-    .select("id, object_key, upload_id, status")
+    .select("id, object_key, thumbnail_path, upload_id, status")
     .eq("storage_provider", "r2")
     .is("attached_response_id", null)
     .in("status", ["pending", "uploading", "completed"])
@@ -188,6 +197,9 @@ Deno.serve(async (request) => {
     }
 
     const removeResult = await r2Fetch(getR2Env(), row.object_key, { method: "DELETE" }).catch(() => null);
+    if (row.thumbnail_path) {
+      await r2Fetch(getR2Env(), row.thumbnail_path, { method: "DELETE" }).catch(() => null);
+    }
 
     if (!removeResult || removeResult.ok || removeResult.status === 404) {
       const { error: updateError } = await admin

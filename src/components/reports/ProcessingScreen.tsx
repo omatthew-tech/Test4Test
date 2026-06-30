@@ -1,5 +1,6 @@
-import { type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ScanLine } from "lucide-react";
+import type { UsabilityReportPreviewFrame } from "../../types";
 
 /**
  * Full-bleed processing screen shown while the backend extracts and analyzes
@@ -20,11 +21,74 @@ export interface ProcessingScreenProps {
   /** Live status label, e.g. how many frames found so far. */
   statusLabel?: string;
   /** Optional real screenshot URLs to feature in the stack (falls back to mocks). */
-  screenshots?: string[];
+  screenshots?: UsabilityReportPreviewFrame[];
 }
 
 export function ProcessingScreen({ productName, screenshots }: ProcessingScreenProps) {
   const screens = Array.from({ length: SCREEN_COUNT }, (_, index) => index);
+  const [slots, setSlots] = useState<Array<UsabilityReportPreviewFrame | null>>(
+    () => Array.from({ length: SCREEN_COUNT }, () => null),
+  );
+  const previewFrames = useMemo(
+    () => (screenshots ?? []).filter((frame) => frame.id && frame.url).slice(0, 16),
+    [screenshots],
+  );
+  const previewFramesRef = useRef<UsabilityReportPreviewFrame[]>(previewFrames);
+  const cursorRef = useRef(0);
+  const replacementSlotRef = useRef(0);
+
+  useEffect(() => {
+    previewFramesRef.current = previewFrames;
+    const latestById = new Map(previewFrames.map((frame) => [frame.id, frame]));
+
+    setSlots((current) => current.map((slot) => (slot ? latestById.get(slot.id) ?? slot : slot)));
+  }, [previewFrames]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setSlots((current) => {
+        const frames = previewFramesRef.current;
+
+        if (frames.length === 0) {
+          return current;
+        }
+
+        const occupiedIds = new Set(current.filter(Boolean).map((slot) => slot!.id));
+        const emptyIndex = current.findIndex((slot) => !slot);
+        const nextFrame =
+          frames.find((frame) => !occupiedIds.has(frame.id)) ??
+          frames[cursorRef.current % frames.length];
+
+        if (!nextFrame) {
+          return current;
+        }
+
+        cursorRef.current += 1;
+
+        if (emptyIndex >= 0) {
+          const next = [...current];
+          next[emptyIndex] = nextFrame;
+          return next;
+        }
+
+        const replacementIndex = replacementSlotRef.current % SCREEN_COUNT;
+        replacementSlotRef.current += 1;
+
+        if (
+          current[replacementIndex]?.id === nextFrame.id &&
+          current[replacementIndex]?.url === nextFrame.url
+        ) {
+          return current;
+        }
+
+        const next = [...current];
+        next[replacementIndex] = nextFrame;
+        return next;
+      });
+    }, 2200);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <section
@@ -39,7 +103,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
         <div className="report-processing__deck">
           {screens.map((index) => {
             const offset = index - (SCREEN_COUNT - 1) / 2;
-            const screenshot = screenshots?.[index];
+            const screenshot = slots[index];
             const style = {
               "--screen-index": index,
               "--screen-offset": offset,
@@ -48,9 +112,19 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
             } as CSSProperties;
 
             return (
-              <div key={index} className="report-screen" style={style}>
+              <div
+                key={index}
+                className={`report-screen${screenshot ? " report-screen--filled" : ""}`}
+                style={style}
+              >
                 {screenshot ? (
-                  <img className="report-screen__shot" src={screenshot} alt="" loading="lazy" />
+                  <img
+                    key={screenshot.id}
+                    className="report-screen__shot"
+                    src={screenshot.url}
+                    alt=""
+                    loading="lazy"
+                  />
                 ) : (
                   <div className="report-screen__mock">
                     <span className="report-screen__bar report-screen__bar--title" />

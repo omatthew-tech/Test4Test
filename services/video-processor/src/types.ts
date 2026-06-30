@@ -35,6 +35,10 @@ export interface ProcessReportInput {
   sources: VideoSource[];
 }
 
+export interface ProcessReportHooks {
+  onFrame?: (frame: ExtractedFrame) => void | Promise<void>;
+}
+
 export interface ProcessReportResult {
   reportId: string;
   frameCount: number;
@@ -53,6 +57,7 @@ export interface Job {
   createdAt: string;
   startedAt?: string;
   finishedAt?: string;
+  partialFrames?: ExtractedFrame[];
   result?: ProcessReportResult;
   error?: string;
 }

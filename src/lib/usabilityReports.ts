@@ -2,6 +2,7 @@ import {
   UsabilityReport,
   UsabilityReportDetail,
   UsabilityReportFrame,
+  UsabilityReportPreviewFrame,
   UsabilityReportStatus,
 } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
@@ -23,6 +24,7 @@ interface GenerateReportResponse {
   message?: string;
   reportId?: string;
   status?: UsabilityReportStatus;
+  previewFrames?: UsabilityReportPreviewFrame[];
 }
 
 interface ReportStatusResponse {
@@ -33,6 +35,7 @@ interface ReportStatusResponse {
   frameCount?: number;
   errorMessage?: string | null;
   completedAt?: string | null;
+  previewFrames?: UsabilityReportPreviewFrame[];
 }
 
 interface ReportDetailResponse {
@@ -160,7 +163,11 @@ export async function listMyUsabilityReports(): Promise<UsabilityReport[]> {
  */
 export async function generateUsabilityReport(
   submissionId: string,
-): Promise<{ reportId: string; status: UsabilityReportStatus }> {
+): Promise<{
+  reportId: string;
+  status: UsabilityReportStatus;
+  previewFrames: UsabilityReportPreviewFrame[];
+}> {
   if (!submissionId) {
     throw new Error("Select an app to generate a report for.");
   }
@@ -173,7 +180,11 @@ export async function generateUsabilityReport(
     throw new Error(payload.message ?? "The report could not be started.");
   }
 
-  return { reportId: payload.reportId, status: payload.status ?? "processing" };
+  return {
+    reportId: payload.reportId,
+    status: payload.status ?? "processing",
+    previewFrames: payload.previewFrames ?? [],
+  };
 }
 
 /** Fetch the current processing status of a report. */
@@ -185,6 +196,7 @@ export async function getUsabilityReportStatus(
   frameCount: number;
   errorMessage?: string | null;
   completedAt?: string | null;
+  previewFrames: UsabilityReportPreviewFrame[];
 }> {
   const payload = await callFunction<ReportStatusResponse>("get-usability-report-status", {
     reportId,
@@ -195,6 +207,7 @@ export async function getUsabilityReportStatus(
     frameCount: payload.frameCount ?? 0,
     errorMessage: payload.errorMessage ?? null,
     completedAt: payload.completedAt ?? null,
+    previewFrames: payload.previewFrames ?? [],
   };
 }
 
@@ -219,7 +232,11 @@ export interface PollOptions {
   /** Maximum wait for each individual status request. Default 15 seconds. */
   statusRequestTimeoutMs?: number;
   /** Called after every status check (useful for progress UI). */
-  onTick?: (status: UsabilityReportStatus, frameCount: number) => void;
+  onTick?: (
+    status: UsabilityReportStatus,
+    frameCount: number,
+    previewFrames: UsabilityReportPreviewFrame[],
+  ) => void;
   /** Abort polling early (e.g. component unmount). */
   signal?: AbortSignal;
 }
@@ -231,7 +248,12 @@ export interface PollOptions {
 export async function pollUsabilityReportUntilDone(
   reportId: string,
   options: PollOptions = {},
-): Promise<{ status: UsabilityReportStatus; frameCount: number; errorMessage?: string | null }> {
+): Promise<{
+  status: UsabilityReportStatus;
+  frameCount: number;
+  errorMessage?: string | null;
+  previewFrames: UsabilityReportPreviewFrame[];
+}> {
   const intervalMs = options.intervalMs ?? 2500;
   const timeoutMs = options.timeoutMs ?? 20 * 60 * 1000;
   const statusRequestTimeoutMs = options.statusRequestTimeoutMs ?? 15000;
@@ -260,7 +282,7 @@ export async function pollUsabilityReportUntilDone(
     }
 
     if (snapshot) {
-      options.onTick?.(snapshot.status, snapshot.frameCount);
+      options.onTick?.(snapshot.status, snapshot.frameCount, snapshot.previewFrames);
 
       if (snapshot.status === "completed" || snapshot.status === "failed") {
         return snapshot;

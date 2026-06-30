@@ -11,6 +11,12 @@ export const R2_RECORDING_ALLOWED_MIME_TYPES = new Set([
   "video/quicktime",
   "video/webm",
 ]);
+export const R2_RECORDING_THUMBNAIL_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+export const R2_RECORDING_THUMBNAIL_ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 export interface R2RecordingEnvironment {
   supabaseUrl: string;
@@ -125,6 +131,60 @@ export function validateR2RecordingObjectInput(input: {
   }
 
   return mimeType;
+}
+
+export function validateR2RecordingThumbnailInput(input: {
+  userId: string;
+  recordingObjectKey: string;
+  thumbnailObjectKey: string;
+  contentType: string;
+  fileSizeBytes: number;
+  width: number;
+  height: number;
+}) {
+  if (!input.recordingObjectKey.startsWith(`draft/${input.userId}/`)) {
+    throw new Error("You can only attach thumbnails to your own recording uploads.");
+  }
+
+  if (!input.thumbnailObjectKey.startsWith(`draft/${input.userId}/`)) {
+    throw new Error("You can only upload recording thumbnails to your own draft path.");
+  }
+
+  if (input.thumbnailObjectKey === input.recordingObjectKey) {
+    throw new Error("Recording thumbnail path must be different from the recording path.");
+  }
+
+  if (!Number.isFinite(input.fileSizeBytes) || input.fileSizeBytes <= 0) {
+    throw new Error("Recording thumbnail file size is invalid.");
+  }
+
+  if (input.fileSizeBytes > R2_RECORDING_THUMBNAIL_MAX_FILE_SIZE_BYTES) {
+    throw new Error("Recording thumbnail must be 2 MB or smaller.");
+  }
+
+  const contentType = input.contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+
+  if (!R2_RECORDING_THUMBNAIL_ALLOWED_MIME_TYPES.has(contentType)) {
+    throw new Error("Recording thumbnail must be a JPEG, PNG, or WebP image.");
+  }
+
+  if (
+    !Number.isFinite(input.width) ||
+    !Number.isFinite(input.height) ||
+    input.width < 1 ||
+    input.height < 1 ||
+    input.width > 4096 ||
+    input.height > 4096
+  ) {
+    throw new Error("Recording thumbnail dimensions are invalid.");
+  }
+
+  return {
+    contentType,
+    width: Math.round(input.width),
+    height: Math.round(input.height),
+    fileSizeBytes: Math.round(input.fileSizeBytes),
+  };
 }
 
 export function xmlEscape(value: string) {
