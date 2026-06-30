@@ -11,7 +11,8 @@
     "prerender:blog": "node scripts/prerender-blog.mjs",
     "build": "npm run generate:seo && tsc && vite build && npm run prerender:blog",
     "build:tina": "tinacms build --local --skip-cloud-checks",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:test-account": "node scripts/seed-test-account.mjs"
   },
   "keywords": [
     "react",

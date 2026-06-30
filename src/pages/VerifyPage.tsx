@@ -5,6 +5,7 @@ import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
 import { getStoredOtpChallenge, getSubmitFlowResume, saveSubmitFlowResume } from "../lib/pendingSubmission";
+import { isTestAccountEmail } from "../lib/supabase";
 
 export function VerifyPage() {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,7 @@ export function VerifyPage() {
     storedChallenge?.submissionId ??
     storedResume?.submissionId ??
     undefined;
+  const isTestAccountChallenge = isTestAccountEmail(email);
   const navigate = useNavigate();
   const { currentUser, requestOtp, verifyOtp } = useAppState();
 
@@ -53,7 +55,11 @@ export function VerifyPage() {
 
     try {
       await requestOtp(email, submissionId);
-      setMessage("New code sent. Check your email for the latest code.");
+      setMessage(
+        isTestAccountChallenge
+          ? "Enter the configured test account passcode."
+          : "New code sent. Check your email for the latest code.",
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not resend that code.");
     } finally {
@@ -104,12 +110,18 @@ export function VerifyPage() {
           <ArrowLeft size={16} />
           Change Email
         </button>
-        <h2>Enter the six-digit code</h2>
-        <p>
-          We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish verifying your account.
-        </p>
+        <h2>{isTestAccountChallenge ? "Enter test passcode" : "Enter the six-digit code"}</h2>
+        {isTestAccountChallenge ? (
+          <p>
+            Enter the configured test account passcode for <strong>{email || "your email"}</strong>.
+          </p>
+        ) : (
+          <p>
+            We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish verifying your account.
+          </p>
+        )}
         <label className="field field--otp">
-          <span>One-time passcode</span>
+          <span>{isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}</span>
           <div className="otp-row">
             <MailCheck size={18} />
             <input
@@ -143,7 +155,13 @@ export function VerifyPage() {
             ) : (
               <RefreshCcw size={16} />
             )}
-            {isSendingCode ? "Sending..." : "Resend code"}
+            {isSendingCode
+              ? isTestAccountChallenge
+                ? "Resetting..."
+                : "Sending..."
+              : isTestAccountChallenge
+                ? "Restart"
+                : "Resend code"}
           </button>
         </div>
       </VerificationFlowShell>

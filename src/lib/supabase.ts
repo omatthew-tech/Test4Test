@@ -5,8 +5,13 @@ export const supabasePublishableKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ??
   import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ??
   "";
+export const testAccountEmail = import.meta.env.VITE_TEST_ACCOUNT_EMAIL?.trim().toLowerCase() ?? "";
 
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublishableKey);
+
+export function isTestAccountEmail(email: string | null | undefined) {
+  return Boolean(testAccountEmail && email?.trim().toLowerCase() === testAccountEmail);
+}
 
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl, supabasePublishableKey, {
