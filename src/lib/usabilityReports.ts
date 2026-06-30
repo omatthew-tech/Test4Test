@@ -49,6 +49,13 @@ interface ListReportsResponse {
   reports?: UsabilityReport[];
 }
 
+class FunctionCallError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+    this.name = "FunctionCallError";
+  }
+}
+
 function assertConfigured() {
   if (!supabaseUrl || !supabasePublishableKey) {
     throw new Error("Reporting is not available in the current environment.");
@@ -72,24 +79,68 @@ async function getAccessToken(fallbackMessage: string) {
 async function callFunction<T extends { ok?: boolean; error?: string; message?: string }>(
   name: string,
   body: Record<string, unknown>,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<T> {
   assertConfigured();
 
   const accessToken = await getAccessToken("Sign in to generate reports.");
-  const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      apikey: supabasePublishableKey,
-    },
-    body: JSON.stringify(body),
-  });
+  const timeoutController = options.timeoutMs ? new AbortController() : null;
+  const signal = timeoutController?.signal ?? options.signal;
+  let timeoutId: number | undefined;
+  let removeAbortListener: (() => void) | undefined;
+
+  if (timeoutController && options.signal) {
+    if (options.signal.aborted) {
+      timeoutController.abort();
+    } else {
+      const abort = () => timeoutController.abort();
+      options.signal.addEventListener("abort", abort, { once: true });
+      removeAbortListener = () => options.signal?.removeEventListener("abort", abort);
+    }
+  }
+
+  if (timeoutController && options.timeoutMs) {
+    timeoutId = window.setTimeout(() => timeoutController.abort(), options.timeoutMs);
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        apikey: supabasePublishableKey,
+      },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (caught) {
+    if (options.signal?.aborted) {
+      throw new DOMException("Request aborted.", "AbortError");
+    }
+
+    if (timeoutController?.signal.aborted) {
+      throw new FunctionCallError("Request timed out.");
+    }
+
+    throw caught;
+  } finally {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+
+    removeAbortListener?.();
+  }
 
   const payload = (await response.json().catch(() => null)) as T | null;
 
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error ?? payload?.message ?? response.statusText);
+    throw new FunctionCallError(
+      payload?.error ?? payload?.message ?? response.statusText,
+      response.status,
+    );
   }
 
   return payload;
@@ -126,7 +177,10 @@ export async function generateUsabilityReport(
 }
 
 /** Fetch the current processing status of a report. */
-export async function getUsabilityReportStatus(reportId: string): Promise<{
+export async function getUsabilityReportStatus(
+  reportId: string,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<{
   status: UsabilityReportStatus;
   frameCount: number;
   errorMessage?: string | null;
@@ -134,7 +188,7 @@ export async function getUsabilityReportStatus(reportId: string): Promise<{
 }> {
   const payload = await callFunction<ReportStatusResponse>("get-usability-report-status", {
     reportId,
-  });
+  }, options);
 
   return {
     status: payload.status ?? "processing",
@@ -162,6 +216,8 @@ export interface PollOptions {
   intervalMs?: number;
   /** Maximum total wait before giving up. Default 20 minutes. */
   timeoutMs?: number;
+  /** Maximum wait for each individual status request. Default 15 seconds. */
+  statusRequestTimeoutMs?: number;
   /** Called after every status check (useful for progress UI). */
   onTick?: (status: UsabilityReportStatus, frameCount: number) => void;
   /** Abort polling early (e.g. component unmount). */
@@ -178,6 +234,7 @@ export async function pollUsabilityReportUntilDone(
 ): Promise<{ status: UsabilityReportStatus; frameCount: number; errorMessage?: string | null }> {
   const intervalMs = options.intervalMs ?? 2500;
   const timeoutMs = options.timeoutMs ?? 20 * 60 * 1000;
+  const statusRequestTimeoutMs = options.statusRequestTimeoutMs ?? 15000;
   const deadline = Date.now() + timeoutMs;
 
   while (true) {
@@ -185,11 +242,29 @@ export async function pollUsabilityReportUntilDone(
       throw new DOMException("Polling aborted.", "AbortError");
     }
 
-    const snapshot = await getUsabilityReportStatus(reportId);
-    options.onTick?.(snapshot.status, snapshot.frameCount);
+    let snapshot: Awaited<ReturnType<typeof getUsabilityReportStatus>> | null = null;
 
-    if (snapshot.status === "completed" || snapshot.status === "failed") {
-      return snapshot;
+    try {
+      snapshot = await getUsabilityReportStatus(reportId, {
+        signal: options.signal,
+        timeoutMs: statusRequestTimeoutMs,
+      });
+    } catch (caught) {
+      if (options.signal?.aborted) {
+        throw new DOMException("Polling aborted.", "AbortError");
+      }
+
+      if (caught instanceof FunctionCallError && caught.status && caught.status < 500) {
+        throw caught;
+      }
+    }
+
+    if (snapshot) {
+      options.onTick?.(snapshot.status, snapshot.frameCount);
+
+      if (snapshot.status === "completed" || snapshot.status === "failed") {
+        return snapshot;
+      }
     }
 
     if (Date.now() >= deadline) {
