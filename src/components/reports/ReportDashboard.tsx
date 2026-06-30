@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, FileText, Video } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  CircleDashed,
+  FileText,
+  Video,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
 import { useAppState } from "../../context/AppStateContext";
@@ -39,6 +47,19 @@ function reportStatusLabel(status: UsabilityReport["status"]) {
       return "Failed";
     default:
       return status;
+  }
+}
+
+function reportStatusIcon(status: UsabilityReport["status"]) {
+  switch (status) {
+    case "completed":
+      return <CheckCircle2 size={20} strokeWidth={2.2} aria-hidden="true" />;
+    case "failed":
+      return <AlertCircle size={20} strokeWidth={2.2} aria-hidden="true" />;
+    case "processing":
+    case "pending":
+    default:
+      return <CircleDashed size={20} strokeWidth={2.2} aria-hidden="true" />;
   }
 }
 
@@ -197,8 +218,8 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
         <div className="report-dashboard__hero-text">
           <h2 className="report-dashboard__title">Generate report</h2>
           <p className="report-dashboard__subtitle">
-            We scan your testers' screen recordings and pull out every unique app page as a
-            timestamped screenshot, so you can see exactly what testers saw and when.
+            Let AI analyze every user recording for new insights, quick fixes and in-depth
+            feedback. See exactly what your users see and what they have to say about it.
           </p>
         </div>
 
@@ -264,7 +285,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
       </Surface>
 
       {submissions.length > 0 ? (
-        <Surface className="report-dashboard__history">
+        <section className="report-dashboard__history">
           <h3 className="report-dashboard__history-title">Previous reports</h3>
           {filteredHistory.length === 0 ? (
             <div className="empty-state empty-state--left">
@@ -283,16 +304,27 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                       disabled={!isReady}
                     >
                       <span className="report-history__main">
-                        <span className="report-history__name">Report {report.reportNumber}</span>
-                        <span className="report-history__meta">
-                          {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
-                          {report.sourceResponseCount === 1 ? "" : "s"} analyzed
+                        <span className="report-history__icon" aria-hidden="true">
+                          <FileText size={30} strokeWidth={1.9} />
+                        </span>
+                        <span className="report-history__copy">
+                          <span className="report-history__name">Report {report.reportNumber}</span>
+                          <span className="report-history__meta">
+                            {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
+                            {report.sourceResponseCount === 1 ? "" : "s"} analyzed
+                          </span>
                         </span>
                       </span>
-                      <span
-                        className={`report-history__status report-history__status--${report.status}`}
-                      >
-                        {reportStatusLabel(report.status)}
+                      <span className="report-history__actions">
+                        <span
+                          className={`report-history__status report-history__status--${report.status}`}
+                        >
+                          {reportStatusIcon(report.status)}
+                          {reportStatusLabel(report.status)}
+                        </span>
+                        <span className="report-history__arrow" aria-hidden="true">
+                          <ArrowRight size={26} strokeWidth={1.9} />
+                        </span>
                       </span>
                     </button>
                   </li>
@@ -300,7 +332,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
               })}
             </ul>
           )}
-        </Surface>
+        </section>
       ) : null}
     </div>
   );

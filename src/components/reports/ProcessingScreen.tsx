@@ -73,6 +73,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
         <h2 className="report-processing__title">
           Analyzing {productName ? <strong>{productName}</strong> : "your recordings"}…
         </h2>
+        <p className="report-processing__hint">You can close this tab and check back later</p>
       </div>
     </section>
   );

@@ -7,10 +7,7 @@ export function ReportsPage() {
   const { reportId } = useParams();
 
   return (
-    <AppShell
-      title="AI Analysis"
-      description="Turn tester screen recordings into timestamped usability snapshots."
-    >
+    <AppShell>
       {reportId ? <ReportView reportId={reportId} /> : <ReportDashboard />}
     </AppShell>
   );
