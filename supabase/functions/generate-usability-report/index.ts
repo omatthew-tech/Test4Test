@@ -1,16 +1,16 @@
 import {
   enqueueWorkerReport,
-  createReportFrameSignedUrl,
   getAuthenticatedReportUser,
-  getReportFrameR2Environment,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
   createReportAdminClient,
   NO_RECORDINGS_ERROR,
   reportCorsHeaders,
   reportJson,
+  signWorkerFrameUrls,
   workerStatusToReportStatus,
   type ReportPreviewFrame,
+  type ReportWorkerEnvironment,
   type WorkerSource,
 } from "../_shared/usability-reports.ts";
 
@@ -89,31 +89,36 @@ async function buildWorkerSources(
   return sources;
 }
 
-async function buildInitialPreviewFrames(rows: RecordingResponseRow[]) {
+async function buildInitialPreviewFrames(rows: RecordingResponseRow[], workerEnv: ReportWorkerEnvironment) {
   const thumbnailRows = rows.filter((row) => row.recording_thumbnail_bucket && row.recording_thumbnail_path);
 
   if (thumbnailRows.length === 0) {
     return [];
   }
 
-  let r2Env: ReturnType<typeof getReportFrameR2Environment>;
-
   try {
-    r2Env = getReportFrameR2Environment();
-  } catch (_error) {
-    return [];
-  }
+    const candidates = thumbnailRows.slice(0, 8).map((row) => ({
+      id: `thumbnail:${row.id}`,
+      row,
+    }));
+    const signedUrls = await signWorkerFrameUrls(
+      workerEnv,
+      candidates.map((candidate) => ({
+        id: candidate.id,
+        bucket: candidate.row.recording_thumbnail_bucket!,
+        key: candidate.row.recording_thumbnail_path!,
+      })),
+    );
 
-  const previews = await Promise.all(thumbnailRows.slice(0, 8).map(async (row) => {
-    try {
-      const url = await createReportFrameSignedUrl(
-        r2Env,
-        row.recording_thumbnail_bucket!,
-        row.recording_thumbnail_path!,
-      );
+    return candidates.flatMap(({ id, row }) => {
+      const url = signedUrls.get(id);
 
-      return {
-        id: `thumbnail:${row.id}`,
+      if (!url) {
+        return [];
+      }
+
+      return [{
+        id,
         testResponseId: row.id,
         source: "thumbnail",
         url,
@@ -121,13 +126,11 @@ async function buildInitialPreviewFrames(rows: RecordingResponseRow[]) {
         height: row.recording_thumbnail_height ?? null,
         timestampMs: 0,
         frameIndex: null,
-      } satisfies ReportPreviewFrame;
-    } catch (_error) {
-      return null;
-    }
-  }));
-
-  return previews.filter((preview): preview is ReportPreviewFrame => Boolean(preview?.url));
+      } satisfies ReportPreviewFrame];
+    });
+  } catch (_error) {
+    return [];
+  }
 }
 
 async function createReportRow(
@@ -319,7 +322,7 @@ Deno.serve(async (request) => {
       reportId: report.id,
       reportNumber: report.report_number,
       status,
-      previewFrames: await buildInitialPreviewFrames(recordings),
+      previewFrames: await buildInitialPreviewFrames(recordings, workerEnv),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The video processor could not start this report.";

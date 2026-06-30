@@ -85,6 +85,12 @@ export interface WorkerJob {
   error?: string;
 }
 
+export interface WorkerFrameSignRequest {
+  id: string;
+  bucket: string;
+  key: string;
+}
+
 export interface ReportRow {
   id: string;
   submission_id: string;
@@ -261,6 +267,41 @@ export async function getWorkerJob(env: ReportWorkerEnvironment, jobId: string) 
   }
 
   return payload.job;
+}
+
+export async function signWorkerFrameUrls(
+  env: ReportWorkerEnvironment,
+  frames: WorkerFrameSignRequest[],
+) {
+  if (frames.length === 0) {
+    return new Map<string, string>();
+  }
+
+  const response = await fetch(`${env.workerUrl}/frames/sign`, {
+    method: "POST",
+    headers: buildWorkerHeaders(env),
+    body: JSON.stringify({ frames }),
+  });
+  const payload = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    frames?: Array<{ id?: string; url?: string }>;
+    error?: string;
+    message?: string;
+  } | null;
+
+  if (!response.ok || !payload?.ok || !Array.isArray(payload.frames)) {
+    throw new Error(payload?.error ?? payload?.message ?? "The video processor could not sign preview frames.");
+  }
+
+  const urls = new Map<string, string>();
+
+  for (const frame of payload.frames) {
+    if (frame.id && frame.url) {
+      urls.set(frame.id, frame.url);
+    }
+  }
+
+  return urls;
 }
 
 export async function persistCompletedWorkerResult(

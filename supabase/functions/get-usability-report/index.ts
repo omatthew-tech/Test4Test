@@ -1,12 +1,12 @@
 import {
   createReportAdminClient,
-  createReportFrameSignedUrl,
   getAuthenticatedReportUser,
-  getReportFrameR2Environment,
   getReportSupabaseEnvironment,
+  getReportWorkerEnvironment,
   mapReportSummary,
   reportCorsHeaders,
   reportJson,
+  signWorkerFrameUrls,
   type ReportRow,
 } from "../_shared/usability-reports.ts";
 
@@ -130,29 +130,34 @@ Deno.serve(async (request) => {
     return reportJson({ error: frameError.message }, 500);
   }
 
-  let r2Env;
+  const rows = (frameRows ?? []) as FrameRow[];
+  let signedUrls = new Map<string, string>();
 
   try {
-    r2Env = getReportFrameR2Environment();
-  } catch (error) {
-    if ((frameRows ?? []).length > 0) {
-      return reportJson({ error: error instanceof Error ? error.message : "Report frame storage is incomplete." }, 500);
-    }
+    const workerEnv = getReportWorkerEnvironment();
+    signedUrls = await signWorkerFrameUrls(
+      workerEnv,
+      rows.map((frame) => ({
+        id: frame.id,
+        bucket: frame.storage_bucket,
+        key: frame.storage_key,
+      })),
+    );
+  } catch (_error) {
+    signedUrls = new Map<string, string>();
   }
 
-  const frames = await Promise.all(((frameRows ?? []) as FrameRow[]).map(async (frame) => ({
+  const frames = rows.map((frame) => ({
     id: frame.id,
     reportId: frame.report_id,
     testResponseId: frame.test_response_id,
     testerLabel: getTesterLabel(frame),
     frameIndex: frame.frame_index,
     timestampMs: frame.timestamp_ms,
-    url: r2Env
-      ? await createReportFrameSignedUrl(r2Env, frame.storage_bucket, frame.storage_key)
-      : "",
+    url: signedUrls.get(frame.id) ?? "",
     width: frame.width,
     height: frame.height,
-  })));
+  }));
 
   return reportJson({
     ok: true,

@@ -1,8 +1,6 @@
 import {
   createReportAdminClient,
-  createReportFrameSignedUrl,
   getAuthenticatedReportUser,
-  getReportFrameR2Environment,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
   getWorkerJob,
@@ -10,9 +8,11 @@ import {
   persistCompletedWorkerResult,
   reportCorsHeaders,
   reportJson,
+  signWorkerFrameUrls,
   workerStatusToReportStatus,
   type ReportPreviewFrame,
   type ReportRow,
+  type ReportWorkerEnvironment,
   type WorkerFrame,
 } from "../_shared/usability-reports.ts";
 
@@ -88,40 +88,11 @@ async function loadSourcePreviewRows(
   return (data ?? []) as SourcePreviewRow[];
 }
 
-async function signPreviewFrame(
-  r2Env: ReturnType<typeof getReportFrameR2Environment>,
-  frame: {
-    id: string;
-    testResponseId: string;
-    source: "thumbnail" | "worker";
-    bucket: string;
-    key: string;
-    width?: number | null;
-    height?: number | null;
-    timestampMs?: number | null;
-    frameIndex?: number | null;
-  },
-): Promise<ReportPreviewFrame | null> {
-  try {
-    return {
-      id: frame.id,
-      testResponseId: frame.testResponseId,
-      source: frame.source,
-      url: await createReportFrameSignedUrl(r2Env, frame.bucket, frame.key),
-      width: frame.width ?? null,
-      height: frame.height ?? null,
-      timestampMs: frame.timestampMs ?? null,
-      frameIndex: frame.frameIndex ?? null,
-    };
-  } catch (_error) {
-    return null;
-  }
-}
-
 async function buildPreviewFrames(
   admin: ReturnType<typeof createReportAdminClient>,
   reportId: string,
   partialFrames: WorkerFrame[],
+  workerEnv: ReportWorkerEnvironment,
 ) {
   const sources = await loadSourcePreviewRows(admin, reportId);
   const thumbnailCandidates = sources
@@ -159,16 +130,37 @@ async function buildPreviewFrames(
     return [];
   }
 
-  let r2Env: ReturnType<typeof getReportFrameR2Environment>;
-
   try {
-    r2Env = getReportFrameR2Environment();
+    const signedUrls = await signWorkerFrameUrls(
+      workerEnv,
+      candidates.map((candidate) => ({
+        id: candidate.id,
+        bucket: candidate.bucket,
+        key: candidate.key,
+      })),
+    );
+
+    return candidates.flatMap((candidate) => {
+      const url = signedUrls.get(candidate.id);
+
+      if (!url) {
+        return [];
+      }
+
+      return [{
+        id: candidate.id,
+        testResponseId: candidate.testResponseId,
+        source: candidate.source,
+        url,
+        width: candidate.width ?? null,
+        height: candidate.height ?? null,
+        timestampMs: candidate.timestampMs ?? null,
+        frameIndex: candidate.frameIndex ?? null,
+      } satisfies ReportPreviewFrame];
+    });
   } catch (_error) {
     return [];
   }
-
-  const signed = await Promise.all(candidates.map((candidate) => signPreviewFrame(r2Env, candidate)));
-  return signed.filter((frame): frame is ReportPreviewFrame => Boolean(frame?.url));
 }
 
 Deno.serve(async (request) => {
@@ -249,7 +241,7 @@ Deno.serve(async (request) => {
 
     const updatedReport = await loadReport(admin, reportId, user.id);
     const partialFrames = workerJob.result?.frames ?? workerJob.partialFrames ?? [];
-    const previewFrames = await buildPreviewFrames(admin, report.id, partialFrames);
+    const previewFrames = await buildPreviewFrames(admin, report.id, partialFrames, workerEnv);
     const frameCount = Math.max(updatedReport.frame_count, partialFrames.length);
     return statusResponse(updatedReport, previewFrames, frameCount);
   } catch (error) {

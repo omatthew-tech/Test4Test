@@ -8,6 +8,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
@@ -142,4 +143,19 @@ export async function uploadManifest(key: string, manifest: unknown): Promise<vo
       ContentType: "application/json; charset=utf-8",
     }),
   );
+}
+
+export async function createSignedObjectUrl(params: {
+  bucket: string;
+  key: string;
+  expiresInSeconds?: number;
+}): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: params.bucket,
+    Key: params.key,
+  });
+
+  return getSignedUrl(r2 as never, command as never, {
+    expiresIn: params.expiresInSeconds ?? 60 * 60,
+  });
 }
