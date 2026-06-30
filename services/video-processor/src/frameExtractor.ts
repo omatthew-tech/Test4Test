@@ -53,11 +53,22 @@ export function detectSceneTimestamps(input: string): Promise<number[]> {
   return new Promise((resolve, reject) => {
     const timestamps: number[] = [0];
     const sceneThreshold = config.frames.sceneThreshold;
+    const filters: string[] = [];
+
+    if (config.frames.analysisFps > 0) {
+      filters.push(`fps=${config.frames.analysisFps}`);
+    }
+
+    if (config.frames.analysisWidth > 0) {
+      filters.push(`scale=${config.frames.analysisWidth}:-1:flags=fast_bilinear`);
+    }
+
+    filters.push(`select='gt(scene,${sceneThreshold})'`, "showinfo");
 
     ffmpeg(input)
       .outputOptions([
         "-vf",
-        `select='gt(scene,${sceneThreshold})',showinfo`,
+        filters.join(","),
         // Variable frame rate so only selected frames are emitted/measured.
         "-vsync",
         "vfr",
@@ -196,6 +207,8 @@ export async function extractUniqueFrames(input: string): Promise<CandidateFrame
   logger.info("Detected frame timestamps", {
     input,
     durationSeconds,
+    analysisFps: config.frames.analysisFps,
+    analysisWidth: config.frames.analysisWidth,
     sceneCandidateCount: sceneTimestamps.length,
     intervalCandidateCount: intervalTimestamps.length,
     mergedCandidateCount: timestamps.length,

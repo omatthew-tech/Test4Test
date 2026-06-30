@@ -62,6 +62,9 @@ export const config = {
     minGapSeconds: numberEnv("FRAME_MIN_GAP_SECONDS", 0.75),
     maxPerVideo: numberEnv("FRAME_MAX_PER_VIDEO", 120),
     hammingThreshold: numberEnv("FRAME_HAMMING_THRESHOLD", 6),
+    /** Downsample the scene-detection pass so reports do not spend minutes decoding full-res video. */
+    analysisFps: numberEnv("FRAME_ANALYSIS_FPS", 2),
+    analysisWidth: numberEnv("FRAME_ANALYSIS_WIDTH", 480),
     /** Fixed-interval samples (seconds). 0 disables. Supplements scene detection for long videos. */
     sampleIntervalSeconds: numberEnv("FRAME_SAMPLE_INTERVAL_SECONDS", 0),
     outputWidth: numberEnv("FRAME_OUTPUT_WIDTH", 1280),
