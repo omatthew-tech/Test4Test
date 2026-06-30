@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ScanLine } from "lucide-react";
 import type { UsabilityReportPreviewFrame } from "../../types";
 
 /**
@@ -8,8 +7,8 @@ import type { UsabilityReportPreviewFrame } from "../../types";
  *
  * The centerpiece is an "oscillating screenshots" animation: a fanned stack of
  * mock app screens that continuously sweep left/right while a scan line passes
- * over the active card, simulating an AI systematically working through the
- * recording. It is pure CSS (see `.report-processing__*` rules in styles.css)
+ * over the active card, simulating an AI working through the recording. It is
+ * pure CSS (see `.report-processing__*` rules in styles.css)
  * and honors `prefers-reduced-motion`.
  */
 
@@ -133,7 +132,8 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
             const offset = index - (SCREEN_COUNT - 1) / 2;
             const screenshot = slots[index];
             const isLandscape = isLandscapeFrame(screenshot);
-            const screenSpread = isLandscape ? 86 : 66;
+            const isPortrait = Boolean(screenshot && !isLandscape);
+            const screenSpread = isPortrait ? 66 : 86;
             const style = {
               "--screen-index": index,
               "--screen-offset": offset,
@@ -149,6 +149,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
                   "report-screen",
                   screenshot ? "report-screen--filled" : "",
                   screenshot && isLandscape ? "report-screen--landscape" : "",
+                  isPortrait ? "report-screen--portrait" : "",
                 ].filter(Boolean).join(" ")}
                 style={style}
               >
@@ -172,9 +173,7 @@ export function ProcessingScreen({ productName, screenshots }: ProcessingScreenP
                     <span className="report-screen__bar report-screen__bar--short" />
                   </div>
                 )}
-                <span className="report-screen__scan">
-                  <ScanLine size={18} strokeWidth={2.2} />
-                </span>
+                <span className="report-screen__scan" />
               </div>
             );
           })}

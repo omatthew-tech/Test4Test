@@ -12114,8 +12114,8 @@ select {
 }
 
 .report-screen {
-  --screen-width: 150px;
-  --screen-height: 270px;
+  --screen-width: 230px;
+  --screen-height: 132px;
   --screen-x: 0px;
   position: absolute;
   top: 50%;
@@ -12123,7 +12123,7 @@ select {
   width: var(--screen-width);
   height: var(--screen-height);
   margin: calc(var(--screen-height) / -2) 0 0 calc(var(--screen-width) / -2);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--color-surface-000);
   border: 1px solid var(--color-line-200);
   box-shadow: var(--shadow-md);
@@ -12138,6 +12138,12 @@ select {
   --screen-width: 230px;
   --screen-height: 132px;
   border-radius: 14px;
+}
+
+.report-screen--portrait {
+  --screen-width: 150px;
+  --screen-height: 270px;
+  border-radius: 18px;
 }
 
 .report-screen__shot,
