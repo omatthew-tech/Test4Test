@@ -1,5 +1,5 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { ScanLine, Sparkles } from "lucide-react";
+import { type CSSProperties } from "react";
+import { ScanLine } from "lucide-react";
 
 /**
  * Full-bleed processing screen shown while the backend extracts and analyzes
@@ -12,14 +12,6 @@ import { ScanLine, Sparkles } from "lucide-react";
  * and honors `prefers-reduced-motion`.
  */
 
-const ANALYSIS_STEPS = [
-  "Fetching usability recordings",
-  "Splitting video into app screens",
-  "Detecting unique pages",
-  "Timestamping each screenshot",
-  "Compiling your report",
-];
-
 const SCREEN_COUNT = 5;
 
 export interface ProcessingScreenProps {
@@ -31,17 +23,7 @@ export interface ProcessingScreenProps {
   screenshots?: string[];
 }
 
-export function ProcessingScreen({ productName, statusLabel, screenshots }: ProcessingScreenProps) {
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActiveStep((step) => (step + 1) % ANALYSIS_STEPS.length);
-    }, 2200);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
+export function ProcessingScreen({ productName, screenshots }: ProcessingScreenProps) {
   const screens = Array.from({ length: SCREEN_COUNT }, (_, index) => index);
 
   return (
@@ -88,36 +70,9 @@ export function ProcessingScreen({ productName, statusLabel, screenshots }: Proc
       </div>
 
       <div className="report-processing__copy">
-        <span className="report-processing__eyebrow">
-          <Sparkles size={16} strokeWidth={2.4} />
-          AI analysis in progress
-        </span>
         <h2 className="report-processing__title">
           Analyzing {productName ? <strong>{productName}</strong> : "your recordings"}…
         </h2>
-        <p className="report-processing__subtitle">
-          {statusLabel ?? "We're scanning each recording to capture every unique app page."}
-        </p>
-
-        <ol className="report-processing__steps">
-          {ANALYSIS_STEPS.map((step, index) => {
-            const state =
-              index === activeStep ? "active" : index < activeStep ? "done" : "upcoming";
-            return (
-              <li
-                key={step}
-                className={`report-processing__step report-processing__step--${state}`}
-              >
-                <span className="report-processing__step-dot" aria-hidden="true" />
-                {step}
-              </li>
-            );
-          })}
-        </ol>
-
-        <p className="report-processing__hint">
-          This can take a minute or two. You'll be redirected automatically when it's ready.
-        </p>
       </div>
     </section>
   );
