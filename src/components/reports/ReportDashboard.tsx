@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, FileText, Sparkles, Video } from "lucide-react";
+import { AlertTriangle, ArrowRight, FileText, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
 import { useAppState } from "../../context/AppStateContext";
@@ -195,10 +195,6 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
     <div className="report-dashboard page-stack">
       <Surface className="report-dashboard__hero">
         <div className="report-dashboard__hero-text">
-          <span className="report-dashboard__eyebrow">
-            <Sparkles size={16} strokeWidth={2.4} />
-            AI Analysis
-          </span>
           <h2 className="report-dashboard__title">Generate report</h2>
           <p className="report-dashboard__subtitle">
             We scan your testers' screen recordings and pull out every unique app page as a
