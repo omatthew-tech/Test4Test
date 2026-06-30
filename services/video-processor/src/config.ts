@@ -60,7 +60,7 @@ export const config = {
   frames: {
     sceneThreshold: numberEnv("FRAME_SCENE_THRESHOLD", 0.3),
     minGapSeconds: numberEnv("FRAME_MIN_GAP_SECONDS", 0.75),
-    maxPerVideo: numberEnv("FRAME_MAX_PER_VIDEO", 120),
+    maxPerVideo: numberEnv("FRAME_MAX_PER_VIDEO", 60),
     hammingThreshold: numberEnv("FRAME_HAMMING_THRESHOLD", 6),
     /** Downsample the scene-detection pass so reports do not spend minutes decoding full-res video. */
     analysisFps: numberEnv("FRAME_ANALYSIS_FPS", 2),
