@@ -377,6 +377,9 @@ verify_jwt = false
 [functions.cleanup-response-recordings]
 verify_jwt = false
 
+[functions.complete-usability-report]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

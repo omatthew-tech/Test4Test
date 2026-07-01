@@ -1,7 +1,8 @@
 # video-processor
 
 Asynchronous Node.js worker that turns usability-test screen recordings into a
-set of **unique, timestamped app-page screenshots** stored in Cloudflare R2.
+set of **unique, timestamped app-page screenshots** stored in Cloudflare R2 and
+normalized Groq Whisper transcripts returned to Supabase for persistence.
 
 It exists as a standalone service because the rest of the Test4Test backend runs
 on Supabase Edge Functions (Deno), which cannot run `ffmpeg`. This worker does
@@ -51,7 +52,7 @@ Near-duplicate frames are removed with a 64-bit average perceptual hash
 
 ```bash
 cd services/video-processor
-cp .env.example .env   # fill in Cloudflare R2 credentials
+cp .env.example .env   # fill in Cloudflare R2 and Groq credentials
 npm install
 npm run dev            # or: npm run build && npm start
 ```
@@ -71,9 +72,23 @@ All R2 credentials are read **strictly from environment variables** (see
 | `CLOUDFLARE_SECRET_ACCESS_KEY` | R2 secret access key |
 | `CLOUDFLARE_BUCKET_NAME` | Destination bucket for generated frames |
 | `CLOUDFLARE_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` |
+| `GROQ_API_KEY` | Groq API key for uncached report transcription |
 
 Optional: `CLOUDFLARE_SOURCE_BUCKET_NAME`, `PORT`, `WORKER_SHARED_SECRET`,
-`JOB_CONCURRENCY`, `COMPLETION_WEBHOOK_URL`, and the `FRAME_*` tuning knobs.
+`JOB_CONCURRENCY`, `COMPLETION_WEBHOOK_URL`, the `FRAME_*` tuning knobs, and
+Groq transcription knobs:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GROQ_TRANSCRIPTION_MODEL` | `whisper-large-v3-turbo` | Whisper model id persisted with transcript cache rows |
+| `GROQ_TRANSCRIPTION_LANGUAGE` | empty | Optional ISO-639-1 language hint, e.g. `en` |
+| `GROQ_TRANSCRIPTION_PROMPT` | empty | Optional prompt for product names or spelling hints |
+| `GROQ_TRANSCRIPTION_MAX_UPLOAD_BYTES` | `20971520` | Safe direct-upload size before chunking |
+| `GROQ_TRANSCRIPTION_CHUNK_SECONDS` | `600` | Initial chunk duration for larger audio files |
+
+The Supabase Edge Functions also read `GROQ_TRANSCRIPTION_MODEL` for transcript
+cache lookups. If you override it here, set the same value as an Edge Function
+secret.
 
 ## API
 
@@ -85,19 +100,22 @@ Headers: `x-worker-secret: <WORKER_SHARED_SECRET>` (when configured).
 {
   "reportId": "8f3c...",
   "sources": [
-    { "responseId": "a1b2...", "objectKey": "draft/<user>/<session>/rec.webm" },
+    { "responseId": "a1b2...", "objectKey": "draft/<user>/<session>/rec.webm", "transcriptCached": false },
     { "responseId": "c3d4...", "url": "https://signed-url-to-video" }
   ]
 }
 ```
 
 Each source needs `responseId` plus either `objectKey` (downloaded from R2) or
-`url` (downloaded directly). Response: `202 { jobId, statusUrl, ... }`.
+`url` (downloaded directly). When `transcriptCached` is true, the worker skips
+Groq transcription for that source; Supabase will reuse the completed transcript
+already in Postgres. Response: `202 { jobId, statusUrl, ... }`.
 
 ### `GET /jobs/:jobId`
 
 Returns the job with `status` (`queued` | `processing` | `completed` | `failed`)
-and, when complete, a `result` containing every extracted frame:
+and, when complete, a `result` containing every extracted frame plus any newly
+generated transcripts:
 
 ```json
 {
@@ -120,6 +138,27 @@ and, when complete, a `result` containing every extracted frame:
           "contentType": "image/webp",
           "sizeBytes": 42310,
           "perceptualHash": "ffc3a1..."
+        }
+      ],
+      "transcripts": [
+        {
+          "responseId": "a1b2...",
+          "provider": "groq",
+          "model": "whisper-large-v3-turbo",
+          "language": "en",
+          "durationMs": 42130,
+          "fullText": "I opened the app and the signup button was hard to find.",
+          "segments": [
+            {
+              "segmentIndex": 0,
+              "startMs": 1200,
+              "endMs": 4860,
+              "text": "I opened the app and the signup button was hard to find.",
+              "words": [
+                { "word": "I", "startMs": 1200, "endMs": 1280 }
+              ]
+            }
+          ]
         }
       ]
     }

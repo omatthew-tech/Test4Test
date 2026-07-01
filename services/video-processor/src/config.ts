@@ -71,6 +71,18 @@ export const config = {
     outputQuality: numberEnv("FRAME_OUTPUT_QUALITY", 80),
   },
 
+  transcription: {
+    provider: "groq",
+    apiKey: process.env.GROQ_API_KEY?.trim() ?? "",
+    model: optionalEnv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo"),
+    language: process.env.GROQ_TRANSCRIPTION_LANGUAGE?.trim() ?? "",
+    prompt: process.env.GROQ_TRANSCRIPTION_PROMPT?.trim() ?? "",
+    endpoint: optionalEnv("GROQ_TRANSCRIPTION_ENDPOINT", "https://api.groq.com/openai/v1/audio/transcriptions"),
+    /** Keep direct uploads comfortably below Groq's documented attachment limits. */
+    maxUploadBytes: numberEnv("GROQ_TRANSCRIPTION_MAX_UPLOAD_BYTES", 20 * 1024 * 1024),
+    chunkSeconds: numberEnv("GROQ_TRANSCRIPTION_CHUNK_SECONDS", 600),
+  },
+
   completionWebhookUrl: process.env.COMPLETION_WEBHOOK_URL?.trim() ?? "",
 } as const;
 

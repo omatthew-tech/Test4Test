@@ -27,6 +27,21 @@ interface FrameRow {
   test_responses?: { anonymous_label?: string | null } | Array<{ anonymous_label?: string | null }> | null;
 }
 
+interface QuoteRow {
+  id: string;
+  report_id: string;
+  test_response_id: string;
+  frame_id: string | null;
+  transcript_segment_id: string | null;
+  timestamp_ms: number;
+  start_ms: number | null;
+  end_ms: number | null;
+  quote_text: string;
+  speaker: string | null;
+  include_in_summary: boolean;
+  test_responses?: { anonymous_label?: string | null } | Array<{ anonymous_label?: string | null }> | null;
+}
+
 async function responseFromAuthError(error: unknown) {
   if (error instanceof Response) {
     const payload = await error.json().catch(() => ({ error: "Unauthorized." }));
@@ -36,7 +51,7 @@ async function responseFromAuthError(error: unknown) {
   return null;
 }
 
-function getTesterLabel(row: FrameRow) {
+function getTesterLabel(row: Pick<FrameRow | QuoteRow, "test_responses">) {
   const response = Array.isArray(row.test_responses)
     ? row.test_responses[0]
     : row.test_responses;
@@ -159,11 +174,54 @@ Deno.serve(async (request) => {
     height: frame.height,
   }));
 
+  const { data: quoteRows, error: quoteError } = await admin
+    .from("usability_report_quotes")
+    .select(`
+      id,
+      report_id,
+      test_response_id,
+      frame_id,
+      transcript_segment_id,
+      timestamp_ms,
+      start_ms,
+      end_ms,
+      quote_text,
+      speaker,
+      include_in_summary,
+      test_responses (
+        anonymous_label
+      )
+    `)
+    .eq("report_id", reportId)
+    .order("test_response_id", { ascending: true })
+    .order("timestamp_ms", { ascending: true });
+
+  if (quoteError) {
+    return reportJson({ error: quoteError.message }, 500);
+  }
+
+  const quotes = ((quoteRows ?? []) as QuoteRow[]).map((quote) => ({
+    id: quote.id,
+    reportId: quote.report_id,
+    testResponseId: quote.test_response_id,
+    testerLabel: getTesterLabel(quote),
+    timestampMs: quote.timestamp_ms,
+    startMs: quote.start_ms,
+    endMs: quote.end_ms,
+    text: quote.quote_text,
+    speaker: quote.speaker,
+    transcriptSegmentId: quote.transcript_segment_id,
+    includeInSummary: quote.include_in_summary !== false,
+    linkedFrameId: quote.frame_id,
+    linkedFrameUrl: quote.frame_id ? signedUrls.get(quote.frame_id) ?? null : null,
+  }));
+
   return reportJson({
     ok: true,
     report: {
       ...mapReportSummary(reportData as ReportRow),
       frames,
+      quotes,
     },
   });
 });
