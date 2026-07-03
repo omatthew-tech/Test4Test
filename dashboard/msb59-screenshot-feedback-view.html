@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!--
+  Test4Test — AI Analysis: single screenshot feedback view
+  Design mockup for Jira MSB-59 / MSB-25 ("Design single page screenshot
+  feedback view"). Supports user story MSB-2; epic MSB-7 (automating
+  screenshots + extracting transcripts from recordings).
+
+  This is a STATIC design reference, not production code:
+    - The screenshot is a wireframe placeholder; the real view renders the
+      signed-URL image from UsabilityReportFrame.
+    - The feedback list maps to UsabilityReportQuote (linked to this frame via
+      linkedFrameId); quote text originates from transcript segments
+      (transcriptSegmentId), per the MSB-7 epic.
+    - "Tester moments" = the same logical screen as it appears in each tester's
+      recording (each at a different timestampMs).
+
+  OPEN DECISIONS baked in as proposals (not backed by current types):
+    1. Sentiment (colored dots + positive/neutral/negative bar) has no field on
+       UsabilityReportQuote. Needs a new/derived field, or remove.
+    2. Logical-screen grouping: UsabilityReportFrame carries testResponseId (one
+       recording), so "seen by 6 of 8 testers" assumes the backend clusters
+       per-tester frames into one logical screen. Confirm this dedup exists.
+    3. The highlighted "hesitation" field implies per-element data not captured
+       today — aspirational; flag or cut for v1.
+
+  Primary/emphasis buttons render orange-on-ink per the styles.css comment.
+  Tokens mirror styles.css (Sora/Inter, ink/surface/line, orange accent).
+  Fonts + icons load from CDN, so this needs an internet connection to render.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test4Test — Screenshot feedback (MSB-59)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --ink900:#1B1D24; --ink700:#3D414C; --ink500:#74777F;
+    --page:#F3F0EA; --s0:#FBFAF8; --s000:#FFF; --s100:#F6F4F0; --line:#E9E5DF;
+    --orange:#E8712B; --orange200:#F3C6A6;
+    --succ:#3E8B63; --warn:#B0781A; --err:#B8464A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink900);
+    font-family:"Inter",system-ui,sans-serif;line-height:1.5;
+    padding:32px 20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto}
+  .app{background:var(--s0);border:0.5px solid var(--line);border-radius:16px;padding:22px}
+  h1,h2,h3{font-family:"Sora","Inter",sans-serif;margin:0}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--orange);font-weight:500}
+  .crumb{display:flex;align-items:center;gap:7px;margin-bottom:14px;color:var(--ink500);font-size:.8rem;flex-wrap:wrap}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:9px;font-size:.82rem;font-weight:500;border:1px solid var(--line);background:var(--s000);color:var(--ink700);cursor:pointer}
+  .btn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.11em;color:var(--ink500);font-weight:500}
+  .split{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(230px,1fr);gap:16px}
+  .card{background:var(--s000);border:1px solid var(--line);border-radius:14px}
+  .shot{position:relative;background:var(--s100);border-radius:12px;padding:20px;min-height:300px;display:flex;flex-direction:column;gap:12px}
+  .bar{height:10px;border-radius:3px;background:#E4E0D9}
+  .field{background:#fff;border:1px solid var(--line);border-radius:8px;height:38px;display:flex;align-items:center;padding:0 12px;color:var(--ink500);font-size:.8rem}
+  .field--flag{border-color:var(--orange200);background:#FDF3EC}
+  .field--cta{width:60%;background:var(--ink900);color:#fff;border-color:var(--ink900);justify-content:center;font-weight:500}
+  .pill{background:var(--ink900);color:#fff;font-size:.68rem;font-weight:600;padding:3px 9px;border-radius:999px;font-variant-numeric:tabular-nums}
+  .tmoment{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:var(--s100);border:1px solid var(--line);font-size:.72rem;color:var(--ink700);cursor:pointer}
+  .sent{display:flex;height:7px;border-radius:999px;overflow:hidden;margin-bottom:6px}
+  .sent span{height:100%}
+  .fb{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+  .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+  .fb p{margin:0 0 5px;font-size:.85rem;color:var(--ink700);line-height:1.5}
+  .who{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--ink500)}
+  .jump{display:inline-flex;align-items:center;gap:4px;color:var(--orange);cursor:pointer}
+  .foot{display:flex;gap:10px;margin-top:16px}
+  @media (max-width:640px){.split{grid-template-columns:1fr}.foot{flex-direction:column}}
+  @media (prefers-reduced-motion:reduce){*{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="app">
+  <h2 class="sr-only">Single screenshot feedback view for a Test4Test usability report: one app screen shown large on the left, with all tester feedback tied to that screen listed on the right, plus screen-to-screen navigation.</h2>
+
+  <nav class="crumb">
+    <i class="ti ti-arrow-left" aria-hidden="true"></i><span>AI Analysis</span>
+    <i class="ti ti-chevron-right" style="font-size:.85rem" aria-hidden="true"></i><span>Report 3</span>
+    <i class="ti ti-chevron-right" style="font-size:.85rem" aria-hidden="true"></i><span style="color:var(--ink700)">Screen 4</span>
+  </nav>
+
+  <div class="head">
+    <div>
+      <span class="eyebrow"><i class="ti ti-photo" aria-hidden="true"></i>Screen 4 of 14</span>
+      <h1 style="font-size:1.4rem;font-weight:600;margin:7px 0 5px">Sign up — email step</h1>
+      <div style="font-size:.8rem;color:var(--ink500)">Seen by 6 of 8 testers · 9 feedback moments</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn"><i class="ti ti-chevron-left" aria-hidden="true"></i>Previous</button>
+      <button class="btn">Next<i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <div class="split">
+    <div>
+      <div class="shot">
+        <span class="pill" style="position:absolute;top:14px;right:14px">appears ~0:41</span>
+        <div class="bar" style="width:40%"></div>
+        <div style="font-family:'Sora',sans-serif;font-weight:600;font-size:1rem;color:var(--ink700);margin:6px 0 4px">Create your account</div>
+        <div class="field">you@email.com</div>
+        <div class="field field--flag">Phone number</div>
+        <div class="field field--cta">Continue</div>
+        <div style="margin-top:auto;font-size:.72rem;color:var(--ink500)">Highlighted field marks where 5 of 6 testers hesitated</div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="label" style="margin-bottom:8px">Tester moments — jump to this screen in each recording</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <span class="tmoment"><i class="ti ti-player-play" style="font-size:.8rem;color:var(--orange)" aria-hidden="true"></i>T2 · 0:41</span>
+          <span class="tmoment"><i class="ti ti-player-play" style="font-size:.8rem;color:var(--orange)" aria-hidden="true"></i>T5 · 0:38</span>
+          <span class="tmoment"><i class="ti ti-player-play" style="font-size:.8rem;color:var(--orange)" aria-hidden="true"></i>T4 · 0:52</span>
+          <span class="tmoment"><i class="ti ti-player-play" style="font-size:.8rem;color:var(--orange)" aria-hidden="true"></i>T7 · 0:45</span>
+          <span class="tmoment"><i class="ti ti-player-play" style="font-size:.8rem;color:var(--orange)" aria-hidden="true"></i>T1 · 0:49</span>
+          <span class="tmoment" style="color:var(--ink500)">+1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px 18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="font-size:.95rem;font-weight:600">Feedback</h3>
+        <span style="font-size:.72rem;color:var(--ink500)">9 comments</span>
+      </div>
+      <div class="sent">
+        <span style="width:22%;background:rgba(78,157,114,.55)"></span>
+        <span style="width:34%;background:rgba(116,119,127,.35)"></span>
+        <span style="width:44%;background:rgba(201,91,91,.55)"></span>
+      </div>
+      <div style="font-size:.7rem;color:var(--ink500);margin-bottom:4px">2 positive · 3 neutral · 4 negative</div>
+
+      <div class="fb">
+        <span class="dot" style="background:var(--err)"></span>
+        <div><p>Why do you need my number before I've even tried it?</p><div class="who"><span>Tester 2</span><span class="jump"><i class="ti ti-player-play" style="font-size:.75rem" aria-hidden="true"></i>0:41</span></div></div>
+      </div>
+      <div class="fb">
+        <span class="dot" style="background:var(--err)"></span>
+        <div><p>I almost closed the tab here — too much, too soon.</p><div class="who"><span>Tester 5</span><span class="jump"><i class="ti ti-player-play" style="font-size:.75rem" aria-hidden="true"></i>0:38</span></div></div>
+      </div>
+      <div class="fb">
+        <span class="dot" style="background:#B4B2A9"></span>
+        <div><p>I'd expect a Google sign-in option on this screen.</p><div class="who"><span>Tester 4</span><span class="jump"><i class="ti ti-player-play" style="font-size:.75rem" aria-hidden="true"></i>0:52</span></div></div>
+      </div>
+      <div class="fb">
+        <span class="dot" style="background:#B4B2A9"></span>
+        <div><p>Is the phone number required or optional? Not clear.</p><div class="who"><span>Tester 7</span><span class="jump"><i class="ti ti-player-play" style="font-size:.75rem" aria-hidden="true"></i>0:45</span></div></div>
+      </div>
+      <div class="fb">
+        <span class="dot" style="background:var(--succ)"></span>
+        <div><p>At least it's just two fields — quick enough.</p><div class="who"><span>Tester 1</span><span class="jump"><i class="ti ti-player-play" style="font-size:.75rem" aria-hidden="true"></i>0:49</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="btn" style="flex:1;justify-content:center"><i class="ti ti-chevron-left" aria-hidden="true"></i>Screen 3 — Landing</button>
+    <button class="btn" style="flex:1;justify-content:center">Screen 5 — Verify email<i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
