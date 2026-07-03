@@ -1,0 +1,159 @@
+/* ===========================================================================
+ * AI Analysis dashboard — Report Card styles. APPEND to src/styles.css.
+ * Uses your existing design tokens (--color-*, --space-*, --radius-*) and the
+ * .button--primary orange-on-ink convention. No other CSS changes needed.
+ * ======================================================================== */
+
+/* ---- Report card ------------------------------------------------------- */
+
+.report-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-200);
+}
+
+.report-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-150);
+  padding: var(--space-250);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-line-200);
+  background: var(--color-surface-000);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.report-card--completed:hover {
+  border-color: var(--color-orange-200);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.report-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-150);
+}
+
+.report-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-025);
+}
+
+.report-card__eyebrow {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-ink-500);
+}
+
+.report-card__title {
+  margin: 0;
+  font-family: "Sora", "Inter", sans-serif;
+  font-size: 1.25rem;
+  color: var(--color-ink-900);
+}
+
+.report-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-050);
+  flex-shrink: 0;
+  padding: var(--space-025) var(--space-100);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--color-surface-100);
+  color: var(--color-ink-700);
+  white-space: nowrap;
+}
+
+.report-card__badge--completed {
+  background: rgba(78, 157, 114, 0.14);
+  color: var(--color-success);
+}
+
+.report-card__badge--failed {
+  background: rgba(201, 91, 91, 0.14);
+  color: var(--color-error);
+}
+
+.report-card__badge--processing,
+.report-card__badge--pending {
+  background: rgba(229, 169, 61, 0.16);
+  color: var(--color-warning);
+}
+
+.report-card__badge-spin {
+  animation: button-spinner-spin 0.9s linear infinite;
+}
+
+@keyframes button-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.report-card__product {
+  margin: 0;
+  color: var(--color-ink-700);
+  font-weight: 500;
+}
+
+.report-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-150) var(--space-300);
+  margin: 0;
+  padding: var(--space-150) 0;
+  border-top: 1px solid var(--color-line-200);
+  border-bottom: 1px solid var(--color-line-200);
+}
+
+.report-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-050);
+}
+
+.report-card__stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-050);
+  font-size: 0.72rem;
+  color: var(--color-ink-500);
+}
+
+.report-card__stat-value {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-900);
+}
+
+.report-card__error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-error);
+}
+
+.report-card__footer {
+  display: flex;
+  margin-top: auto;
+}
+
+.report-card__view {
+  width: 100%;
+}
+
+.report-card__pending {
+  width: 100%;
+  text-align: center;
+  padding: var(--space-150);
+  font-size: 0.875rem;
+  color: var(--color-ink-500);
+}
+

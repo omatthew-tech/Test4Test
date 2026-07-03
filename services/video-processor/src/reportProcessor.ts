@@ -11,11 +11,13 @@ import {
   uploadFrame,
   uploadManifest,
 } from "./r2Client.js";
+import { transcribeRecording } from "./transcription.js";
 import type {
   ExtractedFrame,
   ProcessReportHooks,
   ProcessReportInput,
   ProcessReportResult,
+  ResponseTranscript,
   VideoSource,
 } from "./types.js";
 
@@ -52,7 +54,7 @@ async function processSource(
   source: VideoSource,
   workDir: string,
   hooks: ProcessReportHooks = {},
-): Promise<ExtractedFrame[]> {
+): Promise<{ frames: ExtractedFrame[]; transcript: ResponseTranscript | null }> {
   const localPath = join(workDir, `${source.responseId}.video`);
   await downloadSource(source, localPath);
 
@@ -99,7 +101,11 @@ async function processSource(
     await hooks.onFrame?.(frame);
   }
 
-  return frames;
+  const transcript = source.transcriptCached
+    ? null
+    : await transcribeRecording(localPath, workDir, source.responseId);
+
+  return { frames, transcript };
 }
 
 /**
@@ -121,12 +127,16 @@ export async function processReport(
 
   const workDir = await mkdtemp(join(tmpdir(), `report-${input.reportId}-`));
   const frames: ExtractedFrame[] = [];
+  const transcripts: ResponseTranscript[] = [];
 
   try {
     for (const source of input.sources) {
       logger.info("Processing source", { reportId: input.reportId, responseId: source.responseId });
-      const sourceFrames = await processSource(input.reportId, source, workDir, hooks);
+      const { frames: sourceFrames, transcript } = await processSource(input.reportId, source, workDir, hooks);
       frames.push(...sourceFrames);
+      if (transcript) {
+        transcripts.push(transcript);
+      }
     }
 
     const manifestKey = `reports/${input.reportId}/manifest.json`;
@@ -135,6 +145,7 @@ export async function processReport(
       sourceCount: input.sources.length,
       frameCount: frames.length,
       frames,
+      transcripts,
       manifestKey,
     };
 

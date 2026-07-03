@@ -41,12 +41,13 @@ function parseSources(value: unknown): VideoSource[] {
     const objectKey = typeof candidate.objectKey === "string" ? candidate.objectKey.trim() : undefined;
     const url = typeof candidate.url === "string" ? candidate.url.trim() : undefined;
     const bucket = typeof candidate.bucket === "string" ? candidate.bucket.trim() : undefined;
+    const transcriptCached = candidate.transcriptCached === true;
 
     if (!responseId || (!objectKey && !url)) {
       continue;
     }
 
-    sources.push({ responseId, objectKey, url, bucket });
+    sources.push({ responseId, objectKey, url, bucket, transcriptCached });
   }
 
   return sources;

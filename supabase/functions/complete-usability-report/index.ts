@@ -69,6 +69,7 @@ Deno.serve(async (request) => {
       sourceCount: payload.sourceCount ?? 0,
       frameCount: payload.frameCount ?? payload.frames.length,
       frames: payload.frames,
+      transcripts: payload.transcripts ?? [],
       manifestKey: payload.manifestKey,
     });
 

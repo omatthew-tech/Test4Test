@@ -7,6 +7,11 @@ import {
   renderEmailTemplate,
   sendEmail,
 } from "./email-system.ts";
+import {
+  groupTranscriptFramesByResponse,
+  matchTranscriptSegmentToFrame,
+  type TranscriptFrameWindow,
+} from "./transcript-frame-matching.ts";
 
 export const NO_RECORDINGS_ERROR = "no_recordings";
 
@@ -51,6 +56,7 @@ export interface WorkerSource {
   objectKey?: string;
   url?: string;
   bucket?: string;
+  transcriptCached?: boolean;
 }
 
 export interface WorkerFrame {
@@ -66,11 +72,39 @@ export interface WorkerFrame {
   perceptualHash?: string;
 }
 
+export interface WorkerTranscriptWord {
+  word: string;
+  startMs: number;
+  endMs: number;
+}
+
+export interface WorkerTranscriptSegment {
+  segmentIndex: number;
+  startMs: number;
+  endMs: number;
+  text: string;
+  words?: WorkerTranscriptWord[];
+  avgLogprob?: number | null;
+  noSpeechProb?: number | null;
+  compressionRatio?: number | null;
+}
+
+export interface WorkerTranscript {
+  responseId: string;
+  provider: string;
+  model: string;
+  language?: string | null;
+  durationMs?: number | null;
+  fullText: string;
+  segments: WorkerTranscriptSegment[];
+}
+
 export interface WorkerResult {
   reportId: string;
   frameCount: number;
   sourceCount: number;
   frames: WorkerFrame[];
+  transcripts?: WorkerTranscript[];
   manifestKey?: string;
 }
 
@@ -115,6 +149,24 @@ export interface ReportRow {
   submissions?: { product_name?: string | null } | Array<{ product_name?: string | null }> | null;
 }
 
+interface TranscriptRow {
+  id: string;
+  test_response_id: string;
+}
+
+interface TranscriptSegmentRow {
+  id: string;
+  transcript_id: string;
+  test_response_id: string;
+  segment_index: number;
+  start_ms: number;
+  end_ms: number;
+  text: string;
+}
+
+const REPORT_TRANSCRIPTION_PROVIDER = "groq";
+const DEFAULT_REPORT_TRANSCRIPTION_MODEL = "whisper-large-v3-turbo";
+
 export function getReportSupabaseEnvironment(): ReportSupabaseEnvironment {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim() ?? "";
   const serviceRoleKey =
@@ -144,6 +196,10 @@ export function getReportWorkerEnvironment(): ReportWorkerEnvironment {
     workerUrl,
     workerSecret,
   };
+}
+
+export function getReportTranscriptionModel() {
+  return Deno.env.get("GROQ_TRANSCRIPTION_MODEL")?.trim() || DEFAULT_REPORT_TRANSCRIPTION_MODEL;
 }
 
 export function getReportFrameR2Environment(): ReportFrameR2Environment {
@@ -259,6 +315,30 @@ export async function enqueueWorkerReport(
   };
 }
 
+export async function loadCompletedTranscriptResponseIds(
+  admin: SupabaseClient,
+  responseIds: string[],
+  model = getReportTranscriptionModel(),
+) {
+  if (responseIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const { data, error } = await admin
+    .from("test_response_transcripts")
+    .select("test_response_id")
+    .eq("provider", REPORT_TRANSCRIPTION_PROVIDER)
+    .eq("model", model)
+    .eq("status", "completed")
+    .in("test_response_id", responseIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return new Set((data ?? []).map((row) => String((row as { test_response_id: string }).test_response_id)));
+}
+
 export async function getWorkerJob(env: ReportWorkerEnvironment, jobId: string) {
   const response = await fetch(`${env.workerUrl}/jobs/${encodeURIComponent(jobId)}`, {
     method: "GET",
@@ -341,6 +421,15 @@ export async function persistCompletedWorkerResult(
       throw new Error(frameError.message);
     }
   }
+
+  // Guard on the current status so the transition to "completed" only happens
+  // once, even if this runs from both the polling path and the worker webhook.
+  // Only a row that actually flipped is returned, which is our "fire once" signal.
+  const quoteModel = result.transcripts?.find((transcript) => transcript.model.trim())?.model ??
+    getReportTranscriptionModel();
+
+  await persistWorkerTranscripts(admin, result.transcripts ?? []);
+  await createReportQuotesFromTranscripts(admin, reportId, quoteModel);
 
   // Guard on the current status so the transition to "completed" only happens
   // once, even if this runs from both the polling path and the worker webhook.
@@ -475,6 +564,185 @@ export async function sendReportReadyNotification(
     }).catch(() => undefined);
 
     throw error;
+  }
+}
+
+async function persistWorkerTranscripts(
+  admin: SupabaseClient,
+  transcripts: WorkerTranscript[],
+) {
+  for (const transcript of transcripts) {
+    const completedAt = new Date().toISOString();
+    const { data, error } = await admin
+      .from("test_response_transcripts")
+      .upsert(
+        {
+          test_response_id: transcript.responseId,
+          provider: transcript.provider,
+          model: transcript.model,
+          status: "completed",
+          language: transcript.language ?? null,
+          duration_ms: transcript.durationMs ?? null,
+          full_text: transcript.fullText ?? "",
+          error_message: null,
+          completed_at: completedAt,
+          updated_at: completedAt,
+        },
+        { onConflict: "test_response_id,provider,model" },
+      )
+      .select("id, test_response_id")
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? "Transcript could not be saved.");
+    }
+
+    const transcriptRow = data as TranscriptRow;
+    const segments = transcript.segments
+      .filter((segment) => segment.text.trim())
+      .map((segment) => {
+        const startMs = Math.max(0, Math.round(segment.startMs));
+        const endMs = Math.max(startMs, Math.round(segment.endMs));
+
+        return {
+          transcript_id: transcriptRow.id,
+          test_response_id: transcript.responseId,
+          segment_index: segment.segmentIndex,
+          start_ms: startMs,
+          end_ms: endMs,
+          text: segment.text.trim(),
+          words: segment.words ?? null,
+          avg_logprob: segment.avgLogprob ?? null,
+          no_speech_prob: segment.noSpeechProb ?? null,
+          compression_ratio: segment.compressionRatio ?? null,
+        };
+      });
+
+    if (segments.length === 0) {
+      continue;
+    }
+
+    const { error: segmentError } = await admin
+      .from("test_response_transcript_segments")
+      .upsert(segments, { onConflict: "transcript_id,segment_index" });
+
+    if (segmentError) {
+      throw new Error(segmentError.message);
+    }
+  }
+}
+
+async function loadReportSourceResponseIds(admin: SupabaseClient, reportId: string) {
+  const { data, error } = await admin
+    .from("usability_report_sources")
+    .select("test_response_id")
+    .eq("report_id", reportId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => String((row as { test_response_id: string }).test_response_id));
+}
+
+async function loadCompletedTranscriptRows(
+  admin: SupabaseClient,
+  responseIds: string[],
+  model = getReportTranscriptionModel(),
+) {
+  if (responseIds.length === 0) {
+    return [] as TranscriptRow[];
+  }
+
+  const { data, error } = await admin
+    .from("test_response_transcripts")
+    .select("id, test_response_id")
+    .eq("provider", REPORT_TRANSCRIPTION_PROVIDER)
+    .eq("model", model)
+    .eq("status", "completed")
+    .in("test_response_id", responseIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as TranscriptRow[];
+}
+
+async function loadTranscriptSegments(
+  admin: SupabaseClient,
+  transcriptIds: string[],
+) {
+  if (transcriptIds.length === 0) {
+    return [] as TranscriptSegmentRow[];
+  }
+
+  const { data, error } = await admin
+    .from("test_response_transcript_segments")
+    .select("id, transcript_id, test_response_id, segment_index, start_ms, end_ms, text")
+    .in("transcript_id", transcriptIds)
+    .order("test_response_id", { ascending: true })
+    .order("start_ms", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as TranscriptSegmentRow[];
+}
+
+async function loadReportFramesForQuotes(admin: SupabaseClient, reportId: string) {
+  const { data, error } = await admin
+    .from("usability_report_frames")
+    .select("id, test_response_id, frame_index, timestamp_ms")
+    .eq("report_id", reportId)
+    .order("test_response_id", { ascending: true })
+    .order("frame_index", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as TranscriptFrameWindow[];
+}
+
+async function createReportQuotesFromTranscripts(admin: SupabaseClient, reportId: string, model: string) {
+  const responseIds = await loadReportSourceResponseIds(admin, reportId);
+  const transcripts = await loadCompletedTranscriptRows(admin, responseIds, model);
+  const segments = await loadTranscriptSegments(admin, transcripts.map((transcript) => transcript.id));
+  const framesByResponse = groupTranscriptFramesByResponse(await loadReportFramesForQuotes(admin, reportId));
+
+  const quoteRows = segments.flatMap((segment) => {
+    const frame = matchTranscriptSegmentToFrame(segment, framesByResponse.get(segment.test_response_id) ?? []);
+
+    if (!frame) {
+      return [];
+    }
+
+    return [{
+      report_id: reportId,
+      test_response_id: segment.test_response_id,
+      frame_id: frame.id,
+      transcript_segment_id: segment.id,
+      timestamp_ms: segment.start_ms,
+      start_ms: segment.start_ms,
+      end_ms: segment.end_ms,
+      quote_text: segment.text,
+      speaker: "Tester",
+      include_in_summary: true,
+    }];
+  });
+
+  if (quoteRows.length === 0) {
+    return;
+  }
+
+  const { error } = await admin
+    .from("usability_report_quotes")
+    .upsert(quoteRows, { onConflict: "report_id,test_response_id,timestamp_ms,quote_text" });
+
+  if (error) {
+    throw new Error(error.message);
   }
 }
 

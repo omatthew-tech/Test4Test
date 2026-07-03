@@ -23,6 +23,7 @@
    - `TEST_ACCOUNT_OTP_CODE`
    - `VIDEO_PROCESSOR_URL`
    - `VIDEO_PROCESSOR_SHARED_SECRET` (must match `WORKER_SHARED_SECRET` in `services/video-processor`)
+   - `GROQ_TRANSCRIPTION_MODEL` (optional, defaults to `whisper-large-v3-turbo`; set this to match the video worker if overridden)
    - `R2_ACCOUNT_ID`
    - `R2_ACCESS_KEY_ID`
    - `R2_SECRET_ACCESS_KEY`

@@ -8,6 +8,8 @@ export interface VideoSource {
   url?: string;
   /** Optional source bucket override (defaults to config.r2.sourceBucketName). */
   bucket?: string;
+  /** True when Supabase already has a completed transcript for this response/model. */
+  transcriptCached?: boolean;
 }
 
 /** Metadata describing one extracted, uploaded screenshot. */
@@ -39,11 +41,39 @@ export interface ProcessReportHooks {
   onFrame?: (frame: ExtractedFrame) => void | Promise<void>;
 }
 
+export interface TranscriptWord {
+  word: string;
+  startMs: number;
+  endMs: number;
+}
+
+export interface TranscriptSegment {
+  segmentIndex: number;
+  startMs: number;
+  endMs: number;
+  text: string;
+  words?: TranscriptWord[];
+  avgLogprob?: number | null;
+  noSpeechProb?: number | null;
+  compressionRatio?: number | null;
+}
+
+export interface ResponseTranscript {
+  responseId: string;
+  provider: string;
+  model: string;
+  language?: string | null;
+  durationMs?: number | null;
+  fullText: string;
+  segments: TranscriptSegment[];
+}
+
 export interface ProcessReportResult {
   reportId: string;
   frameCount: number;
   sourceCount: number;
   frames: ExtractedFrame[];
+  transcripts: ResponseTranscript[];
   /** R2 key of the JSON manifest written for this report. */
   manifestKey: string;
 }

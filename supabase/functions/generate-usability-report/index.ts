@@ -3,6 +3,7 @@ import {
   getAuthenticatedReportUser,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
+  loadCompletedTranscriptResponseIds,
   createReportAdminClient,
   NO_RECORDINGS_ERROR,
   reportCorsHeaders,
@@ -70,20 +71,27 @@ async function createSignedLegacySource(
 async function buildWorkerSources(
   admin: ReturnType<typeof createReportAdminClient>,
   rows: RecordingResponseRow[],
+  cachedTranscriptResponseIds: Set<string>,
 ) {
   const sources: WorkerSource[] = [];
 
   for (const row of rows) {
+    const transcriptCached = cachedTranscriptResponseIds.has(row.id);
+
     if (row.recording_bucket.startsWith("r2:")) {
       sources.push({
         responseId: row.id,
         objectKey: row.recording_path,
         bucket: stripR2BucketPrefix(row.recording_bucket),
+        transcriptCached,
       });
       continue;
     }
 
-    sources.push(await createSignedLegacySource(admin, row));
+    sources.push({
+      ...(await createSignedLegacySource(admin, row)),
+      transcriptCached,
+    });
   }
 
   return sources;
@@ -264,6 +272,17 @@ Deno.serve(async (request) => {
     return reportJson({ error: NO_RECORDINGS_ERROR, message: "This app does not have any usable recordings yet." }, 400);
   }
 
+  let cachedTranscriptResponseIds: Set<string>;
+
+  try {
+    cachedTranscriptResponseIds = await loadCompletedTranscriptResponseIds(
+      admin,
+      recordings.map((recording) => recording.id),
+    );
+  } catch (error) {
+    return reportJson({ error: error instanceof Error ? error.message : "Transcript cache could not be checked." }, 500);
+  }
+
   let report: { id: string; report_number: number };
 
   try {
@@ -301,7 +320,7 @@ Deno.serve(async (request) => {
 
   try {
     const workerEnv = getReportWorkerEnvironment();
-    const sources = await buildWorkerSources(admin, recordings);
+    const sources = await buildWorkerSources(admin, recordings, cachedTranscriptResponseIds);
     const worker = await enqueueWorkerReport(workerEnv, report.id, sources);
     const status = workerStatusToReportStatus(worker.status);
     const { error: updateError } = await admin

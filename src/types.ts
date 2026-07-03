@@ -397,10 +397,17 @@ export interface UsabilityReportQuote {
   testerLabel?: string | null;
   /** Exact offset of the quote within the source recording, in milliseconds. */
   timestampMs: number;
+  /** Segment start/end offsets in milliseconds when sourced from transcription. */
+  startMs?: number | null;
+  endMs?: number | null;
   /** The verbatim quote text. */
   text: string;
   /** Optional speaker/source label (e.g. "Tester", "Moderator"). */
   speaker?: string | null;
+  /** Source transcript segment id, when this quote was generated from speech-to-text. */
+  transcriptSegmentId?: string | null;
+  /** Future-ready flag for excluding quotes from AI summaries. */
+  includeInSummary?: boolean;
   /** Linked screenshot id (usability_report_frames.id). Null if no frame matched. */
   linkedFrameId?: string | null;
   /** Convenience: short-lived signed URL for the linked screenshot. */
