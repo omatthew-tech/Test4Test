@@ -1,7 +1,16 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { AwsClient } from "npm:aws4fetch@1.0.20";
+import {
+  getEmailEnvironment,
+  loadEmailTemplates,
+  logEmailDelivery,
+  renderEmailTemplate,
+  sendEmail,
+} from "./email-system.ts";
 
 export const NO_RECORDINGS_ERROR = "no_recordings";
+
+export const reportReadyTemplateKey = "usability_report_ready";
 
 export const reportCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -333,7 +342,10 @@ export async function persistCompletedWorkerResult(
     }
   }
 
-  const { error: updateError } = await admin
+  // Guard on the current status so the transition to "completed" only happens
+  // once, even if this runs from both the polling path and the worker webhook.
+  // Only a row that actually flipped is returned, which is our "fire once" signal.
+  const { data: transitionedRows, error: updateError } = await admin
     .from("usability_reports")
     .update({
       status: "completed",
@@ -342,10 +354,127 @@ export async function persistCompletedWorkerResult(
       error_message: null,
       completed_at: new Date().toISOString(),
     })
-    .eq("id", reportId);
+    .eq("id", reportId)
+    .neq("status", "completed")
+    .select("id, submission_id, owner_user_id, frame_count");
 
   if (updateError) {
     throw new Error(updateError.message);
+  }
+
+  const transitioned = (transitionedRows ?? [])[0] as
+    | { id: string; submission_id: string; owner_user_id: string; frame_count: number }
+    | undefined;
+
+  if (transitioned) {
+    // The report is what matters; a notification failure must never fail completion.
+    await sendReportReadyNotification(admin, {
+      reportId: transitioned.id,
+      submissionId: transitioned.submission_id,
+      ownerUserId: transitioned.owner_user_id,
+      frameCount: transitioned.frame_count ?? result.frameCount,
+    }).catch((error) => {
+      console.error("Failed to send report-ready notification", {
+        reportId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+}
+
+interface ReportReadyContext {
+  reportId: string;
+  submissionId: string;
+  ownerUserId: string;
+  frameCount: number;
+}
+
+/**
+ * Email the app owner that their usability report finished processing.
+ * Loads its own email environment so report completion does not depend on SMTP
+ * being configured; if secrets are missing this throws and the caller swallows it.
+ */
+export async function sendReportReadyNotification(
+  admin: SupabaseClient,
+  context: ReportReadyContext,
+) {
+  const env = getEmailEnvironment();
+
+  const { data: ownerRow, error: ownerError } = await admin
+    .from("profiles")
+    .select("id, email, display_name")
+    .eq("id", context.ownerUserId)
+    .single();
+
+  if (ownerError || !ownerRow) {
+    throw new Error(ownerError?.message ?? "Report owner not found.");
+  }
+
+  const owner = ownerRow as { id: string; email: string; display_name: string };
+
+  if (!owner.email?.trim()) {
+    return;
+  }
+
+  const { data: submissionRow, error: submissionError } = await admin
+    .from("submissions")
+    .select("id, product_name")
+    .eq("id", context.submissionId)
+    .single();
+
+  if (submissionError || !submissionRow) {
+    throw new Error(submissionError?.message ?? "Report submission not found.");
+  }
+
+  const submission = submissionRow as { id: string; product_name: string | null };
+  const productName = submission.product_name?.trim() || "your app";
+
+  const templates = await loadEmailTemplates(admin, [reportReadyTemplateKey]);
+  const template = templates.get(reportReadyTemplateKey);
+
+  if (!template) {
+    throw new Error(`Missing email template: ${reportReadyTemplateKey}`);
+  }
+
+  const reportUrl = `${env.appBaseUrl}/reports/${context.reportId}`;
+  const rendered = renderEmailTemplate(template, {
+    ownerDisplayName: owner.display_name?.trim() || "there",
+    productName,
+    reportUrl,
+    frameCount: String(context.frameCount),
+  });
+
+  try {
+    const sendResult = await sendEmail(env, {
+      to: owner.email,
+      subject: rendered.subject,
+      textBody: rendered.textBody,
+      htmlBody: rendered.htmlBody,
+    });
+
+    await logEmailDelivery(admin, {
+      templateKey: reportReadyTemplateKey,
+      recipientUserId: owner.id,
+      recipientEmail: owner.email,
+      relatedSubmissionId: submission.id,
+      subject: rendered.subject,
+      status: "sent",
+      providerMessageId: sendResult.providerMessageId,
+      metadata: { reportId: context.reportId, frameCount: context.frameCount },
+    });
+  } catch (error) {
+    await logEmailDelivery(admin, {
+      templateKey: reportReadyTemplateKey,
+      recipientUserId: owner.id,
+      recipientEmail: owner.email,
+      relatedSubmissionId: submission.id,
+      subject: rendered.subject,
+      status: "failed",
+      errorMessage: error instanceof Error ? error.message : "Failed to send report-ready email.",
+      metadata: { reportId: context.reportId, frameCount: context.frameCount },
+    }).catch(() => undefined);
+
+    throw error;
   }
 }
 
