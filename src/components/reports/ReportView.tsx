@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, Clock, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
 import { formatDateTime } from "../../lib/format";
-import { getUsabilityReport } from "../../lib/usabilityReports";
+import { analyzeUsabilityReportQuotes, getUsabilityReport } from "../../lib/usabilityReports";
 import { UsabilityReportDetail, UsabilityReportFrame } from "../../types";
 
 /** Format an exact millisecond offset as M:SS.mmm for the timestamp badge. */
@@ -31,6 +31,7 @@ export function ReportView({ reportId }: ReportViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const quoteAnalysisBackfills = useRef(new Set<string>());
 
   useEffect(() => {
     let isCancelled = false;
@@ -58,6 +59,38 @@ export function ReportView({ reportId }: ReportViewProps) {
       isCancelled = true;
     };
   }, [reportId, reloadToken]);
+
+  useEffect(() => {
+    if (!report || report.status !== "completed") {
+      return;
+    }
+
+    const analysisStatus = report.quoteAnalysis?.status;
+    if (analysisStatus === "completed" || analysisStatus === "processing") {
+      return;
+    }
+
+    if (quoteAnalysisBackfills.current.has(report.id)) {
+      return;
+    }
+
+    let isCancelled = false;
+    quoteAnalysisBackfills.current.add(report.id);
+
+    analyzeUsabilityReportQuotes(report.id, { timeoutMs: 120000 })
+      .then((quoteAnalysis) => {
+        if (!isCancelled) {
+          setReport((current) => current?.id === report.id ? { ...current, quoteAnalysis } : current);
+        }
+      })
+      .catch((caught: unknown) => {
+        console.error("Failed to analyze report quotes", caught);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [report?.id, report?.quoteAnalysis?.status, report?.status]);
 
   const groups = useMemo<FrameGroup[]>(() => {
     if (!report) {

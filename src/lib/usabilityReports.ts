@@ -2,6 +2,7 @@ import {
   UsabilityReport,
   UsabilityReportDetail,
   UsabilityReportFrame,
+  UsabilityReportQuoteAnalysis,
   UsabilityReportPreviewFrame,
   UsabilityReportStatus,
 } from "../types";
@@ -50,6 +51,13 @@ interface ListReportsResponse {
   error?: string;
   message?: string;
   reports?: UsabilityReport[];
+}
+
+interface AnalyzeQuotesResponse {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  quoteAnalysis?: UsabilityReportQuoteAnalysis;
 }
 
 class FunctionCallError extends Error {
@@ -222,6 +230,30 @@ export async function getUsabilityReport(reportId: string): Promise<UsabilityRep
   }
 
   return payload.report;
+}
+
+/** Backfill or refresh the AI-generated quote analysis for a completed report. */
+export async function analyzeUsabilityReportQuotes(
+  reportId: string,
+  options: { force?: boolean; signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<UsabilityReportQuoteAnalysis> {
+  const payload = await callFunction<AnalyzeQuotesResponse>(
+    "analyze-usability-report-quotes",
+    {
+      reportId,
+      ...(options.force ? { force: true } : {}),
+    },
+    {
+      signal: options.signal,
+      timeoutMs: options.timeoutMs,
+    },
+  );
+
+  if (!payload.quoteAnalysis) {
+    throw new Error(payload.message ?? "Quote analysis could not be loaded.");
+  }
+
+  return payload.quoteAnalysis;
 }
 
 export interface PollOptions {
