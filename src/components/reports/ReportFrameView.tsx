@@ -170,84 +170,86 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
 
   return (
     <div className="report-frame-view page-stack">
-      <Surface className="report-frame-view__header">
-        <button
-          type="button"
-          className="report-view__back"
-          onClick={() => navigate(`/ai-analysis/${report.id}`)}
-        >
-          <ArrowLeft size={16} strokeWidth={2.2} />
-          Report {report.reportNumber}
-        </button>
-        <div className="report-frame-view__heading-row">
-          <div>
-            <span className="report-frame-view__eyebrow">
-              Screen {frameOrdinal} of {frames.length}
-            </span>
-            <h2 className="report-view__title">{testerLabel}'s feedback</h2>
-          </div>
-          <div className="report-frame-view__nav">
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => navigateToFrame(previousFrame)}
-              disabled={!previousFrame}
-            >
-              <ChevronLeft size={16} strokeWidth={2.2} />
-              Previous
-            </button>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => navigateToFrame(nextFrame)}
-              disabled={!nextFrame}
-            >
-              Next
-              <ChevronRight size={16} strokeWidth={2.2} />
-            </button>
+      <Surface className="report-frame-view__card">
+        <div className="report-frame-view__header">
+          <button
+            type="button"
+            className="report-view__back"
+            onClick={() => navigate(`/ai-analysis/${report.id}`)}
+          >
+            <ArrowLeft size={16} strokeWidth={2.2} />
+            Report {report.reportNumber}
+          </button>
+          <div className="report-frame-view__heading-row">
+            <div>
+              <span className="report-frame-view__eyebrow">
+                Screen {frameOrdinal} of {frames.length}
+              </span>
+              <h2 className="report-view__title">{testerLabel}'s feedback</h2>
+            </div>
+            <div className="report-frame-view__nav">
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => navigateToFrame(previousFrame)}
+                disabled={!previousFrame}
+              >
+                <ChevronLeft size={16} strokeWidth={2.2} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => navigateToFrame(nextFrame)}
+                disabled={!nextFrame}
+              >
+                Next
+                <ChevronRight size={16} strokeWidth={2.2} />
+              </button>
+            </div>
           </div>
         </div>
-      </Surface>
 
-      <div className="report-frame-view__layout">
-        <Surface className="report-frame-view__screenshot-card">
-          <div className="report-frame-view__image-wrap">
-            <img
-              className="report-frame-view__image"
-              src={frame.url}
-              alt={`App screen at ${formatTimestamp(frame.timestampMs)}`}
-            />
-            <span className="report-frame-view__timestamp">
-              <Clock size={13} strokeWidth={2.4} />
-              {formatTimestamp(frame.timestampMs)}
-            </span>
-          </div>
-        </Surface>
-
-        <Surface className="report-frame-view__quotes-card">
-          <header className="report-frame-view__quotes-head">
-            <h3>Quotes</h3>
-          </header>
-
-          {quotes.length === 0 ? (
-            <div className="empty-state empty-state--left">
-              <p>No transcript quotes were captured during this screen moment.</p>
+        <div className="report-frame-view__layout">
+          <div className="report-frame-view__screenshot">
+            <div className="report-frame-view__image-wrap">
+              <img
+                className="report-frame-view__image"
+                src={frame.url}
+                alt={`App screen at ${formatTimestamp(frame.timestampMs)}`}
+              />
+              <span className="report-frame-view__timestamp">
+                <Clock size={13} strokeWidth={2.4} />
+                {formatTimestamp(frame.timestampMs)}
+              </span>
             </div>
-          ) : (
-            <ol className="report-frame-view__quotes">
-              {quotes.map((quote) => (
-                <li key={quote.id} className="report-frame-view__quote">
-                  <MessageSquareQuote size={18} strokeWidth={2.1} aria-hidden="true" />
-                  <div>
-                    <p>{quote.text}</p>
-                    <span>{formatTimestamp(quote.timestampMs)}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </Surface>
-      </div>
+          </div>
+
+          <section className="report-frame-view__quotes-panel">
+            <header className="report-frame-view__quotes-head">
+              <h3>Quotes</h3>
+            </header>
+
+            {quotes.length === 0 ? (
+              <div className="empty-state empty-state--left">
+                <p>No transcript quotes were captured during this screen moment.</p>
+              </div>
+            ) : (
+              <ol className="report-frame-view__quotes">
+                {quotes.map((quote) => (
+                  <li key={quote.id} className="report-frame-view__quote">
+                    <MessageSquareQuote size={18} strokeWidth={2.1} aria-hidden="true" />
+                    <div>
+                      <p>{quote.text}</p>
+                      <span>{formatTimestamp(quote.timestampMs)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
+      </Surface>
     </div>
   );
 }
