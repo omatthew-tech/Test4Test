@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { AwsClient } from "npm:aws4fetch@1.0.20";
+import { analyzeReportQuotes } from "./quote-analysis.ts";
 import {
   getEmailEnvironment,
   loadEmailTemplates,
@@ -456,6 +457,13 @@ export async function persistCompletedWorkerResult(
     | undefined;
 
   if (transitioned) {
+    await analyzeReportQuotes(admin, transitioned.id).catch((error) => {
+      console.error("Failed to analyze report quotes", {
+        reportId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+
     // The report is what matters; a notification failure must never fail completion.
     await sendReportReadyNotification(admin, {
       reportId: transitioned.id,

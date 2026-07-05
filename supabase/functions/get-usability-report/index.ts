@@ -1,3 +1,4 @@
+import { loadReportQuoteAnalysis } from "../_shared/quote-analysis.ts";
 import {
   createReportAdminClient,
   getAuthenticatedReportUser,
@@ -215,6 +216,7 @@ Deno.serve(async (request) => {
     linkedFrameId: quote.frame_id,
     linkedFrameUrl: quote.frame_id ? signedUrls.get(quote.frame_id) ?? null : null,
   }));
+  const quoteAnalysis = await loadReportQuoteAnalysis(admin, reportId).catch(() => null);
 
   return reportJson({
     ok: true,
@@ -222,6 +224,7 @@ Deno.serve(async (request) => {
       ...mapReportSummary(reportData as ReportRow),
       frames,
       quotes,
+      quoteAnalysis,
     },
   });
 });

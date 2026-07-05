@@ -38,6 +38,7 @@
    - `supabase/functions/list-usability-reports`
    - `supabase/functions/get-usability-report-status`
    - `supabase/functions/get-usability-report`
+   - `supabase/functions/analyze-usability-report-quotes`
    - `supabase/functions/complete-usability-report`
    - `supabase/functions/test-account-login` with `--no-verify-jwt`
 9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.

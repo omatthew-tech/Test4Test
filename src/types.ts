@@ -414,9 +414,78 @@ export interface UsabilityReportQuote {
   linkedFrameUrl?: string | null;
 }
 
+export type UsabilityReportQuoteAnalysisStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface UsabilityReportQuoteAnalysisEvidence {
+  quoteId: string;
+  testResponseId: string;
+  testerLabel: string;
+  timestampMs: number;
+  linkedFrameId: string | null;
+  quote: string;
+}
+
+export interface UsabilityReportQuoteAnalysisFinding {
+  title: string;
+  category:
+    | "navigation"
+    | "visual_design"
+    | "content"
+    | "functionality"
+    | "performance"
+    | "accessibility"
+    | "data_clarity"
+    | "other";
+  severity: "low" | "medium" | "high";
+  frequency: "one_off" | "repeated";
+  quoteCount: number;
+  recordingCount: number;
+  description: string;
+  evidence: UsabilityReportQuoteAnalysisEvidence[];
+  affectedArea: string;
+  recommendation: string;
+}
+
+export interface UsabilityReportQuoteAnalysisResult {
+  summary: string;
+  findings: UsabilityReportQuoteAnalysisFinding[];
+  positiveFeedback: Array<{
+    summary: string;
+    quoteCount: number;
+    recordingCount: number;
+    evidence: UsabilityReportQuoteAnalysisEvidence[];
+  }>;
+  unclearFeedback: Array<{
+    quoteId: string;
+    testResponseId: string;
+    testerLabel: string;
+    timestampMs: number;
+    linkedFrameId: string | null;
+    quote: string;
+    reason: string;
+  }>;
+}
+
+export interface UsabilityReportQuoteAnalysis {
+  id: string;
+  reportId: string;
+  status: UsabilityReportQuoteAnalysisStatus;
+  model: string;
+  promptVersion: string;
+  inputHash: string;
+  quoteCount: number;
+  analysis: UsabilityReportQuoteAnalysisResult | null;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UsabilityReportDetail extends UsabilityReport {
   frames: UsabilityReportFrame[];
   quotes?: UsabilityReportQuote[];
+  quoteAnalysis?: UsabilityReportQuoteAnalysis | null;
 }
 
 

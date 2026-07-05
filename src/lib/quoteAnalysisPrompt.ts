@@ -1,35 +1,32 @@
-export type ReportTranscriptInput = {
-  recordingId: string;
-  testerId?: string;
-  transcript: string;
+export type ReportQuoteInput = {
+  quoteId: string;
+  testResponseId: string;
+  testerLabel?: string;
+  timestampMs: number;
+  linkedFrameId?: string | null;
+  text: string;
 };
 
 export type BuildQuoteAnalysisPromptInput = {
   appName: string;
-  transcripts: ReportTranscriptInput[];
+  quotes: ReportQuoteInput[];
 };
 
-const QUOTE_ANALYSIS_PROMPT_TEMPLATE = `You are analyzing usability testing transcripts for a software product.
+const QUOTE_ANALYSIS_PROMPT_TEMPLATE = `You are analyzing usability testing transcript quotes for a software product.
 
-Your job is to extract usability-relevant feedback from the transcripts and turn it into structured findings for a report dashboard.
+Your job is to extract usability-relevant feedback from the quotes and turn it into structured findings for a report dashboard.
 
 The input may contain casual speech, filler words, incomplete thoughts, and narration. Ignore filler unless it supports a usability finding.
 
-Analyze all transcripts together and identify:
-
-- repeated usability issues
-- one-off usability issues
-- positive feedback
-- confusing screens, features, labels, or components
-- possible severity
-- recommended UX improvements
+Analyze all quotes together and identify repeated usability issues, one-off usability issues, positive feedback, confusing screens/features/labels/components, possible severity, and recommended UX improvements.
 
 Rules:
 
-- Do not invent issues that are not supported by the transcript.
-- Use direct transcript evidence when possible.
+- Do not invent issues that are not supported by the quotes.
+- Use direct quote evidence when possible.
+- Evidence entries must reference quoteId values from the provided input.
 - Group similar comments into the same finding when they describe the same underlying usability issue.
-- If a comment is unclear, mark it as unclear instead of guessing.
+- If a comment is unclear, put it in unclearFeedback instead of guessing.
 - Keep findings concise and useful for a product team.
 - Return valid JSON only.
 - Do not include markdown.
@@ -38,9 +35,9 @@ Rules:
 
 Frequency rules:
 
-- Use "repeated" only when the same issue is supported by quotes from more than one recording or tester.
-- Use "one_off" when the issue appears in only one recording or tester.
-- If one tester mentions the same issue multiple times, count the supporting quotes, but still mark the frequency as "one_off" unless another tester or recording also supports it.
+- Use "repeated" only when the same issue is supported by quotes from more than one recording/testResponseId.
+- Use "one_off" when the issue appears in only one recording/testResponseId.
+- If one tester mentions the same issue multiple times, count the supporting quotes, but still mark frequency as "one_off" unless another tester or recording also supports it.
 
 Severity rules:
 
@@ -76,7 +73,11 @@ Return this JSON structure:
       "description": "Clear explanation of the issue.",
       "evidence": [
         {
-          "recordingId": "recording-1",
+          "quoteId": "quote-1",
+          "testResponseId": "recording-1",
+          "testerLabel": "Tester 1",
+          "timestampMs": 0,
+          "linkedFrameId": "frame-1 or null",
           "quote": "Relevant transcript quote or close excerpt."
         }
       ],
@@ -91,7 +92,11 @@ Return this JSON structure:
       "recordingCount": 0,
       "evidence": [
         {
-          "recordingId": "recording-1",
+          "quoteId": "quote-1",
+          "testResponseId": "recording-1",
+          "testerLabel": "Tester 1",
+          "timestampMs": 0,
+          "linkedFrameId": "frame-1 or null",
           "quote": "Relevant transcript quote or close excerpt."
         }
       ]
@@ -99,39 +104,38 @@ Return this JSON structure:
   ],
   "unclearFeedback": [
     {
-      "recordingId": "recording-1",
+      "quoteId": "quote-1",
+      "testResponseId": "recording-1",
+      "testerLabel": "Tester 1",
+      "timestampMs": 0,
+      "linkedFrameId": "frame-1 or null",
       "quote": "Unclear quote.",
       "reason": "Why this feedback could not be confidently interpreted."
     }
   ]
 }`;
 
-function formatTranscripts(transcripts: ReportTranscriptInput[]): string {
-  return transcripts
-    .map((transcript, index) => {
-      const testerId = transcript.testerId ?? `tester-${index + 1}`;
-
-      return [
-        `Recording ${index + 1}`,
-        `recordingId: ${transcript.recordingId}`,
-        `testerId: ${testerId}`,
-        "transcript:",
-        transcript.transcript.trim(),
-      ].join("\n");
-    })
-    .join("\n\n---\n\n");
+function normalizeQuote(quote: ReportQuoteInput) {
+  return {
+    quoteId: quote.quoteId,
+    testResponseId: quote.testResponseId,
+    testerLabel: quote.testerLabel?.trim() || "Tester",
+    timestampMs: Math.max(0, Math.round(quote.timestampMs)),
+    linkedFrameId: quote.linkedFrameId ?? null,
+    text: quote.text.trim(),
+  };
 }
 
 export function buildQuoteAnalysisPrompt(
-  input: BuildQuoteAnalysisPromptInput
+  input: BuildQuoteAnalysisPromptInput,
 ): string {
-  const formattedTranscripts = formatTranscripts(input.transcripts);
+  const quotes = input.quotes.map(normalizeQuote).filter((quote) => quote.text);
 
   return `${QUOTE_ANALYSIS_PROMPT_TEMPLATE}
 
 Product/app name: ${input.appName}
 
-Now analyze the following transcripts:
+Quotes to analyze:
 
-${formattedTranscripts}`;
+${JSON.stringify(quotes, null, 2)}`;
 }

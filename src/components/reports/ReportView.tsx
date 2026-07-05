@@ -84,6 +84,10 @@ export function ReportView({ reportId }: ReportViewProps) {
 
     return [...byResponse.values()];
   }, [report]);
+  const quoteAnalysisSummary =
+    report?.quoteAnalysis?.status === "completed"
+      ? report.quoteAnalysis.analysis?.summary?.trim() ?? ""
+      : "";
 
   if (isLoading) {
     return (
@@ -134,6 +138,13 @@ export function ReportView({ reportId }: ReportViewProps) {
           {report.frameCount} unique screenshot{report.frameCount === 1 ? "" : "s"}
         </p>
       </Surface>
+
+      {quoteAnalysisSummary ? (
+        <Surface className="report-view__group">
+          <h3 className="report-view__group-title">AI summary</h3>
+          <p>{quoteAnalysisSummary}</p>
+        </Surface>
+      ) : null}
 
       {groups.length === 0 ? (
         <Surface className="report-view__group">
