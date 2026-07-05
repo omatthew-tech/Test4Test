@@ -192,13 +192,20 @@ export function ReportView({ reportId }: ReportViewProps) {
             <div className="report-frames">
               {group.frames.map((frame) => (
                 <figure key={frame.id} className="report-frame">
-                  <div className="report-frame__media">
-                    <img className="report-frame__image" src={frame.url} alt={`App screen at ${formatTimestamp(frame.timestampMs)}`} loading="lazy" />
-                    <span className="report-frame__timestamp">
-                      <Clock size={13} strokeWidth={2.4} />
-                      {formatTimestamp(frame.timestampMs)}
+                  <button
+                    type="button"
+                    className="report-frame__open"
+                    onClick={() => navigate(`/ai-analysis/${report.id}/screens/${frame.id}`)}
+                    aria-label={`Open quotes for screen ${frame.frameIndex + 1} at ${formatTimestamp(frame.timestampMs)}`}
+                  >
+                    <span className="report-frame__media">
+                      <img className="report-frame__image" src={frame.url} alt={`App screen at ${formatTimestamp(frame.timestampMs)}`} loading="lazy" />
+                      <span className="report-frame__timestamp">
+                        <Clock size={13} strokeWidth={2.4} />
+                        {formatTimestamp(frame.timestampMs)}
+                      </span>
                     </span>
-                  </div>
+                  </button>
                   <figcaption className="report-frame__caption">Screen {frame.frameIndex + 1}</figcaption>
                 </figure>
               ))}

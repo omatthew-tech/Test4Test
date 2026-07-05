@@ -71,7 +71,11 @@ function BannedOnlyRoute({ children }: { children: ReactElement }) {
 }
 
 function ReportsRedirect() {
-  const { reportId } = useParams();
+  const { reportId, frameId } = useParams();
+
+  if (reportId && frameId) {
+    return <Navigate to={`/ai-analysis/${reportId}/screens/${frameId}`} replace />;
+  }
 
   return <Navigate to={reportId ? `/ai-analysis/${reportId}` : "/ai-analysis"} replace />;
 }
@@ -100,8 +104,10 @@ export default function App() {
             <Route path="/my-tests/:submissionId" element={<BanRedirectRoute><SubmissionDetailPage /></BanRedirectRoute>} />
             <Route path="/ai-analysis" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
             <Route path="/ai-analysis/:reportId" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
+            <Route path="/ai-analysis/:reportId/screens/:frameId" element={<BanRedirectRoute><ReportsPage /></BanRedirectRoute>} />
             <Route path="/reports" element={<BanRedirectRoute><ReportsRedirect /></BanRedirectRoute>} />
             <Route path="/reports/:reportId" element={<BanRedirectRoute><ReportsRedirect /></BanRedirectRoute>} />
+            <Route path="/reports/:reportId/screens/:frameId" element={<BanRedirectRoute><ReportsRedirect /></BanRedirectRoute>} />
             <Route path="/submissions" element={<BanRedirectRoute><SubmissionsPage /></BanRedirectRoute>} />
             <Route path="/submissions/:responseId/revise" element={<BanRedirectRoute><ReviseSubmissionPage /></BanRedirectRoute>} />
             <Route path="/credits" element={<BanRedirectRoute><CreditsPage /></BanRedirectRoute>} />
