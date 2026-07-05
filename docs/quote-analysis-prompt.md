@@ -25,6 +25,8 @@ Rules:
 - Do not include markdown.
 - Do not include explanations outside of the JSON.
 - Do not include filler quotes unless they support a usability finding.
+- Return no more than 8 findings, 5 positiveFeedback items, and 10 unclearFeedback items.
+- For each finding or positiveFeedback item, include no more than 4 strongest evidence entries. Use quoteCount and recordingCount for the full support counts.
 
 Frequency rules:
 

@@ -3,6 +3,11 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 export const quoteAnalysisPromptVersion = "quote-analysis-v1";
 
 const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
+const MAX_QUOTE_ANALYSIS_OUTPUT_TOKENS = 12000;
+const MAX_FINDINGS = 8;
+const MAX_POSITIVE_FEEDBACK_ITEMS = 5;
+const MAX_UNCLEAR_FEEDBACK_ITEMS = 10;
+const MAX_EVIDENCE_ITEMS = 4;
 
 interface ReportRow {
   id: string;
@@ -278,6 +283,8 @@ function buildQuoteAnalysisPrompt(input: ReportQuoteAnalysisInput) {
     "- Do not include markdown.",
     "- Do not include explanations outside of the JSON.",
     "- Do not include filler quotes unless they support a usability finding.",
+    `- Return no more than ${MAX_FINDINGS} findings, ${MAX_POSITIVE_FEEDBACK_ITEMS} positiveFeedback items, and ${MAX_UNCLEAR_FEEDBACK_ITEMS} unclearFeedback items.`,
+    `- For each finding or positiveFeedback item, include no more than ${MAX_EVIDENCE_ITEMS} strongest evidence entries. Use quoteCount and recordingCount for the full support counts.`,
     "",
     "Frequency rules:",
     "- Use repeated only when the same issue is supported by quotes from more than one recording/testResponseId.",
@@ -327,6 +334,7 @@ const quoteAnalysisSchema = {
     summary: { type: "string" },
     findings: {
       type: "array",
+      maxItems: MAX_FINDINGS,
       items: {
         type: "object",
         additionalProperties: false,
@@ -352,6 +360,7 @@ const quoteAnalysisSchema = {
           description: { type: "string" },
           evidence: {
             type: "array",
+            maxItems: MAX_EVIDENCE_ITEMS,
             items: quoteEvidenceSchema,
           },
           affectedArea: { type: "string" },
@@ -373,6 +382,7 @@ const quoteAnalysisSchema = {
     },
     positiveFeedback: {
       type: "array",
+      maxItems: MAX_POSITIVE_FEEDBACK_ITEMS,
       items: {
         type: "object",
         additionalProperties: false,
@@ -382,6 +392,7 @@ const quoteAnalysisSchema = {
           recordingCount: { type: "integer" },
           evidence: {
             type: "array",
+            maxItems: MAX_EVIDENCE_ITEMS,
             items: quoteEvidenceSchema,
           },
         },
@@ -390,6 +401,7 @@ const quoteAnalysisSchema = {
     },
     unclearFeedback: {
       type: "array",
+      maxItems: MAX_UNCLEAR_FEEDBACK_ITEMS,
       items: {
         type: "object",
         additionalProperties: false,
@@ -437,6 +449,21 @@ function extractOutputText(payload: unknown) {
   }
 
   return parts.join("\n");
+}
+
+function getOpenAiIncompleteReason(payload: unknown) {
+  const response = payload as {
+    status?: unknown;
+    incomplete_details?: { reason?: unknown } | null;
+  };
+
+  if (response.status !== "incomplete") {
+    return "";
+  }
+
+  return typeof response.incomplete_details?.reason === "string"
+    ? response.incomplete_details.reason
+    : "unknown";
 }
 
 function normalizeEvidence(value: unknown): QuoteAnalysisEvidence[] {
@@ -553,7 +580,7 @@ async function callOpenAiForQuoteAnalysis(input: ReportQuoteAnalysisInput, model
       instructions:
         "You are a senior UX researcher analyzing usability-test transcript quotes. Return only valid JSON matching the provided schema.",
       input: buildQuoteAnalysisPrompt(input),
-      max_output_tokens: 3200,
+      max_output_tokens: MAX_QUOTE_ANALYSIS_OUTPUT_TOKENS,
       text: {
         format: {
           type: "json_schema",
@@ -574,12 +601,22 @@ async function callOpenAiForQuoteAnalysis(input: ReportQuoteAnalysisInput, model
   }
 
   const responseText = extractOutputText(openAiPayload);
+  const incompleteReason = getOpenAiIncompleteReason(openAiPayload);
+
+  if (incompleteReason) {
+    throw new Error(`OpenAI returned an incomplete quote analysis response: ${incompleteReason}.`);
+  }
 
   if (!responseText) {
     throw new Error("OpenAI returned an empty quote analysis response.");
   }
 
-  return normalizeAnalysisPayload(JSON.parse(responseText));
+  try {
+    return normalizeAnalysisPayload(JSON.parse(responseText));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "JSON parse failed.";
+    throw new Error(`OpenAI returned invalid quote analysis JSON: ${message}`);
+  }
 }
 
 async function upsertAnalysis(
