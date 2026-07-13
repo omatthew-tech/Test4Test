@@ -1,9 +1,9 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-export const quoteAnalysisPromptVersion = "quote-analysis-v1";
+export const quoteAnalysisPromptVersion = "quote-analysis-v4";
 
 const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
-const MAX_QUOTE_ANALYSIS_OUTPUT_TOKENS = 12000;
+const MAX_QUOTE_ANALYSIS_OUTPUT_TOKENS = 32000;
 const MAX_FINDINGS = 8;
 const MAX_POSITIVE_FEEDBACK_ITEMS = 5;
 const MAX_UNCLEAR_FEEDBACK_ITEMS = 10;
@@ -21,8 +21,18 @@ interface QuoteRow {
   test_response_id: string;
   frame_id: string | null;
   timestamp_ms: number;
+  start_ms: number | null;
+  end_ms: number | null;
   quote_text: string;
   include_in_summary: boolean;
+  test_responses?: { anonymous_label?: string | null } | Array<{ anonymous_label?: string | null }> | null;
+}
+
+interface FrameRow {
+  id: string;
+  test_response_id: string;
+  frame_index: number;
+  timestamp_ms: number;
   test_responses?: { anonymous_label?: string | null } | Array<{ anonymous_label?: string | null }> | null;
 }
 
@@ -91,8 +101,15 @@ export interface QuoteAnalysisUnclearFeedback {
   reason: string;
 }
 
+export interface QuoteAnalysisPageInsight {
+  frameId: string;
+  usefulForUsabilityTesting: boolean;
+  suggestion: string | null;
+}
+
 export interface QuoteAnalysisResult {
   summary: string;
+  pageInsights: QuoteAnalysisPageInsight[];
   findings: QuoteAnalysisFinding[];
   positiveFeedback: QuoteAnalysisPositiveFeedback[];
   unclearFeedback: QuoteAnalysisUnclearFeedback[];
@@ -119,14 +136,24 @@ interface AnalysisQuoteInput {
   testResponseId: string;
   testerLabel: string;
   timestampMs: number;
+  startMs: number | null;
+  endMs: number | null;
   linkedFrameId: string | null;
   text: string;
+}
+
+interface AnalysisPageInput {
+  frameId: string;
+  testResponseId: string;
+  testerLabel: string;
+  quotes: AnalysisQuoteInput[];
 }
 
 interface ReportQuoteAnalysisInput {
   reportId: string;
   appName: string;
   quotes: AnalysisQuoteInput[];
+  pages: AnalysisPageInput[];
 }
 
 function normalizeText(value: unknown) {
@@ -141,7 +168,7 @@ function getSubmissionProductName(report: ReportRow) {
   return normalizeText(submission?.product_name) || "Untitled app";
 }
 
-function getTesterLabel(row: Pick<QuoteRow, "test_responses">) {
+function getTesterLabel(row: Pick<QuoteRow | FrameRow, "test_responses">) {
   const response = Array.isArray(row.test_responses)
     ? row.test_responses[0]
     : row.test_responses;
@@ -208,23 +235,48 @@ async function loadAnalysisInput(admin: SupabaseClient, reportId: string): Promi
   }
 
   const report = reportData as ReportRow;
-  const { data: quoteRows, error: quoteError } = await admin
-    .from("usability_report_quotes")
-    .select(`
-      id,
-      test_response_id,
-      frame_id,
-      timestamp_ms,
-      quote_text,
-      include_in_summary,
-      test_responses (
-        anonymous_label
-      )
-    `)
-    .eq("report_id", reportId)
-    .eq("include_in_summary", true)
-    .order("test_response_id", { ascending: true })
-    .order("timestamp_ms", { ascending: true });
+  const [frameResult, quoteResult] = await Promise.all([
+    admin
+      .from("usability_report_frames")
+      .select(`
+        id,
+        test_response_id,
+        frame_index,
+        timestamp_ms,
+        test_responses (
+          anonymous_label
+        )
+      `)
+      .eq("report_id", reportId)
+      .order("test_response_id", { ascending: true })
+      .order("frame_index", { ascending: true }),
+    admin
+      .from("usability_report_quotes")
+      .select(`
+        id,
+        test_response_id,
+        frame_id,
+        timestamp_ms,
+        start_ms,
+        end_ms,
+        quote_text,
+        include_in_summary,
+        test_responses (
+          anonymous_label
+        )
+      `)
+      .eq("report_id", reportId)
+      .eq("include_in_summary", true)
+      .order("test_response_id", { ascending: true })
+      .order("timestamp_ms", { ascending: true }),
+  ]);
+
+  const { data: frameRows, error: frameError } = frameResult;
+  if (frameError) {
+    throw new Error(frameError.message);
+  }
+
+  const { data: quoteRows, error: quoteError } = quoteResult;
 
   if (quoteError) {
     throw new Error(quoteError.message);
@@ -236,15 +288,71 @@ async function loadAnalysisInput(admin: SupabaseClient, reportId: string): Promi
       testResponseId: quote.test_response_id,
       testerLabel: getTesterLabel(quote),
       timestampMs: quote.timestamp_ms,
+      startMs: quote.start_ms,
+      endMs: quote.end_ms,
       linkedFrameId: quote.frame_id,
       text: normalizeText(quote.quote_text),
     }))
     .filter((quote) => quote.text);
 
+  const quotesByResponse = new Map<string, AnalysisQuoteInput[]>();
+  for (const quote of quotes) {
+    const responseQuotes = quotesByResponse.get(quote.testResponseId);
+    if (responseQuotes) {
+      responseQuotes.push(quote);
+    } else {
+      quotesByResponse.set(quote.testResponseId, [quote]);
+    }
+  }
+
+  const framesByResponse = new Map<string, FrameRow[]>();
+  for (const frame of (frameRows ?? []) as FrameRow[]) {
+    const responseFrames = framesByResponse.get(frame.test_response_id);
+    if (responseFrames) {
+      responseFrames.push(frame);
+    } else {
+      framesByResponse.set(frame.test_response_id, [frame]);
+    }
+  }
+
+  const pages: AnalysisPageInput[] = [];
+  for (const responseFrames of framesByResponse.values()) {
+    responseFrames.sort((first, second) =>
+      first.timestamp_ms - second.timestamp_ms || first.frame_index - second.frame_index
+    );
+    const responseQuotes = quotesByResponse.get(responseFrames[0]?.test_response_id ?? "") ?? [];
+
+    for (let index = 0; index < responseFrames.length; index += 1) {
+      const frame = responseFrames[index]!;
+      const nextFrame = responseFrames[index + 1];
+      const frameStartMs = frame.timestamp_ms;
+      const frameEndMs = nextFrame?.timestamp_ms ?? Number.POSITIVE_INFINITY;
+      const pageQuotes = responseQuotes
+        .filter((quote) => {
+          if (quote.linkedFrameId === frame.id) {
+            return true;
+          }
+
+          const quoteStartMs = quote.startMs ?? quote.timestampMs;
+          const quoteEndMs = Math.max(quoteStartMs + 1, quote.endMs ?? quote.timestampMs + 1);
+          return Math.min(quoteEndMs, frameEndMs) > Math.max(quoteStartMs, frameStartMs);
+        })
+        .map((quote) => ({ ...quote, linkedFrameId: frame.id }));
+
+      pages.push({
+        frameId: frame.id,
+        testResponseId: frame.test_response_id,
+        testerLabel: getTesterLabel(frame),
+        quotes: pageQuotes,
+      });
+    }
+  }
+
   return {
     reportId,
     appName: getSubmissionProductName(report),
     quotes,
+    pages,
   };
 }
 
@@ -253,6 +361,7 @@ async function hashInput(input: ReportQuoteAnalysisInput) {
     promptVersion: quoteAnalysisPromptVersion,
     appName: input.appName,
     quotes: input.quotes,
+    pages: input.pages,
   });
   const encoded = new TextEncoder().encode(body);
   const digest = await crypto.subtle.digest("SHA-256", encoded);
@@ -263,14 +372,17 @@ async function hashInput(input: ReportQuoteAnalysisInput) {
 }
 
 function buildQuoteAnalysisPrompt(input: ReportQuoteAnalysisInput) {
+  const linkedQuoteIds = new Set(input.pages.flatMap((page) => page.quotes.map((quote) => quote.quoteId)));
+  const unlinkedQuotes = input.quotes.filter((quote) => !linkedQuoteIds.has(quote.quoteId));
+
   return [
     "You are analyzing usability testing transcript quotes for a software product.",
     "",
-    "Your job is to extract usability-relevant feedback from the quotes and turn it into structured findings for a report dashboard.",
+    "Your job is to extract usability-relevant feedback, turn it into structured report findings, and decide which individual screenshot pages contain actionable usability-testing insight.",
     "",
     "The input may contain casual speech, filler words, incomplete thoughts, and narration. Ignore filler unless it supports a usability finding.",
     "",
-    "Analyze all quotes together and identify repeated usability issues, one-off usability issues, positive feedback, confusing screens/features/labels/components, possible severity, and recommended UX improvements.",
+    "Analyze the report as a whole for aggregate findings. For pageInsights, analyze every PAGE independently and evaluate all quotes in that PAGE together. The PAGE frameId identifies the screenshot where those quotes occurred, but the screenshot itself is not included.",
     "",
     "Rules:",
     "- Do not invent issues that are not supported by the quotes.",
@@ -285,6 +397,14 @@ function buildQuoteAnalysisPrompt(input: ReportQuoteAnalysisInput) {
     "- Do not include filler quotes unless they support a usability finding.",
     `- Return no more than ${MAX_FINDINGS} findings, ${MAX_POSITIVE_FEEDBACK_ITEMS} positiveFeedback items, and ${MAX_UNCLEAR_FEEDBACK_ITEMS} unclearFeedback items.`,
     `- For each finding or positiveFeedback item, include no more than ${MAX_EVIDENCE_ITEMS} strongest evidence entries. Use quoteCount and recordingCount for the full support counts.`,
+    "- Return exactly one pageInsights entry for every PAGE frameId in the input, in the same order.",
+    "- Pages with no quotes must return usefulForUsabilityTesting false and suggestion null.",
+    "- Mark usefulForUsabilityTesting true when that page's quotes reveal a concrete problem, confusion, friction, unmet expectation, or high-value improvement opportunity.",
+    "- Treat qualified or mixed feedback as actionable when it contains a specific concern. For example, a page described as easy but also as having too much going on should receive a suggestion addressing the clutter concern.",
+    "- Set suggestion to null whenever usefulForUsabilityTesting is false.",
+    "- When usefulForUsabilityTesting is true, suggestion must be exactly one concise, actionable sentence describing what the product owner should improve on that page.",
+    "- Ground page suggestions only in the quotes for that PAGE; do not infer unseen visual details.",
+    "- Positive-only, descriptive, filler, or genuinely ambiguous page comments should return false and null, but do not discard a clear criticism merely because it is surrounded by positive language or casual speech.",
     "",
     "Frequency rules:",
     "- Use repeated only when the same issue is supported by quotes from more than one recording/testResponseId.",
@@ -308,8 +428,11 @@ function buildQuoteAnalysisPrompt(input: ReportQuoteAnalysisInput) {
     "",
     `Product/app name: ${input.appName}`,
     "",
-    "Quotes to analyze:",
-    JSON.stringify(input.quotes, null, 2),
+    "Pages to analyze:",
+    JSON.stringify(input.pages, null, 2),
+    "",
+    "Quotes that could not be linked to a screenshot page (include these only in aggregate findings):",
+    JSON.stringify(unlinkedQuotes, null, 2),
   ].join("\n");
 }
 
@@ -332,6 +455,19 @@ const quoteAnalysisSchema = {
   additionalProperties: false,
   properties: {
     summary: { type: "string" },
+    pageInsights: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          frameId: { type: "string" },
+          usefulForUsabilityTesting: { type: "boolean" },
+          suggestion: { type: ["string", "null"] },
+        },
+        required: ["frameId", "usefulForUsabilityTesting", "suggestion"],
+      },
+    },
     findings: {
       type: "array",
       maxItems: MAX_FINDINGS,
@@ -418,7 +554,7 @@ const quoteAnalysisSchema = {
       },
     },
   },
-  required: ["summary", "findings", "positiveFeedback", "unclearFeedback"],
+  required: ["summary", "pageInsights", "findings", "positiveFeedback", "unclearFeedback"],
 } as const;
 
 function extractOutputText(payload: unknown) {
@@ -521,7 +657,45 @@ function normalizeFrequency(value: unknown): QuoteAnalysisFinding["frequency"] {
   return value === "repeated" ? "repeated" : "one_off";
 }
 
-function normalizeAnalysisPayload(value: unknown): QuoteAnalysisResult {
+function normalizeSuggestion(value: unknown) {
+  const suggestion = normalizeText(value);
+
+  if (!suggestion) {
+    return null;
+  }
+
+  const firstSentence = suggestion.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? suggestion;
+  return /[.!?]$/.test(firstSentence) ? firstSentence : `${firstSentence}.`;
+}
+
+function normalizePageInsights(value: unknown, pages: AnalysisPageInput[]): QuoteAnalysisPageInsight[] {
+  const candidates = Array.isArray(value) ? value : [];
+  const byFrameId = new Map<string, Partial<QuoteAnalysisPageInsight>>();
+
+  for (const entry of candidates) {
+    const candidate = entry as Partial<QuoteAnalysisPageInsight>;
+    const frameId = normalizeText(candidate.frameId);
+    if (frameId && !byFrameId.has(frameId)) {
+      byFrameId.set(frameId, candidate);
+    }
+  }
+
+  return pages.map((page) => {
+    const candidate = byFrameId.get(page.frameId);
+    const suggestion = normalizeSuggestion(candidate?.suggestion);
+    // The suggestion is the canonical signal. This avoids silently discarding useful
+    // text when the model returns an internally inconsistent boolean alongside it.
+    const usefulForUsabilityTesting = Boolean(suggestion);
+
+    return {
+      frameId: page.frameId,
+      usefulForUsabilityTesting,
+      suggestion: usefulForUsabilityTesting ? suggestion : null,
+    };
+  });
+}
+
+function normalizeAnalysisPayload(value: unknown, input: ReportQuoteAnalysisInput): QuoteAnalysisResult {
   const payload = value as Partial<QuoteAnalysisResult>;
   const findings = Array.isArray(payload.findings) ? payload.findings : [];
   const positiveFeedback = Array.isArray(payload.positiveFeedback) ? payload.positiveFeedback : [];
@@ -529,6 +703,7 @@ function normalizeAnalysisPayload(value: unknown): QuoteAnalysisResult {
 
   return {
     summary: normalizeText(payload.summary),
+    pageInsights: normalizePageInsights(payload.pageInsights, input.pages),
     findings: findings.map((finding) => ({
       title: normalizeText(finding.title),
       category: normalizeCategory(finding.category),
@@ -580,6 +755,9 @@ async function callOpenAiForQuoteAnalysis(input: ReportQuoteAnalysisInput, model
       instructions:
         "You are a senior UX researcher analyzing usability-test transcript quotes. Return only valid JSON matching the provided schema.",
       input: buildQuoteAnalysisPrompt(input),
+      reasoning: {
+        effort: "low",
+      },
       max_output_tokens: MAX_QUOTE_ANALYSIS_OUTPUT_TOKENS,
       text: {
         format: {
@@ -612,7 +790,7 @@ async function callOpenAiForQuoteAnalysis(input: ReportQuoteAnalysisInput, model
   }
 
   try {
-    return normalizeAnalysisPayload(JSON.parse(responseText));
+    return normalizeAnalysisPayload(JSON.parse(responseText), input);
   } catch (error) {
     const message = error instanceof Error ? error.message : "JSON parse failed.";
     throw new Error(`OpenAI returned invalid quote analysis JSON: ${message}`);
@@ -696,6 +874,7 @@ export async function analyzeReportQuotes(
     const analysis = analysisInput.quotes.length === 0
       ? {
           summary: "No transcript quotes were available for AI analysis.",
+          pageInsights: [],
           findings: [],
           positiveFeedback: [],
           unclearFeedback: [],

@@ -425,6 +425,12 @@ export interface UsabilityReportQuoteAnalysisEvidence {
   quote: string;
 }
 
+export interface UsabilityReportPageInsight {
+  frameId: string;
+  usefulForUsabilityTesting: boolean;
+  suggestion: string | null;
+}
+
 export interface UsabilityReportQuoteAnalysisFinding {
   title: string;
   category:
@@ -448,6 +454,7 @@ export interface UsabilityReportQuoteAnalysisFinding {
 
 export interface UsabilityReportQuoteAnalysisResult {
   summary: string;
+  pageInsights: UsabilityReportPageInsight[];
   findings: UsabilityReportQuoteAnalysisFinding[];
   positiveFeedback: Array<{
     summary: string;

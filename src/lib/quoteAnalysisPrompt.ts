@@ -12,13 +12,15 @@ export type BuildQuoteAnalysisPromptInput = {
   quotes: ReportQuoteInput[];
 };
 
+export const quoteAnalysisPromptVersion = "quote-analysis-v4";
+
 const QUOTE_ANALYSIS_PROMPT_TEMPLATE = `You are analyzing usability testing transcript quotes for a software product.
 
-Your job is to extract usability-relevant feedback from the quotes and turn it into structured findings for a report dashboard.
+Your job is to extract usability-relevant feedback, turn it into structured report findings, and decide which individual screenshot pages contain actionable usability-testing insight.
 
 The input may contain casual speech, filler words, incomplete thoughts, and narration. Ignore filler unless it supports a usability finding.
 
-Analyze all quotes together and identify repeated usability issues, one-off usability issues, positive feedback, confusing screens/features/labels/components, possible severity, and recommended UX improvements.
+Analyze the report as a whole for aggregate findings. For pageInsights, analyze every PAGE independently and evaluate all quotes in that PAGE together. The PAGE frameId identifies the screenshot where those quotes occurred, but the screenshot itself is not included.
 
 Rules:
 
@@ -34,6 +36,14 @@ Rules:
 - Do not include filler quotes unless they support a usability finding.
 - Return no more than 8 findings, 5 positiveFeedback items, and 10 unclearFeedback items.
 - For each finding or positiveFeedback item, include no more than 4 strongest evidence entries. Use quoteCount and recordingCount for the full support counts.
+- Return exactly one pageInsights entry for every PAGE frameId in the input, in the same order.
+- Pages with no quotes must return usefulForUsabilityTesting false and suggestion null.
+- Mark usefulForUsabilityTesting true when that page's quotes reveal a concrete problem, confusion, friction, unmet expectation, or high-value improvement opportunity.
+- Treat qualified or mixed feedback as actionable when it contains a specific concern. For example, a page described as easy but also as having too much going on should receive a suggestion addressing the clutter concern.
+- Set suggestion to null whenever usefulForUsabilityTesting is false.
+- When usefulForUsabilityTesting is true, suggestion must be exactly one concise, actionable sentence describing what the product owner should improve on that page.
+- Ground page suggestions only in the quotes for that PAGE; do not infer unseen visual details.
+- Positive-only, descriptive, filler, or genuinely ambiguous page comments should return false and null, but do not discard a clear criticism merely because it is surrounded by positive language or casual speech.
 
 Frequency rules:
 
@@ -64,6 +74,13 @@ Return this JSON structure:
 
 {
   "summary": "Short summary of the overall usability feedback.",
+  "pageInsights": [
+    {
+      "frameId": "frame-1",
+      "usefulForUsabilityTesting": true,
+      "suggestion": "Make the primary action easier to identify."
+    }
+  ],
   "findings": [
     {
       "title": "Short issue title",
@@ -128,16 +145,52 @@ function normalizeQuote(quote: ReportQuoteInput) {
   };
 }
 
+function groupQuotesByPage(quotes: ReturnType<typeof normalizeQuote>[]) {
+  const pages = new Map<string, {
+    frameId: string;
+    testResponseId: string;
+    testerLabel: string;
+    quotes: ReturnType<typeof normalizeQuote>[];
+  }>();
+
+  for (const quote of quotes) {
+    if (!quote.linkedFrameId) {
+      continue;
+    }
+
+    const page = pages.get(quote.linkedFrameId);
+    if (page) {
+      page.quotes.push(quote);
+    } else {
+      pages.set(quote.linkedFrameId, {
+        frameId: quote.linkedFrameId,
+        testResponseId: quote.testResponseId,
+        testerLabel: quote.testerLabel,
+        quotes: [quote],
+      });
+    }
+  }
+
+  return [...pages.values()];
+}
+
 export function buildQuoteAnalysisPrompt(
   input: BuildQuoteAnalysisPromptInput,
 ): string {
   const quotes = input.quotes.map(normalizeQuote).filter((quote) => quote.text);
+  const pages = groupQuotesByPage(quotes);
+  const linkedQuoteIds = new Set(pages.flatMap((page) => page.quotes.map((quote) => quote.quoteId)));
+  const unlinkedQuotes = quotes.filter((quote) => !linkedQuoteIds.has(quote.quoteId));
 
   return `${QUOTE_ANALYSIS_PROMPT_TEMPLATE}
 
 Product/app name: ${input.appName}
 
-Quotes to analyze:
+Pages to analyze:
 
-${JSON.stringify(quotes, null, 2)}`;
+${JSON.stringify(pages, null, 2)}
+
+Quotes that could not be linked to a screenshot page (include these only in aggregate findings):
+
+${JSON.stringify(unlinkedQuotes, null, 2)}`;
 }

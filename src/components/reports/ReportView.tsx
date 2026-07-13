@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft, Clock, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
 import { formatDateTime } from "../../lib/format";
+import { quoteAnalysisPromptVersion } from "../../lib/quoteAnalysisPrompt";
 import { analyzeUsabilityReportQuotes, getUsabilityReport } from "../../lib/usabilityReports";
 import { UsabilityReportDetail, UsabilityReportFrame } from "../../types";
 
@@ -66,7 +67,10 @@ export function ReportView({ reportId }: ReportViewProps) {
     }
 
     const analysisStatus = report.quoteAnalysis?.status;
-    if (analysisStatus === "completed" || analysisStatus === "processing") {
+    const hasCurrentPageInsights =
+      report.quoteAnalysis?.promptVersion === quoteAnalysisPromptVersion
+      && Array.isArray(report.quoteAnalysis.analysis?.pageInsights);
+    if ((analysisStatus === "completed" && hasCurrentPageInsights) || analysisStatus === "processing") {
       return;
     }
 
@@ -74,23 +78,22 @@ export function ReportView({ reportId }: ReportViewProps) {
       return;
     }
 
-    let isCancelled = false;
     quoteAnalysisBackfills.current.add(report.id);
 
     analyzeUsabilityReportQuotes(report.id, { timeoutMs: 120000 })
       .then((quoteAnalysis) => {
-        if (!isCancelled) {
-          setReport((current) => current?.id === report.id ? { ...current, quoteAnalysis } : current);
-        }
+        setReport((current) => current?.id === report.id ? { ...current, quoteAnalysis } : current);
       })
       .catch((caught: unknown) => {
         console.error("Failed to analyze report quotes", caught);
       });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [report?.id, report?.quoteAnalysis?.status, report?.status]);
+  }, [
+    report?.id,
+    report?.quoteAnalysis?.analysis?.pageInsights,
+    report?.quoteAnalysis?.promptVersion,
+    report?.quoteAnalysis?.status,
+    report?.status,
+  ]);
 
   const groups = useMemo<FrameGroup[]>(() => {
     if (!report) {

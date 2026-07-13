@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
-import { getUsabilityReport } from "../../lib/usabilityReports";
+import { quoteAnalysisPromptVersion } from "../../lib/quoteAnalysisPrompt";
+import { analyzeUsabilityReportQuotes, getUsabilityReport } from "../../lib/usabilityReports";
 import {
   UsabilityReportDetail,
   UsabilityReportFrame,
@@ -78,6 +79,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const quoteAnalysisBackfills = useRef(new Set<string>());
 
   useEffect(() => {
     let isCancelled = false;
@@ -106,6 +108,40 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
     };
   }, [reportId, reloadToken]);
 
+  useEffect(() => {
+    if (!report || report.status !== "completed") {
+      return;
+    }
+
+    const analysisStatus = report.quoteAnalysis?.status;
+    const hasCurrentPageInsights =
+      report.quoteAnalysis?.promptVersion === quoteAnalysisPromptVersion
+      && Array.isArray(report.quoteAnalysis.analysis?.pageInsights);
+    if ((analysisStatus === "completed" && hasCurrentPageInsights) || analysisStatus === "processing") {
+      return;
+    }
+
+    if (quoteAnalysisBackfills.current.has(report.id)) {
+      return;
+    }
+
+    quoteAnalysisBackfills.current.add(report.id);
+
+    analyzeUsabilityReportQuotes(report.id, { timeoutMs: 120000 })
+      .then((quoteAnalysis) => {
+        setReport((current) => current?.id === report.id ? { ...current, quoteAnalysis } : current);
+      })
+      .catch((caught: unknown) => {
+        console.error("Failed to analyze report quotes", caught);
+      });
+  }, [
+    report?.id,
+    report?.quoteAnalysis?.analysis?.pageInsights,
+    report?.quoteAnalysis?.promptVersion,
+    report?.quoteAnalysis?.status,
+    report?.status,
+  ]);
+
   const frames = report?.frames ?? [];
   const frame = frames.find((candidate) => candidate.id === frameId) ?? null;
   const frameOrdinal = frame ? frames.findIndex((candidate) => candidate.id === frame.id) + 1 : 0;
@@ -121,6 +157,10 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
       .filter((quote) => quoteOverlapsFrameWindow(quote, frame, frameWindow))
       .sort((first, second) => first.timestampMs - second.timestampMs);
   }, [frame, frameWindow, report]);
+  const pageInsight = report?.quoteAnalysis?.analysis?.pageInsights?.find(
+    (insight) => insight.frameId === frameId,
+  );
+  const aiSuggestion = pageInsight?.suggestion?.trim() ?? "";
 
   function navigateToFrame(target: UsabilityReportFrame | null) {
     if (target) {
@@ -223,6 +263,11 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
                 {formatTimestamp(frame.timestampMs)}
               </span>
             </div>
+            {aiSuggestion ? (
+              <p className="report-frame-view__ai-suggestion">
+                <strong>AI Suggestion:</strong> {aiSuggestion}
+              </p>
+            ) : null}
           </div>
 
           <section className="report-frame-view__quotes-panel">
