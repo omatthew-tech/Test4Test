@@ -17,6 +17,7 @@ import {
   UsabilityReportFrame,
   UsabilityReportQuote,
 } from "../../types";
+import { AiSuggestionCard, AiSuggestionCardPlaceholder } from "./AiSuggestionCard";
 
 function formatTimestamp(timestampMs: number) {
   const totalSeconds = Math.floor(timestampMs / 1000);
@@ -161,6 +162,10 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
     (insight) => insight.frameId === frameId,
   );
   const aiSuggestion = pageInsight?.suggestion?.trim() ?? "";
+  const analysisStatus = report?.quoteAnalysis?.status;
+  const showSuggestionPlaceholder =
+    !aiSuggestion
+    && (analysisStatus === "pending" || analysisStatus === "processing" || !report?.quoteAnalysis);
 
   function navigateToFrame(target: UsabilityReportFrame | null) {
     if (target) {
@@ -264,9 +269,13 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
               </span>
             </div>
             {aiSuggestion ? (
-              <p className="report-frame-view__ai-suggestion">
-                <strong>AI Suggestion:</strong> {aiSuggestion}
-              </p>
+              <AiSuggestionCard
+                suggestion={aiSuggestion}
+                screenLabel={`Screen ${frameOrdinal}`}
+                variant="inline"
+              />
+            ) : showSuggestionPlaceholder ? (
+              <AiSuggestionCardPlaceholder variant="inline" />
             ) : null}
           </div>
 

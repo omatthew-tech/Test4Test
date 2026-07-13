@@ -12509,6 +12509,7 @@ select {
   position: absolute;
   top: var(--space-150);
   right: var(--space-150);
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: var(--space-050);
@@ -12547,15 +12548,87 @@ select {
   color: var(--color-ink-900);
 }
 
-.report-frame-view__ai-suggestion {
-  margin: 0;
-  color: var(--color-ink-800);
-  font-size: 0.92rem;
-  line-height: 1.5;
+/* ---- AI suggestion floating card --------------------------------------- */
+
+.ai-suggestion-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-075);
+  padding: var(--space-150) var(--space-200);
+  border-radius: 14px;
+  border: 1px solid rgba(245, 142, 86, 0.38);
+  background:
+    linear-gradient(145deg, rgba(255, 248, 241, 0.97), rgba(255, 254, 252, 0.98)),
+    var(--color-surface-000);
+  box-shadow:
+    0 10px 28px rgba(29, 24, 21, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.65) inset;
+  color: var(--color-ink-900);
+  backdrop-filter: blur(8px);
 }
 
-.report-frame-view__ai-suggestion strong {
+.ai-suggestion-card--floating {
+  position: absolute;
+  left: var(--space-150);
+  right: var(--space-150);
+  bottom: var(--space-150);
+  z-index: 3;
+  animation: ai-suggestion-float-in 380ms ease both;
+}
+
+.ai-suggestion-card--inline {
+  position: relative;
+  width: 100%;
+  animation: ai-suggestion-float-in 380ms ease both;
+}
+
+.ai-suggestion-card--placeholder {
+  border-style: dashed;
+  border-color: rgba(133, 123, 116, 0.4);
+  background: rgba(255, 254, 252, 0.92);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.ai-suggestion-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-050);
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(245, 142, 86, 0.16);
+  color: #b85a22;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.ai-suggestion-card__text {
+  margin: 0;
+  font-family: "Sora", "Inter", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--color-ink-900);
+}
+
+.ai-suggestion-card__text--muted {
+  font-weight: 500;
+  color: var(--color-ink-500);
+}
+
+@keyframes ai-suggestion-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .report-frame-view__quotes {
@@ -12691,6 +12764,12 @@ select {
   .report-frame-view__quotes-panel {
     padding: var(--space-200);
   }
+
+  .ai-suggestion-card--floating {
+    left: var(--space-100);
+    right: var(--space-100);
+    bottom: var(--space-100);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -12699,7 +12778,8 @@ select {
   .report-processing__glow,
   .report-processing__step--active .report-processing__step-dot,
   .report-history__status--processing svg,
-  .report-history__status--pending svg {
+  .report-history__status--pending svg,
+  .ai-suggestion-card--floating {
     animation: none;
   }
 
