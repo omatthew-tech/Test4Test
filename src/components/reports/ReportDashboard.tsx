@@ -92,6 +92,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const [statusLabel, setStatusLabel] = useState<string>("");
   const [history, setHistory] = useState<UsabilityReport[]>([]);
   const [previewFrames, setPreviewFrames] = useState<UsabilityReportPreviewFrame[]>([]);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -276,7 +277,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
             <button
               type="button"
               className="button button--primary report-dashboard__generate"
-              onClick={handleGenerate}
+              onClick={() => setIsConfirmModalOpen(true)}
               disabled={!selectedSubmission || selectedRecordingCount === 0}
             >
               Generate report
@@ -292,6 +293,42 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
           </div>
         ) : null}
       </Surface>
+
+       {isConfirmModalOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="generate-report-confirm-title"
+          >
+            <h3 id="generate-report-confirm-title">Generate updated report?</h3>
+            <p>
+              This will create a new report using the currently selected feedback.
+              Feedback that has been removed will not be included in the updated AI analysis.
+            </p>
+            <div className="modal__actions">
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => setIsConfirmModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  void handleGenerate();
+                }}
+              >
+                Generate report
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {submissions.length > 0 ? (
         <section className="report-dashboard__history">

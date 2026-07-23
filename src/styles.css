@@ -12905,3 +12905,41 @@ select {
   }
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 15, 35, 0.45);
+}
+
+.modal {
+  width: min(100%, 28rem);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(15, 15, 35, 0.12);
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 15, 35, 0.22);
+  padding: 1.5rem;
+}
+
+.modal h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  color: #111127;
+}
+
+.modal p {
+  margin: 0;
+  color: #4b4b63;
+  line-height: 1.55;
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
