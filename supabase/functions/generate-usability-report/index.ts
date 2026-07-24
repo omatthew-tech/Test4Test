@@ -18,6 +18,7 @@ import {
 interface GenerateReportRequest {
   submissionId?: string;
   responseIds?: unknown;
+  reportName?: unknown;
 }
 
 interface SubmissionRow {
@@ -147,6 +148,7 @@ async function createReportRow(
   submissionId: string,
   ownerUserId: string,
   sourceResponseCount: number,
+  requestedReportName: string | null,
 ) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const { data: latestRows, error: latestError } = await admin
@@ -168,6 +170,7 @@ async function createReportRow(
         submission_id: submissionId,
         owner_user_id: ownerUserId,
         report_number: reportNumber,
+        report_name: requestedReportName ?? `Report ${reportNumber}`,
         status: "pending",
         source_response_count: sourceResponseCount,
       })
@@ -223,6 +226,17 @@ Deno.serve(async (request) => {
 
   if (!submissionId) {
     return reportJson({ error: "Select an app to generate a report for." }, 400);
+  }
+
+  const requestedReportName =
+    typeof payload.reportName === "string" ? payload.reportName.trim() : null;
+
+  if (payload.reportName !== undefined && !requestedReportName) {
+    return reportJson({ error: "Enter a report name." }, 400);
+  }
+
+  if (requestedReportName && requestedReportName.length > 100) {
+    return reportJson({ error: "Report names must be 100 characters or fewer." }, 400);
   }
 
   let selectedResponseIds: string[] | null = null;
@@ -323,7 +337,13 @@ Deno.serve(async (request) => {
   let report: { id: string; report_number: number };
 
   try {
-    report = await createReportRow(admin, submission.id, user.id, recordings.length);
+    report = await createReportRow(
+      admin,
+      submission.id,
+      user.id,
+      recordings.length,
+      requestedReportName,
+    );
   } catch (error) {
     return reportJson({ error: error instanceof Error ? error.message : "The report could not be created." }, 500);
   }

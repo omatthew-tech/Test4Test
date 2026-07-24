@@ -38,6 +38,7 @@
    - `supabase/functions/list-usability-reports`
    - `supabase/functions/get-usability-report-status`
    - `supabase/functions/get-usability-report`
+   - `supabase/functions/update-usability-report-name`
    - `supabase/functions/analyze-usability-report-quotes`
    - `supabase/functions/complete-usability-report`
    - `supabase/functions/test-account-login` with `--no-verify-jwt`

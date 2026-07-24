@@ -2,11 +2,14 @@ import {
   createReportAdminClient,
   getAuthenticatedReportUser,
   getReportSupabaseEnvironment,
-  mapReportSummary,
   reportCorsHeaders,
   reportJson,
-  type ReportRow,
 } from "../_shared/usability-reports.ts";
+
+interface UpdateReportNameRequest {
+  reportId?: unknown;
+  reportName?: unknown;
+}
 
 async function responseFromAuthError(error: unknown) {
   if (error instanceof Response) {
@@ -31,7 +34,9 @@ Deno.serve(async (request) => {
   try {
     env = getReportSupabaseEnvironment();
   } catch (error) {
-    return reportJson({ error: error instanceof Error ? error.message : "AI Analysis setup is incomplete." }, 500);
+    return reportJson({
+      error: error instanceof Error ? error.message : "AI Analysis setup is incomplete.",
+    }, 500);
   }
 
   const admin = createReportAdminClient(env);
@@ -47,33 +52,41 @@ Deno.serve(async (request) => {
     return reportJson({ error: "Unauthorized." }, 401);
   }
 
+  const payload = (await request.json().catch(() => ({}))) as UpdateReportNameRequest;
+  const reportId = typeof payload.reportId === "string" ? payload.reportId.trim() : "";
+  const reportName = typeof payload.reportName === "string" ? payload.reportName.trim() : "";
+
+  if (!reportId) {
+    return reportJson({ error: "Missing report id." }, 400);
+  }
+
+  if (!reportName) {
+    return reportJson({ error: "Enter a report name." }, 400);
+  }
+
+  if (reportName.length > 100) {
+    return reportJson({ error: "Report names must be 100 characters or fewer." }, 400);
+  }
+
   const { data, error } = await admin
     .from("usability_reports")
-    .select(`
-      id,
-      submission_id,
-      owner_user_id,
-      report_number,
-      report_name,
-      status,
-      error_message,
-      source_response_count,
-      frame_count,
-      created_at,
-      completed_at,
-      submissions (
-        product_name
-      )
-    `)
+    .update({ report_name: reportName })
+    .eq("id", reportId)
     .eq("owner_user_id", user.id)
-    .order("created_at", { ascending: false });
+    .select("id, report_name")
+    .maybeSingle();
 
   if (error) {
     return reportJson({ error: error.message }, 500);
   }
 
+  if (!data) {
+    return reportJson({ error: "Report not found." }, 404);
+  }
+
   return reportJson({
     ok: true,
-    reports: ((data ?? []) as ReportRow[]).map(mapReportSummary),
+    reportId: data.id,
+    reportName: data.report_name,
   });
 });

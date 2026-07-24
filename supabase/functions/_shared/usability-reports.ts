@@ -140,6 +140,7 @@ export interface ReportRow {
   submission_id: string;
   owner_user_id: string;
   report_number: number;
+  report_name?: string | null;
   status: "pending" | "processing" | "completed" | "failed";
   error_message: string | null;
   source_response_count: number;
@@ -264,6 +265,7 @@ export function mapReportSummary(report: ReportRow) {
     submissionId: report.submission_id,
     submissionProductName: getSubmissionProductName(report),
     reportNumber: report.report_number,
+    reportName: report.report_name?.trim() || `Report ${report.report_number}`,
     status: report.status,
     errorMessage: report.error_message,
     sourceResponseCount: report.source_response_count,

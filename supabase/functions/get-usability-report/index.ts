@@ -104,6 +104,7 @@ Deno.serve(async (request) => {
       submission_id,
       owner_user_id,
       report_number,
+      report_name,
       status,
       error_message,
       source_response_count,
