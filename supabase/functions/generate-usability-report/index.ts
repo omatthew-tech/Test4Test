@@ -17,6 +17,7 @@ import {
 
 interface GenerateReportRequest {
   submissionId?: string;
+  responseIds?: unknown;
 }
 
 interface SubmissionRow {
@@ -224,6 +225,30 @@ Deno.serve(async (request) => {
     return reportJson({ error: "Select an app to generate a report for." }, 400);
   }
 
+  let selectedResponseIds: string[] | null = null;
+
+  if (payload.responseIds !== undefined) {
+    if (!Array.isArray(payload.responseIds)) {
+      return reportJson({ error: "Select the recordings to include in this report." }, 400);
+    }
+
+    selectedResponseIds = [
+      ...new Set(
+        payload.responseIds.flatMap((value) =>
+          typeof value === "string" && value.trim() ? [value.trim()] : []
+        ),
+      ),
+    ];
+
+    if (selectedResponseIds.length === 0) {
+      return reportJson({ error: "Select at least one recording to generate a report." }, 400);
+    }
+
+    if (selectedResponseIds.length !== payload.responseIds.length) {
+      return reportJson({ error: "The recording selection is invalid." }, 400);
+    }
+  }
+
   const { data: submissionRow, error: submissionError } = await admin
     .from("submissions")
     .select("id, user_id, product_name")
@@ -241,7 +266,7 @@ Deno.serve(async (request) => {
   }
 
   const now = new Date().toISOString();
-  const { data: responseRows, error: responseError } = await admin
+  let recordingsQuery = admin
     .from("test_responses")
     .select(`
       id,
@@ -261,6 +286,12 @@ Deno.serve(async (request) => {
     .gt("recording_expires_at", now)
     .order("submitted_at", { ascending: true });
 
+  if (selectedResponseIds) {
+    recordingsQuery = recordingsQuery.in("id", selectedResponseIds);
+  }
+
+  const { data: responseRows, error: responseError } = await recordingsQuery;
+
   if (responseError) {
     return reportJson({ error: responseError.message }, 500);
   }
@@ -270,6 +301,12 @@ Deno.serve(async (request) => {
 
   if (recordings.length === 0) {
     return reportJson({ error: NO_RECORDINGS_ERROR, message: "This app does not have any usable recordings yet." }, 400);
+  }
+
+  if (selectedResponseIds && recordings.length !== selectedResponseIds.length) {
+    return reportJson({
+      error: "One or more selected recordings are no longer available for this app. Refresh the page and try again.",
+    }, 400);
   }
 
   let cachedTranscriptResponseIds: Set<string>;
