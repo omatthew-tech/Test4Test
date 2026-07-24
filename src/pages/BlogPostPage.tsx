@@ -16,7 +16,10 @@ function LinkedText({ links = [], text }: { links?: BlogTextLink[]; text: string
   }
 
   const linksByText = new Map(links.map((link) => [link.text, link]));
-  const linkPattern = new RegExp(`(${links.map((link) => escapeRegExp(link.text)).join("|")})`, "g");
+  const linkPattern = new RegExp(
+    `(${links.map((link) => escapeRegExp(link.text)).join("|")})`,
+    "g",
+  );
 
   return (
     <>
@@ -131,7 +134,12 @@ export function BlogPostPage() {
 
         {post.coverImage ? (
           <figure className="blog-article__cover">
-            <img src={post.coverImage.src} alt={post.coverImage.alt} loading="eager" decoding="async" />
+            <img
+              src={post.coverImage.src}
+              alt={post.coverImage.alt}
+              loading="eager"
+              decoding="async"
+            />
             {post.coverImage.caption ? <figcaption>{post.coverImage.caption}</figcaption> : null}
           </figure>
         ) : null}

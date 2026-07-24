@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test4test.io/design-system/catalog.schema.json",
+  "title": "Test4Test component catalog",
+  "type": "object",
+  "required": ["name", "version", "components"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "name": { "const": "Test4Test Design System" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "components": {
+      "type": "array",
+      "items": { "$ref": "./component.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

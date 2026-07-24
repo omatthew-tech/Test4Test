@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
+import { useModalFocus } from "@test4test/design-system";
 import { GooglePlayClosedTestOption } from "./GooglePlayClosedTestOption";
 import {
   accessLinkFieldLabel,
@@ -26,10 +27,12 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
   };
 }
 
-const productTypeOptions: Array<{ value: ProductType; title: string }> = PRODUCT_TYPE_ORDER.map((value) => ({
-  value,
-  title: productTypeLabel(value),
-}));
+const productTypeOptions: Array<{ value: ProductType; title: string }> = PRODUCT_TYPE_ORDER.map(
+  (value) => ({
+    value,
+    title: productTypeLabel(value),
+  }),
+);
 
 export function EditSubmissionModal({
   submission,
@@ -65,6 +68,7 @@ export function EditSubmissionModal({
 
     onClose();
   };
+  const modalFocus = useModalFocus<HTMLDivElement>(true, closeEditTest);
 
   const updateEditDraft = (next: Partial<SubmissionDraft>) => {
     setEditError("");
@@ -107,9 +111,7 @@ export function EditSubmissionModal({
         return {
           ...current,
           productTypes: ["android"],
-          accessLinks: current.accessLinks.android
-            ? { android: current.accessLinks.android }
-            : {},
+          accessLinks: current.accessLinks.android ? { android: current.accessLinks.android } : {},
           needsGooglePlayClosedTesters: true,
         };
       }
@@ -192,9 +194,7 @@ export function EditSubmissionModal({
       setIsSavingEdit(false);
       onClose();
     } catch (error) {
-      setEditError(
-        error instanceof Error ? error.message : "The test could not be updated.",
-      );
+      setEditError(error instanceof Error ? error.message : "The test could not be updated.");
       setIsSavingEdit(false);
     }
   };
@@ -202,6 +202,7 @@ export function EditSubmissionModal({
   return (
     <div className="results-modal-backdrop" role="presentation" onClick={closeEditTest}>
       <div
+        {...modalFocus}
         className="results-modal results-modal--edit-test"
         role="dialog"
         aria-modal="true"
@@ -218,7 +219,7 @@ export function EditSubmissionModal({
             onClick={closeEditTest}
             aria-label="Close edit test"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -265,7 +266,10 @@ export function EditSubmissionModal({
                     aria-pressed={isSelected}
                     disabled={isDisabled}
                   >
-                    <span className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`} aria-hidden="true">
+                    <span
+                      className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`}
+                      aria-hidden="true"
+                    >
                       {isSelected ? <Check size={16} /> : null}
                     </span>
                     <span className="choice-card__content">
@@ -285,7 +289,11 @@ export function EditSubmissionModal({
 
           <div className="edit-test-modal__section">
             <div className="section-heading">
-              <h2>{selectedEditProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
+              <h2>
+                {selectedEditProductTypes.length > 1
+                  ? "What are the links to your app?"
+                  : "What's the link to your app?"}
+              </h2>
               {selectedEditProductTypes.length > 1 ? (
                 <p>Add one public link for each selected platform.</p>
               ) : null}
@@ -328,7 +336,8 @@ export function EditSubmissionModal({
                   placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
                 />
                 <small className="helper-text">
-                  Include any tester group, opt-in, or install steps needed before users can access the Android closed test.
+                  Include any tester group, opt-in, or install steps needed before users can access
+                  the Android closed test.
                 </small>
               </label>
             ) : null}
@@ -351,7 +360,8 @@ export function EditSubmissionModal({
                 <span>Require testers to record their screen and voice</span>
               </label>
               <small>
-                Recording uploads stay available for 60 days, then Test4Test deletes them automatically.
+                Recording uploads stay available for 60 days, then Test4Test deletes them
+                automatically.
               </small>
             </div>
           </div>
@@ -360,10 +370,20 @@ export function EditSubmissionModal({
         {editError ? <div className="callout callout--warning">{editError}</div> : null}
 
         <div className="wizard-actions">
-          <button type="button" className="button button--secondary" onClick={closeEditTest} disabled={isSavingEdit}>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={closeEditTest}
+            disabled={isSavingEdit}
+          >
             Cancel
           </button>
-          <button type="button" className="button button--primary" onClick={() => void saveEditTest()} disabled={isSavingEdit}>
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => void saveEditTest()}
+            disabled={isSavingEdit}
+          >
             {isSavingEdit ? "Saving..." : "Save changes"}
           </button>
         </div>

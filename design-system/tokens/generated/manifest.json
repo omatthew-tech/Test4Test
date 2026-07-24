@@ -1,0 +1,11 @@
+{
+  "name": "Test4Test Design System",
+  "version": "1.0.0",
+  "format": "DTCG 2025.10",
+  "source": "design-system/tokens/source/tokens.json",
+  "sourceSha256": "de8a25e1438caf27e0a18d93f7c144cb936cf7b27f414eccc1ea4f158f9e25ca",
+  "outputs": [
+    "design-system/tokens/generated/tokens.css",
+    "design-system/tokens/generated/tokens.ts"
+  ]
+}

@@ -244,4 +244,3 @@ export function getSubmitFlowResume() {
 export function clearSubmitFlowResume() {
   removeStoredValue(SUBMIT_FLOW_RESUME_KEY);
 }
-

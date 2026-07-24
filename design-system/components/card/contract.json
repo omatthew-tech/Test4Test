@@ -1,0 +1,36 @@
+{
+  "id": "card",
+  "name": "Card",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Bounded content surface used only when grouping is meaningful.",
+  "semantics": [
+    "Configurable semantic element"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Card",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "bordered",
+    "raised"
+  ],
+  "states": [
+    "default",
+    "long-content",
+    "narrow-width"
+  ],
+  "accessibleName": "Inherited from the configured semantic element when required.",
+  "controlMode": "not-applicable",
+  "storyExport": "CardContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#CardContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "progress",
+  "name": "Progress",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Determinate or indeterminate operation progress.",
+  "semantics": [
+    "Native progress",
+    "Visible text communicates status"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Progress",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "determinate",
+    "indeterminate"
+  ],
+  "states": [
+    "in-progress",
+    "complete"
+  ],
+  "accessibleName": "Required label prop labels the native progress element.",
+  "controlMode": "controlled",
+  "storyExport": "ProgressContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#ProgressContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

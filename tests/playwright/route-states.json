@@ -1,0 +1,107 @@
+[
+  {
+    "name": "home",
+    "routePattern": "/",
+    "path": "/"
+  },
+  {
+    "name": "sign-in",
+    "routePattern": "/sign-in",
+    "path": "/sign-in"
+  },
+  {
+    "name": "submit-test",
+    "routePattern": "/submit",
+    "path": "/submit"
+  },
+  {
+    "name": "verify",
+    "routePattern": "/verify",
+    "path": "/verify"
+  },
+  {
+    "name": "tester-landing",
+    "routePattern": "/get-paid-to-test",
+    "path": "/get-paid-to-test"
+  },
+  {
+    "name": "blog",
+    "routePattern": "/blog",
+    "path": "/blog"
+  },
+  {
+    "name": "blog-post",
+    "routePattern": "/blog/:slug",
+    "path": "/blog/top-5-free-user-testing-platforms-2026"
+  },
+  {
+    "name": "earn",
+    "routePattern": "/earn",
+    "path": "/earn?ds-user=user-avery"
+  },
+  {
+    "name": "email-preview",
+    "routePattern": "/email-preview",
+    "path": "/email-preview?ds-user=user-avery"
+  },
+  {
+    "name": "test-session",
+    "routePattern": "/test/:submissionId",
+    "path": "/test/submission-palette?ds-user=user-avery"
+  },
+  {
+    "name": "test-session-recording",
+    "routePattern": "/test/:submissionId",
+    "path": "/test/submission-palette?ds-user=user-avery&ds-recording=1"
+  },
+  {
+    "name": "test-success",
+    "routePattern": "/test/:submissionId/success",
+    "path": "/test/submission-palette/success?ds-user=user-avery"
+  },
+  {
+    "name": "my-tests",
+    "routePattern": "/my-tests",
+    "path": "/my-tests?ds-user=user-mateo"
+  },
+  {
+    "name": "submission-detail",
+    "routePattern": "/my-tests/:submissionId",
+    "path": "/my-tests/submission-palette?ds-user=user-mateo"
+  },
+  {
+    "name": "submissions",
+    "routePattern": "/submissions",
+    "path": "/submissions?ds-user=user-avery"
+  },
+  {
+    "name": "revise-response",
+    "routePattern": "/submissions/:responseId/revise",
+    "path": "/submissions/response-palette-1/revise?ds-user=user-avery"
+  },
+  {
+    "name": "credits",
+    "routePattern": "/credits",
+    "path": "/credits?ds-user=user-avery"
+  },
+  {
+    "name": "profile",
+    "routePattern": "/profile",
+    "path": "/profile?ds-user=user-avery"
+  },
+  {
+    "name": "admin",
+    "routePattern": "/admin",
+    "path": "/admin?ds-user=user-avery"
+  },
+  {
+    "name": "banned",
+    "routePattern": "/banned",
+    "path": "/banned?ds-user=user-avery&ds-banned=1"
+  },
+  {
+    "name": "not-found-fallback",
+    "routePattern": "*",
+    "path": "/design-system-unknown-route"
+  }
+]

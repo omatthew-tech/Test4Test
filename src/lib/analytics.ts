@@ -55,7 +55,9 @@ function getTrackedSessionEvents() {
     const raw = window.sessionStorage.getItem(SESSION_TRACKED_EVENTS_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
 
-    return new Set(Array.isArray(parsed) ? parsed.filter((value) => typeof value === "string") : []);
+    return new Set(
+      Array.isArray(parsed) ? parsed.filter((value) => typeof value === "string") : [],
+    );
   } catch {
     return new Set<string>();
   }
@@ -120,27 +122,34 @@ export function trackEvent(eventName: AnalyticsEventName, metadata?: AnalyticsMe
   });
   const url = `${supabaseUrl}/functions/v1/track-analytics-event`;
 
-  void supabase?.auth.getSession().then(({ data }) => {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      apikey: supabasePublishableKey,
-    };
+  void supabase?.auth
+    .getSession()
+    .then(({ data }) => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        apikey: supabasePublishableKey,
+      };
 
-    if (data.session?.access_token) {
-      headers.Authorization = `Bearer ${data.session.access_token}`;
-    }
+      if (data.session?.access_token) {
+        headers.Authorization = `Bearer ${data.session.access_token}`;
+      }
 
-    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function" && !headers.Authorization) {
-      const blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon(url, blob);
-      return;
-    }
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.sendBeacon === "function" &&
+        !headers.Authorization
+      ) {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon(url, blob);
+        return;
+      }
 
-    void fetch(url, {
-      method: "POST",
-      headers,
-      body: payload,
-      keepalive: true,
-    }).catch(() => undefined);
-  }).catch(() => undefined);
+      void fetch(url, {
+        method: "POST",
+        headers,
+        body: payload,
+        keepalive: true,
+      }).catch(() => undefined);
+    })
+    .catch(() => undefined);
 }

@@ -1,0 +1,39 @@
+{
+  "id": "status-indicator",
+  "name": "Status indicator",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Text and icon status communication.",
+  "semantics": [
+    "Visible status text",
+    "Color is supplementary"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "StatusIndicator",
+  "sizes": [
+    "compact"
+  ],
+  "variants": [
+    "neutral",
+    "info",
+    "success",
+    "warning",
+    "danger"
+  ],
+  "states": [
+    "default",
+    "long-content"
+  ],
+  "accessibleName": "Visible text carries meaning independently of color and the dot is decorative.",
+  "controlMode": "not-applicable",
+  "storyExport": "StatusIndicatorContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#StatusIndicatorContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

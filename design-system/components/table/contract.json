@@ -1,0 +1,39 @@
+{
+  "id": "table",
+  "name": "Table",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Labeled tabular data with responsive overflow treatment.",
+  "semantics": [
+    "Native table",
+    "Caption",
+    "Header scope"
+  ],
+  "keyboard": [
+    "Interactive cells contain native controls"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Table",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "scroll-container"
+  ],
+  "states": [
+    "populated",
+    "long-content",
+    "narrow-width"
+  ],
+  "accessibleName": "Required caption prop names the native table.",
+  "controlMode": "controlled",
+  "storyExport": "TableContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#TableContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

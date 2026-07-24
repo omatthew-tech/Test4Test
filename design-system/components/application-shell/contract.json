@@ -1,0 +1,41 @@
+{
+  "id": "application-shell",
+  "name": "Application shell",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Header, main landmark, and footer frame shared by Test4Test routes.",
+  "semantics": [
+    "Native main landmark",
+    "Stable skip-link target"
+  ],
+  "keyboard": [
+    "Skip link moves focus to main content"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "top-navigation",
+    "container"
+  ],
+  "exportName": "ApplicationShell",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "header-main-footer"
+  ],
+  "states": [
+    "default",
+    "narrow-width",
+    "long-content"
+  ],
+  "accessibleName": "The main landmark is identified by mainId and reached by the skip link.",
+  "controlMode": "not-applicable",
+  "storyExport": "ApplicationShellContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#ApplicationShellContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

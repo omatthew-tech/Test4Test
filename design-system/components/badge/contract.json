@@ -1,0 +1,38 @@
+{
+  "id": "badge",
+  "name": "Badge",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Compact categorical label used with restraint.",
+  "semantics": [
+    "Text meaning is available without color"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Badge",
+  "sizes": [
+    "compact"
+  ],
+  "variants": [
+    "neutral",
+    "info",
+    "success",
+    "warning",
+    "danger"
+  ],
+  "states": [
+    "default",
+    "long-content"
+  ],
+  "accessibleName": "Visible text carries meaning independently of color.",
+  "controlMode": "not-applicable",
+  "storyExport": "BadgeContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#BadgeContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

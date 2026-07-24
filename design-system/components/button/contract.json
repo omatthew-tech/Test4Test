@@ -1,0 +1,47 @@
+{
+  "id": "button",
+  "name": "Button",
+  "family": "actions",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/actions.tsx",
+  "story": "design-system/stories/Actions.stories.tsx",
+  "description": "Text action with primary, secondary, quiet, and destructive emphasis.",
+  "semantics": [
+    "Native button semantics",
+    "Loading state preserves accessible name"
+  ],
+  "keyboard": [
+    "Enter activates",
+    "Space activates"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Button",
+  "sizes": [
+    "compact",
+    "default",
+    "large"
+  ],
+  "variants": [
+    "primary",
+    "secondary",
+    "quiet",
+    "danger"
+  ],
+  "states": [
+    "enabled",
+    "hover",
+    "focus-visible",
+    "pressed",
+    "disabled",
+    "loading"
+  ],
+  "accessibleName": "Visible children, or loadingLabel while loading.",
+  "controlMode": "uncontrolled",
+  "storyExport": "ButtonContract",
+  "examples": [
+    "design-system/stories/Actions.stories.tsx#ButtonContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

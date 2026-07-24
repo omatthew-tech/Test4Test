@@ -1,0 +1,103 @@
+.primaryLink {
+  display: inline-flex;
+  min-height: var(--ds-semantic-size-control-default);
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  border-radius: var(--ds-semantic-radius-control);
+  padding-inline: var(--ds-semantic-space-inline-lg);
+  background: var(--ds-semantic-color-action-primary);
+  color: var(--ds-semantic-color-text-inverse);
+  font-size: var(--ds-semantic-typography-interface-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  text-decoration: none;
+}
+
+.primaryLink:hover {
+  background: var(--ds-semantic-color-action-primary-hover);
+  color: var(--ds-semantic-color-text-inverse);
+}
+
+.list {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+  max-width: var(--ds-semantic-size-content-data);
+}
+
+.testCard {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.header,
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-lg);
+}
+
+.header h2 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.date,
+.description,
+.latest {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.responseMetric {
+  display: grid;
+  justify-items: end;
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+}
+
+.responseMetric strong {
+  color: var(--ds-semantic-color-text-primary);
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+}
+
+.closedTestProgress {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+  padding: var(--ds-semantic-space-stack-md);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-background-subtle);
+}
+
+.closedTestProgress > strong {
+  font-size: var(--ds-semantic-typography-interface-size);
+}
+
+.closedTestProgress span {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+}
+
+.closedTestProgress b {
+  color: var(--ds-semantic-color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  padding-block-start: var(--ds-semantic-space-stack-md);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .header,
+  .footer {
+    display: grid;
+  }
+
+  .responseMetric {
+    justify-items: start;
+  }
+}

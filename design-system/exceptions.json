@@ -1,0 +1,27 @@
+{
+  "$schema": "./contracts/exception.schema.json",
+  "version": "1.0.0",
+  "exceptions": [
+    {
+      "id": "runtime-measurements",
+      "owner": "Test4Test",
+      "scope": "Inline styles that express measured waveform heights, determinate progress widths, SVG coordinates, and calculated placement geometry.",
+      "rationale": "These values represent runtime data or geometry and are not reusable visual constants.",
+      "expires": "2027-07-23"
+    },
+    {
+      "id": "static-brand-platform-formats",
+      "owner": "Test4Test Design System",
+      "scope": "Token-derived color literals serialized into index.html theme metadata, the web app manifest, and standalone SVG brand assets.",
+      "rationale": "Browser metadata, JSON manifests, and standalone SVG files cannot consume the application's CSS custom properties. Validation restricts every serialized color to an approved design token and verifies the manifest and theme metadata against their canonical semantic tokens.",
+      "expires": "2027-07-23"
+    },
+    {
+      "id": "supabase-transactional-email-functions",
+      "owner": "Test4Test Backend",
+      "scope": "Existing HTML embedded in Supabase Edge Functions under supabase/functions.",
+      "rationale": "The approved migration explicitly excludes Supabase Function changes. Repository email previews use the new system; production function templates require a separately authorized backend migration and deployment.",
+      "expires": "2026-10-23"
+    }
+  ]
+}

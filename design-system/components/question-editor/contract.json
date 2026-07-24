@@ -1,0 +1,47 @@
+{
+  "id": "question-editor",
+  "name": "Question editor",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Labeled, validated question editing composition with explicit actions.",
+  "semantics": [
+    "Persistent textarea label",
+    "Help and errors are associated"
+  ],
+  "keyboard": [
+    "Textarea uses native editing keys",
+    "Actions follow the field"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "textarea",
+    "card",
+    "button"
+  ],
+  "exportName": "QuestionEditor",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "with-actions",
+    "without-actions"
+  ],
+  "states": [
+    "empty",
+    "filled",
+    "disabled",
+    "help",
+    "error",
+    "long-content"
+  ],
+  "accessibleName": "Required label prop labels the textarea; actions retain explicit names.",
+  "controlMode": "controlled",
+  "storyExport": "QuestionEditorContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#QuestionEditorContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

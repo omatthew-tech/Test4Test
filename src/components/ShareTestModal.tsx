@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, Mic, X } from "lucide-react";
+import { useModalFocus } from "@test4test/design-system";
 import { Surface } from "./Layout";
 import { getOrderedAccessLinks } from "../lib/format";
 import { QuestionSetVersion, Submission } from "../types";
@@ -22,8 +23,9 @@ export function ShareTestModal({
   onClose: () => void;
 }) {
   const accessLinks = getOrderedAccessLinks(submission.accessLinks, submission.productTypes);
-  const previewQuestions = [...(questionSet?.questions ?? [])]
-    .sort((first, second) => first.sortOrder - second.sortOrder);
+  const previewQuestions = [...(questionSet?.questions ?? [])].sort(
+    (first, second) => first.sortOrder - second.sortOrder,
+  );
   const testerInstructions = submission.instructions.trim()
     ? submission.instructions.trim()
     : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
@@ -34,13 +36,16 @@ export function ShareTestModal({
   };
   const [customMessage, setCustomMessage] = useState(() => submission.publicShareMessage ?? "");
   const [savedShareUrl, setSavedShareUrl] = useState("");
-  const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
   const lastSavedMessageRef = useRef(submission.publicShareMessage ?? "");
   const saveSequenceRef = useRef(0);
   const previewTitle = customMessage.trim() ? customMessage.trim() : sharedTestTitle;
   const visibleShareUrl = savedShareUrl || shareUrl;
   const isCopying = copyStatus === "Copying...";
   const hasResettableCustomMessage = isResettableCustomMessage(customMessage);
+  const modalFocus = useModalFocus<HTMLDivElement>(true, onClose);
   const shouldShowResetButton = hasResettableCustomMessage && messageSaveStatus === "idle";
   const messageSaveStatusLabel =
     messageSaveStatus === "saving"
@@ -97,6 +102,7 @@ export function ShareTestModal({
   return (
     <div className="results-modal-backdrop" role="presentation" onClick={onClose}>
       <div
+        {...modalFocus}
         className="results-modal results-modal--share-test"
         role="dialog"
         aria-modal="true"
@@ -113,7 +119,7 @@ export function ShareTestModal({
             onClick={onClose}
             aria-label="Close share test"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -155,9 +161,7 @@ export function ShareTestModal({
                 aria-live="polite"
               >
                 {messageSaveStatusLabel}
-                {messageSaveStatus === "saved" ? (
-                  <Check size={14} strokeWidth={2.4} aria-hidden="true" />
-                ) : null}
+                {messageSaveStatus === "saved" ? <Check size={16} aria-hidden="true" /> : null}
               </span>
             ) : null}
           </div>
@@ -176,20 +180,25 @@ export function ShareTestModal({
           <div className="share-test-page-preview" aria-label="Shared test preview">
             <div className="test-layout test-layout--single share-test-page-preview__layout">
               <div className="test-session__header">
-                <h1>{previewTitle}</h1>
+                <h3>{previewTitle}</h3>
               </div>
 
               <Surface className="test-questions test-questions--full">
                 <div className="test-session__intro-card">
                   <div className="test-session__resource">
-                    <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+                    <span className="test-session__label">
+                      {accessLinks.length > 1 ? "App links" : "App link"}
+                    </span>
                     {accessLinks.length > 0 ? (
                       <div className="test-session__link-list">
                         {accessLinks.map((link) => (
-                          <div key={link.productType} className="test-session__link share-test-page-preview__link">
+                          <div
+                            key={link.productType}
+                            className="test-session__link share-test-page-preview__link"
+                          >
                             <span className="test-session__link-label">{link.label}</span>
                             <span>{link.displayUrl}</span>
-                            <ExternalLink size={15} aria-hidden="true" />
+                            <ExternalLink size={16} aria-hidden="true" />
                           </div>
                         ))}
                       </div>
@@ -207,9 +216,13 @@ export function ShareTestModal({
                 {submission.requiresRecording ? (
                   <div className="callout callout--soft recording-test-callout share-test-page-preview__recording-callout">
                     <div className="recording-test-callout__copy">
-                      <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                      <span className="recording-test-callout__eyebrow">
+                        Screen + voice recording
+                      </span>
                       <strong>This session needs a screen and voice recording.</strong>
-                      <p>Open the app, think out loud, and upload the recording with your feedback.</p>
+                      <p>
+                        Open the app, think out loud, and upload the recording with your feedback.
+                      </p>
                     </div>
                     <Mic size={20} aria-hidden="true" />
                   </div>
@@ -220,7 +233,9 @@ export function ShareTestModal({
                     {previewQuestions.map((question) => (
                       <article key={question.id} className="question-card question-card--spacious">
                         <div className="test-session__question-body">
-                          <h3>{question.sortOrder}. {question.title}</h3>
+                          <h3>
+                            {question.sortOrder}. {question.title}
+                          </h3>
                           {question.type === "multiple" ? (
                             <div className="radio-list" aria-hidden="true">
                               {(question.options ?? []).map((option) => (
@@ -244,7 +259,9 @@ export function ShareTestModal({
                                 disabled
                                 placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
                               />
-                              <small className="helper-text">0 / 40 recommended minimum characters</small>
+                              <small className="helper-text">
+                                0 / 40 recommended minimum characters
+                              </small>
                             </label>
                           )}
                         </div>
@@ -254,7 +271,9 @@ export function ShareTestModal({
                 ) : submission.requiresRecording ? (
                   <div className="recording-questionless-note">
                     <strong>No written questionnaire for this test.</strong>
-                    <p>Once the recording is ready, you can submit this test from the footer below.</p>
+                    <p>
+                      Once the recording is ready, you can submit this test from the footer below.
+                    </p>
                   </div>
                 ) : null}
               </Surface>

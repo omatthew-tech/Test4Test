@@ -3,6 +3,11 @@
   "short_name": "Test4Test",
   "icons": [
     {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
       "src": "/favicon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
@@ -13,7 +18,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#fff4ea",
-  "background_color": "#fffefc",
+  "theme_color": "#007BAE",
+  "background_color": "#FFFFFF",
   "display": "standalone"
 }

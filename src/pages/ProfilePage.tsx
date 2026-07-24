@@ -9,6 +9,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useModalFocus } from "@test4test/design-system";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 
@@ -33,11 +34,13 @@ const paymentMethodConfigs = [
   },
 ] as const;
 
-function createPaymentDraft(currentUser?: {
-  paypalHandle?: string | null;
-  venmoHandle?: string | null;
-  cashAppHandle?: string | null;
-} | null): PaymentDraft {
+function createPaymentDraft(
+  currentUser?: {
+    paypalHandle?: string | null;
+    venmoHandle?: string | null;
+    cashAppHandle?: string | null;
+  } | null,
+): PaymentDraft {
   return {
     paypalHandle: currentUser?.paypalHandle ?? "",
     venmoHandle: currentUser?.venmoHandle ?? "",
@@ -51,7 +54,9 @@ export function ProfilePage() {
 
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nextEmail, setNextEmail] = useState("");
-  const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() => createPaymentDraft(currentUser));
+  const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(() =>
+    createPaymentDraft(currentUser),
+  );
   const [emailMessage, setEmailMessage] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
   const [deleteMessage, setDeleteMessage] = useState("");
@@ -60,6 +65,9 @@ export function ProfilePage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deleteDialogFocus = useModalFocus<HTMLDivElement>(showDeleteConfirm, () =>
+    setShowDeleteConfirm(false),
+  );
 
   useEffect(() => {
     setPaymentDraft(createPaymentDraft(currentUser));
@@ -74,8 +82,8 @@ export function ProfilePage() {
               <UserRound size={24} />
               <h3>Sign in to launch your account</h3>
               <p>
-                Submit an app and verify your email to unlock shared data, credits,
-                and live results.
+                Submit an app and verify your email to unlock shared data, credits, and live
+                results.
               </p>
               <Link to="/submit" className="button button--primary">
                 Submit your app
@@ -151,7 +159,7 @@ export function ProfilePage() {
               <div className="profile-account-row">
                 <div className="profile-email-card">
                   <div className="profile-email-card__icon">
-                    <Mail size={18} />
+                    <Mail size={20} />
                   </div>
                   <div className="profile-email-card__content">
                     <small>Current email</small>
@@ -229,8 +237,8 @@ export function ProfilePage() {
             </div>
             <div className="profile-payments-stack">
               <p className="profile-payments-copy">
-                Add your preferred payment method(s). Users can tip you when they
-                review your feedback.
+                Add your preferred payment method(s). Users can tip you when they review your
+                feedback.
               </p>
 
               <form
@@ -275,13 +283,17 @@ export function ProfilePage() {
                     className="button button--primary profile-payments-save"
                     disabled={isSavingPayments}
                   >
-                    {isSavingPayments ? <span className="button__spinner" aria-hidden="true" /> : null}
+                    {isSavingPayments ? (
+                      <span className="button__spinner" aria-hidden="true" />
+                    ) : null}
                     {isSavingPayments ? "Saving payment methods..." : "Save payment methods"}
                   </button>
                 </div>
               </form>
 
-              {paymentMessage ? <div className="callout callout--soft">{paymentMessage}</div> : null}
+              {paymentMessage ? (
+                <div className="callout callout--soft">{paymentMessage}</div>
+              ) : null}
             </div>
           </Surface>
 
@@ -291,7 +303,8 @@ export function ProfilePage() {
             </div>
             <div className="profile-danger-stack">
               <p className="profile-danger-copy">
-                Deleting your account permanently removes your apps, responses, ratings, and credits.
+                Deleting your account permanently removes your apps, responses, ratings, and
+                credits.
               </p>
               <button
                 type="button"
@@ -309,8 +322,13 @@ export function ProfilePage() {
         </div>
 
         {showDeleteConfirm ? (
-          <div className="account-modal-backdrop" role="presentation" onClick={() => setShowDeleteConfirm(false)}>
+          <div
+            className="account-modal-backdrop"
+            role="presentation"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
             <div
+              {...deleteDialogFocus}
               className="account-modal"
               role="dialog"
               aria-modal="true"
@@ -319,13 +337,13 @@ export function ProfilePage() {
             >
               <div className="account-modal__header">
                 <div className="account-modal__badge">
-                  <AlertTriangle size={18} />
+                  <AlertTriangle size={20} />
                 </div>
                 <div>
                   <h2>Delete your account?</h2>
                   <p>
-                    This permanently removes your Test4Test account, your apps, your feedback, and your credits.
-                    This action cannot be undone.
+                    This permanently removes your Test4Test account, your apps, your feedback, and
+                    your credits. This action cannot be undone.
                   </p>
                 </div>
               </div>
@@ -348,7 +366,9 @@ export function ProfilePage() {
                   {isDeletingAccount ? "Deleting account..." : "Yes, delete my account"}
                 </button>
               </div>
-              {deleteMessage ? <div className="callout callout--warning">{deleteMessage}</div> : null}
+              {deleteMessage ? (
+                <div className="callout callout--warning">{deleteMessage}</div>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -356,11 +376,3 @@ export function ProfilePage() {
     </AppShell>
   );
 }
-
-
-
-
-
-
-
-

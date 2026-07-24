@@ -2,39 +2,18 @@ export type ProductType = "website" | "ios" | "android";
 export type AccessLinks = Partial<Record<ProductType, string>>;
 export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
-export type SubmissionStatus =
-  | "draft"
-  | "pending_verification"
-  | "live"
-  | "paused"
-  | "flagged";
+export type SubmissionStatus = "draft" | "pending_verification" | "live" | "paused" | "flagged";
 export type ResponseStatus = "approved" | "flagged" | "rejected";
 export type FeedbackRatingValue = "smiley" | "neutral" | "frowny";
 export type FeedbackReportStatus = "pending" | "resolved" | "dismissed";
 export type TestReportReason =
-  | "app_unavailable"
-  | "requires_payment"
-  | "suspicious_malware"
-  | "other";
+  "app_unavailable" | "requires_payment" | "suspicious_malware" | "other";
 export type TestReportStatus = "pending" | "dismissed" | "confirmed";
-export type CreditTransactionType =
-  | "starter_credit"
-  | "earned_test"
-  | "adjustment"
-  | "revocation";
+export type CreditTransactionType = "starter_credit" | "earned_test" | "adjustment" | "revocation";
 export type NotificationType = "otp" | "new_feedback" | "system";
-export type ModerationActionType =
-  | "flag"
-  | "reject"
-  | "revoke_credit"
-  | "warn"
-  | "suspend"
-  | "ban";
+export type ModerationActionType = "flag" | "reject" | "revoke_credit" | "warn" | "suspend" | "ban";
 export type GooglePlayClosedTestParticipationStatus =
-  | "active"
-  | "completed"
-  | "missed"
-  | "cancelled";
+  "active" | "completed" | "missed" | "cancelled";
 
 export interface PaymentMethods {
   paypalHandle?: string | null;
@@ -328,5 +307,3 @@ export interface SubmissionDraft {
   needsGooglePlayClosedTesters: boolean;
   questionMode: QuestionMode;
 }
-
-

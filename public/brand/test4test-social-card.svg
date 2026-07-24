@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Test4Test</title>
+  <desc id="description">Free user testing for web and mobile products.</desc>
+  <rect width="1200" height="630" fill="#FBFDFE"/>
+  <rect x="88" y="86" width="120" height="120" rx="22" fill="#007BAE"/>
+  <path fill="#FFFFFF" d="M110 108h76v25h-27v58h-23v-58h-26z"/>
+  <path fill="#A0D7F4" d="M163 139h23v23h-23zM110 168h23v23H110z"/>
+  <text x="88" y="316" fill="#242A31" font-family="Arial, sans-serif" font-size="84" font-weight="700">Test4Test</text>
+  <text x="92" y="400" fill="#4A545C" font-family="Arial, sans-serif" font-size="38">Free user testing for web and mobile products.</text>
+  <rect x="88" y="474" width="1024" height="2" fill="#D9DFE3"/>
+  <text x="92" y="536" fill="#007BAE" font-family="Arial, sans-serif" font-size="28" font-weight="700">test4test.io</text>
+</svg>

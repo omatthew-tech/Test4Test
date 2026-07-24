@@ -1,0 +1,35 @@
+{
+  "id": "inline-validation",
+  "name": "Inline validation",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Field-specific error or recovery guidance.",
+  "semantics": [
+    "Associated by aria-describedby",
+    "Error text is not color-only"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "InlineValidation",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "error"
+  ],
+  "states": [
+    "present",
+    "long-content"
+  ],
+  "accessibleName": "Referenced from the invalid field through aria-describedby.",
+  "controlMode": "not-applicable",
+  "storyExport": "InlineValidationContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#InlineValidationContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

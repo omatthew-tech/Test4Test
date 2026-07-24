@@ -1,0 +1,35 @@
+{
+  "id": "help-text",
+  "name": "Help text",
+  "family": "inputs",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/inputs.tsx",
+  "story": "design-system/stories/Inputs.stories.tsx",
+  "description": "Persistent field guidance referenced by the owning control.",
+  "semantics": [
+    "Referenced through aria-describedby",
+    "Never replaces a persistent label"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "HelpText",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "field-guidance"
+  ],
+  "states": [
+    "default",
+    "long-content"
+  ],
+  "accessibleName": "Referenced by the owning field through aria-describedby.",
+  "controlMode": "not-applicable",
+  "storyExport": "HelpTextContract",
+  "examples": [
+    "design-system/stories/Inputs.stories.tsx#HelpTextContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

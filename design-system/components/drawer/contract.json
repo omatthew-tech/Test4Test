@@ -1,0 +1,44 @@
+{
+  "id": "drawer",
+  "name": "Drawer",
+  "family": "overlays",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/overlays.tsx",
+  "story": "design-system/stories/Overlays.stories.tsx",
+  "description": "Edge-aligned modal panel with dialog behavior.",
+  "semantics": [
+    "Native dialog",
+    "Labeled title",
+    "Modal state"
+  ],
+  "keyboard": [
+    "Escape closes",
+    "Tab remains within",
+    "Focus restores"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "dialog"
+  ],
+  "exportName": "Drawer",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "right-edge"
+  ],
+  "states": [
+    "closed",
+    "open",
+    "focus-contained",
+    "long-content"
+  ],
+  "accessibleName": "Required title prop labels the native dialog.",
+  "controlMode": "controlled",
+  "storyExport": "DrawerContract",
+  "examples": [
+    "design-system/stories/Overlays.stories.tsx#DrawerContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

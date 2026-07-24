@@ -32,5 +32,3 @@ export function requireSupabase() {
 
   return supabase;
 }
-
-

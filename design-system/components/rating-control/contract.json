@@ -1,0 +1,42 @@
+{
+  "id": "rating-control",
+  "name": "Rating control",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Labeled single-choice rating scale.",
+  "semantics": [
+    "Fieldset and legend",
+    "Native radio inputs"
+  ],
+  "keyboard": [
+    "Arrow keys move",
+    "Space selects"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "radio"
+  ],
+  "exportName": "RatingControl",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "numeric-range"
+  ],
+  "states": [
+    "unselected",
+    "selected",
+    "focus-visible",
+    "disabled"
+  ],
+  "accessibleName": "Required legend labels the radio group; numbers label options.",
+  "controlMode": "controlled",
+  "storyExport": "RatingControlContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#RatingControlContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

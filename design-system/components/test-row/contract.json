@@ -1,0 +1,46 @@
+{
+  "id": "test-row",
+  "name": "Test row",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Responsive test or submission summary with explicit actions.",
+  "semantics": [
+    "Article or list item",
+    "Heading names the item"
+  ],
+  "keyboard": [
+    "Actions are separate focus targets"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "card",
+    "status-indicator",
+    "button"
+  ],
+  "exportName": "TestRow",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "with-actions",
+    "without-actions"
+  ],
+  "states": [
+    "loading",
+    "active",
+    "closed",
+    "error",
+    "long-content",
+    "narrow-width"
+  ],
+  "accessibleName": "Visible heading names the article; each action has its own name.",
+  "controlMode": "not-applicable",
+  "storyExport": "TestRowContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#TestRowContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

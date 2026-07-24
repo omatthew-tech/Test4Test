@@ -1,0 +1,38 @@
+{
+  "id": "stack",
+  "name": "Stack",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Vertical rhythm primitive.",
+  "semantics": [
+    "Configurable semantic element"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Stack",
+  "sizes": [
+    "xs",
+    "sm",
+    "md",
+    "lg",
+    "xl"
+  ],
+  "variants": [
+    "semantic-element"
+  ],
+  "states": [
+    "default",
+    "long-content"
+  ],
+  "accessibleName": "Inherited from the configured semantic element when required.",
+  "controlMode": "not-applicable",
+  "storyExport": "StackContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#StackContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

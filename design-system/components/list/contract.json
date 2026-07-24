@@ -1,0 +1,35 @@
+{
+  "id": "list",
+  "name": "List",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Semantic ordered or unordered content collection.",
+  "semantics": [
+    "Native list and list items"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "List",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "unordered",
+    "ordered"
+  ],
+  "states": [
+    "populated",
+    "long-content"
+  ],
+  "accessibleName": "Native list semantics; use an external heading when a name is needed.",
+  "controlMode": "not-applicable",
+  "storyExport": "ListContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#ListContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

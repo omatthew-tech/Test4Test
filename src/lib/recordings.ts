@@ -17,10 +17,7 @@ export const RECORDING_ACCEPTED_EXTENSIONS = [".mp4", ".mov", ".webm"] as const;
 export const RECORDING_ACCEPT_ATTRIBUTE = ".mp4,.mov,.webm,video/mp4,video/quicktime,video/webm";
 
 export type RecordingTestPhase =
-  | "preflight"
-  | "recording_live"
-  | "uploading_recording"
-  | "return_and_submit";
+  "preflight" | "recording_live" | "uploading_recording" | "return_and_submit";
 
 export type RecordingExperienceMode = "native-desktop" | "manual-upload";
 export type MobileOperatingSystem = "ios" | "android" | "unknown";
@@ -116,7 +113,9 @@ export function createRecordingSessionId() {
 }
 
 export function calculateRecordingExpiry(uploadedAt = new Date()) {
-  return new Date(uploadedAt.getTime() + RECORDING_STORAGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  return new Date(
+    uploadedAt.getTime() + RECORDING_STORAGE_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
 }
 
 export function loadRecordingTestSession(submissionId: string) {
@@ -136,12 +135,10 @@ export function loadRecordingTestSession(submissionId: string) {
     if (
       typeof parsed.submissionId !== "string" ||
       typeof parsed.sessionId !== "string" ||
-      (
-        parsed.phase !== "preflight" &&
+      (parsed.phase !== "preflight" &&
         parsed.phase !== "recording_live" &&
         parsed.phase !== "uploading_recording" &&
-        parsed.phase !== "return_and_submit"
-      )
+        parsed.phase !== "return_and_submit")
     ) {
       return null;
     }
@@ -169,7 +166,10 @@ export function saveRecordingTestSession(state: RecordingTestSessionState) {
     return;
   }
 
-  window.sessionStorage.setItem(buildRecordingSessionStorageKey(state.submissionId), JSON.stringify(state));
+  window.sessionStorage.setItem(
+    buildRecordingSessionStorageKey(state.submissionId),
+    JSON.stringify(state),
+  );
 }
 
 export function clearRecordingTestSession(submissionId: string) {
@@ -188,9 +188,12 @@ function isProbablyMobileNavigator(navigatorRef: NavigatorWithUserAgentData) {
   return /android|iphone|ipad|ipod|mobile/i.test(navigatorRef.userAgent);
 }
 
-function detectMobileOperatingSystem(navigatorRef: NavigatorWithUserAgentData): MobileOperatingSystem {
+function detectMobileOperatingSystem(
+  navigatorRef: NavigatorWithUserAgentData,
+): MobileOperatingSystem {
   const userAgent = navigatorRef.userAgent.toLowerCase();
-  const platform = navigatorRef.userAgentData?.platform?.toLowerCase() ?? navigatorRef.platform.toLowerCase();
+  const platform =
+    navigatorRef.userAgentData?.platform?.toLowerCase() ?? navigatorRef.platform.toLowerCase();
 
   if (platform.includes("android") || userAgent.includes("android")) {
     return "android";
@@ -209,14 +212,19 @@ function detectMobileOperatingSystem(navigatorRef: NavigatorWithUserAgentData): 
 }
 
 function isChromiumDesktopNavigator(navigatorRef: NavigatorWithUserAgentData) {
-  const brandNames = navigatorRef.userAgentData?.brands?.map((brand) => brand.brand?.toLowerCase() ?? "") ?? [];
+  const brandNames =
+    navigatorRef.userAgentData?.brands?.map((brand) => brand.brand?.toLowerCase() ?? "") ?? [];
   const userAgent = navigatorRef.userAgent;
   const hasChromiumBrand = brandNames.some(
-    (brand) => brand.includes("google chrome") || brand.includes("chromium") || brand.includes("microsoft edge"),
+    (brand) =>
+      brand.includes("google chrome") ||
+      brand.includes("chromium") ||
+      brand.includes("microsoft edge"),
   );
   const hasChromeUserAgent = /chrome\//i.test(userAgent) || /edg\//i.test(userAgent);
   const isOpera = /opr\//i.test(userAgent) || brandNames.some((brand) => brand.includes("opera"));
-  const isFirefox = /firefox\//i.test(userAgent) || brandNames.some((brand) => brand.includes("firefox"));
+  const isFirefox =
+    /firefox\//i.test(userAgent) || brandNames.some((brand) => brand.includes("firefox"));
   const isSafariOnly =
     /safari\//i.test(userAgent) &&
     !/chrome\//i.test(userAgent) &&
@@ -226,7 +234,9 @@ function isChromiumDesktopNavigator(navigatorRef: NavigatorWithUserAgentData) {
   return !isOpera && !isFirefox && !isSafariOnly && (hasChromiumBrand || hasChromeUserAgent);
 }
 
-export function resolveRecordingExperience(productType: ProductType | null | undefined): RecordingExperience {
+export function resolveRecordingExperience(
+  productType: ProductType | null | undefined,
+): RecordingExperience {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return {
       mode: "manual-upload",
@@ -250,7 +260,8 @@ export function resolveRecordingExperience(productType: ProductType | null | und
   if (productType === "ios" || productType === "android") {
     return {
       mode: "manual-upload",
-      reason: "This test targets a phone app, so keep using your device recorder and upload afterward.",
+      reason:
+        "This test targets a phone app, so keep using your device recorder and upload afterward.",
       isMobile,
       mobileOs,
       isChromiumDesktop,
@@ -270,7 +281,8 @@ export function resolveRecordingExperience(productType: ProductType | null | und
   if (productType === "website" && !isMobile && isChromiumDesktop) {
     return {
       mode: "native-desktop",
-      reason: "Chrome or Edge will open the browser's built-in share picker so you can record and upload automatically.",
+      reason:
+        "Chrome or Edge will open the browser's built-in share picker so you can record and upload automatically.",
       isMobile,
       mobileOs,
       isChromiumDesktop,
@@ -297,7 +309,11 @@ export function normalizeRecordingMimeType(fileName: string, mimeType: string | 
   const baseMimeType = (mimeType ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
   const normalizedFileName = fileName.trim().toLowerCase();
 
-  if (RECORDING_ACCEPTED_MIME_TYPES.includes(baseMimeType as (typeof RECORDING_ACCEPTED_MIME_TYPES)[number])) {
+  if (
+    RECORDING_ACCEPTED_MIME_TYPES.includes(
+      baseMimeType as (typeof RECORDING_ACCEPTED_MIME_TYPES)[number],
+    )
+  ) {
     return baseMimeType;
   }
 
@@ -348,7 +364,11 @@ export function buildRecordingDraftPath(userId: string, sessionId: string, fileN
   return `draft/${userId}/${sessionId}/${Date.now()}-${sanitizeFileName(fileName)}`;
 }
 
-function buildUploadProgress(bytesUploaded: number, bytesTotal: number, state: RecordingUploadProgress["state"]) {
+function buildUploadProgress(
+  bytesUploaded: number,
+  bytesTotal: number,
+  state: RecordingUploadProgress["state"],
+) {
   return {
     bytesUploaded,
     bytesTotal,
@@ -384,9 +404,7 @@ async function callRecordingUploadR2(
     apikey: supabasePublishableKey,
   };
   const publicTesterKey = options.publicTesterKey?.trim();
-  const body = publicTesterKey
-    ? { ...payload, publicTesterKey }
-    : payload;
+  const body = publicTesterKey ? { ...payload, publicTesterKey } : payload;
 
   if (!publicTesterKey) {
     const accessToken = await getCurrentAccessToken();
@@ -401,11 +419,7 @@ async function callRecordingUploadR2(
   const result = (await response.json().catch(() => null)) as RecordingUploadR2Response | null;
 
   if (!response.ok || !result?.ok) {
-    throw new Error(
-      result?.error ??
-        result?.message ??
-        "The recording could not be uploaded.",
-    );
+    throw new Error(result?.error ?? result?.message ?? "The recording could not be uploaded.");
   }
 
   return result;
@@ -453,7 +467,11 @@ function sendFileToSignedUrl(
     };
 
     request.onerror = () => {
-      reject(new Error(`${options.retryLabel ?? "Recording upload"} failed. Check your connection and try again.`));
+      reject(
+        new Error(
+          `${options.retryLabel ?? "Recording upload"} failed. Check your connection and try again.`,
+        ),
+      );
     };
 
     request.onabort = () => {
@@ -493,7 +511,9 @@ async function uploadFileToSignedUrl(
         break;
       }
 
-      await new Promise((resolve) => window.setTimeout(resolve, RECORDING_UPLOAD_RETRY_DELAYS_MS[attempt]));
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, RECORDING_UPLOAD_RETRY_DELAYS_MS[attempt]),
+      );
     }
   }
 
@@ -508,13 +528,16 @@ async function uploadRecordingObjectSingle(
   options: RecordingUploadIdentityOptions = {},
 ) {
   onProgress?.(buildUploadProgress(0, file.size, "uploading"));
-  const createResult = await callRecordingUploadR2({
-    action: "create_single",
-    path,
-    fileName: file.name,
-    mimeType: contentType,
-    fileSizeBytes: file.size,
-  }, options);
+  const createResult = await callRecordingUploadR2(
+    {
+      action: "create_single",
+      path,
+      fileName: file.name,
+      mimeType: contentType,
+      fileSizeBytes: file.size,
+    },
+    options,
+  );
 
   if (!createResult.uploadUrl) {
     throw new Error("The recording upload URL could not be created.");
@@ -532,13 +555,16 @@ async function uploadRecordingObjectSingle(
   });
   onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 
-  await callRecordingUploadR2({
-    action: "complete_single",
-    path,
-    fileName: file.name,
-    mimeType: contentType,
-    fileSizeBytes: file.size,
-  }, options);
+  await callRecordingUploadR2(
+    {
+      action: "complete_single",
+      path,
+      fileName: file.name,
+      mimeType: contentType,
+      fileSizeBytes: file.size,
+    },
+    options,
+  );
 }
 
 function getMultipartCacheKey(path: string, file: File, contentType: string) {
@@ -556,13 +582,16 @@ async function uploadRecordingObjectMultipart(
   let cacheEntry = multipartUploadCache.get(cacheKey);
 
   if (!cacheEntry) {
-    const initiateResult = await callRecordingUploadR2({
-      action: "initiate_multipart",
-      path,
-      fileName: file.name,
-      mimeType: contentType,
-      fileSizeBytes: file.size,
-    }, options);
+    const initiateResult = await callRecordingUploadR2(
+      {
+        action: "initiate_multipart",
+        path,
+        fileName: file.name,
+        mimeType: contentType,
+        fileSizeBytes: file.size,
+      },
+      options,
+    );
 
     if (!initiateResult.uploadId) {
       throw new Error("The multipart recording upload could not start.");
@@ -584,7 +613,9 @@ async function uploadRecordingObjectMultipart(
     return total + Math.max(0, partEnd - partStart);
   }, 0);
 
-  onProgress?.(buildUploadProgress(uploadedBytes, file.size, uploadedBytes > 0 ? "retrying" : "uploading"));
+  onProgress?.(
+    buildUploadProgress(uploadedBytes, file.size, uploadedBytes > 0 ? "retrying" : "uploading"),
+  );
 
   for (let partNumber = 1; partNumber <= totalParts; partNumber += 1) {
     if (completedPartNumbers.has(partNumber)) {
@@ -598,15 +629,18 @@ async function uploadRecordingObjectMultipart(
     let maxPartBytesUploaded = 0;
 
     for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
-      const signedPart = await callRecordingUploadR2({
-        action: "sign_part",
-        path,
-        fileName: file.name,
-        mimeType: contentType,
-        fileSizeBytes: file.size,
-        uploadId: cacheEntry.uploadId,
-        partNumber,
-      }, options);
+      const signedPart = await callRecordingUploadR2(
+        {
+          action: "sign_part",
+          path,
+          fileName: file.name,
+          mimeType: contentType,
+          fileSizeBytes: file.size,
+          uploadId: cacheEntry.uploadId,
+          partNumber,
+        },
+        options,
+      );
 
       if (!signedPart.uploadUrl) {
         throw new Error("The recording upload part URL could not be created.");
@@ -624,7 +658,9 @@ async function uploadRecordingObjectMultipart(
               maxPartBytesUploaded,
               Math.min(partBlob.size, partBytesUploaded),
             );
-            onProgress?.(buildUploadProgress(uploadedBytes + maxPartBytesUploaded, file.size, "uploading"));
+            onProgress?.(
+              buildUploadProgress(uploadedBytes + maxPartBytesUploaded, file.size, "uploading"),
+            );
           },
         });
         break;
@@ -638,27 +674,29 @@ async function uploadRecordingObjectMultipart(
     const etag = partResponse?.headers.get("etag")?.trim();
 
     if (!etag) {
-      throw new Error("Cloudflare R2 did not return a part ETag. Check the R2 bucket CORS exposed headers.");
+      throw new Error(
+        "Cloudflare R2 did not return a part ETag. Check the R2 bucket CORS exposed headers.",
+      );
     }
 
-    cacheEntry.completedParts = [
-      ...cacheEntry.completedParts,
-      { partNumber, etag },
-    ];
+    cacheEntry.completedParts = [...cacheEntry.completedParts, { partNumber, etag }];
     completedPartNumbers.add(partNumber);
     uploadedBytes += partBlob.size;
     onProgress?.(buildUploadProgress(uploadedBytes, file.size, "uploading"));
   }
 
-  await callRecordingUploadR2({
-    action: "complete_multipart",
-    path,
-    fileName: file.name,
-    mimeType: contentType,
-    fileSizeBytes: file.size,
-    uploadId: cacheEntry.uploadId,
-    parts: cacheEntry.completedParts,
-  }, options);
+  await callRecordingUploadR2(
+    {
+      action: "complete_multipart",
+      path,
+      fileName: file.name,
+      mimeType: contentType,
+      fileSizeBytes: file.size,
+      uploadId: cacheEntry.uploadId,
+      parts: cacheEntry.completedParts,
+    },
+    options,
+  );
   multipartUploadCache.delete(cacheKey);
   onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
 }
@@ -713,11 +751,7 @@ export function getPreferredMediaRecorderMimeType() {
     return "";
   }
 
-  const preferredTypes = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-  ];
+  const preferredTypes = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
 
   return preferredTypes.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
 }
@@ -735,7 +769,8 @@ export async function uploadGeneratedRecordingDraft(
   previousRecording?: ResponseRecording | null,
   options?: RecordingUploadOptions,
 ) {
-  const normalizedMimeType = normalizeRecordingMimeType("", mimeType || "video/webm") || "video/webm";
+  const normalizedMimeType =
+    normalizeRecordingMimeType("", mimeType || "video/webm") || "video/webm";
   const fileName = createGeneratedRecordingFileName(sessionId, normalizedMimeType);
   const recordingFile = new File([blob], fileName, {
     type: normalizedMimeType,
@@ -754,13 +789,16 @@ export async function deleteRecordingDraft(
   }
 
   if (recording.bucket === R2_RECORDING_BUCKET_ID) {
-    await callRecordingUploadR2({
-      action: "delete",
-      path: recording.path,
-      fileName: recording.fileName,
-      mimeType: recording.mimeType,
-      fileSizeBytes: recording.fileSizeBytes,
-    }, options);
+    await callRecordingUploadR2(
+      {
+        action: "delete",
+        path: recording.path,
+        fileName: recording.fileName,
+        mimeType: recording.mimeType,
+        fileSizeBytes: recording.fileSizeBytes,
+      },
+      options,
+    );
     return;
   }
 
@@ -821,11 +859,7 @@ export async function requestResponseRecordingUrl(responseId: string, download =
   const payload = (await response.json().catch(() => null)) as RecordingAccessResponse | null;
 
   if (!response.ok || !payload?.url) {
-    throw new Error(
-      payload?.error ??
-        payload?.message ??
-        "Recording is not available right now.",
-    );
+    throw new Error(payload?.error ?? payload?.message ?? "Recording is not available right now.");
   }
 
   return {

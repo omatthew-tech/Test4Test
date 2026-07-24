@@ -1,0 +1,47 @@
+{
+  "id": "icon-button",
+  "name": "Icon button",
+  "family": "actions",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/actions.tsx",
+  "story": "design-system/stories/Actions.stories.tsx",
+  "description": "Compact action for familiar icons with a required accessible label.",
+  "semantics": [
+    "Native button",
+    "aria-label is required"
+  ],
+  "keyboard": [
+    "Enter activates",
+    "Space activates"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "tooltip"
+  ],
+  "exportName": "IconButton",
+  "sizes": [
+    "compact",
+    "default",
+    "large"
+  ],
+  "variants": [
+    "secondary",
+    "quiet",
+    "danger"
+  ],
+  "states": [
+    "enabled",
+    "hover",
+    "focus-visible",
+    "pressed",
+    "disabled"
+  ],
+  "accessibleName": "Required label prop.",
+  "controlMode": "uncontrolled",
+  "storyExport": "IconButtonContract",
+  "examples": [
+    "design-system/stories/Actions.stories.tsx#IconButtonContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

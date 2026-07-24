@@ -32,7 +32,9 @@ export async function requestTipPaymentMethodEmail(responseId: string) {
     },
     body: JSON.stringify({ responseId }),
   });
-  const payload = (await response.json().catch(() => null)) as TipPaymentMethodRequestResponse | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as TipPaymentMethodRequestResponse | null;
 
   if (!response.ok || payload?.error) {
     throw new Error(payload?.error ?? "The tester could not be notified right now.");
@@ -70,9 +72,11 @@ export async function notifyTipPaymentMethodsAdded() {
     },
     body: JSON.stringify({}),
   });
-  const payload = (await response.json().catch(() => null)) as (TipPaymentMethodRequestResponse & {
-    notifiedCount?: number;
-  }) | null;
+  const payload = (await response.json().catch(() => null)) as
+    | (TipPaymentMethodRequestResponse & {
+        notifiedCount?: number;
+      })
+    | null;
 
   if (!response.ok || payload?.error) {
     throw new Error(payload?.error ?? "Tip notifications could not be sent right now.");

@@ -1,0 +1,40 @@
+{
+  "id": "link",
+  "name": "Link",
+  "family": "actions",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/actions.tsx",
+  "story": "design-system/stories/Actions.stories.tsx",
+  "description": "Text navigation with visible affordance and focus.",
+  "semantics": [
+    "Native anchor or React Router link"
+  ],
+  "keyboard": [
+    "Enter follows link"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Link",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "internal",
+    "external"
+  ],
+  "states": [
+    "default",
+    "hover",
+    "focus-visible",
+    "visited",
+    "long-content"
+  ],
+  "accessibleName": "Descriptive link content.",
+  "controlMode": "not-applicable",
+  "storyExport": "LinkContract",
+  "examples": [
+    "design-system/stories/Actions.stories.tsx#LinkContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

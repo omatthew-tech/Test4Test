@@ -4,7 +4,7 @@ export const siteTitle = "Test4Test";
 export const siteUrl = "https://test4test.io";
 export const defaultDescription =
   "A Free User Testing Platform where founders exchange meaningful feedback";
-export const defaultImage = "/branding/Square%20Logo.png";
+export const defaultImage = "/brand/test4test-social-card.png";
 
 export interface PageMetadata {
   title?: string;
@@ -137,7 +137,9 @@ export function usePageMetadata({
     getOrCreateMeta("property", "og:description").content = resolvedMetadata.description;
     getOrCreateMeta("property", "og:url").content = resolvedMetadata.canonicalUrl;
     getOrCreateMeta("property", "og:type").content = resolvedMetadata.type;
-    getOrCreateMeta("name", "twitter:card").content = resolvedMetadata.imageUrl ? "summary_large_image" : "summary";
+    getOrCreateMeta("name", "twitter:card").content = resolvedMetadata.imageUrl
+      ? "summary_large_image"
+      : "summary";
     getOrCreateMeta("name", "twitter:title").content = resolvedMetadata.title;
     getOrCreateMeta("name", "twitter:description").content = resolvedMetadata.description;
 

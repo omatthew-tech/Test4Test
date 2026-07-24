@@ -1,13 +1,7 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CheckCircle2,
-  ExternalLink,
-  Flag,
-  Mic,
-  Trash2,
-  X,
-} from "lucide-react";
+import { CheckCircle2, ExternalLink, Flag, Mic, Trash2, X } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { tokens, useModalFocus } from "@test4test/design-system";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { consumeEarnPlacementSnapshot } from "../lib/earnPlacementCelebration";
@@ -33,6 +27,7 @@ import {
   uploadRecordingDraft,
   validateRecordingFile,
 } from "../lib/recordings";
+import styles from "./TestSessionPage.module.css";
 import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
 import { trackEventOncePerSession } from "../lib/analytics";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
@@ -47,7 +42,8 @@ import { reportTest } from "../lib/testReports";
 import { ProductType, Question, ResponseRecording, TestAnswer, TestReportReason } from "../types";
 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
-type DraftSaveStatus = "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
+type DraftSaveStatus =
+  "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
 
 const reportReasons: Array<{ value: TestReportReason; label: string }> = [
   { value: "app_unavailable", label: "App unavailable" },
@@ -101,7 +97,10 @@ function pruneAnswerValues(answers: Record<string, string>, questions: Question[
   return Object.fromEntries(
     questions
       .map((question) => [question.id, answers[question.id]] as const)
-      .filter((entry): entry is readonly [string, string] => typeof entry[1] === "string" && entry[1].length > 0),
+      .filter(
+        (entry): entry is readonly [string, string] =>
+          typeof entry[1] === "string" && entry[1].length > 0,
+      ),
   );
 }
 
@@ -339,23 +338,65 @@ function getManualRecordingTitle(device: ManualRecordingDevice, fallbackTitle: s
   return fallbackTitle;
 }
 
-function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRecordingDevice, "mobile" | "desktop"> }) {
+function ScreenRecordingMenuIllustration({
+  device,
+}: {
+  device: Exclude<ManualRecordingDevice, "mobile" | "desktop">;
+}) {
   const isIOS = device === "ios";
-  const label = isIOS ? "iOS Control Center screen recording button" : "Android quick settings screen recording button";
+  const label = isIOS
+    ? "iOS Control Center screen recording button"
+    : "Android quick settings screen recording button";
 
   return (
-    <figure className={`screen-recording-illustration screen-recording-illustration--${device}`} aria-label={label}>
+    <figure
+      className={`screen-recording-illustration screen-recording-illustration--${device}`}
+      aria-label={label}
+    >
       <svg viewBox="0 0 360 260" role="img" aria-hidden="true" focusable="false">
         <defs>
           <linearGradient id={`screen-recording-panel-${device}`} x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor={isIOS ? "#263247" : "#f8fafc"} />
-            <stop offset="100%" stopColor={isIOS ? "#0f1724" : "#e5ecf6"} />
+            <stop
+              offset="0%"
+              stopColor={
+                isIOS
+                  ? tokens["primitive.color.neutral.800"].value
+                  : tokens["primitive.color.neutral.25"].value
+              }
+            />
+            <stop
+              offset="100%"
+              stopColor={
+                isIOS
+                  ? tokens["primitive.color.neutral.950"].value
+                  : tokens["primitive.color.neutral.100"].value
+              }
+            />
           </linearGradient>
-          <filter id={`screen-recording-shadow-${device}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#221a14" floodOpacity="0.18" />
+          <filter
+            id={`screen-recording-shadow-${device}`}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
+            <feDropShadow
+              dx="0"
+              dy="12"
+              stdDeviation="10"
+              floodColor={tokens["primitive.color.neutral.950"].value}
+              floodOpacity="0.18"
+            />
           </filter>
         </defs>
-        <rect className="screen-recording-illustration__phone" x="30" y="14" width="300" height="226" rx="34" />
+        <rect
+          className="screen-recording-illustration__phone"
+          x="30"
+          y="14"
+          width="300"
+          height="226"
+          rx="34"
+        />
         <rect
           className="screen-recording-illustration__panel"
           x="44"
@@ -368,37 +409,172 @@ function ScreenRecordingMenuIllustration({ device }: { device: Exclude<ManualRec
         />
         {isIOS ? (
           <>
-            <rect className="screen-recording-illustration__ios-tile" x="62" y="48" width="108" height="108" rx="28" />
-            <circle className="screen-recording-illustration__ios-toggle screen-recording-illustration__ios-toggle--active" cx="92" cy="78" r="17" />
+            <rect
+              className="screen-recording-illustration__ios-tile"
+              x="62"
+              y="48"
+              width="108"
+              height="108"
+              rx="28"
+            />
+            <circle
+              className="screen-recording-illustration__ios-toggle screen-recording-illustration__ios-toggle--active"
+              cx="92"
+              cy="78"
+              r="17"
+            />
             <circle className="screen-recording-illustration__ios-toggle" cx="140" cy="78" r="17" />
             <circle className="screen-recording-illustration__ios-toggle" cx="92" cy="126" r="17" />
-            <circle className="screen-recording-illustration__ios-toggle" cx="140" cy="126" r="17" />
-            <path className="screen-recording-illustration__wifi" d="M130 74 Q140 66 150 74 M134 80 Q140 75 146 80" />
-            <rect className="screen-recording-illustration__ios-tile" x="188" y="48" width="106" height="50" rx="20" />
-            <rect className="screen-recording-illustration__ios-slider" x="188" y="114" width="46" height="92" rx="23" />
-            <rect className="screen-recording-illustration__ios-slider-fill" x="188" y="154" width="46" height="52" rx="23" />
-            <rect className="screen-recording-illustration__ios-slider" x="248" y="114" width="46" height="92" rx="23" />
-            <rect className="screen-recording-illustration__ios-slider-fill" x="248" y="136" width="46" height="70" rx="23" />
-            <circle className="screen-recording-illustration__record-target" cx="92" cy="190" r="26" />
-            <circle className="screen-recording-illustration__record-ring" cx="92" cy="190" r="13" />
+            <circle
+              className="screen-recording-illustration__ios-toggle"
+              cx="140"
+              cy="126"
+              r="17"
+            />
+            <path
+              className="screen-recording-illustration__wifi"
+              d="M130 74 Q140 66 150 74 M134 80 Q140 75 146 80"
+            />
+            <rect
+              className="screen-recording-illustration__ios-tile"
+              x="188"
+              y="48"
+              width="106"
+              height="50"
+              rx="20"
+            />
+            <rect
+              className="screen-recording-illustration__ios-slider"
+              x="188"
+              y="114"
+              width="46"
+              height="92"
+              rx="23"
+            />
+            <rect
+              className="screen-recording-illustration__ios-slider-fill"
+              x="188"
+              y="154"
+              width="46"
+              height="52"
+              rx="23"
+            />
+            <rect
+              className="screen-recording-illustration__ios-slider"
+              x="248"
+              y="114"
+              width="46"
+              height="92"
+              rx="23"
+            />
+            <rect
+              className="screen-recording-illustration__ios-slider-fill"
+              x="248"
+              y="136"
+              width="46"
+              height="70"
+              rx="23"
+            />
+            <circle
+              className="screen-recording-illustration__record-target"
+              cx="92"
+              cy="190"
+              r="26"
+            />
+            <circle
+              className="screen-recording-illustration__record-ring"
+              cx="92"
+              cy="190"
+              r="13"
+            />
             <circle className="screen-recording-illustration__record-dot" cx="92" cy="190" r="6" />
-            <rect className="screen-recording-illustration__small-tile" x="124" y="164" width="46" height="52" rx="16" />
-            <path className="screen-recording-illustration__arrow" d="M250 226 C206 210 164 196 121 191" />
-            <path className="screen-recording-illustration__arrow-head" d="M137 176 L119 191 L137 208" />
+            <rect
+              className="screen-recording-illustration__small-tile"
+              x="124"
+              y="164"
+              width="46"
+              height="52"
+              rx="16"
+            />
+            <path
+              className="screen-recording-illustration__arrow"
+              d="M250 226 C206 210 164 196 121 191"
+            />
+            <path
+              className="screen-recording-illustration__arrow-head"
+              d="M137 176 L119 191 L137 208"
+            />
           </>
         ) : (
           <>
-            <text className="screen-recording-illustration__android-time" x="66" y="62">10:56</text>
-            <rect className="screen-recording-illustration__android-brightness" x="64" y="82" width="232" height="20" rx="10" />
-            <rect className="screen-recording-illustration__android-brightness-fill" x="64" y="82" width="146" height="20" rx="10" />
-            <rect className="screen-recording-illustration__android-tile" x="64" y="118" width="104" height="44" rx="22" />
-            <rect className="screen-recording-illustration__android-tile" x="190" y="118" width="104" height="44" rx="22" />
-            <rect className="screen-recording-illustration__android-tile" x="64" y="176" width="104" height="44" rx="22" />
-            <rect className="screen-recording-illustration__android-tile screen-recording-illustration__android-tile--active" x="190" y="176" width="104" height="44" rx="22" />
-            <circle className="screen-recording-illustration__record-dot" cx="216" cy="198" r="10" />
-            <text className="screen-recording-illustration__android-label" x="236" y="203">Record</text>
-            <path className="screen-recording-illustration__arrow" d="M92 236 C128 217 158 205 204 199" />
-            <path className="screen-recording-illustration__arrow-head" d="M184 187 L207 198 L188 216" />
+            <text className="screen-recording-illustration__android-time" x="66" y="62">
+              10:56
+            </text>
+            <rect
+              className="screen-recording-illustration__android-brightness"
+              x="64"
+              y="82"
+              width="232"
+              height="20"
+              rx="10"
+            />
+            <rect
+              className="screen-recording-illustration__android-brightness-fill"
+              x="64"
+              y="82"
+              width="146"
+              height="20"
+              rx="10"
+            />
+            <rect
+              className="screen-recording-illustration__android-tile"
+              x="64"
+              y="118"
+              width="104"
+              height="44"
+              rx="22"
+            />
+            <rect
+              className="screen-recording-illustration__android-tile"
+              x="190"
+              y="118"
+              width="104"
+              height="44"
+              rx="22"
+            />
+            <rect
+              className="screen-recording-illustration__android-tile"
+              x="64"
+              y="176"
+              width="104"
+              height="44"
+              rx="22"
+            />
+            <rect
+              className="screen-recording-illustration__android-tile screen-recording-illustration__android-tile--active"
+              x="190"
+              y="176"
+              width="104"
+              height="44"
+              rx="22"
+            />
+            <circle
+              className="screen-recording-illustration__record-dot"
+              cx="216"
+              cy="198"
+              r="10"
+            />
+            <text className="screen-recording-illustration__android-label" x="236" y="203">
+              Record
+            </text>
+            <path
+              className="screen-recording-illustration__arrow"
+              d="M92 236 C128 217 158 205 204 199"
+            />
+            <path
+              className="screen-recording-illustration__arrow-head"
+              d="M184 187 L207 198 L188 216"
+            />
           </>
         )}
       </svg>
@@ -419,7 +595,8 @@ export function TestSessionPage() {
   } = useAppState();
   const isPublicTester = !currentUser;
   const submissionById = state.submissions.find((item) => item.id === testRef) ?? null;
-  const submissionBySlug = state.submissions.find((item) => item.publicShareSlug === testRef) ?? null;
+  const submissionBySlug =
+    state.submissions.find((item) => item.publicShareSlug === testRef) ?? null;
   const submission = submissionById ?? submissionBySlug;
   const resolvedSubmissionId = submission?.id ?? testRef;
   const isSlugSharedVisit = Boolean(submissionBySlug && !submissionById);
@@ -454,9 +631,12 @@ export function TestSessionPage() {
   const draftServerUnavailableRef = useRef(false);
   const draftEditedKeyRef = useRef("");
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
-  const activeSubmissionVersion = submission ? getActiveSubmissionVersion(state, submission.id) : null;
+  const activeSubmissionVersion = submission
+    ? getActiveSubmissionVersion(state, submission.id)
+    : null;
   const accessLinks = useMemo(
-    () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
+    () =>
+      submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : [],
     [submission],
   );
   const isRecordingTest = submission?.requiresRecording === true;
@@ -494,16 +674,21 @@ export function TestSessionPage() {
   const [nativeRecordingMimeType, setNativeRecordingMimeType] = useState(
     () => getPreferredMediaRecorderMimeType() || "video/webm",
   );
-  const [recordingUploadProgress, setRecordingUploadProgress] = useState<RecordingUploadProgress | null>(null);
+  const [recordingUploadProgress, setRecordingUploadProgress] =
+    useState<RecordingUploadProgress | null>(null);
   const [pendingRecordingUploadPath, setPendingRecordingUploadPath] = useState("");
   const [nativeUploadError, setNativeUploadError] = useState("");
   const [nativeRecoveryUploadEnabled, setNativeRecoveryUploadEnabled] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const [screenShareStatus, setScreenShareStatus] = useState<"idle" | "requesting" | "active" | "error" | "ended">("idle");
+  const [screenShareStatus, setScreenShareStatus] = useState<
+    "idle" | "requesting" | "active" | "error" | "ended"
+  >("idle");
   const [nativeCaptureConfirmed, setNativeCaptureConfirmed] = useState(false);
   const [availableMicrophones, setAvailableMicrophones] = useState<MicrophoneOption[]>([]);
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
-  const [microphoneStatus, setMicrophoneStatus] = useState<"idle" | "requesting" | "ready" | "error">("idle");
+  const [microphoneStatus, setMicrophoneStatus] = useState<
+    "idle" | "requesting" | "ready" | "error"
+  >("idle");
   const [microphoneError, setMicrophoneError] = useState("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
@@ -513,6 +698,9 @@ export function TestSessionPage() {
   const [reportError, setReportError] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [hasSubmittedReport, setHasSubmittedReport] = useState(false);
+  const reportDialogFocus = useModalFocus<HTMLDivElement>(isReportModalOpen, () => {
+    if (!isSubmittingReport) setIsReportModalOpen(false);
+  });
   const [closedTestAction, setClosedTestAction] = useState<"joining" | "checking-in" | null>(null);
   const [closedTestNotice, setClosedTestNotice] = useState("");
   const deviceRecordingExperience = useMemo(() => resolveRecordingExperience(null), []);
@@ -521,8 +709,8 @@ export function TestSessionPage() {
     [accessLinks, deviceRecordingExperience],
   );
   const effectiveProductType = isRecordingTest
-    ? autoDetectedProductType ?? chosenProductType ?? defaultProductType
-    : accessLinks[0]?.productType ?? null;
+    ? (autoDetectedProductType ?? chosenProductType ?? defaultProductType)
+    : (accessLinks[0]?.productType ?? null);
 
   const selectedLink = useMemo(() => {
     if (!isRecordingTest) {
@@ -555,16 +743,20 @@ export function TestSessionPage() {
       return null;
     }
 
-    return state.googlePlayClosedTestParticipations.find(
-      (participation) =>
-        participation.submissionId === submission.id &&
-        participation.testerUserId === currentUser.id &&
-        (participation.status === "active" || participation.status === "completed"),
-    ) ?? state.googlePlayClosedTestParticipations.find(
-      (participation) =>
-        participation.submissionId === submission.id &&
-        participation.testerUserId === currentUser.id,
-    ) ?? null;
+    return (
+      state.googlePlayClosedTestParticipations.find(
+        (participation) =>
+          participation.submissionId === submission.id &&
+          participation.testerUserId === currentUser.id &&
+          (participation.status === "active" || participation.status === "completed"),
+      ) ??
+      state.googlePlayClosedTestParticipations.find(
+        (participation) =>
+          participation.submissionId === submission.id &&
+          participation.testerUserId === currentUser.id,
+      ) ??
+      null
+    );
   }, [currentUser, state.googlePlayClosedTestParticipations, submission]);
   const googlePlayClosedTestCheckIns = useMemo(
     () =>
@@ -580,29 +772,29 @@ export function TestSessionPage() {
     (checkIn) => checkIn.checkInDate === todayUtcDate,
   );
   const googlePlayClosedTestStatus = googlePlayClosedTestParticipation?.status ?? "not_started";
-  const googlePlayClosedTestActionLabel =
-    !currentUser
-      ? "Sign in to join"
-      : googlePlayClosedTestStatus === "completed"
-        ? "Completed"
-        : googlePlayClosedTestStatus === "active"
-          ? hasGooglePlayClosedTestCheckInToday
-            ? "Checked in today"
-            : "Check in today"
-          : "Join closed test";
+  const googlePlayClosedTestActionLabel = !currentUser
+    ? "Sign in to join"
+    : googlePlayClosedTestStatus === "completed"
+      ? "Completed"
+      : googlePlayClosedTestStatus === "active"
+        ? hasGooglePlayClosedTestCheckInToday
+          ? "Checked in today"
+          : "Check in today"
+        : "Join closed test";
   const googlePlayClosedTestProgressLabel =
     googlePlayClosedTestStatus === "completed"
       ? "14 / 14 days complete"
       : `${Math.min(googlePlayClosedTestCheckInCount, 14)} / 14 days checked in`;
   const hasQuestions = (questionSet?.questions.length ?? 0) > 0;
-  const draftIdentity = currentUser && submission && activeSubmissionVersion && questionSet
-    ? {
-        userId: currentUser.id,
-        submissionId: submission.id,
-        submissionVersionId: activeSubmissionVersion.id,
-        questionSetVersionId: questionSet.id,
-      }
-    : null;
+  const draftIdentity =
+    currentUser && submission && activeSubmissionVersion && questionSet
+      ? {
+          userId: currentUser.id,
+          submissionId: submission.id,
+          submissionVersionId: activeSubmissionVersion.id,
+          questionSetVersionId: questionSet.id,
+        }
+      : null;
   const draftIdentityKey = draftIdentity
     ? `${draftIdentity.userId}:${draftIdentity.submissionId}:${draftIdentity.submissionVersionId}:${draftIdentity.questionSetVersionId}`
     : "";
@@ -622,7 +814,10 @@ export function TestSessionPage() {
     const weights = [0.6, 0.82, 1, 0.82, 0.6];
 
     return baseHeights.map((baseHeight, index) =>
-      Math.min(34, Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index])))),
+      Math.min(
+        34,
+        Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index]))),
+      ),
     );
   }, [microphoneLevel, microphoneStatus]);
 
@@ -792,10 +987,15 @@ export function TestSessionPage() {
     const { document: pipDocument } = pipWindow;
     const isDeleteConfirm = recordingPipDeleteConfirm && uploadedRecording !== null;
     const isUploaded = uploadedRecording !== null && recordingPhase === "return_and_submit";
-    const isUploading = !isUploaded && (recordingPhase === "uploading_recording" || isUploadingRecording);
-    const uploadProgressPercentage = Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0));
+    const isUploading =
+      !isUploaded && (recordingPhase === "uploading_recording" || isUploadingRecording);
+    const uploadProgressPercentage = Math.min(
+      100,
+      Math.max(0, recordingUploadProgress?.percentage ?? 0),
+    );
     const uploadProgressLabel = formatUploadProgress(recordingUploadProgress);
-    const uploadStatusLabel = recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
+    const uploadStatusLabel =
+      recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
     const submitDisabledAttribute = submitDisabled ? " disabled" : "";
     const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
     const submitLabel = isSubmitting ? "Submitting..." : "Submit test";
@@ -822,27 +1022,30 @@ export function TestSessionPage() {
       style.id = "recording-pip-styles";
       style.textContent = `
         :root {
-          --pip-orange: #f58e56;
-          --pip-orange-soft: #ffd0ae;
-          --pip-orange-wash: #fff4ea;
-          --pip-ink: #1d1815;
-          --pip-graphite: #4f4741;
-          --pip-dust: #857b74;
-          --pip-line: #d8d0c8;
-          --pip-bone: #f6f2ee;
-          --pip-paper: #fffefc;
-          --pip-success: #4e9d72;
-          --pip-error: #c95b5b;
-          --space-025: 2px;
-          --space-050: 4px;
-          --space-075: 6px;
-          --space-100: 8px;
-          --space-150: 12px;
-          --space-200: 16px;
-          --space-250: 20px;
-          --space-300: 24px;
+          --pip-primary: ${tokens["semantic.color.action.primary"].value};
+          --pip-primary-hover: ${tokens["semantic.color.action.primary-hover"].value};
+          --pip-accent-tint: ${tokens["semantic.color.action.tint"].value};
+          --pip-text: ${tokens["semantic.color.text.primary"].value};
+          --pip-text-secondary: ${tokens["semantic.color.text.secondary"].value};
+          --pip-border: ${tokens["semantic.color.border.default"].value};
+          --pip-background: ${tokens["semantic.color.background.subtle"].value};
+          --pip-surface: ${tokens["semantic.color.surface.default"].value};
+          --pip-success: ${tokens["semantic.color.status.success"].value};
+          --pip-success-tint: ${tokens["semantic.color.status.success-tint"].value};
+          --pip-danger: ${tokens["semantic.color.status.danger"].value};
+          --pip-danger-tint: ${tokens["semantic.color.status.danger-tint"].value};
+          --pip-shadow: ${tokens["primitive.shadow.overlay"].value};
+          --pip-font: ${tokens["primitive.font.family.sans"].value};
+          --space-025: ${tokens["primitive.space.optical-2"].value};
+          --space-050: ${tokens["primitive.space.1"].value};
+          --space-075: ${tokens["primitive.space.optical-6"].value};
+          --space-100: ${tokens["primitive.space.2"].value};
+          --space-150: ${tokens["primitive.space.3"].value};
+          --space-200: ${tokens["primitive.space.4"].value};
+          --space-250: ${tokens["primitive.space.5"].value};
+          --space-300: ${tokens["primitive.space.6"].value};
           color-scheme: light;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-family: var(--pip-font);
         }
 
         * {
@@ -855,10 +1058,8 @@ export function TestSessionPage() {
           min-height: 100%;
           margin: 0;
           overflow: hidden;
-          background:
-            radial-gradient(circle at 18% 0%, rgba(255, 208, 174, 0.28), transparent 32%),
-            linear-gradient(180deg, var(--pip-orange-wash), var(--pip-bone));
-          color: var(--pip-ink);
+          background: var(--pip-background);
+          color: var(--pip-text);
         }
 
         body {
@@ -872,12 +1073,10 @@ export function TestSessionPage() {
           justify-content: space-between;
           gap: var(--space-150);
           padding: var(--space-200);
-          border: 1px solid rgba(245, 142, 86, 0.24);
+          border: 1px solid var(--pip-border);
           border-radius: 24px;
-          background:
-            radial-gradient(circle at top right, rgba(245, 142, 86, 0.14), transparent 36%),
-            linear-gradient(180deg, rgba(255, 254, 252, 0.98), rgba(255, 250, 245, 0.98));
-          box-shadow: 0 10px 28px rgba(29, 24, 21, 0.12);
+          background: var(--pip-surface);
+          box-shadow: var(--pip-shadow);
         }
 
         .recording-pip__top {
@@ -893,8 +1092,8 @@ export function TestSessionPage() {
           align-items: center;
           gap: var(--space-100);
           min-width: 0;
-          color: var(--pip-ink);
-          font-family: Sora, Inter, ui-sans-serif, system-ui, sans-serif;
+          color: var(--pip-text);
+          font-family: var(--pip-font);
           font-size: 0.96rem;
           font-weight: 700;
           letter-spacing: 0;
@@ -905,22 +1104,19 @@ export function TestSessionPage() {
           height: 12px;
           flex: 0 0 12px;
           border-radius: 999px;
-          background: var(--pip-orange);
-          box-shadow: 0 0 0 7px rgba(240, 106, 63, 0.15);
+          background: var(--pip-primary);
         }
 
         .recording-pip__dot--uploading {
-          animation: recordingDotPulse 1s ease-in-out infinite alternate;
+          opacity: 0.78;
         }
 
         .recording-pip__dot--done {
           background: var(--pip-success);
-          box-shadow: 0 0 0 7px rgba(78, 157, 114, 0.14);
         }
 
         .recording-pip__dot--danger {
-          background: var(--pip-error);
-          box-shadow: 0 0 0 7px rgba(201, 91, 91, 0.14);
+          background: var(--pip-danger);
         }
 
         .recording-pip__timer {
@@ -928,8 +1124,8 @@ export function TestSessionPage() {
           min-height: 28px;
           padding: var(--space-075) var(--space-150);
           border-radius: 999px;
-          background: rgba(255, 241, 230, 0.88);
-          color: #8a5c3f;
+          background: var(--pip-accent-tint);
+          color: var(--pip-primary-hover);
           font-size: 0.82rem;
           font-variant-numeric: tabular-nums;
           font-weight: 700;
@@ -937,14 +1133,14 @@ export function TestSessionPage() {
 
         .recording-pip__text {
           margin: 0;
-          color: var(--pip-graphite);
+          color: var(--pip-text-secondary);
           font-size: 0.9rem;
           line-height: 1.5;
         }
 
         .recording-pip__text--strong {
-          color: var(--pip-ink);
-          font-family: Sora, Inter, ui-sans-serif, system-ui, sans-serif;
+          color: var(--pip-text);
+          font-family: var(--pip-font);
           font-size: 1rem;
           font-weight: 700;
           letter-spacing: 0;
@@ -962,20 +1158,20 @@ export function TestSessionPage() {
           min-height: 30px;
           padding: 0 var(--space-150);
           border-radius: 999px;
-          background: rgba(246, 242, 238, 0.92);
-          color: var(--pip-graphite);
+          background: var(--pip-background);
+          color: var(--pip-text-secondary);
           font-size: 0.82rem;
           font-weight: 700;
         }
 
         .recording-pip__pill--ok {
-          background: rgba(255, 241, 230, 0.96);
-          color: #8a5c3f;
+          background: var(--pip-accent-tint);
+          color: var(--pip-primary-hover);
         }
 
         .recording-pip__pill--success {
-          background: rgba(78, 157, 114, 0.12);
-          color: #326b4d;
+          background: var(--pip-success-tint);
+          color: var(--pip-success);
         }
 
         .recording-pip__button {
@@ -983,8 +1179,8 @@ export function TestSessionPage() {
           min-height: 44px;
           border: 1px solid transparent;
           border-radius: 16px;
-          background: var(--pip-orange);
-          color: var(--pip-ink);
+          background: var(--pip-primary);
+          color: var(--pip-surface);
           cursor: pointer;
           font: inherit;
           font-size: 0.9rem;
@@ -992,13 +1188,11 @@ export function TestSessionPage() {
           line-height: 1.2;
           padding: 0 var(--space-200);
           white-space: nowrap;
-          box-shadow: 0 6px 18px rgba(245, 142, 86, 0.22);
-          transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+          transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
         }
 
         .recording-pip__button:hover {
-          background: #f67e42;
-          box-shadow: 0 10px 28px rgba(245, 142, 86, 0.26);
+          background: var(--pip-primary-hover);
         }
 
         .recording-pip__button:disabled {
@@ -1023,15 +1217,14 @@ export function TestSessionPage() {
           height: 14px;
           overflow: hidden;
           border-radius: 999px;
-          background: rgba(216, 208, 200, 0.72);
-          box-shadow: inset 0 1px 2px rgba(29, 24, 21, 0.08);
+          background: var(--pip-border);
         }
 
         .recording-pip__progress-fill {
           display: block;
           height: 100%;
           border-radius: inherit;
-          background: linear-gradient(90deg, var(--pip-orange), #f67e42);
+          background: var(--pip-primary);
           transition: width 220ms linear;
           will-change: width;
         }
@@ -1040,7 +1233,7 @@ export function TestSessionPage() {
           width: 0%;
           border-top-right-radius: 0;
           border-bottom-right-radius: 0;
-          animation: recordingUploadProgress 2.8s ease-out forwards, recordingUploadPulse 1.2s ease-in-out 2.8s infinite alternate;
+          width: 78%;
         }
 
         .recording-pip__progress-fill--uploading::after {
@@ -1051,7 +1244,7 @@ export function TestSessionPage() {
           margin-left: auto;
           transform: skewX(-38deg) translateX(18px);
           transform-origin: left center;
-          background: #f67e42;
+          background: var(--pip-primary-hover);
         }
 
         .recording-pip__progress-fill--done {
@@ -1063,14 +1256,14 @@ export function TestSessionPage() {
           flex-direction: column;
           gap: var(--space-150);
           padding: var(--space-150);
-          border: 1px solid rgba(216, 208, 200, 0.74);
+          border: 1px solid var(--pip-border);
           border-radius: 16px;
-          background: rgba(255, 254, 252, 0.78);
+          background: var(--pip-surface);
         }
 
         .recording-pip__main--danger {
-          border-color: rgba(201, 91, 91, 0.22);
-          background: rgba(255, 245, 244, 0.58);
+          border-color: var(--pip-danger);
+          background: var(--pip-danger-tint);
         }
 
         .recording-pip__actions {
@@ -1091,68 +1284,40 @@ export function TestSessionPage() {
           align-items: center;
           justify-content: center;
           gap: var(--space-100);
-          border: 1px solid rgba(216, 208, 200, 0.92);
-          background: rgba(255, 254, 252, 0.9);
-          color: var(--pip-ink);
+          border: 1px solid var(--pip-border);
+          background: var(--pip-surface);
+          color: var(--pip-text);
           box-shadow: none;
         }
 
         .recording-pip__button--secondary {
-          border-color: var(--pip-line);
-          background: var(--pip-paper);
-          color: var(--pip-ink);
+          border-color: var(--pip-border);
+          background: var(--pip-surface);
+          color: var(--pip-text);
         }
 
         .recording-pip__button--danger {
-          border-color: rgba(201, 91, 91, 0.34);
-          color: #b42318;
+          border-color: var(--pip-danger);
+          color: var(--pip-danger);
         }
 
         .recording-pip__button--danger:hover {
-          background: rgba(255, 245, 244, 0.96);
-          border-color: rgba(201, 91, 91, 0.54);
+          background: var(--pip-danger-tint);
+          border-color: var(--pip-danger);
         }
 
         .recording-pip__button--danger:disabled {
-          background: rgba(255, 254, 252, 0.84);
-          color: #b42318;
+          background: var(--pip-surface);
+          color: var(--pip-danger);
           opacity: 0.48;
         }
 
         .recording-pip__button--secondary:hover {
-          background: var(--pip-bone);
-          border-color: rgba(216, 208, 200, 0.98);
+          background: var(--pip-background);
+          border-color: var(--pip-border);
           box-shadow: none;
         }
 
-        @keyframes recordingUploadPulse {
-          from {
-            width: 76%;
-          }
-          to {
-            width: 90%;
-          }
-        }
-
-        @keyframes recordingUploadProgress {
-          from {
-            width: 0%;
-          }
-          to {
-            width: 78%;
-          }
-        }
-
-        @keyframes recordingDotPulse {
-          from {
-            opacity: 0.58;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
       `;
       pipDocument.head.append(style);
     }
@@ -1192,9 +1357,13 @@ export function TestSessionPage() {
       pipDocument
         .getElementById("recording-pip-cancel-delete")
         ?.addEventListener("click", () => setRecordingPipDeleteConfirm(false), { once: true });
-      pipDocument
-        .getElementById("recording-pip-confirm-delete")
-        ?.addEventListener("click", () => { void handleDeleteUploadedRecording({ returnToTestPage: true }); }, { once: true });
+      pipDocument.getElementById("recording-pip-confirm-delete")?.addEventListener(
+        "click",
+        () => {
+          void handleDeleteUploadedRecording({ returnToTestPage: true });
+        },
+        { once: true },
+      );
       return;
     }
 
@@ -1233,9 +1402,13 @@ export function TestSessionPage() {
       pipDocument
         .getElementById("recording-pip-delete")
         ?.addEventListener("click", () => setRecordingPipDeleteConfirm(true), { once: true });
-      pipDocument
-        .getElementById("recording-pip-submit")
-        ?.addEventListener("click", () => { void submit(); }, { once: true });
+      pipDocument.getElementById("recording-pip-submit")?.addEventListener(
+        "click",
+        () => {
+          void submit();
+        },
+        { once: true },
+      );
       return;
     }
 
@@ -1250,6 +1423,7 @@ export function TestSessionPage() {
           <div class="recording-pip__main">
             <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
             <div class="recording-pip__progress" aria-label="Recording upload in progress">
+              <!-- ds-exception: runtime-measurements — determinate upload percentage. -->
               <span class="recording-pip__progress-fill" style="width: ${uploadProgressPercentage.toFixed(1)}%"></span>
             </div>
             <div class="recording-pip__status">
@@ -1299,7 +1473,8 @@ export function TestSessionPage() {
   };
 
   const openRecordingPipWindow = async () => {
-    const documentPictureInPicture = (window as WindowWithDocumentPictureInPicture).documentPictureInPicture;
+    const documentPictureInPicture = (window as WindowWithDocumentPictureInPicture)
+      .documentPictureInPicture;
 
     if (typeof documentPictureInPicture?.requestWindow !== "function") {
       return false;
@@ -1338,7 +1513,11 @@ export function TestSessionPage() {
       track.onended = null;
     });
 
-    for (const stream of [displayStreamRef.current, microphoneStreamRef.current, combinedStreamRef.current]) {
+    for (const stream of [
+      displayStreamRef.current,
+      microphoneStreamRef.current,
+      combinedStreamRef.current,
+    ]) {
       stream?.getTracks().forEach((track) => tracks.add(track));
     }
 
@@ -1385,9 +1564,10 @@ export function TestSessionPage() {
       const nextSelectedMicrophoneId =
         deviceId && microphoneDevices.some((device) => device.deviceId === deviceId)
           ? deviceId
-          : activeTrackDeviceId && microphoneDevices.some((device) => device.deviceId === activeTrackDeviceId)
+          : activeTrackDeviceId &&
+              microphoneDevices.some((device) => device.deviceId === activeTrackDeviceId)
             ? activeTrackDeviceId
-            : microphoneDevices[0]?.deviceId ?? "";
+            : (microphoneDevices[0]?.deviceId ?? "");
 
       microphoneStreamRef.current = stream;
       setAvailableMicrophones(microphoneDevices);
@@ -1560,7 +1740,8 @@ export function TestSessionPage() {
       setMessage(successMessage);
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "The recording could not be uploaded.";
+      const errorMessage =
+        error instanceof Error ? error.message : "The recording could not be uploaded.";
       setNativeUploadError(errorMessage);
       setMessage(errorMessage);
       return false;
@@ -1570,16 +1751,19 @@ export function TestSessionPage() {
   };
 
   const finalizeNativeRecording = async (blob: Blob, mimeType: string) => {
-    const resolvedMimeType = normalizeRecordingMimeType("", mimeType || getPreferredMediaRecorderMimeType() || "video/webm") || "video/webm";
-    const generatedFileName = createGeneratedRecordingFileName(recordingSessionId, resolvedMimeType);
-    const generatedFile = new File(
-      [blob],
-      generatedFileName,
-      {
-        type: resolvedMimeType,
-        lastModified: Date.now(),
-      },
+    const resolvedMimeType =
+      normalizeRecordingMimeType(
+        "",
+        mimeType || getPreferredMediaRecorderMimeType() || "video/webm",
+      ) || "video/webm";
+    const generatedFileName = createGeneratedRecordingFileName(
+      recordingSessionId,
+      resolvedMimeType,
     );
+    const generatedFile = new File([blob], generatedFileName, {
+      type: resolvedMimeType,
+      lastModified: Date.now(),
+    });
     const validation = validateRecordingFile(generatedFile);
 
     setNativeRecordingBlob(blob);
@@ -1682,7 +1866,9 @@ export function TestSessionPage() {
       setNativeRecoveryUploadEnabled(true);
       setScreenShareStatus("ended");
       setNativeCaptureConfirmed(false);
-      setMessage("The browser recording is no longer active. Upload a saved backup if you have one, or start again.");
+      setMessage(
+        "The browser recording is no longer active. Upload a saved backup if you have one, or start again.",
+      );
       return;
     }
 
@@ -1717,7 +1903,11 @@ export function TestSessionPage() {
     const input = buildDraftInput(nextAnswers);
 
     if (!input) {
-      clearLocalTestResponseDraft(draftIdentity.userId, draftIdentity.submissionId, draftIdentity.questionSetVersionId);
+      clearLocalTestResponseDraft(
+        draftIdentity.userId,
+        draftIdentity.submissionId,
+        draftIdentity.questionSetVersionId,
+      );
       return;
     }
 
@@ -1819,11 +2009,7 @@ export function TestSessionPage() {
         setAnswers(nextAnswers);
         setStartedAt(parseDraftStartedAt(draft.startedAt));
         setDraftSaveStatus(
-          hasAnswers
-            ? draft.source === "server"
-              ? "restored"
-              : "restored_local"
-            : "idle",
+          hasAnswers ? (draft.source === "server" ? "restored" : "restored_local") : "idle",
         );
       } else if (!userEditedDuringLoad) {
         setAnswers({});
@@ -1937,10 +2123,7 @@ export function TestSessionPage() {
       return;
     }
 
-    if (
-      chosenProductType &&
-      !accessLinks.some((link) => link.productType === chosenProductType)
-    ) {
+    if (chosenProductType && !accessLinks.some((link) => link.productType === chosenProductType)) {
       setChosenProductType(autoDetectedProductType);
     }
   }, [accessLinks, autoDetectedProductType, chosenProductType, isRecordingTest]);
@@ -1980,11 +2163,9 @@ export function TestSessionPage() {
   useEffect(() => {
     const shouldKeepRecordingPipOpen =
       isNativeDesktopRecording &&
-      (
-        recordingPhase === "recording_live" ||
+      (recordingPhase === "recording_live" ||
         recordingPhase === "uploading_recording" ||
-        (recordingPhase === "return_and_submit" && uploadedRecording !== null)
-      );
+        (recordingPhase === "return_and_submit" && uploadedRecording !== null));
 
     if (!shouldKeepRecordingPipOpen) {
       closeRecordingPipWindow();
@@ -2058,7 +2239,9 @@ export function TestSessionPage() {
   if (!submission || !questionSet || !activeSubmissionVersion) {
     return (
       <AppShell title="Test session" description="The test you're looking for could not be loaded.">
-        <Surface><p>Try returning to the Earn page and choosing another live submission.</p></Surface>
+        <Surface>
+          <p>Try returning to the Earn page and choosing another live submission.</p>
+        </Surface>
       </AppShell>
     );
   }
@@ -2075,10 +2258,8 @@ export function TestSessionPage() {
 
     if (
       googlePlayClosedTestParticipation?.status === "completed" ||
-      (
-        googlePlayClosedTestParticipation?.status === "active" &&
-        hasGooglePlayClosedTestCheckInToday
-      )
+      (googlePlayClosedTestParticipation?.status === "active" &&
+        hasGooglePlayClosedTestCheckInToday)
     ) {
       return;
     }
@@ -2171,9 +2352,7 @@ export function TestSessionPage() {
       setHasSubmittedReport(true);
     } catch (error) {
       setReportError(
-        error instanceof Error
-          ? error.message
-          : "We could not submit this report right now.",
+        error instanceof Error ? error.message : "We could not submit this report right now.",
       );
     } finally {
       setIsSubmittingReport(false);
@@ -2280,8 +2459,12 @@ export function TestSessionPage() {
           setNativeRecoveryUploadEnabled(true);
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
-          setNativeUploadError("The browser did not capture a recording. Start again or upload a saved backup file.");
-          setMessage("The browser did not capture a recording. Start again or upload a saved backup file.");
+          setNativeUploadError(
+            "The browser did not capture a recording. Start again or upload a saved backup file.",
+          );
+          setMessage(
+            "The browser did not capture a recording. Start again or upload a saved backup file.",
+          );
           return;
         }
 
@@ -2319,7 +2502,9 @@ export function TestSessionPage() {
       }
 
       if (!launched) {
-        setMessage("Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.");
+        setMessage(
+          "Recording live. Your microphone is connected and screen sharing is active. If the website did not open automatically, use the button below to open it in a new tab.",
+        );
       } else {
         setMessage("Recording live. Your microphone is connected and screen sharing is active.");
       }
@@ -2437,8 +2622,13 @@ export function TestSessionPage() {
     recordingExperience.isMobile,
   );
   const isPhoneManualRecording =
-    manualRecordingDevice === "ios" || manualRecordingDevice === "android" || manualRecordingDevice === "mobile";
-  const manualRecordingTitle = getManualRecordingTitle(manualRecordingDevice, recordingInstructions.title);
+    manualRecordingDevice === "ios" ||
+    manualRecordingDevice === "android" ||
+    manualRecordingDevice === "mobile";
+  const manualRecordingTitle = getManualRecordingTitle(
+    manualRecordingDevice,
+    recordingInstructions.title,
+  );
   const manualRecordingIntro = isPhoneManualRecording ? "" : recordingInstructions.intro;
   const manualRecordingGuideUrl =
     manualRecordingDevice === "ios"
@@ -2454,8 +2644,11 @@ export function TestSessionPage() {
       ]
     : recordingInstructions.steps;
   const screenRecordingIllustrationDevice =
-    manualRecordingDevice === "ios" || manualRecordingDevice === "android" ? manualRecordingDevice : null;
-  const shouldShowManualRecordingCallout = !isNativeDesktopRecording && !recordingExperience.isMobile;
+    manualRecordingDevice === "ios" || manualRecordingDevice === "android"
+      ? manualRecordingDevice
+      : null;
+  const shouldShowManualRecordingCallout =
+    !isNativeDesktopRecording && !recordingExperience.isMobile;
   const shouldShowManualRecordingGuidance = !isNativeDesktopRecording && isPhoneManualRecording;
   const shouldShowManualRecoveryUpload =
     isNativeDesktopRecording &&
@@ -2479,7 +2672,7 @@ export function TestSessionPage() {
 
   return (
     <AppShell eyebrowLabel={null} hideSiteHeader={isSharedPublicVisit}>
-      <div className="test-layout test-layout--single">
+      <div className={`${styles.page} test-layout test-layout--single`}>
         <div className="test-session__header">
           <h1>{testSessionTitle}</h1>
           {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
@@ -2489,7 +2682,9 @@ export function TestSessionPage() {
           <div className="test-session__intro-card">
             <div className="test-session__intro-card-header">
               <div className="test-session__resource">
-                <span className="test-session__label">{accessLinks.length > 1 ? "App links" : "App link"}</span>
+                <span className="test-session__label">
+                  {accessLinks.length > 1 ? "App links" : "App link"}
+                </span>
                 {accessLinks.length > 0 ? (
                   <div className="test-session__link-list">
                     {accessLinks.map((link) => (
@@ -2502,7 +2697,7 @@ export function TestSessionPage() {
                       >
                         <span className="test-session__link-label">{link.label}</span>
                         <span>{link.displayUrl}</span>
-                        <ExternalLink size={15} />
+                        <ExternalLink size={16} />
                       </a>
                     ))}
                   </div>
@@ -2535,14 +2730,13 @@ export function TestSessionPage() {
                   <span className="test-session__label">Google Play closed test</span>
                   <strong>Use this Android app for 14 consecutive days.</strong>
                   <p>
-                    Join the Google Play closed test, install the app, and check in here once per day.
+                    Join the Google Play closed test, install the app, and check in here once per
+                    day.
                   </p>
                   {submission.googlePlayClosedTestInstructions.trim() ? (
                     <p>{submission.googlePlayClosedTestInstructions.trim()}</p>
                   ) : null}
-                  {currentUser ? (
-                    <small>{googlePlayClosedTestProgressLabel}</small>
-                  ) : null}
+                  {currentUser ? <small>{googlePlayClosedTestProgressLabel}</small> : null}
                 </div>
                 <div className="google-play-session-panel__actions">
                   <button
@@ -2552,10 +2746,8 @@ export function TestSessionPage() {
                     disabled={
                       closedTestAction !== null ||
                       googlePlayClosedTestParticipation?.status === "completed" ||
-                      (
-                        googlePlayClosedTestParticipation?.status === "active" &&
-                        hasGooglePlayClosedTestCheckInToday
-                      )
+                      (googlePlayClosedTestParticipation?.status === "active" &&
+                        hasGooglePlayClosedTestCheckInToday)
                     }
                   >
                     {closedTestAction ? "Saving..." : googlePlayClosedTestActionLabel}
@@ -2573,7 +2765,9 @@ export function TestSessionPage() {
               {shouldShowManualRecordingCallout ? (
                 <div className="callout callout--soft recording-test-callout">
                   <div className="recording-test-callout__copy">
-                    <span className="recording-test-callout__eyebrow">Screen + voice recording</span>
+                    <span className="recording-test-callout__eyebrow">
+                      Screen + voice recording
+                    </span>
                     <strong>This session needs a screen and voice recording.</strong>
                     <p>{recordingExperience.reason}</p>
                   </div>
@@ -2605,7 +2799,10 @@ export function TestSessionPage() {
                                       disabled={microphoneStatus === "requesting"}
                                     >
                                       {availableMicrophones.map((microphone) => (
-                                        <option key={microphone.deviceId} value={microphone.deviceId}>
+                                        <option
+                                          key={microphone.deviceId}
+                                          value={microphone.deviceId}
+                                        >
                                           {microphone.label}
                                         </option>
                                       ))}
@@ -2619,7 +2816,11 @@ export function TestSessionPage() {
                                     aria-label="Voice activity level for the selected microphone"
                                   >
                                     {microphoneBarHeights.map((height, index) => (
-                                      <span key={`mic-bar-${index}`} style={{ height: `${height}px` }} />
+                                      /* ds-exception: runtime-measurements — measured waveform height. */
+                                      <span
+                                        key={`mic-bar-${index}`}
+                                        style={{ height: `${height}px` }}
+                                      />
                                     ))}
                                   </div>
                                 ) : null}
@@ -2630,10 +2831,16 @@ export function TestSessionPage() {
                                     <button
                                       type="button"
                                       className="button button--secondary button--small"
-                                      onClick={() => { void prepareMicrophonePreview(selectedMicrophoneId || undefined); }}
+                                      onClick={() => {
+                                        void prepareMicrophonePreview(
+                                          selectedMicrophoneId || undefined,
+                                        );
+                                      }}
                                       disabled={microphoneStatus === "requesting"}
                                     >
-                                      {microphoneStatus === "requesting" ? "Checking microphone..." : "Enable microphone"}
+                                      {microphoneStatus === "requesting"
+                                        ? "Checking microphone..."
+                                        : "Enable microphone"}
                                     </button>
                                   ) : null}
                                   {microphoneStatus !== "ready" ? (
@@ -2643,12 +2850,18 @@ export function TestSessionPage() {
                                       aria-label="Microphone activity is inactive until microphone access is enabled"
                                     >
                                       {microphoneBarHeights.map((height, index) => (
-                                        <span key={`inactive-mic-bar-${index}`} style={{ height: `${height}px` }} />
+                                        /* ds-exception: runtime-measurements — measured waveform height. */
+                                        <span
+                                          key={`inactive-mic-bar-${index}`}
+                                          style={{ height: `${height}px` }}
+                                        />
                                       ))}
                                     </div>
                                   ) : null}
                                   {microphoneError ? (
-                                    <small className="helper-text helper-text--warning">{microphoneError}</small>
+                                    <small className="helper-text helper-text--warning">
+                                      {microphoneError}
+                                    </small>
                                   ) : null}
                                 </div>
                               ) : null}
@@ -2656,17 +2869,25 @@ export function TestSessionPage() {
                           </div>
                         </div>
                       </div>
-                      <div className={`recording-quickstart__step${microphoneStatus === "ready" ? "" : " recording-quickstart__step--pending"}`}>
+                      <div
+                        className={`recording-quickstart__step${microphoneStatus === "ready" ? "" : " recording-quickstart__step--pending"}`}
+                      >
                         <span className="recording-quickstart__number">2.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong className="recording-quickstart__title">Enable screen sharing</strong>
+                            <strong className="recording-quickstart__title">
+                              Enable screen sharing
+                            </strong>
                             <div className="recording-microphone-actions">
                               <button
                                 type="button"
                                 className="button button--secondary button--small"
-                                onClick={() => { void prepareScreenSharePreview(); }}
-                                disabled={microphoneStatus !== "ready" || screenShareStatus === "requesting"}
+                                onClick={() => {
+                                  void prepareScreenSharePreview();
+                                }}
+                                disabled={
+                                  microphoneStatus !== "ready" || screenShareStatus === "requesting"
+                                }
                               >
                                 {screenShareStatus === "active"
                                   ? "Select screen again"
@@ -2676,25 +2897,34 @@ export function TestSessionPage() {
                               </button>
                             </div>
                             {screenShareStatus === "active" ? null : (
-                              <small className={`helper-text ${screenShareStatus === "error" ? "helper-text--warning" : ""}`}>
+                              <small
+                                className={`helper-text ${screenShareStatus === "error" ? "helper-text--warning" : ""}`}
+                              >
                                 {screenShareStatus === "requesting"
-                                  ? "Select \"Entire screen\" and then click \"Share\""
+                                  ? 'Select "Entire screen" and then click "Share"'
                                   : screenShareStatus === "error"
                                     ? "Screen sharing did not start. Try again."
                                     : screenShareStatus === "ended"
                                       ? "Screen sharing stopped. Enable it again before starting."
-                                      : "Select \"Entire screen\" and then click \"Share\""}
+                                      : 'Select "Entire screen" and then click "Share"'}
                               </small>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className={`recording-quickstart__step${screenShareStatus === "active" ? "" : " recording-quickstart__step--pending"}`}>
+                      <div
+                        className={`recording-quickstart__step${screenShareStatus === "active" ? "" : " recording-quickstart__step--pending"}`}
+                      >
                         <span className="recording-quickstart__number">3.</span>
                         <div className="recording-quickstart__content">
                           <div className="recording-quickstart__copy">
-                            <strong className="recording-quickstart__title">Prepare to think out loud</strong>
-                            <small className="helper-text">Find a quiet place. Close out any unwanted tabs. And share your honest thoughts. There are no right or wrong answers.</small>
+                            <strong className="recording-quickstart__title">
+                              Prepare to think out loud
+                            </strong>
+                            <small className="helper-text">
+                              Find a quiet place. Close out any unwanted tabs. And share your honest
+                              thoughts. There are no right or wrong answers.
+                            </small>
                           </div>
                         </div>
                       </div>
@@ -2713,8 +2943,14 @@ export function TestSessionPage() {
                                 <li key={step}>
                                   {index === 2 && manualRecordingGuideUrl ? (
                                     <span>
-                                      Start recording your screen and microphone. If you&apos;re not sure how to record, check out{" "}
-                                      <a className="recording-guide-link" href={manualRecordingGuideUrl} target="_blank" rel="noreferrer">
+                                      Start recording your screen and microphone. If you&apos;re not
+                                      sure how to record, check out{" "}
+                                      <a
+                                        className="recording-guide-link"
+                                        href={manualRecordingGuideUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
                                         this guide
                                       </a>
                                     </span>
@@ -2722,13 +2958,14 @@ export function TestSessionPage() {
                                     <span>{step}</span>
                                   )}
                                   {index === 2 && screenRecordingIllustrationDevice ? (
-                                    <ScreenRecordingMenuIllustration device={screenRecordingIllustrationDevice} />
+                                    <ScreenRecordingMenuIllustration
+                                      device={screenRecordingIllustrationDevice}
+                                    />
                                   ) : null}
                                 </li>
                               ))}
                             </ol>
                           </div>
-
                         </>
                       ) : null}
 
@@ -2740,7 +2977,11 @@ export function TestSessionPage() {
                         />
                         <span>
                           I started recording and I see the{" "}
-                          <span className="recording-attestation__recording-dot" aria-hidden="true" /> on the upper part of my screen
+                          <span
+                            className="recording-attestation__recording-dot"
+                            aria-hidden="true"
+                          />{" "}
+                          on the upper part of my screen
                         </span>
                       </label>
                     </>
@@ -2748,12 +2989,15 @@ export function TestSessionPage() {
 
                   {isNativeDesktopRecording ? (
                     <details className="recording-recovery-upload">
-                      <summary className="recording-recovery-upload__summary">Already recorded?</summary>
+                      <summary className="recording-recovery-upload__summary">
+                        Already recorded?
+                      </summary>
                       <div className="recording-recovery-upload__body">
                         <div className="recording-recovery-upload__copy">
                           <strong>Already have a saved recording?</strong>
                           <small className="helper-text">
-                            If you downloaded a backup after a failed upload, attach it here and submit without recording again.
+                            If you downloaded a backup after a failed upload, attach it here and
+                            submit without recording again.
                           </small>
                         </div>
                         <label className="field recording-recovery-upload__field">
@@ -2789,7 +3033,11 @@ export function TestSessionPage() {
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </button>
                     {shouldShowBackToTests ? (
-                      <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                      <button
+                        type="button"
+                        className="button button--secondary"
+                        onClick={handleBackToEarn}
+                      >
                         {backToTestsLabel}
                       </button>
                     ) : null}
@@ -2800,8 +3048,14 @@ export function TestSessionPage() {
               {recordingPhase === "recording_live" ? (
                 <div className="recording-phase-card">
                   <div className="recording-phase-card__copy">
-                    <span className="test-session__label">{isNativeDesktopRecording ? "Recording live" : "Testing in progress"}</span>
-                    <h2>{isNativeDesktopRecording ? "Your test is recording" : recordingInstructions.launchTitle}</h2>
+                    <span className="test-session__label">
+                      {isNativeDesktopRecording ? "Recording live" : "Testing in progress"}
+                    </span>
+                    <h2>
+                      {isNativeDesktopRecording
+                        ? "Your test is recording"
+                        : recordingInstructions.launchTitle}
+                    </h2>
                     <p>
                       {isNativeDesktopRecording
                         ? nativeCaptureConfirmed
@@ -2824,7 +3078,9 @@ export function TestSessionPage() {
                         rel="noreferrer"
                         className="button button--secondary"
                       >
-                        {isNativeDesktopRecording ? "Open website again" : recordingInstructions.launchButtonLabel}
+                        {isNativeDesktopRecording
+                          ? "Open website again"
+                          : recordingInstructions.launchButtonLabel}
                         <ExternalLink size={16} />
                       </a>
                     ) : null}
@@ -2835,7 +3091,9 @@ export function TestSessionPage() {
                         onClick={() => {
                           void openRecordingPipWindow().then((opened) => {
                             if (!opened) {
-                              setMessage("Your browser did not allow the movable recording control. Keep this Test4Test tab open to finish recording.");
+                              setMessage(
+                                "Your browser did not allow the movable recording control. Keep this Test4Test tab open to finish recording.",
+                              );
                             }
                           });
                         }}
@@ -2851,7 +3109,9 @@ export function TestSessionPage() {
                           stopNativeRecording();
                         } else {
                           setRecordingPhase("return_and_submit");
-                          setMessage("Stop your recording, upload the video, then finish the questionnaire.");
+                          setMessage(
+                            "Stop your recording, upload the video, then finish the questionnaire.",
+                          );
                         }
                       }}
                     >
@@ -2860,7 +3120,10 @@ export function TestSessionPage() {
                   </div>
                   {popupBlocked ? (
                     <div className="callout callout--warning">
-                      <span>The website did not open automatically. Use the button above to open it in a new tab.</span>
+                      <span>
+                        The website did not open automatically. Use the button above to open it in a
+                        new tab.
+                      </span>
                     </div>
                   ) : null}
                 </div>
@@ -2871,7 +3134,9 @@ export function TestSessionPage() {
                   <div className="recording-upload-card__copy">
                     <span className="test-session__label">Uploading recording</span>
                     <h2>Uploading your browser recording</h2>
-                    <p>Stay on this page while Test4Test saves the screen recording automatically.</p>
+                    <p>
+                      Stay on this page while Test4Test saves the screen recording automatically.
+                    </p>
                   </div>
                   <div className="callout callout--soft">
                     <span className="button__spinner" aria-hidden="true" />
@@ -2882,8 +3147,16 @@ export function TestSessionPage() {
                     </span>
                   </div>
                   <div className="recording-upload-progress" aria-live="polite">
-                    <div className="recording-upload-progress__track" aria-label="Recording upload progress">
-                      <span style={{ width: `${Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}%` }} />
+                    <div
+                      className="recording-upload-progress__track"
+                      aria-label="Recording upload progress"
+                    >
+                      {/* ds-exception: runtime-measurements — determinate upload percentage. */}
+                      <span
+                        style={{
+                          width: `${Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}%`,
+                        }}
+                      />
                     </div>
                     <small>{formatUploadProgress(recordingUploadProgress)}</small>
                   </div>
@@ -2898,13 +3171,15 @@ export function TestSessionPage() {
                       <button
                         type="button"
                         className="button button--danger button--small"
-                        onClick={() => { void handleDeleteUploadedRecording(); }}
+                        onClick={() => {
+                          void handleDeleteUploadedRecording();
+                        }}
                         disabled={isDeletingRecording || isUploadingRecording || isSubmitting}
                       >
                         {isDeletingRecording ? (
                           <span className="button__spinner" aria-hidden="true" />
                         ) : (
-                          <Trash2 size={15} aria-hidden="true" />
+                          <Trash2 size={16} aria-hidden="true" />
                         )}
                         {isDeletingRecording ? "Deleting..." : "Delete and re-record"}
                       </button>
@@ -2912,7 +3187,11 @@ export function TestSessionPage() {
                   ) : (
                     <div className="recording-upload-card__copy">
                       <span className="test-session__label">Return and submit</span>
-                      <h2>{isNativeDesktopRecording ? "Review the recording and submit" : "Stop your recording and upload the video"}</h2>
+                      <h2>
+                        {isNativeDesktopRecording
+                          ? "Review the recording and submit"
+                          : "Stop your recording and upload the video"}
+                      </h2>
                       <p>
                         {isNativeDesktopRecording
                           ? "Once the recording is uploaded, final submit unlocks here. If the automatic upload fails, retry it or download a backup copy."
@@ -2930,16 +3209,22 @@ export function TestSessionPage() {
                         onChange={handleRecordingUpload}
                         disabled={isUploadingRecording}
                       />
-                      <small className="helper-text">
-                        Accepted: MP4, MOV, or WEBM up to 1 GB.
-                      </small>
+                      <small className="helper-text">Accepted: MP4, MOV, or WEBM up to 1 GB.</small>
                     </label>
                   ) : null}
 
                   {isUploadingRecording && recordingUploadProgress ? (
                     <div className="recording-upload-progress" aria-live="polite">
-                      <div className="recording-upload-progress__track" aria-label="Recording upload progress">
-                        <span style={{ width: `${Math.min(100, Math.max(0, recordingUploadProgress.percentage))}%` }} />
+                      <div
+                        className="recording-upload-progress__track"
+                        aria-label="Recording upload progress"
+                      >
+                        {/* ds-exception: runtime-measurements — determinate upload percentage. */}
+                        <span
+                          style={{
+                            width: `${Math.min(100, Math.max(0, recordingUploadProgress.percentage))}%`,
+                          }}
+                        />
                       </div>
                       <small>
                         {recordingUploadProgress.state === "retrying"
@@ -2954,7 +3239,12 @@ export function TestSessionPage() {
                       <button
                         type="button"
                         className="button button--primary"
-                        onClick={() => { void finalizeNativeRecording(nativeRecordingBlob, nativeRecordingMimeType); }}
+                        onClick={() => {
+                          void finalizeNativeRecording(
+                            nativeRecordingBlob,
+                            nativeRecordingMimeType,
+                          );
+                        }}
                         disabled={isUploadingRecording}
                       >
                         Retry upload
@@ -2962,7 +3252,9 @@ export function TestSessionPage() {
                       <button
                         type="button"
                         className="button button--secondary"
-                        onClick={() => downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName)}
+                        onClick={() =>
+                          downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName)
+                        }
                       >
                         Download backup
                       </button>
@@ -3013,11 +3305,16 @@ export function TestSessionPage() {
                   {questionSet.questions.map((question) => (
                     <article key={question.id} className="question-card question-card--spacious">
                       <div className="test-session__question-body">
-                        <h3>{question.sortOrder}. {question.title}</h3>
+                        <h3>
+                          {question.sortOrder}. {question.title}
+                        </h3>
                         {question.type === "multiple" ? (
                           <div className="radio-list">
                             {(question.options ?? []).map((option) => (
-                              <label key={option} className={`radio-card${answers[question.id] === option ? " radio-card--active" : ""}`}>
+                              <label
+                                key={option}
+                                className={`radio-card${answers[question.id] === option ? " radio-card--active" : ""}`}
+                              >
                                 <input
                                   className="radio-card__control"
                                   type="radio"
@@ -3037,8 +3334,11 @@ export function TestSessionPage() {
                               onChange={(event) => updateAnswer(question.id, event.target.value)}
                               placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
                             />
-                            <small className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}>
-                              {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters
+                            <small
+                              className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}
+                            >
+                              {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum
+                              characters
                             </small>
                           </label>
                         )}
@@ -3049,12 +3349,16 @@ export function TestSessionPage() {
               ) : isRecordingTest ? (
                 <div className="recording-questionless-note">
                   <strong>No written questionnaire for this test.</strong>
-                  <p>Once the recording is ready, you can submit this test from the footer below.</p>
+                  <p>
+                    Once the recording is ready, you can submit this test from the footer below.
+                  </p>
                 </div>
               ) : null}
 
               {message ? (
-                <div className={`callout ${nativeUploadError ? "callout--warning" : "callout--soft"}`}>
+                <div
+                  className={`callout ${nativeUploadError ? "callout--warning" : "callout--soft"}`}
+                >
                   <span>{message}</span>
                 </div>
               ) : null}
@@ -3062,28 +3366,37 @@ export function TestSessionPage() {
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
                 {isRecordingTest && !hasQuestions ? (
                   shouldShowBackToTests ? (
-                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                    <button
+                      type="button"
+                      className="button button--secondary"
+                      onClick={handleBackToEarn}
+                    >
                       {backToTestsLabel}
                     </button>
                   ) : null
                 ) : (
                   <div className="test-session__progress">
                     <strong>{progressLabel}</strong>
-                    {isRecordingTest ? (
-                      <span>{recordingStatusCopy}</span>
-                    ) : null}
-                    {draftStatusCopy ? (
-                      <span>{draftStatusCopy}</span>
-                    ) : null}
+                    {isRecordingTest ? <span>{recordingStatusCopy}</span> : null}
+                    {draftStatusCopy ? <span>{draftStatusCopy}</span> : null}
                   </div>
                 )}
                 <div className="inline-actions">
                   {shouldShowBackToTests && !(isRecordingTest && !hasQuestions) ? (
-                    <button type="button" className="button button--secondary" onClick={handleBackToEarn}>
+                    <button
+                      type="button"
+                      className="button button--secondary"
+                      onClick={handleBackToEarn}
+                    >
                       {backToTestsLabel}
                     </button>
                   ) : null}
-                  <button type="button" className="button button--primary" onClick={() => void submit()} disabled={submitDisabled}>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => void submit()}
+                    disabled={submitDisabled}
+                  >
                     Submit test
                   </button>
                 </div>
@@ -3097,7 +3410,7 @@ export function TestSessionPage() {
 
       {isReportModalOpen ? (
         <div
-          className="results-modal-backdrop"
+          className={`${styles.modalBackdrop} results-modal-backdrop`}
           role="presentation"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
@@ -3106,6 +3419,7 @@ export function TestSessionPage() {
           }}
         >
           <div
+            {...reportDialogFocus}
             className="results-modal test-report-modal"
             role="dialog"
             aria-modal="true"
@@ -3115,17 +3429,26 @@ export function TestSessionPage() {
             {hasSubmittedReport ? (
               <div className="submission-report-modal__success test-report-modal__success">
                 <span className="submission-report-modal__success-icon" aria-hidden="true">
-                  <CheckCircle2 size={34} />
+                  <CheckCircle2 size={24} />
                 </span>
                 <h2 id="test-report-title">Report submitted</h2>
                 <p id="test-report-description">
-                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a problem with the app, you&apos;ll receive a free credit.
+                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a
+                  problem with the app, you&apos;ll receive a free credit.
                 </p>
                 <div className="inline-actions inline-actions--compact">
-                  <button type="button" className="button button--secondary" onClick={closeReportModal}>
+                  <button
+                    type="button"
+                    className="button button--secondary"
+                    onClick={closeReportModal}
+                  >
                     Close
                   </button>
-                  <button type="button" className="button button--primary" onClick={() => navigate("/earn")}>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => navigate("/earn")}
+                  >
                     Back to Earn
                   </button>
                 </div>
@@ -3136,7 +3459,8 @@ export function TestSessionPage() {
                   <div>
                     <h2 id="test-report-title">Report {submission.productName}</h2>
                     <p id="test-report-description">
-                      Tell us what went wrong. We&apos;ll review the app before asking you to test it.
+                      Tell us what went wrong. We&apos;ll review the app before asking you to test
+                      it.
                     </p>
                   </div>
                   <button
@@ -3146,12 +3470,16 @@ export function TestSessionPage() {
                     aria-label="Close report dialog"
                     disabled={isSubmittingReport}
                   >
-                    <X size={18} />
+                    <X size={20} />
                   </button>
                 </div>
 
                 <div className="test-report-modal__body">
-                  <div className="test-report-modal__reasons" role="radiogroup" aria-label="Report reason">
+                  <div
+                    className="test-report-modal__reasons"
+                    role="radiogroup"
+                    aria-label="Report reason"
+                  >
                     {reportReasons.map((reason) => (
                       <label
                         key={reason.value}
@@ -3192,7 +3520,9 @@ export function TestSessionPage() {
                     </label>
                   ) : null}
 
-                  {reportError ? <div className="callout callout--warning">{reportError}</div> : null}
+                  {reportError ? (
+                    <div className="callout callout--warning">{reportError}</div>
+                  ) : null}
                 </div>
 
                 <div className="inline-actions inline-actions--compact">

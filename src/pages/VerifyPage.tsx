@@ -4,7 +4,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
-import { getStoredOtpChallenge, getSubmitFlowResume, saveSubmitFlowResume } from "../lib/pendingSubmission";
+import {
+  getStoredOtpChallenge,
+  getSubmitFlowResume,
+  saveSubmitFlowResume,
+} from "../lib/pendingSubmission";
 import { isTestAccountEmail } from "../lib/supabase";
 
 export function VerifyPage() {
@@ -117,13 +121,14 @@ export function VerifyPage() {
           </p>
         ) : (
           <p>
-            We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish verifying your account.
+            We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish
+            verifying your account.
           </p>
         )}
         <label className="field field--otp">
           <span>{isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}</span>
           <div className="otp-row">
-            <MailCheck size={18} />
+            <MailCheck size={20} />
             <input
               className="otp-row__input"
               value={code}
@@ -168,5 +173,3 @@ export function VerifyPage() {
     </AppShell>
   );
 }
-
-

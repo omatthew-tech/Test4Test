@@ -1,0 +1,43 @@
+{
+  "id": "toast",
+  "name": "Toast",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Brief non-blocking status with an accessible live region.",
+  "semantics": [
+    "Polite status region by default",
+    "Does not steal focus"
+  ],
+  "keyboard": [
+    "Dismiss action is reachable"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "icon-button"
+  ],
+  "exportName": "Toast",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "info",
+    "success",
+    "warning",
+    "danger"
+  ],
+  "states": [
+    "closed",
+    "open",
+    "long-content"
+  ],
+  "accessibleName": "Visible title and content announced by the live-region role.",
+  "controlMode": "controlled",
+  "storyExport": "ToastContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#ToastContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

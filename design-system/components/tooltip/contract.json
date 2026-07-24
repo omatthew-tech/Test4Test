@@ -1,0 +1,40 @@
+{
+  "id": "tooltip",
+  "name": "Tooltip",
+  "family": "overlays",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/overlays.tsx",
+  "story": "design-system/stories/Overlays.stories.tsx",
+  "description": "Brief supplemental text available to pointer and keyboard.",
+  "semantics": [
+    "Tooltip role",
+    "Trigger described by tooltip"
+  ],
+  "keyboard": [
+    "Appears on focus",
+    "Escape dismisses"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Tooltip",
+  "sizes": [
+    "content-defined"
+  ],
+  "variants": [
+    "supplemental-text"
+  ],
+  "states": [
+    "hidden",
+    "hover",
+    "focus",
+    "dismissed"
+  ],
+  "accessibleName": "The trigger keeps its own name and references the tooltip as a description.",
+  "controlMode": "uncontrolled",
+  "storyExport": "TooltipContract",
+  "examples": [
+    "design-system/stories/Overlays.stories.tsx#TooltipContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

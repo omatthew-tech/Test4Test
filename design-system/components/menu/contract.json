@@ -1,0 +1,42 @@
+{
+  "id": "menu",
+  "name": "Menu",
+  "family": "navigation",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/navigation.tsx",
+  "story": "design-system/stories/Navigation.stories.tsx",
+  "description": "Compact list of actions with full keyboard behavior.",
+  "semantics": [
+    "Menu and menuitem roles for application actions"
+  ],
+  "keyboard": [
+    "Arrow keys move",
+    "Escape closes",
+    "Home and End move to edges"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "popover"
+  ],
+  "exportName": "Menu",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "action-menu"
+  ],
+  "states": [
+    "enabled",
+    "disabled",
+    "focus-visible",
+    "long-content"
+  ],
+  "accessibleName": "Required label prop names the menu; visible text names each menu item.",
+  "controlMode": "controlled",
+  "storyExport": "MenuContract",
+  "examples": [
+    "design-system/stories/Navigation.stories.tsx#MenuContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

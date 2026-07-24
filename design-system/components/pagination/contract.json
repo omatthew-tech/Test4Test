@@ -1,0 +1,41 @@
+{
+  "id": "pagination",
+  "name": "Pagination",
+  "family": "navigation",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/navigation.tsx",
+  "story": "design-system/stories/Navigation.stories.tsx",
+  "description": "Paged collection navigation.",
+  "semantics": [
+    "Named navigation",
+    "Current page aria-current"
+  ],
+  "keyboard": [
+    "Native button or link behavior"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "button"
+  ],
+  "exportName": "Pagination",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "button"
+  ],
+  "states": [
+    "current",
+    "available",
+    "focus-visible",
+    "many-pages"
+  ],
+  "accessibleName": "Pagination landmark and explicit Page N control labels.",
+  "controlMode": "controlled",
+  "storyExport": "PaginationContract",
+  "examples": [
+    "design-system/stories/Navigation.stories.tsx#PaginationContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

@@ -1,0 +1,37 @@
+{
+  "id": "stepper",
+  "name": "Stepper",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Ordered workflow progress with current-step text.",
+  "semantics": [
+    "Ordered list",
+    "Current step uses aria-current"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Stepper",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "ordered-progress"
+  ],
+  "states": [
+    "upcoming",
+    "current",
+    "complete",
+    "long-label"
+  ],
+  "accessibleName": "Progress list label and visible step names; current step uses aria-current.",
+  "controlMode": "controlled",
+  "storyExport": "StepperContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#StepperContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

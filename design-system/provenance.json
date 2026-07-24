@@ -1,0 +1,12 @@
+{
+  "$schema": "./contracts/provenance.schema.json",
+  "name": "Test4Test Design System",
+  "version": "1.0.0",
+  "source": "C:/Projects/AI Design System/Test4Test Design System Specification.md",
+  "sourceSha256": "04a032225540e97d42e6c636e071f412b9765a83134837e205a959947abdb0ea",
+  "repositoryPath": "design-system/specification.md",
+  "owner": "Test4Test",
+  "implementationAgent": "Codex",
+  "generationMethod": "DTCG source tokens compiled by scripts/generate-design-system.mjs",
+  "adoptedAt": "2026-07-23T00:00:00-04:00"
+}

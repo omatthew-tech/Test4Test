@@ -1,0 +1,43 @@
+{
+  "id": "form-summary",
+  "name": "Form summary",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Focusable invalid-submit summary with links to affected fields.",
+  "semantics": [
+    "Alert labeled by a visible heading",
+    "Links target invalid field IDs"
+  ],
+  "keyboard": [
+    "Receives focus after invalid submit",
+    "Links move to invalid fields"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "link",
+    "inline-validation"
+  ],
+  "exportName": "FormSummary",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "error"
+  ],
+  "states": [
+    "empty",
+    "errors",
+    "focused",
+    "long-content"
+  ],
+  "accessibleName": "Visible title labels the alert; links identify invalid fields.",
+  "controlMode": "controlled",
+  "storyExport": "FormSummaryContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#FormSummaryContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

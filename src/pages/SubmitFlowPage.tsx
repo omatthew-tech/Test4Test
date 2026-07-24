@@ -24,7 +24,6 @@ import {
   buildRandomGeneralQuestions,
   defaultCustomQuestions,
   questionModeLabel,
-  questionTypeLabel,
   syncGeneralQuestionsProductName,
   validateAccessLink,
 } from "../lib/questions";
@@ -35,17 +34,11 @@ import {
   saveSubmitFlowResume,
   SubmitFlowResumePhase,
 } from "../lib/pendingSubmission";
+import styles from "./SubmitFlowPage.module.css";
 import { wait } from "../lib/timing";
 import { ProductType, Question, SubmissionDraft } from "../types";
 
-
-const steps = [
-  "App name",
-  "App types",
-  "App links",
-  "Questions",
-  "Review",
-];
+const steps = ["App name", "App types", "App links", "Questions", "Review"];
 
 const productTypeOptions: Array<{
   value: ProductType;
@@ -57,11 +50,7 @@ const productTypeOptions: Array<{
 
 type AiQuestionStatus = "idle" | "loading" | "ready" | "error";
 
-function createBlankQuestion(
-  index: number,
-  type: Question["type"],
-  prefix = "custom",
-): Question {
+function createBlankQuestion(index: number, type: Question["type"], prefix = "custom"): Question {
   return {
     id: `${prefix}-${Date.now()}-${index}`,
     title: "",
@@ -116,7 +105,9 @@ function getInitialSubmitFlowState(
   const resumeState = getSubmitFlowResume();
   const challenge = getStoredOtpChallenge();
   const defaultDraft = createDefaultDraft(initialProductName);
-  const defaultGeneralQuestions = buildStarterGeneralQuestions(initialProductName || "Your product");
+  const defaultGeneralQuestions = buildStarterGeneralQuestions(
+    initialProductName || "Your product",
+  );
   const defaultCustomQuestionSet = defaultCustomQuestions(initialProductName || "Your product");
 
   if (!resumeState && challenge?.submissionId) {
@@ -210,13 +201,17 @@ export function SubmitFlowPage() {
   const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const [draft, setDraft] = useState<SubmissionDraft>(initialState.draft);
-  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(initialState.generalQuestions);
+  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(
+    initialState.generalQuestions,
+  );
   const [customQuestions, setCustomQuestions] = useState<Question[]>(initialState.customQuestions);
   const [hasGeneratedGeneralQuestions, setHasGeneratedGeneralQuestions] = useState(
     initialState.hasGeneratedGeneralQuestions,
   );
   const [aiQuestions, setAiQuestions] = useState<Question[]>(initialState.aiQuestions);
-  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>(initialState.aiQuestionStatus);
+  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>(
+    initialState.aiQuestionStatus,
+  );
   const [aiQuestionError, setAiQuestionError] = useState(initialState.aiQuestionError);
   const [aiQuestionNotice, setAiQuestionNotice] = useState(initialState.aiQuestionNotice);
   const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(
@@ -224,7 +219,6 @@ export function SubmitFlowPage() {
   );
   const hasTrackedSubmitProductNameRef = useRef(false);
   const hasAppliedStepFourDefaultModeRef = useRef(initialState.currentStep >= 3);
-
 
   useEffect(() => {
     setGeneralQuestions((current) =>
@@ -246,7 +240,6 @@ export function SubmitFlowPage() {
       `submit_step_viewed:${currentStep}`,
     );
   }, [currentStep]);
-
 
   useEffect(() => {
     if (!pendingScrollQuestionId) {
@@ -313,13 +306,19 @@ export function SubmitFlowPage() {
     }
 
     return [];
-  }, [aiQuestions, customQuestions, draft.questionMode, generalQuestions, hasCurrentAiQuestions, isRecordingOnlyMode]);
+  }, [
+    aiQuestions,
+    customQuestions,
+    draft.questionMode,
+    generalQuestions,
+    hasCurrentAiQuestions,
+    isRecordingOnlyMode,
+  ]);
   const isEditableQuestionMode =
-    !isRecordingOnlyMode && (
-      draft.questionMode === "general" ||
+    !isRecordingOnlyMode &&
+    (draft.questionMode === "general" ||
       draft.questionMode === "custom" ||
-      (draft.questionMode === "ai" && hasCurrentAiQuestions)
-    );
+      (draft.questionMode === "ai" && hasCurrentAiQuestions));
   const hasReachedEditableQuestionLimit = editableQuestions.length >= 10;
 
   const displayedQuestions = useMemo(() => {
@@ -347,12 +346,12 @@ export function SubmitFlowPage() {
   const currentLiveSubmission = useMemo(
     () =>
       currentUser
-        ? state.submissions.find(
+        ? (state.submissions.find(
             (submission) =>
               submission.userId === currentUser.id &&
               submission.status === "live" &&
               submission.id !== submissionId,
-          ) ?? null
+          ) ?? null)
         : null,
     [currentUser, state.submissions, submissionId],
   );
@@ -363,13 +362,11 @@ export function SubmitFlowPage() {
         : 0,
     [currentUser, state.submissions],
   );
-  const submitSuccessMessage =
-    pausedLiveSubmissionName
-      ? `${draft.productName || "Your app"} is now live. ${pausedLiveSubmissionName} was paused so only one test appears on Earn at a time.`
-      : !currentUser || ownedSubmissionCount <= 1
+  const submitSuccessMessage = pausedLiveSubmissionName
+    ? `${draft.productName || "Your app"} is now live. ${pausedLiveSubmissionName} was paused so only one test appears on Earn at a time.`
+    : !currentUser || ownedSubmissionCount <= 1
       ? "Congrats on submitting your first app! You're helping other founders, like yourself, make better apps."
       : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
-
 
   useEffect(() => {
     if (draft.questionMode !== "ai") {
@@ -428,7 +425,10 @@ export function SubmitFlowPage() {
     }
 
     navigate(
-      "/verify?email=" + encodeURIComponent(nextEmail) + "&submissionId=" + encodeURIComponent(nextSubmissionId),
+      "/verify?email=" +
+        encodeURIComponent(nextEmail) +
+        "&submissionId=" +
+        encodeURIComponent(nextSubmissionId),
       { replace: true },
     );
   }, [email, flowPhase, navigate, resumeVerifyEmail, submissionId]);
@@ -545,11 +545,7 @@ export function SubmitFlowPage() {
     const nextQuestion = createBlankQuestion(
       editableQuestions.length,
       type,
-      draft.questionMode === "general"
-        ? "general"
-        : draft.questionMode === "ai"
-          ? "ai"
-          : "custom",
+      draft.questionMode === "general" ? "general" : draft.questionMode === "ai" ? "ai" : "custom",
     );
 
     setError("");
@@ -640,7 +636,6 @@ export function SubmitFlowPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-
   const toggleProductType = (productType: ProductType) => {
     setError("");
     setDraft((current) => {
@@ -677,9 +672,7 @@ export function SubmitFlowPage() {
         return {
           ...current,
           productTypes: ["android"],
-          accessLinks: current.accessLinks.android
-            ? { android: current.accessLinks.android }
-            : {},
+          accessLinks: current.accessLinks.android ? { android: current.accessLinks.android } : {},
           needsGooglePlayClosedTesters: true,
         };
       }
@@ -736,10 +729,7 @@ export function SubmitFlowPage() {
         }
       }
 
-      if (
-        draft.needsGooglePlayClosedTesters &&
-        !draft.googlePlayClosedTestInstructions.trim()
-      ) {
+      if (draft.needsGooglePlayClosedTesters && !draft.googlePlayClosedTestInstructions.trim()) {
         return "Add Google Play closed-test access instructions for testers.";
       }
     }
@@ -759,10 +749,7 @@ export function SubmitFlowPage() {
     if (currentStep === 3 && !isRecordingOnlyMode && isEditableQuestionMode) {
       const minimumQuestionCount = draft.questionMode === "ai" ? 5 : 2;
 
-      if (
-        editableQuestions.length < minimumQuestionCount ||
-        editableQuestions.length > 10
-      ) {
+      if (editableQuestions.length < minimumQuestionCount || editableQuestions.length > 10) {
         return `${questionModeLabel(draft.questionMode)} mode needs between ${minimumQuestionCount} and 10 questions for MVP.`;
       }
 
@@ -781,7 +768,11 @@ export function SubmitFlowPage() {
   };
 
   const isContinueDisabled =
-    isSubmitting || (currentStep === 3 && !isRecordingOnlyMode && draft.questionMode === "ai" && !hasCurrentAiQuestions);
+    isSubmitting ||
+    (currentStep === 3 &&
+      !isRecordingOnlyMode &&
+      draft.questionMode === "ai" &&
+      !hasCurrentAiQuestions);
 
   const goNext = async () => {
     const nextError = validateCurrentStep();
@@ -797,7 +788,10 @@ export function SubmitFlowPage() {
 
       try {
         const replacedLiveSubmissionName = currentLiveSubmission?.productName ?? "";
-        const createdId = await createSubmission(draft, isRecordingOnlyMode ? [] : displayedQuestions);
+        const createdId = await createSubmission(
+          draft,
+          isRecordingOnlyMode ? [] : displayedQuestions,
+        );
         setSubmissionId(createdId);
         setPausedLiveSubmissionName(replacedLiveSubmissionName);
         setFlowPhase("email");
@@ -839,13 +833,14 @@ export function SubmitFlowPage() {
       await Promise.all([requestOtp(normalizedEmail, submissionId), wait(5000)]);
       setFlowPhase("verify-code");
       navigate(
-        "/verify?email=" + encodeURIComponent(normalizedEmail) + "&submissionId=" + encodeURIComponent(submissionId),
+        "/verify?email=" +
+          encodeURIComponent(normalizedEmail) +
+          "&submissionId=" +
+          encodeURIComponent(submissionId),
       );
     } catch (otpError) {
       setError(
-        otpError instanceof Error
-          ? otpError.message
-          : "We could not send a verification code.",
+        otpError instanceof Error ? otpError.message : "We could not send a verification code.",
       );
     } finally {
       setIsSendingCode(false);
@@ -853,8 +848,12 @@ export function SubmitFlowPage() {
   };
 
   return (
-    <AppShell eyebrowLabel={null}>
-      <div className="page-stack">
+    <AppShell
+      title="Submit a test"
+      description="Tell testers what to evaluate, choose a question format, and review everything before publishing."
+      eyebrowLabel={null}
+    >
+      <div className={`${styles.page} page-stack`}>
         {currentStep < steps.length ? (
           <div className="wizard-layout">
             <div className="wizard-stage">
@@ -910,7 +909,10 @@ export function SubmitFlowPage() {
                             aria-pressed={isSelected}
                             disabled={isDisabled}
                           >
-                            <span className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`} aria-hidden="true">
+                            <span
+                              className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`}
+                              aria-hidden="true"
+                            >
                               {isSelected ? <Check size={16} /> : null}
                             </span>
                             <span className="choice-card__content">
@@ -926,14 +928,17 @@ export function SubmitFlowPage() {
                         onChange={setGooglePlayClosedTestRequirement}
                       />
                     ) : null}
-
                   </div>
                 ) : null}
 
                 {currentStep === 2 ? (
                   <div className="form-stack">
                     <div className="section-heading">
-                      <h2>{selectedProductTypes.length > 1 ? "What are the links to your app?" : "What's the link to your app?"}</h2>
+                      <h2>
+                        {selectedProductTypes.length > 1
+                          ? "What are the links to your app?"
+                          : "What's the link to your app?"}
+                      </h2>
                       {selectedProductTypes.length > 1 ? (
                         <p>Add one public link for each selected platform.</p>
                       ) : null}
@@ -946,11 +951,16 @@ export function SubmitFlowPage() {
 
                       return (
                         <label key={productType} className="field">
-                          <span>{accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}</span>
+                          <span>
+                            {accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}
+                          </span>
                           <input
                             value={value}
                             onChange={(event) => updateAccessLink(productType, event.target.value)}
-                            placeholder={accessLinkPlaceholder(productType, isGooglePlayClosedTestLink)}
+                            placeholder={accessLinkPlaceholder(
+                              productType,
+                              isGooglePlayClosedTestLink,
+                            )}
                           />
                           {value.trim() ? (
                             <small
@@ -977,7 +987,8 @@ export function SubmitFlowPage() {
                           placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
                         />
                         <small className="helper-text">
-                          Include any tester group, opt-in, or install steps needed before users can access the Android closed test.
+                          Include any tester group, opt-in, or install steps needed before users can
+                          access the Android closed test.
                         </small>
                       </label>
                     ) : null}
@@ -1029,7 +1040,9 @@ export function SubmitFlowPage() {
                       </div>
 
                       {isEditableQuestionMode ? (
-                        <div className={`question-studio__note${draft.questionMode === "general" ? " question-studio__note--actions-only" : ""}`}>
+                        <div
+                          className={`question-studio__note${draft.questionMode === "general" ? " question-studio__note--actions-only" : ""}`}
+                        >
                           {draft.questionMode !== "general" ? (
                             <div className="question-studio__note-copy">
                               <span>{questionModeLabel(draft.questionMode)} questions</span>
@@ -1042,7 +1055,9 @@ export function SubmitFlowPage() {
                               onClick={refreshQuestions}
                             >
                               <RefreshCcw size={16} />
-                              {hasGeneratedGeneralQuestions ? "Refresh questions" : "Generate questions"}
+                              {hasGeneratedGeneralQuestions
+                                ? "Refresh questions"
+                                : "Generate questions"}
                             </button>
                           ) : null}
                         </div>
@@ -1052,12 +1067,12 @@ export function SubmitFlowPage() {
                         <>
                           <div className="recording-setup-copy">
                             <div className="recording-setup-insight">
-                              <Lightbulb size={13} aria-hidden="true" />
+                              <Lightbulb size={16} aria-hidden="true" />
                               <span>This option usually produces the best insights</span>
                             </div>
                             <p>
-                              Testers will record their screen and voice while using your app. Please ensure tester
-                              instructions are simple and easy to follow.
+                              Testers will record their screen and voice while using your app.
+                              Please ensure tester instructions are simple and easy to follow.
                             </p>
                           </div>
                           <div className="question-list question-list--studio">
@@ -1070,7 +1085,10 @@ export function SubmitFlowPage() {
                                 className="recording-preview-field__textarea"
                                 value={draft.instructions}
                                 onChange={(event) =>
-                                  setDraft((current) => ({ ...current, instructions: event.target.value }))
+                                  setDraft((current) => ({
+                                    ...current,
+                                    instructions: event.target.value,
+                                  }))
                                 }
                                 placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
                               />
@@ -1079,15 +1097,19 @@ export function SubmitFlowPage() {
                         </>
                       ) : (
                         <>
-                          {aiQuestionNotice ? <div className="callout callout--soft">{aiQuestionNotice}</div> : null}
-                          {aiQuestionError ? <div className="callout callout--warning">{aiQuestionError}</div> : null}
+                          {aiQuestionNotice ? (
+                            <div className="callout callout--soft">{aiQuestionNotice}</div>
+                          ) : null}
+                          {aiQuestionError ? (
+                            <div className="callout callout--warning">{aiQuestionError}</div>
+                          ) : null}
 
                           {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (
                             <div className="question-studio__empty">
                               <h4>Generate 5 tailored questions</h4>
                               <p>
-                                We&apos;ll use your app name, platforms, links, description, and tester instructions
-                                to draft a focused question set.
+                                We&apos;ll use your app name, platforms, links, description, and
+                                tester instructions to draft a focused question set.
                               </p>
                               <button
                                 type="button"
@@ -1100,7 +1122,9 @@ export function SubmitFlowPage() {
                                 ) : (
                                   <Sparkles size={16} />
                                 )}
-                                {aiQuestionStatus === "loading" ? "Generating..." : "Generate Questions"}
+                                {aiQuestionStatus === "loading"
+                                  ? "Generating..."
+                                  : "Generate Questions"}
                               </button>
                             </div>
                           ) : (
@@ -1133,7 +1157,9 @@ export function SubmitFlowPage() {
                                         <AutoResizeTextarea
                                           className="question-card__prompt-input"
                                           value={question.title}
-                                          onChange={(event) => updateQuestion(index, { title: event.target.value })}
+                                          onChange={(event) =>
+                                            updateQuestion(index, { title: event.target.value })
+                                          }
                                           placeholder="Type your question here"
                                         />
                                       </div>
@@ -1144,8 +1170,14 @@ export function SubmitFlowPage() {
                                       isEditableQuestionMode ? (
                                         <div className="option-list option-list--editor">
                                           {(question.options ?? []).map((option, optionIndex) => (
-                                            <div key={`${question.id}-${optionIndex}`} className="option-input-row">
-                                              <span className="option-input-row__icon" aria-hidden="true" />
+                                            <div
+                                              key={`${question.id}-${optionIndex}`}
+                                              className="option-input-row"
+                                            >
+                                              <span
+                                                className="option-input-row__icon"
+                                                aria-hidden="true"
+                                              />
                                               <input
                                                 className="option-input-row__input"
                                                 value={option}
@@ -1160,13 +1192,18 @@ export function SubmitFlowPage() {
                                                 type="button"
                                                 className="option-input-row__remove"
                                                 onClick={() => {
-                                                  const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
+                                                  const nextOptions = (
+                                                    question.options ?? []
+                                                  ).filter(
+                                                    (_, currentIndex) =>
+                                                      currentIndex !== optionIndex,
+                                                  );
                                                   updateQuestion(index, { options: nextOptions });
                                                 }}
                                                 aria-label={`Remove option ${optionIndex + 1}`}
                                                 disabled={(question.options?.length ?? 0) <= 2}
                                               >
-                                                <X size={16} strokeWidth={2} aria-hidden />
+                                                <X size={16} aria-hidden />
                                               </button>
                                             </div>
                                           ))}
@@ -1174,7 +1211,10 @@ export function SubmitFlowPage() {
                                       ) : (
                                         <div className="option-grid">
                                           {(question.options ?? []).map((option) => (
-                                            <span key={`${question.id}-${option}`} className="option-pill">
+                                            <span
+                                              key={`${question.id}-${option}`}
+                                              className="option-pill"
+                                            >
                                               {option}
                                             </span>
                                           ))}
@@ -1182,7 +1222,11 @@ export function SubmitFlowPage() {
                                       )
                                     ) : (
                                       <div className="question-card__response-preview">
-                                        <span>{isEditableQuestionMode ? "Written answer" : "Open response"}</span>
+                                        <span>
+                                          {isEditableQuestionMode
+                                            ? "Written answer"
+                                            : "Open response"}
+                                        </span>
                                         <p>Testers will leave written feedback here.</p>
                                       </div>
                                     )}
@@ -1258,7 +1302,8 @@ export function SubmitFlowPage() {
                     </div>
                     {currentLiveSubmission ? (
                       <div className="callout callout--soft">
-                        Submitting this app will make it your live Earn test and pause {currentLiveSubmission.productName}.
+                        Submitting this app will make it your live Earn test and pause{" "}
+                        {currentLiveSubmission.productName}.
                       </div>
                     ) : null}
                     <div className="review-grid review-grid--single">
@@ -1276,7 +1321,11 @@ export function SubmitFlowPage() {
                             </span>
                             <ArrowRight size={16} />
                           </button>
-                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(1)}>
+                          <button
+                            type="button"
+                            className="review-edit-row"
+                            onClick={() => jumpToStep(1)}
+                          >
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Platforms</span>
                               {draft.productTypes.length > 0 ? (
@@ -1287,7 +1336,11 @@ export function SubmitFlowPage() {
                             </span>
                             <ArrowRight size={16} />
                           </button>
-                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                          <button
+                            type="button"
+                            className="review-edit-row"
+                            onClick={() => jumpToStep(2)}
+                          >
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Links</span>
                               <strong>
@@ -1299,22 +1352,38 @@ export function SubmitFlowPage() {
                             </span>
                             <ArrowRight size={16} />
                           </button>
-                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(3)}>
+                          <button
+                            type="button"
+                            className="review-edit-row"
+                            onClick={() => jumpToStep(3)}
+                          >
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Question setup</span>
                               <strong>{questionSetupLabel}</strong>
                             </span>
                             <ArrowRight size={16} />
                           </button>
-                          <button type="button" className="review-edit-row" onClick={() => jumpToStep(3)}>
+                          <button
+                            type="button"
+                            className="review-edit-row"
+                            onClick={() => jumpToStep(3)}
+                          >
                             <span className="review-edit-row__copy">
                               <span className="review-edit-row__label">Recording</span>
-                              <strong>{isRecordingOnlyMode ? "Screen + voice recording" : "Questionnaire only"}</strong>
+                              <strong>
+                                {isRecordingOnlyMode
+                                  ? "Screen + voice recording"
+                                  : "Questionnaire only"}
+                              </strong>
                             </span>
                             <ArrowRight size={16} />
                           </button>
                           {draft.needsGooglePlayClosedTesters ? (
-                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(1)}>
+                            <button
+                              type="button"
+                              className="review-edit-row"
+                              onClick={() => jumpToStep(1)}
+                            >
                               <span className="review-edit-row__copy">
                                 <span className="review-edit-row__label">Google Play testing</span>
                                 <strong>Closed-test testers for 14 days</strong>
@@ -1322,8 +1391,13 @@ export function SubmitFlowPage() {
                               <ArrowRight size={16} />
                             </button>
                           ) : null}
-                          {draft.needsGooglePlayClosedTesters && draft.googlePlayClosedTestInstructions.trim() ? (
-                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                          {draft.needsGooglePlayClosedTesters &&
+                          draft.googlePlayClosedTestInstructions.trim() ? (
+                            <button
+                              type="button"
+                              className="review-edit-row"
+                              onClick={() => jumpToStep(2)}
+                            >
                               <span className="review-edit-row__copy">
                                 <span className="review-edit-row__label">Closed-test access</span>
                                 <strong>{draft.googlePlayClosedTestInstructions}</strong>
@@ -1332,7 +1406,11 @@ export function SubmitFlowPage() {
                             </button>
                           ) : null}
                           {draft.instructions.trim() ? (
-                            <button type="button" className="review-edit-row" onClick={() => jumpToStep(2)}>
+                            <button
+                              type="button"
+                              className="review-edit-row"
+                              onClick={() => jumpToStep(2)}
+                            >
                               <span className="review-edit-row__copy">
                                 <span className="review-edit-row__label">Tester instructions</span>
                                 <strong>{draft.instructions}</strong>
@@ -1372,7 +1450,11 @@ export function SubmitFlowPage() {
           </div>
         ) : (
           <VerificationFlowShell title="Your app has been submitted">
-            <h2>{currentUser ? "Your app has been submitted." : "Verify your email to start receiving feedback"}</h2>
+            <h2>
+              {currentUser
+                ? "Your app has been submitted."
+                : "Verify your email to start receiving feedback"}
+            </h2>
             <p>{submitSuccessMessage}</p>
             {!currentUser ? (
               <div className="form-stack form-stack--narrow form-stack--verification">
@@ -1402,7 +1484,11 @@ export function SubmitFlowPage() {
               </div>
             ) : (
               <div className="inline-actions">
-                <button type="button" className="button button--primary" onClick={() => navigate("/earn")}>
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => navigate("/earn")}
+                >
                   Go to Earn
                 </button>
                 <button
@@ -1420,27 +1506,3 @@ export function SubmitFlowPage() {
     </AppShell>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

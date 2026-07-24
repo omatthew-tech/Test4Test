@@ -14,8 +14,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@test4test/design-system": ["./design-system/index.ts"]
+    },
+    "types": ["vite/client", "vitest/globals", "node"]
   },
-  "include": ["src"],
+  "include": ["src", "design-system", ".storybook", "tests", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"],
   "references": []
 }

@@ -42,9 +42,7 @@ function isMissingSubmissionReportsTableError(message: string) {
 }
 
 function normalizeReportStatus(value: unknown): TestReportStatus | null {
-  return value === "pending" || value === "dismissed" || value === "confirmed"
-    ? value
-    : null;
+  return value === "pending" || value === "dismissed" || value === "confirmed" ? value : null;
 }
 
 async function getAccessToken(fallbackMessage: string) {
@@ -62,7 +60,8 @@ async function getAccessToken(fallbackMessage: string) {
 }
 
 async function parseFunctionResponse(response: Response) {
-  const payload = (await response.json().catch(() => null)) as ManageReportsResponse | ReportTestResponse | null;
+  const payload = (await response.json().catch(() => null)) as
+    ManageReportsResponse | ReportTestResponse | null;
 
   if (!response.ok || !payload?.ok) {
     throw new Error(payload?.error ?? payload?.message ?? response.statusText);
@@ -71,11 +70,7 @@ async function parseFunctionResponse(response: Response) {
   return payload;
 }
 
-export async function reportTest(
-  submissionId: string,
-  reason: TestReportReason,
-  message: string,
-) {
+export async function reportTest(submissionId: string, reason: TestReportReason, message: string) {
   if (!submissionId || !supabaseUrl || !supabasePublishableKey) {
     throw new Error("Reporting is not available in the current environment.");
   }
@@ -120,10 +115,12 @@ export async function loadMySubmissionReportStatuses() {
       return [];
     }
 
-    return [{
-      submissionId: row.submission_id,
-      status,
-    } satisfies SubmissionReportStatus];
+    return [
+      {
+        submissionId: row.submission_id,
+        status,
+      } satisfies SubmissionReportStatus,
+    ];
   });
 }
 
@@ -142,7 +139,7 @@ async function callManageReports(body: Record<string, unknown>) {
     },
     body: JSON.stringify(body),
   });
-  const payload = await parseFunctionResponse(response) as ManageReportsResponse;
+  const payload = (await parseFunctionResponse(response)) as ManageReportsResponse;
 
   return {
     message: payload.message,

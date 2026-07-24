@@ -37,7 +37,9 @@ export async function reportFeedbackRating(responseId: string, message: string) 
   const payload = (await response.json().catch(() => null)) as ReportFeedbackResponse | null;
 
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error ?? payload?.message ?? "We could not send your report right now.");
+    throw new Error(
+      payload?.error ?? payload?.message ?? "We could not send your report right now.",
+    );
   }
 
   return payload;

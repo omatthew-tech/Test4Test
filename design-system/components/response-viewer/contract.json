@@ -1,0 +1,44 @@
+{
+  "id": "response-viewer",
+  "name": "Response viewer",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Question, response, metadata, and response actions in a semantic article.",
+  "semantics": [
+    "Article is named by its question heading",
+    "Long responses wrap"
+  ],
+  "keyboard": [
+    "Actions are independent focus targets"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "card",
+    "button"
+  ],
+  "exportName": "ResponseViewer",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "with-actions",
+    "without-actions"
+  ],
+  "states": [
+    "empty",
+    "populated",
+    "reported",
+    "long-content",
+    "narrow-width"
+  ],
+  "accessibleName": "Question heading names the response article; actions retain explicit names.",
+  "controlMode": "not-applicable",
+  "storyExport": "ResponseViewerContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#ResponseViewerContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

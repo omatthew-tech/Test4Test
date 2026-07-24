@@ -33,7 +33,7 @@ export function buildBlogPostingJsonLd(post: BlogPost) {
       url: "https://test4test.io",
       logo: {
         "@type": "ImageObject",
-        url: getAbsoluteUrl("/branding/Test4Test%20Regular%20Logo.png"),
+        url: getAbsoluteUrl("/brand/test4test-mark.svg"),
       },
     },
   };

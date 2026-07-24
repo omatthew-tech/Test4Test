@@ -1,0 +1,46 @@
+{
+  "id": "dialog",
+  "name": "Dialog",
+  "family": "overlays",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/overlays.tsx",
+  "story": "design-system/stories/Overlays.stories.tsx",
+  "description": "Modal task or confirmation using the native dialog element.",
+  "semantics": [
+    "Native dialog",
+    "Labeled title",
+    "Modal state"
+  ],
+  "keyboard": [
+    "Escape closes",
+    "Tab remains within",
+    "Focus restores"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "button",
+    "icon-button"
+  ],
+  "exportName": "Dialog",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "dialog"
+  ],
+  "states": [
+    "closed",
+    "open",
+    "focus-contained",
+    "long-content",
+    "destructive"
+  ],
+  "accessibleName": "Required title prop labels the native dialog.",
+  "controlMode": "controlled",
+  "storyExport": "DialogContract",
+  "examples": [
+    "design-system/stories/Overlays.stories.tsx#DialogContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

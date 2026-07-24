@@ -1,0 +1,266 @@
+.page {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-section-large);
+}
+
+.hero {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-section);
+  align-items: center;
+}
+
+.heroCopy {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xl);
+}
+
+.heroCopy h1 {
+  max-width: var(--ds-semantic-size-content-prose);
+  font-size: var(--ds-semantic-typography-heading-page-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-page-mobile-line-height);
+  letter-spacing: var(--ds-semantic-typography-heading-page-tracking);
+}
+
+.heroCta {
+  width: 100%;
+}
+
+.heroVisual,
+.visualStack {
+  min-width: 0;
+}
+
+.visualStack {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
+}
+
+.brandComposition {
+  display: grid;
+  width: var(--ds-semantic-size-control-large);
+  height: var(--ds-semantic-size-control-large);
+  place-items: center;
+  border-radius: var(--ds-semantic-radius-compact);
+  background: var(--ds-semantic-color-action-primary);
+  color: var(--ds-semantic-color-text-inverse);
+}
+
+.brandMark {
+  width: var(--ds-semantic-size-icon-large);
+  height: var(--ds-semantic-size-icon-large);
+}
+
+.earningsCard {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+  padding: var(--ds-semantic-space-stack-xl);
+}
+
+.earningsHeader,
+.earningsStats,
+.payout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-lg);
+}
+
+.earningsHeader strong,
+.earningsStats strong,
+.payoutCopy strong {
+  font-family: var(--ds-semantic-typography-family-technical);
+  font-variant-numeric: tabular-nums;
+}
+
+.earningsStats {
+  align-items: flex-start;
+}
+
+.earningsStats > div,
+.payoutCopy {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.earningsStats span,
+.payoutCopy span,
+.payoutProgress > span {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+}
+
+.earningsChart {
+  width: 100%;
+  color: var(--ds-semantic-color-status-success);
+}
+
+.earningsChartFill {
+  fill: var(--ds-semantic-color-status-success-tint);
+}
+
+.payout {
+  align-items: end;
+  padding-block-start: var(--ds-semantic-space-stack-md);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+}
+
+.payoutProgress {
+  display: grid;
+  min-width: min(100%, var(--ds-semantic-size-content-choice-min));
+  flex: 1;
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.payoutProgress > div {
+  height: var(--ds-semantic-space-stack-sm);
+  overflow: hidden;
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-surface-track);
+}
+
+.payoutProgress > div > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ds-semantic-color-action-primary);
+}
+
+.paypalMark {
+  display: grid;
+  width: var(--ds-semantic-size-control-default);
+  height: var(--ds-semantic-size-control-default);
+  flex: 0 0 auto;
+  place-items: center;
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
+  border-radius: var(--ds-semantic-radius-compact);
+  background: var(--ds-semantic-color-background-subtle);
+}
+
+.paypalLogo {
+  width: var(--ds-semantic-size-icon-medium);
+  height: var(--ds-semantic-size-icon-medium);
+}
+
+.start {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xl);
+}
+
+.start h2 {
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+}
+
+.steps {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.stepCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-semantic-space-inline-lg);
+  padding: var(--ds-semantic-space-stack-xl);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-surface-default);
+}
+
+.stepNumber {
+  grid-column: 1 / -1;
+  color: var(--ds-semantic-color-text-link);
+  font-family: var(--ds-semantic-typography-family-technical);
+  font-size: var(--ds-semantic-typography-caption-size);
+}
+
+.stepIcon {
+  position: relative;
+  color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.stepAccent {
+  position: absolute;
+  inset-inline-end: calc(var(--ds-semantic-space-inline-md) * -1);
+  inset-block-end: calc(var(--ds-semantic-space-inline-sm) * -1);
+  color: var(--ds-semantic-color-status-success);
+}
+
+.stepCopy {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.stepCopy h3 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.stepCopy p {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.legal {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-xs);
+  flex-wrap: wrap;
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+}
+
+.legalLink {
+  color: var(--ds-semantic-color-text-link);
+  text-decoration: underline;
+  text-underline-offset: var(--ds-semantic-space-inline-xs);
+}
+
+@media (min-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .payout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .payoutProgress {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .heroCopy h1 {
+    font-size: var(--ds-semantic-typography-heading-page-desktop-size);
+    line-height: var(--ds-semantic-typography-heading-page-desktop-line-height);
+  }
+
+  .heroCta {
+    width: fit-content;
+  }
+
+  .start h2 {
+    font-size: var(--ds-semantic-typography-heading-section-desktop-size);
+    line-height: var(--ds-semantic-typography-heading-section-desktop-line-height);
+  }
+}
+
+@media (forced-colors: active) {
+  .brandComposition,
+  .payoutProgress > div > span {
+    forced-color-adjust: auto;
+  }
+}

@@ -69,11 +69,16 @@ function injectPrerenderedRoute(template, route, renderedRoute) {
   }
 
   if (!template.includes('<div id="root"></div>')) {
-    throw new Error('Could not find the empty <div id="root"></div> mount point in dist/index.html.');
+    throw new Error(
+      'Could not find the empty <div id="root"></div> mount point in dist/index.html.',
+    );
   }
 
   return template
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(renderedRoute.metadata.title)}</title>`)
+    .replace(
+      /<title>[\s\S]*?<\/title>/,
+      `<title>${escapeHtml(renderedRoute.metadata.title)}</title>`,
+    )
     .replace(
       /<meta\s+name="description"\s+content="[^"]*"\s*\/>/s,
       `<meta name="description" content="${escapeAttribute(renderedRoute.metadata.description)}" />`,
@@ -100,7 +105,9 @@ const vite = await createServer({
 
 try {
   const template = readFileSync(templatePath, "utf8");
-  const { getPrerenderBlogRoutes, renderBlogRoute } = await vite.ssrLoadModule("/src/entry-prerender.tsx");
+  const { getPrerenderBlogRoutes, renderBlogRoute } = await vite.ssrLoadModule(
+    "/src/entry-prerender.tsx",
+  );
   const routes = getPrerenderBlogRoutes();
 
   for (const route of routes) {

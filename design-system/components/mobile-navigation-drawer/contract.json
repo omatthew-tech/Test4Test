@@ -1,0 +1,41 @@
+{
+  "id": "mobile-navigation-drawer",
+  "name": "Mobile navigation drawer",
+  "family": "navigation",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/navigation.tsx",
+  "story": "design-system/stories/Navigation.stories.tsx",
+  "description": "Small-screen navigation with focus management.",
+  "semantics": [
+    "Named navigation",
+    "Dialog-like focus containment"
+  ],
+  "keyboard": [
+    "Escape closes",
+    "Focus restores to trigger"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "drawer"
+  ],
+  "exportName": "MobileNavigationDrawer",
+  "sizes": [
+    "mobile"
+  ],
+  "variants": [
+    "primary-navigation"
+  ],
+  "states": [
+    "closed",
+    "open",
+    "focus-contained"
+  ],
+  "accessibleName": "Required title labels the modal drawer; navigation is named Primary.",
+  "controlMode": "controlled",
+  "storyExport": "MobileNavigationDrawerContract",
+  "examples": [
+    "design-system/stories/Navigation.stories.tsx#MobileNavigationDrawerContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

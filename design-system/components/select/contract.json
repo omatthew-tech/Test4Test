@@ -1,0 +1,44 @@
+{
+  "id": "select",
+  "name": "Select",
+  "family": "inputs",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/inputs.tsx",
+  "story": "design-system/stories/Inputs.stories.tsx",
+  "description": "Native labeled selection control.",
+  "semantics": [
+    "Native select",
+    "Persistent label"
+  ],
+  "keyboard": [
+    "Native select keyboard behavior"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "inline-validation"
+  ],
+  "exportName": "Select",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "single"
+  ],
+  "states": [
+    "empty",
+    "selected",
+    "focus-visible",
+    "disabled",
+    "required",
+    "help",
+    "error"
+  ],
+  "accessibleName": "Required persistent label prop.",
+  "controlMode": "both",
+  "storyExport": "SelectContract",
+  "examples": [
+    "design-system/stories/Inputs.stories.tsx#SelectContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

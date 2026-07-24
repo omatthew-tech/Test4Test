@@ -1,0 +1,38 @@
+{
+  "id": "bento-grid",
+  "name": "Bento grid",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Deliberate asymmetric summary grid, not a default layout.",
+  "semantics": [
+    "Semantic child order is independent of visual span"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [
+    "grid"
+  ],
+  "exportName": "BentoGrid",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "standard",
+    "wide-item"
+  ],
+  "states": [
+    "default",
+    "narrow-width",
+    "long-content"
+  ],
+  "accessibleName": "Semantic child order remains meaningful without the grid.",
+  "controlMode": "not-applicable",
+  "storyExport": "BentoGridContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#BentoGridContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

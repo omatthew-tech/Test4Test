@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2, Coins } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Test4TestMark } from "@test4test/design-system";
 import { AppShell, Surface } from "../components/Layout";
-import { Test4TestLogoBurst } from "../components/Test4TestLogoBurst";
 import { useAppState } from "../context/AppStateContext";
 
 export function TestSuccessPage() {
@@ -15,23 +15,25 @@ export function TestSuccessPage() {
     <AppShell>
       <div className="test-success-shell center-surface">
         <Surface className="test-success-panel">
-          <Test4TestLogoBurst />
+          <Test4TestMark className="test-success-mark" />
 
           <div className="test-success-panel__content">
             <div className="test-success-chip">
-              {isSharedResponse ? <CheckCircle2 size={18} /> : <Coins size={18} />}
+              {isSharedResponse ? <CheckCircle2 size={20} /> : <Coins size={20} />}
               <span>{isSharedResponse ? "Feedback submitted" : "You earned 1 credit"}</span>
             </div>
             <h1>Nice work.</h1>
             {isSharedResponse ? (
               <p>
-                Thanks for sharing feedback with <strong>{submission?.productName ?? "this app"}</strong>.
-                Your notes were sent to the app owner.
+                Thanks for sharing feedback with{" "}
+                <strong>{submission?.productName ?? "this app"}</strong>. Your notes were sent to
+                the app owner.
               </p>
             ) : (
               <p>
-                Thanks for sharing feedback with <strong>{submission?.productName ?? "this app"}</strong>.
-                You&apos;re helping startups and founders, just like yourself, build better apps.
+                Thanks for sharing feedback with{" "}
+                <strong>{submission?.productName ?? "this app"}</strong>. You&apos;re helping
+                startups and founders, just like yourself, build better apps.
               </p>
             )}
             <div className="test-success-actions">

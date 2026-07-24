@@ -1,0 +1,37 @@
+{
+  "id": "section",
+  "name": "Section",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Responsive page-section spacing.",
+  "semantics": [
+    "Native section or configurable element"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [
+    "container"
+  ],
+  "exportName": "Section",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "canvas",
+    "subtle"
+  ],
+  "states": [
+    "default",
+    "narrow-width"
+  ],
+  "accessibleName": "A section needs an accessible heading when it is a landmark.",
+  "controlMode": "not-applicable",
+  "storyExport": "SectionContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#SectionContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

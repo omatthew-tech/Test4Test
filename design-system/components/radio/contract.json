@@ -1,0 +1,41 @@
+{
+  "id": "radio",
+  "name": "Radio",
+  "family": "inputs",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/inputs.tsx",
+  "story": "design-system/stories/Inputs.stories.tsx",
+  "description": "Single choice within a named group.",
+  "semantics": [
+    "Native radio",
+    "Fieldset and legend for groups"
+  ],
+  "keyboard": [
+    "Arrow keys move within group",
+    "Space selects"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Radio",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "with-description",
+    "without-description"
+  ],
+  "states": [
+    "unchecked",
+    "checked",
+    "focus-visible",
+    "disabled"
+  ],
+  "accessibleName": "Required visible label prop; groups require fieldset and legend.",
+  "controlMode": "both",
+  "storyExport": "RadioContract",
+  "examples": [
+    "design-system/stories/Inputs.stories.tsx#RadioContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

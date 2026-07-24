@@ -1,0 +1,38 @@
+{
+  "id": "empty-state",
+  "name": "Empty state",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Explains absent content and the available next action.",
+  "semantics": [
+    "Heading and descriptive text"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [
+    "button"
+  ],
+  "exportName": "EmptyState",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "with-action",
+    "without-action"
+  ],
+  "states": [
+    "empty",
+    "permission",
+    "offline"
+  ],
+  "accessibleName": "Visible heading and description explain state and next action.",
+  "controlMode": "not-applicable",
+  "storyExport": "EmptyStateContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#EmptyStateContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

@@ -20,7 +20,8 @@ export function SignInPage() {
   const [searchParams] = useSearchParams();
   const { currentUser, requestOtp, state, verifyOtp } = useAppState();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
-  const activeChallenge = state.otpChallenge && !state.otpChallenge.submissionId ? state.otpChallenge : null;
+  const activeChallenge =
+    state.otpChallenge && !state.otpChallenge.submissionId ? state.otpChallenge : null;
   const [email, setEmail] = useState(activeChallenge?.email ?? "");
   const isCurrentEmailTestAccount = isTestAccountEmail(email);
   const [code, setCode] = useState("");
@@ -31,7 +32,9 @@ export function SignInPage() {
 
   useEffect(() => {
     if (currentUser) {
-      navigate(currentUser.banStatus === "banned" ? "/banned" : returnTo ?? "/earn", { replace: true });
+      navigate(currentUser.banStatus === "banned" ? "/banned" : (returnTo ?? "/earn"), {
+        replace: true,
+      });
     }
   }, [currentUser, navigate, returnTo]);
 
@@ -62,7 +65,9 @@ export function SignInPage() {
           : "We sent a one-time code to your email.",
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not send a sign-in code right now.");
+      setMessage(
+        error instanceof Error ? error.message : "We could not send a sign-in code right now.",
+      );
     } finally {
       setIsSendingCode(false);
     }
@@ -88,7 +93,7 @@ export function SignInPage() {
 
   return (
     <AppShell eyebrowLabel={null} headerVariant="marketing">
-      <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel" hideTitle>
+      <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel">
         {hasRequestedCode ? (
           <>
             <button
@@ -103,17 +108,21 @@ export function SignInPage() {
             <h2>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h2>
             {isCurrentEmailTestAccount ? (
               <p>
-                Enter the configured test account passcode for <strong>{email || "your email"}</strong>.
+                Enter the configured test account passcode for{" "}
+                <strong>{email || "your email"}</strong>.
               </p>
             ) : (
               <p>
-                We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it below to sign in.
+                We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it below
+                to sign in.
               </p>
             )}
             <label className="field field--otp">
-              <span>{isCurrentEmailTestAccount ? "Test account passcode" : "One-time passcode"}</span>
+              <span>
+                {isCurrentEmailTestAccount ? "Test account passcode" : "One-time passcode"}
+              </span>
               <div className="otp-row">
-                <MailCheck size={18} />
+                <MailCheck size={20} />
                 <input
                   className="otp-row__input"
                   value={code}
@@ -195,7 +204,11 @@ export function SignInPage() {
               </button>
             </div>
             <div className="sign-in-panel__footer">
-              <button type="button" className="button button--secondary" onClick={() => navigate("/submit")}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => navigate("/submit")}
+              >
                 Sign up
               </button>
             </div>

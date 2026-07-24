@@ -93,9 +93,7 @@ function normalizeQuestions(value: unknown) {
 
     return {
       id:
-        typeof current.id === "string" && current.id.trim()
-          ? current.id
-          : `question-${index + 1}`,
+        typeof current.id === "string" && current.id.trim() ? current.id : `question-${index + 1}`,
       title: typeof current.title === "string" ? current.title : "Untitled question",
       type: current.type === "paragraph" ? "paragraph" : "multiple",
       required: current.required !== false,

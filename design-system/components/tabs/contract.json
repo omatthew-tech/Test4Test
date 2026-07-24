@@ -1,0 +1,41 @@
+{
+  "id": "tabs",
+  "name": "Tabs",
+  "family": "navigation",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/navigation.tsx",
+  "story": "design-system/stories/Navigation.stories.tsx",
+  "description": "Related view switching with roving focus.",
+  "semantics": [
+    "tablist, tab, and tabpanel roles",
+    "Selected state is explicit"
+  ],
+  "keyboard": [
+    "Arrow keys move focus",
+    "Home and End move to edges"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Tabs",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "automatic-activation"
+  ],
+  "states": [
+    "selected",
+    "unselected",
+    "focus-visible",
+    "long-label",
+    "overflow"
+  ],
+  "accessibleName": "Visible tab labels name tabs and panels.",
+  "controlMode": "both",
+  "storyExport": "TabsContract",
+  "examples": [
+    "design-system/stories/Navigation.stories.tsx#TabsContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

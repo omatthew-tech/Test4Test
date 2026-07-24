@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test4test.io/design-system/tokens.schema.json",
+  "title": "Test4Test DTCG 2025.10 token document",
+  "type": "object",
+  "required": ["$schema", "$description", "$extensions", "primitive", "semantic", "component"],
+  "properties": {
+    "$schema": {
+      "const": "https://www.designtokens.org/schemas/2025.10/format.json"
+    },
+    "$description": { "type": "string", "minLength": 1 },
+    "$extensions": {
+      "type": "object",
+      "required": ["com.test4test.metadata"],
+      "properties": {
+        "com.test4test.metadata": {
+          "type": "object",
+          "required": ["name", "version", "format"],
+          "properties": {
+            "name": { "const": "Test4Test Design System" },
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$"
+            },
+            "format": { "const": "DTCG 2025.10" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "primitive": { "$ref": "#/$defs/group" },
+    "semantic": { "$ref": "#/$defs/group" },
+    "component": { "$ref": "#/$defs/group" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "alias": {
+      "type": "string",
+      "pattern": "^\\{[A-Za-z0-9._ -]+\\}$"
+    },
+    "nonAliasString": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "^\\{[A-Za-z0-9._ -]+\\}$" }
+    },
+    "dimensionValue": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": { "type": "number" },
+        "unit": { "enum": ["px", "rem"] }
+      },
+      "additionalProperties": false
+    },
+    "durationValue": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": { "type": "number" },
+        "unit": { "enum": ["ms", "s"] }
+      },
+      "additionalProperties": false
+    },
+    "colorValue": {
+      "type": "object",
+      "required": ["colorSpace", "components"],
+      "properties": {
+        "colorSpace": { "const": "srgb" },
+        "components": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "number", "minimum": 0, "maximum": 1 }
+          ],
+          "items": false
+        },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hex": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "shadowValue": {
+      "type": "object",
+      "required": ["color", "offsetX", "offsetY", "blur", "spread"],
+      "properties": {
+        "color": { "$ref": "#/$defs/colorValue" },
+        "offsetX": { "$ref": "#/$defs/dimensionValue" },
+        "offsetY": { "$ref": "#/$defs/dimensionValue" },
+        "blur": { "$ref": "#/$defs/dimensionValue" },
+        "spread": { "$ref": "#/$defs/dimensionValue" },
+        "inset": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "token": {
+      "type": "object",
+      "required": ["$type", "$value"],
+      "properties": {
+        "$type": {
+          "enum": [
+            "color",
+            "dimension",
+            "fontFamily",
+            "fontWeight",
+            "duration",
+            "cubicBezier",
+            "number",
+            "shadow"
+          ]
+        },
+        "$value": {},
+        "$description": { "type": "string", "minLength": 1 },
+        "$extensions": { "type": "object" }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "$type": { "const": "color" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [{ "$ref": "#/$defs/alias" }, { "$ref": "#/$defs/colorValue" }]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "dimension" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [{ "$ref": "#/$defs/alias" }, { "$ref": "#/$defs/dimensionValue" }]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "duration" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [{ "$ref": "#/$defs/alias" }, { "$ref": "#/$defs/durationValue" }]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "fontFamily" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [
+                  { "$ref": "#/$defs/alias" },
+                  { "$ref": "#/$defs/nonAliasString" },
+                  {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "type": "string", "minLength": 1 }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "fontWeight" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [
+                  { "$ref": "#/$defs/alias" },
+                  { "type": "number", "minimum": 1, "maximum": 1000 },
+                  { "$ref": "#/$defs/nonAliasString" }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "cubicBezier" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [
+                  { "$ref": "#/$defs/alias" },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "prefixItems": [
+                      { "type": "number", "minimum": 0, "maximum": 1 },
+                      { "type": "number" },
+                      { "type": "number", "minimum": 0, "maximum": 1 },
+                      { "type": "number" }
+                    ],
+                    "items": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "number" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [{ "$ref": "#/$defs/alias" }, { "type": "number" }]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "$type": { "const": "shadow" } } },
+          "then": {
+            "properties": {
+              "$value": {
+                "oneOf": [
+                  { "$ref": "#/$defs/alias" },
+                  { "$ref": "#/$defs/shadowValue" },
+                  {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "$ref": "#/$defs/shadowValue" }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "group": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "oneOf": [{ "$ref": "#/$defs/token" }, { "$ref": "#/$defs/group" }]
+      }
+    }
+  }
+}

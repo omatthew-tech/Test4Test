@@ -19,7 +19,10 @@ export function GooglePlayClosedTestOption({
             checked={checked}
             onChange={(event) => onChange(event.target.checked)}
           />
-          <span>I need users to test my app consecutively for 14 days to meet Google Play&apos;s developer requirements</span>
+          <span>
+            I need users to test my app consecutively for 14 days to meet Google Play&apos;s
+            developer requirements
+          </span>
         </label>
         <span className="google-play-closed-test__info-wrap">
           <button
@@ -28,7 +31,7 @@ export function GooglePlayClosedTestOption({
             aria-label="More information about Google Play closed-test matching"
             aria-describedby="google-play-closed-test-tooltip"
           >
-            <Info size={14} aria-hidden="true" />
+            <Info size={16} aria-hidden="true" />
           </button>
           <span
             id="google-play-closed-test-tooltip"

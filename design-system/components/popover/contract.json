@@ -1,0 +1,39 @@
+{
+  "id": "popover",
+  "name": "Popover",
+  "family": "overlays",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/overlays.tsx",
+  "story": "design-system/stories/Overlays.stories.tsx",
+  "description": "Anchored supplemental content with explicit dismissal.",
+  "semantics": [
+    "Trigger exposes expanded and controls states"
+  ],
+  "keyboard": [
+    "Escape closes",
+    "Focus returns to trigger"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Popover",
+  "sizes": [
+    "content-defined"
+  ],
+  "variants": [
+    "anchored-dialog"
+  ],
+  "states": [
+    "closed",
+    "open",
+    "focus-visible",
+    "long-content"
+  ],
+  "accessibleName": "Required label prop labels the popover dialog.",
+  "controlMode": "uncontrolled",
+  "storyExport": "PopoverContract",
+  "examples": [
+    "design-system/stories/Overlays.stories.tsx#PopoverContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

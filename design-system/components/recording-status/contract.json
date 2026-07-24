@@ -1,0 +1,46 @@
+{
+  "id": "recording-status",
+  "name": "Recording status",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Permission, capture, upload, retry, and recovery feedback.",
+  "semantics": [
+    "Live status text",
+    "Progress has an accessible name"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [
+    "alert",
+    "progress",
+    "status-indicator"
+  ],
+  "exportName": "RecordingStatus",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "permission",
+    "recording",
+    "upload",
+    "complete",
+    "error"
+  ],
+  "states": [
+    "permission",
+    "capturing",
+    "uploading",
+    "retry",
+    "complete"
+  ],
+  "accessibleName": "Visible status and description are exposed in a polite live region.",
+  "controlMode": "controlled",
+  "storyExport": "RecordingStatusContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#RecordingStatusContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

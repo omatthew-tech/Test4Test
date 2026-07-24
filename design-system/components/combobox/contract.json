@@ -1,0 +1,43 @@
+{
+  "id": "combobox",
+  "name": "Combobox",
+  "family": "inputs",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/inputs.tsx",
+  "story": "design-system/stories/Inputs.stories.tsx",
+  "description": "Filterable selection using native datalist behavior.",
+  "semantics": [
+    "Input associated with datalist",
+    "Persistent label"
+  ],
+  "keyboard": [
+    "Native input and suggestion behavior"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "text-field"
+  ],
+  "exportName": "Combobox",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "datalist"
+  ],
+  "states": [
+    "empty",
+    "filled",
+    "expanded",
+    "disabled",
+    "help",
+    "error"
+  ],
+  "accessibleName": "Required persistent label prop.",
+  "controlMode": "both",
+  "storyExport": "ComboboxContract",
+  "examples": [
+    "design-system/stories/Inputs.stories.tsx#ComboboxContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

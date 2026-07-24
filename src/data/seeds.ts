@@ -140,7 +140,8 @@ const submissions: Submission[] = [
     userId: "user-jo",
     productName: "Pocket Pantry",
     productTypes: ["website"],
-    description: "A meal planning tool that helps users turn pantry items into realistic weekly dinners.",
+    description:
+      "A meal planning tool that helps users turn pantry items into realistic weekly dinners.",
     targetAudience: "busy households that want low-friction meal planning",
     instructions: "Search for a pantry-based recipe and save it to the week plan.",
     googlePlayClosedTestInstructions: "",
@@ -164,7 +165,8 @@ const submissions: Submission[] = [
     userId: "user-nina",
     productName: "TrailMixer",
     productTypes: ["ios", "android"],
-    description: "A trip-planning companion for stitching outdoor routes, packing lists, and weather together.",
+    description:
+      "A trip-planning companion for stitching outdoor routes, packing lists, and weather together.",
     targetAudience: "casual hikers planning day trips",
     instructions: "Plan a route and check what would help you trust the trip details.",
     googlePlayClosedTestInstructions: "",
@@ -327,15 +329,9 @@ const responses: TestResponse[] = [
     internalFlags: [],
     answers: [
       answerMultiple(pantryQuestions[0], 2),
-      answerMultiple(pantryQuestions[1], 3),
-      answerMultiple(pantryQuestions[2], 2),
       answerParagraph(
-        pantryQuestions[3],
-        "The best part was the pantry-to-meal suggestion area. It felt focused and useful without asking me for too much before showing value.",
-      ),
-      answerParagraph(
-        pantryQuestions[4],
-        "I would improve the recipe-save action first. It works, but it is easy to miss compared with the ingredient filters and the meal preview cards.",
+        pantryQuestions[1],
+        "The pantry-to-meal suggestion area felt focused and useful. I would improve the recipe-save action first because it is easy to miss beside the ingredient filters.",
       ),
     ],
   },

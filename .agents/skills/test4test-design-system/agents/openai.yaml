@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test4Test Design System"
+  short_description: "Build and audit Test4Test interface work"
+  default_prompt: "Use $test4test-design-system to build or review Test4Test UI against the canonical design system."

@@ -1,0 +1,5 @@
+design-system/specification.md
+design-system/tokens/generated/
+design-system/components/*/README.md
+design-system/components/*/contract.json
+scripts/seed-test-account.mjs

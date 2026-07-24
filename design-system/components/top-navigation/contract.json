@@ -1,0 +1,42 @@
+{
+  "id": "top-navigation",
+  "name": "Top navigation",
+  "family": "navigation",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/navigation.tsx",
+  "story": "design-system/stories/Navigation.stories.tsx",
+  "description": "Desktop application and marketing navigation.",
+  "semantics": [
+    "Header and named navigation landmark",
+    "Current page uses aria-current"
+  ],
+  "keyboard": [
+    "Tab follows document order"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "icon-button",
+    "mobile-navigation-drawer"
+  ],
+  "exportName": "TopNavigation",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "public",
+    "authenticated"
+  ],
+  "states": [
+    "default",
+    "current-route",
+    "mobile"
+  ],
+  "accessibleName": "Primary navigation landmark and Test4Test home link.",
+  "controlMode": "uncontrolled",
+  "storyExport": "TopNavigationContract",
+  "examples": [
+    "design-system/stories/Navigation.stories.tsx#TopNavigationContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

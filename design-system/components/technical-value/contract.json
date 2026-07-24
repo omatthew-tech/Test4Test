@@ -1,0 +1,36 @@
+{
+  "id": "technical-value",
+  "name": "Technical value",
+  "family": "data-display",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/data-display.tsx",
+  "story": "design-system/stories/DataDisplay.stories.tsx",
+  "description": "Monospaced identifier, code, or technical output.",
+  "semantics": [
+    "Code element when appropriate",
+    "Long values wrap"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "TechnicalValue",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "code",
+    "custom-element"
+  ],
+  "states": [
+    "default",
+    "long-content"
+  ],
+  "accessibleName": "Visible technical content.",
+  "controlMode": "not-applicable",
+  "storyExport": "TechnicalValueContract",
+  "examples": [
+    "design-system/stories/DataDisplay.stories.tsx#TechnicalValueContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

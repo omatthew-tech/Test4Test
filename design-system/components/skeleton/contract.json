@@ -1,0 +1,35 @@
+{
+  "id": "skeleton",
+  "name": "Skeleton",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Structure-preserving loading placeholder.",
+  "semantics": [
+    "Hidden from assistive technology",
+    "Parent exposes busy state"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Skeleton",
+  "sizes": [
+    "content-defined"
+  ],
+  "variants": [
+    "block"
+  ],
+  "states": [
+    "loading",
+    "reduced-motion"
+  ],
+  "accessibleName": "Hidden from assistive technology; the parent owns aria-busy and status text.",
+  "controlMode": "not-applicable",
+  "storyExport": "SkeletonContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#SkeletonContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

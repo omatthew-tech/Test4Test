@@ -1,0 +1,35 @@
+{
+  "id": "divider",
+  "name": "Divider",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Semantic or decorative section boundary.",
+  "semantics": [
+    "Native hr when meaningful",
+    "Decorative variant is hidden"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Divider",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "semantic",
+    "decorative"
+  ],
+  "states": [
+    "default"
+  ],
+  "accessibleName": "No name when decorative; native separator semantics otherwise.",
+  "controlMode": "not-applicable",
+  "storyExport": "DividerContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#DividerContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

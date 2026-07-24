@@ -38,9 +38,7 @@ export function normalizeEarnPlacementSnapshot(value: unknown) {
         ? Math.max(0, Math.round(candidate.previousWouldRankedSubmissionCount))
         : 0,
     capturedAt:
-      typeof candidate.capturedAt === "string"
-        ? candidate.capturedAt
-        : new Date().toISOString(),
+      typeof candidate.capturedAt === "string" ? candidate.capturedAt : new Date().toISOString(),
   } satisfies EarnPlacementSnapshot;
 }
 
@@ -50,10 +48,7 @@ export function saveEarnPlacementSnapshot(snapshot: EarnPlacementSnapshot | null
   }
 
   try {
-    window.sessionStorage.setItem(
-      EARN_PLACEMENT_SNAPSHOT_STORAGE_KEY,
-      JSON.stringify(snapshot),
-    );
+    window.sessionStorage.setItem(EARN_PLACEMENT_SNAPSHOT_STORAGE_KEY, JSON.stringify(snapshot));
   } catch {
     // Session storage is a convenience for the handoff, not required for submitting a test.
   }

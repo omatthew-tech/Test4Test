@@ -19,7 +19,12 @@ function BlogPostCard({ post }: { post: BlogPost }) {
       <Link to={`/blog/${post.slug}`} className="blog-card__link" aria-label={`Read ${post.title}`}>
         {post.coverImage ? (
           <div className="blog-card__cover">
-            <img src={post.coverImage.src} alt={post.coverImage.alt} loading="lazy" decoding="async" />
+            <img
+              src={post.coverImage.src}
+              alt={post.coverImage.alt}
+              loading="lazy"
+              decoding="async"
+            />
           </div>
         ) : null}
 
@@ -33,7 +38,12 @@ function BlogPostCard({ post }: { post: BlogPost }) {
 
           {post.previewImage ? (
             <div className="blog-card__preview-image">
-              <img src={post.previewImage.src} alt={post.previewImage.alt} loading="lazy" decoding="async" />
+              <img
+                src={post.previewImage.src}
+                alt={post.previewImage.alt}
+                loading="lazy"
+                decoding="async"
+              />
             </div>
           ) : null}
         </div>

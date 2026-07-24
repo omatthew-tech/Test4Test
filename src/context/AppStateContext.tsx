@@ -10,7 +10,12 @@ import {
 } from "react";
 import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { useLocation } from "react-router-dom";
-import { getPrimaryAccessLink, normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "../lib/format";
+import {
+  getPrimaryAccessLink,
+  normalizeAccessLinks,
+  normalizeProductTypes,
+  productTypesBadges,
+} from "../lib/format";
 import {
   clearPendingSubmission,
   clearSubmitFlowResume,
@@ -213,7 +218,11 @@ interface AppStateContextValue {
   ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
   createSubmission: (draft: SubmissionDraft, questions: Question[]) => Promise<string>;
   updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
-  createSubmissionVersion: (submissionId: string, title: string, description: string) => Promise<string>;
+  createSubmissionVersion: (
+    submissionId: string,
+    title: string,
+    description: string,
+  ) => Promise<string>;
   deleteSubmissionVersion: (submissionId: string, versionId: string) => Promise<string>;
   upsertSubmissionShareLink: (
     submissionId: string,
@@ -232,10 +241,7 @@ interface AppStateContextValue {
     answers: TestAnswer[],
     durationSeconds: number,
   ) => Promise<{ ok: boolean; message: string }>;
-  rateFeedback: (
-    responseId: string,
-    ratingValue: FeedbackRatingValue,
-  ) => Promise<void>;
+  rateFeedback: (responseId: string, ratingValue: FeedbackRatingValue) => Promise<void>;
   updateQuestionSet: (
     submissionId: string,
     questionSetVersionId: string,
@@ -250,10 +256,16 @@ interface AppStateContextValue {
   ) => Promise<void>;
   resetDemo: () => Promise<void>;
   changeEmail: (nextEmail: string) => Promise<{ ok: boolean; message: string }>;
-  updatePaymentMethods: (paymentMethods: PaymentMethods) => Promise<{ ok: boolean; message: string }>;
+  updatePaymentMethods: (
+    paymentMethods: PaymentMethods,
+  ) => Promise<{ ok: boolean; message: string }>;
   listEarnSubmissions: (productTypes: Submission["productTypes"]) => Promise<Submission[]>;
-  startGooglePlayClosedTestParticipation: (submissionId: string) => Promise<GooglePlayClosedTestActionResult>;
-  recordGooglePlayClosedTestCheckIn: (submissionId: string) => Promise<GooglePlayClosedTestActionResult>;
+  startGooglePlayClosedTestParticipation: (
+    submissionId: string,
+  ) => Promise<GooglePlayClosedTestActionResult>;
+  recordGooglePlayClosedTestCheckIn: (
+    submissionId: string,
+  ) => Promise<GooglePlayClosedTestActionResult>;
   deleteAccount: () => Promise<{ ok: boolean; message: string }>;
   signOut: () => Promise<void>;
 }
@@ -339,14 +351,11 @@ function normalizeQuestions(value: unknown) {
 
     return {
       id:
-        typeof current.id === "string" && current.id.trim()
-          ? current.id
-          : `question-${index + 1}`,
+        typeof current.id === "string" && current.id.trim() ? current.id : `question-${index + 1}`,
       title: typeof current.title === "string" ? current.title : "Untitled question",
       type: current.type === "paragraph" ? "paragraph" : "multiple",
       required: current.required !== false,
-      sortOrder:
-        typeof current.sortOrder === "number" ? current.sortOrder : index + 1,
+      sortOrder: typeof current.sortOrder === "number" ? current.sortOrder : index + 1,
       options: Array.isArray(current.options)
         ? current.options.map((option) => String(option))
         : undefined,
@@ -428,9 +437,7 @@ function mapSubmissionVersion(row: SubmissionVersionRow): SubmissionVersion {
     versionNumber: row.version_number,
     title: row.title,
     description:
-      typeof row.description === "string" && row.description.trim()
-        ? row.description.trim()
-        : null,
+      typeof row.description === "string" && row.description.trim() ? row.description.trim() : null,
     createdAt: row.created_at,
     isActive: row.is_active,
   };
@@ -564,9 +571,7 @@ function hasUsableSession(session: Session | null | undefined): session is Sessi
   return session.expires_at > Math.floor(Date.now() / 1000) + 30;
 }
 
-async function ensureAuthenticatedSession(
-  fallbackMessage = "Please sign in again to continue.",
-) {
+async function ensureAuthenticatedSession(fallbackMessage = "Please sign in again to continue.") {
   const supabase = requireSupabase();
   const {
     data: { session },
@@ -576,10 +581,7 @@ async function ensureAuthenticatedSession(
     return { supabase, session };
   }
 
-  const {
-    data: refreshed,
-    error: refreshError,
-  } = await supabase.auth.refreshSession();
+  const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
 
   if (refreshError || !hasUsableSession(refreshed.session)) {
     throw new Error(fallbackMessage);
@@ -592,15 +594,16 @@ async function ensureAuthenticatedSession(
 }
 
 async function getFunctionErrorMessage(error: unknown, fallbackMessage: string) {
-  const context = typeof error === "object" && error !== null && "context" in error
-    ? (error as { context?: unknown }).context
-    : null;
+  const context =
+    typeof error === "object" && error !== null && "context" in error
+      ? (error as { context?: unknown }).context
+      : null;
 
   if (context instanceof Response) {
-    const payload = await context
+    const payload = (await context
       .clone()
       .json()
-      .catch(() => null) as { error?: unknown; message?: unknown } | null;
+      .catch(() => null)) as { error?: unknown; message?: unknown } | null;
     const message =
       typeof payload?.error === "string"
         ? payload.error
@@ -622,13 +625,17 @@ async function getFunctionErrorMessage(error: unknown, fallbackMessage: string) 
 
 async function signInWithTestAccountPasscode(email: string, passcode: string) {
   const supabase = requireSupabase();
-  const fallbackMessage = "The test account could not be signed in. Check the passcode and try again.";
-  const { data, error } = await supabase.functions.invoke<TestAccountLoginResponse>("test-account-login", {
-    body: {
-      email,
-      passcode: passcode.trim(),
+  const fallbackMessage =
+    "The test account could not be signed in. Check the passcode and try again.";
+  const { data, error } = await supabase.functions.invoke<TestAccountLoginResponse>(
+    "test-account-login",
+    {
+      body: {
+        email,
+        passcode: passcode.trim(),
+      },
     },
-  });
+  );
 
   if (error) {
     throw new Error(await getFunctionErrorMessage(error, fallbackMessage));
@@ -662,8 +669,7 @@ const latestProfilePaymentSchemaMessage =
   "Your Supabase database is missing the latest payment methods schema. Run the 20260405 profile payment methods migration before saving payout details.";
 const PAYMENT_METHOD_MAX_LENGTH = 120;
 const profileBaseSelectClause = "id, email, display_name, ban_status, banned_at, created_at";
-const profilePaymentSelectClause =
-  `${profileBaseSelectClause}, paypal_handle, venmo_handle, cash_app_handle`;
+const profilePaymentSelectClause = `${profileBaseSelectClause}, paypal_handle, venmo_handle, cash_app_handle`;
 
 function normalizeOptionalProfileText(value: string | null | undefined) {
   const trimmed = typeof value === "string" ? value.trim() : "";
@@ -743,42 +749,54 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "access_links" of relation "submissions" does not exist') ||
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
-    normalized.includes('column "needs_google_play_closed_testers" of relation "submissions" does not exist') ||
-    normalized.includes('column "google_play_closed_test_instructions" of relation "submissions" does not exist') ||
+    normalized.includes(
+      'column "needs_google_play_closed_testers" of relation "submissions" does not exist',
+    ) ||
+    normalized.includes(
+      'column "google_play_closed_test_instructions" of relation "submissions" does not exist',
+    ) ||
     normalized.includes('column "public_share_slug" of relation "submissions" does not exist') ||
     normalized.includes('column "public_share_message" of relation "submissions" does not exist') ||
-    normalized.includes('column "submission_version_id" of relation "test_responses" does not exist') ||
+    normalized.includes(
+      'column "submission_version_id" of relation "test_responses" does not exist',
+    ) ||
     normalized.includes('column "public_tester_key" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_bucket" of relation "test_responses" does not exist') ||
     normalized.includes('column "recording_path" of relation "test_responses" does not exist') ||
-    normalized.includes('relation "public.google_play_closed_test_participations" does not exist') ||
+    normalized.includes(
+      'relation "public.google_play_closed_test_participations" does not exist',
+    ) ||
     normalized.includes('relation "public.google_play_closed_test_check_ins" does not exist') ||
     normalized.includes('relation "public.submission_versions" does not exist') ||
-    normalized.includes('submission_versions') ||
-    normalized.includes('create_submission_with_questions') ||
-    normalized.includes('create_submission_version') ||
-    normalized.includes('delete_submission_version') ||
-    normalized.includes('update_question_set') ||
-    normalized.includes('submit_test_response') ||
-    normalized.includes('submit_public_test_response') ||
-    normalized.includes('upsert_submission_share_link') ||
-    normalized.includes('list_earn_submissions') ||
-    normalized.includes('start_google_play_closed_test_participation') ||
-    normalized.includes('record_google_play_closed_test_check_in') ||
-    normalized.includes('p_product_types') ||
-    normalized.includes('p_access_links') ||
-    normalized.includes('p_requires_recording') ||
-    normalized.includes('p_needs_google_play_closed_testers') ||
-    normalized.includes('p_google_play_closed_test_instructions') ||
-    normalized.includes('p_recording_bucket') ||
-    normalized.includes('p_recording_path') ||
-    normalized.includes('p_question_set_version_id')
+    normalized.includes("submission_versions") ||
+    normalized.includes("create_submission_with_questions") ||
+    normalized.includes("create_submission_version") ||
+    normalized.includes("delete_submission_version") ||
+    normalized.includes("update_question_set") ||
+    normalized.includes("submit_test_response") ||
+    normalized.includes("submit_public_test_response") ||
+    normalized.includes("upsert_submission_share_link") ||
+    normalized.includes("list_earn_submissions") ||
+    normalized.includes("start_google_play_closed_test_participation") ||
+    normalized.includes("record_google_play_closed_test_check_in") ||
+    normalized.includes("p_product_types") ||
+    normalized.includes("p_access_links") ||
+    normalized.includes("p_requires_recording") ||
+    normalized.includes("p_needs_google_play_closed_testers") ||
+    normalized.includes("p_google_play_closed_test_instructions") ||
+    normalized.includes("p_recording_bucket") ||
+    normalized.includes("p_recording_path") ||
+    normalized.includes("p_question_set_version_id")
   );
 }
 
 function isProfileAuthRace(error: { code?: string; message: string; details?: string | null }) {
   const details = error.details?.toLowerCase() ?? "";
-  return error.code === "23503" && error.message.includes("profiles") && details.includes('key is not present in table "users"');
+  return (
+    error.code === "23503" &&
+    error.message.includes("profiles") &&
+    details.includes('key is not present in table "users"')
+  );
 }
 
 async function ensureProfile(authUser: SupabaseAuthUser) {
@@ -873,11 +891,10 @@ async function loadVisibleSubmissions(currentUserId: string | null) {
     ownRows = (data ?? []) as SubmissionRow[];
   }
 
-  return mergeUniqueById([...(liveRows ?? []) as SubmissionRow[], ...ownRows])
+  return mergeUniqueById([...((liveRows ?? []) as SubmissionRow[]), ...ownRows])
     .map(mapSubmission)
     .sort(
-      (first, second) =>
-        new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+      (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
     );
 }
 
@@ -959,7 +976,7 @@ async function loadResponses(currentUserId: string | null, ownedSubmissionIds: s
     ownedRows = (data ?? []) as TestResponseRow[];
   }
 
-  return mergeUniqueById([...(authoredRows ?? []) as TestResponseRow[], ...ownedRows])
+  return mergeUniqueById([...((authoredRows ?? []) as TestResponseRow[]), ...ownedRows])
     .map(mapTestResponse)
     .sort(
       (first, second) =>
@@ -1024,8 +1041,9 @@ async function loadGooglePlayClosedTestParticipations(currentUserId: string | nu
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as GooglePlayClosedTestParticipationRow[])
-    .map(mapGooglePlayClosedTestParticipation);
+  return ((data ?? []) as GooglePlayClosedTestParticipationRow[]).map(
+    mapGooglePlayClosedTestParticipation,
+  );
 }
 
 async function loadGooglePlayClosedTestCheckIns(participationIds: string[]) {
@@ -1048,8 +1066,7 @@ async function loadGooglePlayClosedTestCheckIns(participationIds: string[]) {
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as GooglePlayClosedTestCheckInRow[])
-    .map(mapGooglePlayClosedTestCheckIn);
+  return ((data ?? []) as GooglePlayClosedTestCheckInRow[]).map(mapGooglePlayClosedTestCheckIn);
 }
 
 async function loadEarnSubmissionsForProductTypes(productTypes: Submission["productTypes"]) {
@@ -1222,10 +1239,7 @@ async function persistCreateSubmissionVersion(
   return data;
 }
 
-async function persistDeleteSubmissionVersion(
-  submissionId: string,
-  versionId: string,
-) {
+async function persistDeleteSubmissionVersion(submissionId: string, versionId: string) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before deleting a version.",
   );
@@ -1249,10 +1263,7 @@ async function persistDeleteSubmissionVersion(
   return data;
 }
 
-async function persistSubmissionShareLink(
-  submissionId: string,
-  customMessage: string,
-) {
+async function persistSubmissionShareLink(submissionId: string, customMessage: string) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before sharing your test.",
   );
@@ -1282,7 +1293,9 @@ async function persistSubmissionShareLink(
   };
 }
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const designSystemFixturesEnabled =
+    import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
   const [state, setState] = useState<AppState>({
     ...emptyState,
     otpChallenge: getStoredOtpChallenge(),
@@ -1291,71 +1304,135 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const loadIdRef = useRef(0);
   const loadedStateModeRef = useRef<"none" | "light" | "full">("none");
   const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
-  const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(new Map());
+  const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(
+    new Map(),
+  );
 
-  const refreshState = useCallback(async (authUserOverride?: SupabaseAuthUser | null) => {
-    const loadId = ++loadIdRef.current;
-    let attemptedStateMode: "light" | "full" =
-      shouldLoadFullStateForPath(pathname, null) ? "full" : "light";
+  const refreshState = useCallback(
+    async (authUserOverride?: SupabaseAuthUser | null) => {
+      const loadId = ++loadIdRef.current;
+      let attemptedStateMode: "light" | "full" = shouldLoadFullStateForPath(pathname, null)
+        ? "full"
+        : "light";
 
-    if (!hasSupabaseConfig) {
-      setState({
-        ...emptyState,
-        otpChallenge: getStoredOtpChallenge(),
-      });
-      loadedStateModeRef.current = "light";
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const supabase = requireSupabase();
-      const authUser =
-        authUserOverride !== undefined
-          ? authUserOverride
-          : (await supabase.auth.getUser()).data.user;
-      const currentUserId = authUser?.id ?? null;
-      const currentProfile = authUser ? await ensureProfile(authUser) : null;
-      const shouldLoadFullState = shouldLoadFullStateForPath(pathname, currentUserId);
-      const nextStateMode = shouldLoadFullState ? "full" : "light";
-      attemptedStateMode = nextStateMode;
-      const shouldShowLoading =
-        loadedStateModeRef.current === "none" ||
-        (nextStateMode === "full" && loadedStateModeRef.current !== "full");
-
-      if (shouldShowLoading) {
-        setIsLoading(true);
-      }
-
-      if (currentProfile) {
-        trackAuthenticatedVisit(currentProfile.id);
-      }
-
-      if (currentProfile?.banStatus === "banned") {
+      if (designSystemFixturesEnabled) {
+        const { createDesignSystemFixtureState } = await import("../testing/designSystemFixtures");
         if (loadId !== loadIdRef.current) {
           return;
         }
-
-        setState({
-          currentUserId,
-          users: [currentProfile],
-          submissions: [],
-          submissionVersions: [],
-          questionSetVersions: [],
-          responses: [],
-          feedbackRatings: [],
-          creditTransactions: [],
-          googlePlayClosedTestParticipations: [],
-          googlePlayClosedTestCheckIns: [],
-          emailLogs: [],
-          moderationActions: [],
-          otpChallenge: getStoredOtpChallenge(),
-        });
-        loadedStateModeRef.current = "light";
+        setState(createDesignSystemFixtureState(search));
+        loadedStateModeRef.current = "full";
+        setIsLoading(false);
         return;
       }
 
-      if (!shouldLoadFullState) {
+      if (!hasSupabaseConfig) {
+        setState({
+          ...emptyState,
+          otpChallenge: getStoredOtpChallenge(),
+        });
+        loadedStateModeRef.current = "light";
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const supabase = requireSupabase();
+        const authUser =
+          authUserOverride !== undefined
+            ? authUserOverride
+            : (await supabase.auth.getUser()).data.user;
+        const currentUserId = authUser?.id ?? null;
+        const currentProfile = authUser ? await ensureProfile(authUser) : null;
+        const shouldLoadFullState = shouldLoadFullStateForPath(pathname, currentUserId);
+        const nextStateMode = shouldLoadFullState ? "full" : "light";
+        attemptedStateMode = nextStateMode;
+        const shouldShowLoading =
+          loadedStateModeRef.current === "none" ||
+          (nextStateMode === "full" && loadedStateModeRef.current !== "full");
+
+        if (shouldShowLoading) {
+          setIsLoading(true);
+        }
+
+        if (currentProfile) {
+          trackAuthenticatedVisit(currentProfile.id);
+        }
+
+        if (currentProfile?.banStatus === "banned") {
+          if (loadId !== loadIdRef.current) {
+            return;
+          }
+
+          setState({
+            currentUserId,
+            users: [currentProfile],
+            submissions: [],
+            submissionVersions: [],
+            questionSetVersions: [],
+            responses: [],
+            feedbackRatings: [],
+            creditTransactions: [],
+            googlePlayClosedTestParticipations: [],
+            googlePlayClosedTestCheckIns: [],
+            emailLogs: [],
+            moderationActions: [],
+            otpChallenge: getStoredOtpChallenge(),
+          });
+          loadedStateModeRef.current = "light";
+          return;
+        }
+
+        if (!shouldLoadFullState) {
+          if (loadId !== loadIdRef.current) {
+            return;
+          }
+
+          setState({
+            currentUserId,
+            users: currentProfile ? [currentProfile] : [],
+            submissions: [],
+            submissionVersions: [],
+            questionSetVersions: [],
+            responses: [],
+            feedbackRatings: [],
+            creditTransactions: [],
+            googlePlayClosedTestParticipations: [],
+            googlePlayClosedTestCheckIns: [],
+            emailLogs: [],
+            moderationActions: [],
+            otpChallenge: getStoredOtpChallenge(),
+          });
+          loadedStateModeRef.current = "light";
+          return;
+        }
+
+        const submissions = await loadVisibleSubmissions(currentUserId);
+        const submissionIds = submissions.map((submission) => submission.id);
+        const ownedSubmissionIds = currentUserId
+          ? submissions
+              .filter((submission) => submission.userId === currentUserId)
+              .map((submission) => submission.id)
+          : [];
+        const [
+          submissionVersions,
+          questionSetVersions,
+          responses,
+          feedbackRatings,
+          creditTransactions,
+          googlePlayClosedTestParticipations,
+        ] = await Promise.all([
+          loadVisibleSubmissionVersions(submissionIds),
+          loadVisibleQuestionSets(submissionIds),
+          loadResponses(currentUserId, ownedSubmissionIds),
+          loadFeedbackRatings(currentUserId),
+          loadCreditTransactions(currentUserId),
+          loadGooglePlayClosedTestParticipations(currentUserId),
+        ]);
+        const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
+          googlePlayClosedTestParticipations.map((participation) => participation.id),
+        );
+
         if (loadId !== loadIdRef.current) {
           return;
         }
@@ -1363,85 +1440,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState({
           currentUserId,
           users: currentProfile ? [currentProfile] : [],
-          submissions: [],
-          submissionVersions: [],
-          questionSetVersions: [],
-          responses: [],
-          feedbackRatings: [],
-          creditTransactions: [],
-          googlePlayClosedTestParticipations: [],
-          googlePlayClosedTestCheckIns: [],
+          submissions,
+          submissionVersions,
+          questionSetVersions,
+          responses,
+          feedbackRatings,
+          creditTransactions,
+          googlePlayClosedTestParticipations,
+          googlePlayClosedTestCheckIns,
           emailLogs: [],
           moderationActions: [],
           otpChallenge: getStoredOtpChallenge(),
         });
-        loadedStateModeRef.current = "light";
-        return;
-      }
+        loadedStateModeRef.current = "full";
+      } catch (error) {
+        if (loadId !== loadIdRef.current) {
+          return;
+        }
 
-      const submissions = await loadVisibleSubmissions(currentUserId);
-      const submissionIds = submissions.map((submission) => submission.id);
-      const ownedSubmissionIds = currentUserId
-        ? submissions
-            .filter((submission) => submission.userId === currentUserId)
-            .map((submission) => submission.id)
-        : [];
-      const [
-        submissionVersions,
-        questionSetVersions,
-        responses,
-        feedbackRatings,
-        creditTransactions,
-        googlePlayClosedTestParticipations,
-      ] = await Promise.all([
-        loadVisibleSubmissionVersions(submissionIds),
-        loadVisibleQuestionSets(submissionIds),
-        loadResponses(currentUserId, ownedSubmissionIds),
-        loadFeedbackRatings(currentUserId),
-        loadCreditTransactions(currentUserId),
-        loadGooglePlayClosedTestParticipations(currentUserId),
-      ]);
-      const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
-        googlePlayClosedTestParticipations.map((participation) => participation.id),
-      );
-
-      if (loadId !== loadIdRef.current) {
-        return;
+        console.error(error);
+        setState({
+          ...emptyState,
+          otpChallenge: getStoredOtpChallenge(),
+        });
+        loadedStateModeRef.current = attemptedStateMode;
+      } finally {
+        if (loadId === loadIdRef.current) {
+          setIsLoading(false);
+        }
       }
-
-      setState({
-        currentUserId,
-        users: currentProfile ? [currentProfile] : [],
-        submissions,
-        submissionVersions,
-        questionSetVersions,
-        responses,
-        feedbackRatings,
-        creditTransactions,
-        googlePlayClosedTestParticipations,
-        googlePlayClosedTestCheckIns,
-        emailLogs: [],
-        moderationActions: [],
-        otpChallenge: getStoredOtpChallenge(),
-      });
-      loadedStateModeRef.current = "full";
-    } catch (error) {
-      if (loadId !== loadIdRef.current) {
-        return;
-      }
-
-      console.error(error);
-      setState({
-        ...emptyState,
-        otpChallenge: getStoredOtpChallenge(),
-      });
-      loadedStateModeRef.current = attemptedStateMode;
-    } finally {
-      if (loadId === loadIdRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [pathname]);
+    },
+    [designSystemFixturesEnabled, pathname, search],
+  );
 
   useEffect(() => {
     void refreshState();
@@ -1472,7 +1502,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       state,
       currentUser,
       isLoading: effectiveIsLoading,
-      isConfigured: hasSupabaseConfig,
+      isConfigured: designSystemFixturesEnabled ? false : hasSupabaseConfig,
       async requestOtp(email, submissionId) {
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -1507,9 +1537,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const sendPromise = (async () => {
-          const supabase = requireSupabase();
-
           if (!isTestAccountEmail(normalizedEmail)) {
+            const supabase = requireSupabase();
             const { error } = await supabase.auth.signInWithOtp({
               email: normalizedEmail,
               options: {
@@ -1717,7 +1746,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return shareLink;
       },
-      async completeTest(submissionId, answers, durationSeconds, recording, questionSetVersionId, submissionVersionId) {
+      async completeTest(
+        submissionId,
+        answers,
+        durationSeconds,
+        recording,
+        questionSetVersionId,
+        submissionVersionId,
+      ) {
         if (!currentUser) {
           const supabase = requireSupabase();
           let { data, error } = await supabase.rpc("submit_public_test_response", {
@@ -1734,11 +1770,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           if (
             error &&
             !recording &&
-            (
-              error.message.includes("p_recording_bucket") ||
+            (error.message.includes("p_recording_bucket") ||
               error.message.includes("p_recording_path") ||
-              error.message.includes("Could not find the function")
-            )
+              error.message.includes("Could not find the function"))
           ) {
             const retry = await supabase.rpc("submit_public_test_response", {
               p_submission_id: submissionId,
@@ -1794,11 +1828,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         if (
           error &&
-          (
-            error.message.includes("p_question_set_version_id") ||
+          (error.message.includes("p_question_set_version_id") ||
             error.message.includes("p_submission_version_id") ||
-            error.message.includes("Could not find the function")
-          )
+            error.message.includes("Could not find the function"))
         ) {
           const retry = await supabase.rpc("submit_test_response", {
             p_submission_id: submissionId,
@@ -1972,7 +2004,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const supabase = requireSupabase();
-        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/profile` : undefined;
+        const redirectTo =
+          typeof window !== "undefined" ? `${window.location.origin}/profile` : undefined;
         const { error } = await supabase.auth.updateUser(
           { email: normalizedEmail },
           { emailRedirectTo: redirectTo },
@@ -2051,14 +2084,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return {
             ...currentState,
             users: existingUser
-              ? currentState.users.map((user) =>
-                  user.id === currentUser.id ? nextUser : user,
-                )
+              ? currentState.users.map((user) => (user.id === currentUser.id ? nextUser : user))
               : [...currentState.users, nextUser],
           };
         });
 
-        const filledCount = Object.values(normalizedPaymentMethods).filter((value) => Boolean(value)).length;
+        const filledCount = Object.values(normalizedPaymentMethods).filter((value) =>
+          Boolean(value),
+        ).length;
 
         if (filledCount > 0) {
           void notifyTipPaymentMethodsAdded().catch((error) => {
@@ -2182,7 +2215,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           } catch {
             return {
               ok: false,
-              message: "We couldn't verify your account deletion request. Refresh the page and try again.",
+              message:
+                "We couldn't verify your account deletion request. Refresh the page and try again.",
             };
           }
         }
@@ -2192,7 +2226,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         if (error) {
           let message = error.message?.trim() || "We could not delete your account right now.";
           const response =
-            typeof error === "object" && error && "context" in error && error.context instanceof Response
+            typeof error === "object" &&
+            error &&
+            "context" in error &&
+            error.context instanceof Response
               ? error.context
               : null;
 
@@ -2206,7 +2243,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }
 
           if (/invalid jwt/i.test(message) || /unauthorized/i.test(message)) {
-            message = "We couldn't verify your account deletion request. Refresh the page and try again.";
+            message =
+              "We couldn't verify your account deletion request. Refresh the page and try again.";
           }
 
           return {
@@ -2244,11 +2282,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState(null);
       },
     };
-  }, [isLoading, pathname, refreshState, state]);
+  }, [designSystemFixturesEnabled, isLoading, pathname, refreshState, state]);
 
-  return (
-    <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
-  );
+  return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
 
 export function useAppState() {
@@ -2260,20 +2296,3 @@ export function useAppState() {
 
   return context;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

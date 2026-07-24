@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test4test.io/design-system/provenance.schema.json",
+  "title": "Test4Test design-system provenance",
+  "type": "object",
+  "required": [
+    "$schema",
+    "name",
+    "version",
+    "source",
+    "sourceSha256",
+    "repositoryPath",
+    "owner",
+    "implementationAgent",
+    "generationMethod",
+    "adoptedAt"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "name": { "const": "Test4Test Design System" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "source": { "type": "string", "minLength": 1 },
+    "sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "repositoryPath": { "const": "design-system/specification.md" },
+    "owner": { "type": "string", "minLength": 1 },
+    "implementationAgent": { "type": "string", "minLength": 1 },
+    "generationMethod": { "type": "string", "minLength": 1 },
+    "adoptedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

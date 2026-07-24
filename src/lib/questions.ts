@@ -7,12 +7,7 @@ import {
 import { ProductType, Question, QuestionMode, SubmissionDraft } from "../types";
 import { hasNativeProductTypes, normalizeAccessUrl } from "./format";
 
-const easeScale = [
-  "Very hard",
-  "A little hard",
-  "Easy enough",
-  "Very easy",
-];
+const easeScale = ["Very hard", "A little hard", "Easy enough", "Very easy"];
 
 const clarityScale = [
   "Very unclear",
@@ -22,12 +17,7 @@ const clarityScale = [
   "Very clear",
 ];
 
-const trustScale = [
-  "Not at all",
-  "A little",
-  "Mostly",
-  "Very",
-];
+const trustScale = ["Not at all", "A little", "Mostly", "Very"];
 
 const GENERAL_MULTIPLE_QUESTION_COUNT = 3;
 const GENERAL_PARAGRAPH_QUESTION_COUNT = 2;
@@ -126,13 +116,7 @@ function normalizeGeneralQuestionOptions(options: readonly string[]) {
 }
 
 function buildGeneralPlaceholderQuestion() {
-  return createQuestion(
-    GENERAL_PLACEHOLDER_QUESTION_ID,
-    "",
-    "multiple",
-    1,
-    ["", ""],
-  );
+  return createQuestion(GENERAL_PLACEHOLDER_QUESTION_ID, "", "multiple", 1, ["", ""]);
 }
 
 function buildPersonalizedGeneralQuestion(
@@ -193,18 +177,22 @@ function buildGeneralQuestionsFromTemplates(
   return [
     buildGeneralPlaceholderQuestion(),
     buildPersonalizedGeneralQuestion(productName, featuredTemplate, 2),
-    ...fallbackMultipleTemplates.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT - 2).map((template, index) =>
-      createQuestion(
-        `general-${template.id}`,
-        template.prompt,
-        "multiple",
-        index + 3,
-        normalizeGeneralQuestionOptions(template.options),
+    ...fallbackMultipleTemplates
+      .slice(0, GENERAL_MULTIPLE_QUESTION_COUNT - 2)
+      .map((template, index) =>
+        createQuestion(
+          `general-${template.id}`,
+          template.prompt,
+          "multiple",
+          index + 3,
+          normalizeGeneralQuestionOptions(template.options),
+        ),
       ),
-    ),
-    ...fallbackParagraphTemplates.slice(0, GENERAL_PARAGRAPH_QUESTION_COUNT).map((template, index) =>
-      buildGeneralParagraphQuestion(template, GENERAL_MULTIPLE_QUESTION_COUNT + index + 1),
-    ),
+    ...fallbackParagraphTemplates
+      .slice(0, GENERAL_PARAGRAPH_QUESTION_COUNT)
+      .map((template, index) =>
+        buildGeneralParagraphQuestion(template, GENERAL_MULTIPLE_QUESTION_COUNT + index + 1),
+      ),
   ];
 }
 
@@ -229,12 +217,7 @@ function getFeaturedGeneralTemplateFromQuestion(question: Question | undefined) 
 export function buildStarterGeneralQuestions(_productName: string) {
   return [
     buildGeneralPlaceholderQuestion(),
-    createQuestion(
-      GENERAL_STARTER_PARAGRAPH_QUESTION_ID,
-      "",
-      "paragraph",
-      2,
-    ),
+    createQuestion(GENERAL_STARTER_PARAGRAPH_QUESTION_ID, "", "paragraph", 2),
   ];
 }
 
@@ -243,10 +226,7 @@ export function buildGeneralQuestions(productName: string) {
     productName,
     resolveGeneralTemplate(GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID),
     getTemplatesByIds(generalQuestionTemplateById, GENERAL_DEFAULT_TEMPLATE_IDS),
-    getTemplatesByIds(
-      generalParagraphQuestionTemplateById,
-      GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS,
-    ),
+    getTemplatesByIds(generalParagraphQuestionTemplateById, GENERAL_DEFAULT_PARAGRAPH_TEMPLATE_IDS),
   );
 }
 
@@ -286,8 +266,12 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
 
   const isGeneralSet =
     questions.length === GENERAL_QUESTION_COUNT &&
-    questions.slice(0, GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "multiple") &&
-    questions.slice(GENERAL_MULTIPLE_QUESTION_COUNT).every((question) => question.type === "paragraph") &&
+    questions
+      .slice(0, GENERAL_MULTIPLE_QUESTION_COUNT)
+      .every((question) => question.type === "multiple") &&
+    questions
+      .slice(GENERAL_MULTIPLE_QUESTION_COUNT)
+      .every((question) => question.type === "paragraph") &&
     questions[0]?.id === GENERAL_PLACEHOLDER_QUESTION_ID &&
     (questions[1]?.id.startsWith(GENERAL_PERSONALIZED_QUESTION_ID_PREFIX) ||
       questions[1]?.id === LEGACY_GENERAL_PERSONALIZED_QUESTION_ID);
@@ -304,7 +288,10 @@ export function syncGeneralQuestionsProductName(questions: Question[], productNa
     {
       ...questions[0],
       sortOrder: 1,
-      options: questions[0].type === "multiple" && questions[0].options ? [...questions[0].options] : undefined,
+      options:
+        questions[0].type === "multiple" && questions[0].options
+          ? [...questions[0].options]
+          : undefined,
     },
     buildPersonalizedGeneralQuestion(
       productName,
@@ -359,32 +346,14 @@ export function buildAiQuestions(draft: SubmissionDraft) {
       1,
       [...clarityScale],
     ),
-    createQuestion(
-      `${productName}-ai-2`,
-      `How easy was it to ${primaryTask}?`,
-      "multiple",
-      2,
-      [...easeScale],
-    ),
-    createQuestion(
-      `${productName}-ai-3`,
-      "How trustworthy did it feel?",
-      "multiple",
-      3,
-      [...trustScale],
-    ),
-    createQuestion(
-      `${productName}-ai-4`,
-      "Where did you hesitate or slow down?",
-      "paragraph",
-      4,
-    ),
-    createQuestion(
-      `${productName}-ai-5`,
-      "What would make it easier right away?",
-      "paragraph",
-      5,
-    ),
+    createQuestion(`${productName}-ai-2`, `How easy was it to ${primaryTask}?`, "multiple", 2, [
+      ...easeScale,
+    ]),
+    createQuestion(`${productName}-ai-3`, "How trustworthy did it feel?", "multiple", 3, [
+      ...trustScale,
+    ]),
+    createQuestion(`${productName}-ai-4`, "Where did you hesitate or slow down?", "paragraph", 4),
+    createQuestion(`${productName}-ai-5`, "What would make it easier right away?", "paragraph", 5),
   ];
 }
 
@@ -446,11 +415,14 @@ export function validateAccessLink(url: string, productType: ProductType) {
 
     if (
       productType !== "website" &&
-      !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(normalizedUrl)
+      !/(appstore|play\.google|testflight|figma|framer|notion|webflow|vercel|netlify|github)/i.test(
+        normalizedUrl,
+      )
     ) {
       return {
         valid: true,
-        message: "Public store, beta, and demo links are allowed as long as they are easy to access.",
+        message:
+          "Public store, beta, and demo links are allowed as long as they are easy to access.",
       };
     }
 
@@ -471,19 +443,8 @@ export function validateAccessLink(url: string, productType: ProductType) {
 
 export function defaultCustomQuestions(productName: string) {
   return [
-    createQuestion(
-      `${productName}-custom-1`,
-      "",
-      "multiple",
-      1,
-      ["", ""],
-    ),
-    createQuestion(
-      `${productName}-custom-2`,
-      "",
-      "paragraph",
-      2,
-    ),
+    createQuestion(`${productName}-custom-1`, "", "multiple", 1, ["", ""]),
+    createQuestion(`${productName}-custom-2`, "", "paragraph", 2),
   ];
 }
 
@@ -526,6 +487,3 @@ export function questionTypeLabel(mode: QuestionMode) {
       return "Custom questions";
   }
 }
-
-
-

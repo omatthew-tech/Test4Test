@@ -95,5 +95,8 @@ export function getLatestBlogPosts(posts = getPublishedBlogPosts()) {
 }
 
 export function getPublishedBlogPostBySlug(slug: string) {
-  return blogPosts.find((post) => post.slug === slug && post.status === "published" && !post.noindex) ?? null;
+  return (
+    blogPosts.find((post) => post.slug === slug && post.status === "published" && !post.noindex) ??
+    null
+  );
 }

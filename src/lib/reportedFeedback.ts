@@ -20,7 +20,9 @@ export function loadReportedFeedbackResponseIds(userId: string) {
 
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed)
-      ? parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      ? parsed.filter(
+          (value): value is string => typeof value === "string" && value.trim().length > 0,
+        )
       : [];
   } catch {
     return [];
@@ -76,7 +78,11 @@ export function reconcileReportedFeedbackResponseIds(
   }
 
   const explicitStatuses = new Map(items.map((item) => [item.responseId, item.reportStatus]));
-  const next = current.filter((responseId) => explicitStatuses.get(responseId) !== "resolved" && explicitStatuses.get(responseId) !== "dismissed");
+  const next = current.filter(
+    (responseId) =>
+      explicitStatuses.get(responseId) !== "resolved" &&
+      explicitStatuses.get(responseId) !== "dismissed",
+  );
 
   if (next.length !== current.length) {
     saveReportedFeedbackResponseIds(userId, next);

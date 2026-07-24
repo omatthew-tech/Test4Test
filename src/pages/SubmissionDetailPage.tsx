@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,16 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useModalFocus } from "@test4test/design-system";
 import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
 import { AppShell, Surface } from "../components/Layout";
 import { ReactionFaces } from "../components/ReactionFaces";
 import { useAppState } from "../context/AppStateContext";
 import { formatDateTime, getOrderedAccessLinks } from "../lib/format";
-import {
-  buildAiQuestions,
-  buildGeneralQuestions,
-  defaultCustomQuestions,
-} from "../lib/questions";
+import { buildAiQuestions, buildGeneralQuestions, defaultCustomQuestions } from "../lib/questions";
 import {
   buildSubmissionSummary,
   getActiveQuestionSet,
@@ -82,8 +79,8 @@ function getTipHref(key: TipMethodKey, value: string) {
 function hasTipPaymentMethods(paymentMethods: PaymentMethods) {
   return Boolean(
     paymentMethods.paypalHandle?.trim() ||
-      paymentMethods.venmoHandle?.trim() ||
-      paymentMethods.cashAppHandle?.trim(),
+    paymentMethods.venmoHandle?.trim() ||
+    paymentMethods.cashAppHandle?.trim(),
   );
 }
 
@@ -137,20 +134,25 @@ export function SubmissionDetailPage() {
   } = useAppState();
   const submission = state.submissions.find((item) => item.id === submissionId);
   const accessLinks = useMemo(
-    () => (submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : []),
+    () =>
+      submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : [],
     [submission],
   );
   const submissionVersions = useMemo(
     () => (submission ? getSubmissionVersions(state, submission.id) : []),
     [state, submission],
   );
-  const activeSubmissionVersion = submission ? getActiveSubmissionVersion(state, submission.id) : null;
+  const activeSubmissionVersion = submission
+    ? getActiveSubmissionVersion(state, submission.id)
+    : null;
   const activeQuestionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [responseView, setResponseView] = useState<ResponseViewMode>("all");
   const [selectedResponseIndex, setSelectedResponseIndex] = useState(0);
   const [editMode, setEditMode] = useState<QuestionMode>(submission?.questionMode ?? "general");
-  const [editQuestions, setEditQuestions] = useState<Question[]>(activeQuestionSet?.questions ?? []);
+  const [editQuestions, setEditQuestions] = useState<Question[]>(
+    activeQuestionSet?.questions ?? [],
+  );
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
   const [showVersionCreator, setShowVersionCreator] = useState(false);
   const [nextVersionTitle, setNextVersionTitle] = useState("");
@@ -172,6 +174,15 @@ export function SubmissionDetailPage() {
   const [recordingActionError, setRecordingActionError] = useState("");
   const [recordingPreviewUrl, setRecordingPreviewUrl] = useState("");
   const [recordingPreviewFileName, setRecordingPreviewFileName] = useState("");
+  const versionCreatorDialogFocus = useModalFocus<HTMLDivElement>(showVersionCreator, () => {
+    if (!isCreatingVersion) setShowVersionCreator(false);
+  });
+  const versionDeleteDialogFocus = useModalFocus<HTMLDivElement>(showVersionDeleteConfirm, () => {
+    if (!isDeletingVersion) setShowVersionDeleteConfirm(false);
+  });
+  const questionEditorDialogFocus = useModalFocus<HTMLDivElement>(showQuestionEditor, () =>
+    setShowQuestionEditor(false),
+  );
   const selectedResponseIdRef = useRef<string | null>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
   const linkedResponseId = searchParams.get("response")?.trim() ?? "";
@@ -215,10 +226,7 @@ export function SubmissionDetailPage() {
         return;
       }
 
-      counts.set(
-        response.submissionVersionId,
-        (counts.get(response.submissionVersionId) ?? 0) + 1,
-      );
+      counts.set(response.submissionVersionId, (counts.get(response.submissionVersionId) ?? 0) + 1);
     });
 
     return counts;
@@ -228,19 +236,21 @@ export function SubmissionDetailPage() {
     [submissionVersions, versionPendingDeleteId],
   );
   const versionPendingDeleteResponseCount = versionPendingDelete
-    ? responseCountsByVersion.get(versionPendingDelete.id) ?? 0
+    ? (responseCountsByVersion.get(versionPendingDelete.id) ?? 0)
     : 0;
   const latestResponse = allResponses[0] ?? null;
-  const nextVersionNumber = submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
+  const nextVersionNumber =
+    submissionVersions.length > 0 ? submissionVersions[0].versionNumber + 1 : 2;
   const linkedResponse = useMemo(
     () =>
       linkedResponseId
-        ? allResponses.find((response) => response.id === linkedResponseId) ?? null
+        ? (allResponses.find((response) => response.id === linkedResponseId) ?? null)
         : null,
     [allResponses, linkedResponseId],
   );
 
-  const savedEditMode: QuestionMode = activeQuestionSet?.mode ?? submission?.questionMode ?? "general";
+  const savedEditMode: QuestionMode =
+    activeQuestionSet?.mode ?? submission?.questionMode ?? "general";
   const savedEditQuestions = activeQuestionSet?.questions ?? [];
 
   const openQuestionEditor = () => {
@@ -411,7 +421,7 @@ export function SubmissionDetailPage() {
       setSelectedVersionId(
         selectedVersion?.id === versionPendingDelete.id
           ? nextVersionId
-          : selectedVersion?.id ?? nextVersionId,
+          : (selectedVersion?.id ?? nextVersionId),
       );
       setResponseView(submission.requiresRecording ? "individual" : "all");
       setSelectedResponseIndex(0);
@@ -468,26 +478,29 @@ export function SubmissionDetailPage() {
     setRecordingAction("watch");
     setRecordingActionError("");
 
-    void requestResponseRecordingUrl(responseId).then((recordingUrl) => {
-      if (cancelled || selectedResponseIdRef.current !== responseId) {
-        return;
-      }
+    void requestResponseRecordingUrl(responseId)
+      .then((recordingUrl) => {
+        if (cancelled || selectedResponseIdRef.current !== responseId) {
+          return;
+        }
 
-      setRecordingPreviewUrl(recordingUrl.url);
-      setRecordingPreviewFileName(recordingUrl.fileName);
-    }).catch((error) => {
-      if (cancelled || selectedResponseIdRef.current !== responseId) {
-        return;
-      }
+        setRecordingPreviewUrl(recordingUrl.url);
+        setRecordingPreviewFileName(recordingUrl.fileName);
+      })
+      .catch((error) => {
+        if (cancelled || selectedResponseIdRef.current !== responseId) {
+          return;
+        }
 
-      setRecordingActionError(
-        error instanceof Error ? error.message : "The recording could not be loaded right now.",
-      );
-    }).finally(() => {
-      if (!cancelled && selectedResponseIdRef.current === responseId) {
-        setRecordingAction(null);
-      }
-    });
+        setRecordingActionError(
+          error instanceof Error ? error.message : "The recording could not be loaded right now.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled && selectedResponseIdRef.current === responseId) {
+          setRecordingAction(null);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -520,12 +533,14 @@ export function SubmissionDetailPage() {
         return [];
       }
 
-      return [{
-        key,
-        label,
-        value,
-        href: getTipHref(key, value),
-      }];
+      return [
+        {
+          key,
+          label,
+          value,
+          href: getTipHref(key, value),
+        },
+      ];
     });
   }, [tipProfile]);
 
@@ -661,9 +676,10 @@ export function SubmissionDetailPage() {
       return;
     }
 
-    const pendingWindow = mode === "download" && typeof window !== "undefined"
-      ? window.open("", "_blank", "noopener,noreferrer")
-      : null;
+    const pendingWindow =
+      mode === "download" && typeof window !== "undefined"
+        ? window.open("", "_blank", "noopener,noreferrer")
+        : null;
 
     setRecordingAction(mode);
     setRecordingActionError("");
@@ -734,7 +750,9 @@ export function SubmissionDetailPage() {
       return;
     }
 
-    setEditQuestions(activeQuestionSet?.questions ?? defaultCustomQuestions(submission.productName));
+    setEditQuestions(
+      activeQuestionSet?.questions ?? defaultCustomQuestions(submission.productName),
+    );
   };
 
   const hasReachedEditQuestionLimit = editQuestions.length >= 10;
@@ -809,12 +827,22 @@ export function SubmissionDetailPage() {
   };
 
   const visibleEditMode: "custom" | "ai" = editMode === "ai" ? "ai" : "custom";
-  const shouldShowVersionSwitcher = submissionVersions.length > 1 || (selectedVersion?.versionNumber ?? 1) > 1;
+  const shouldShowVersionSwitcher =
+    submissionVersions.length > 1 || (selectedVersion?.versionNumber ?? 1) > 1;
 
-  if (!currentUser || !submission || submission.userId !== currentUser.id || !selectedVersion || !activeQuestionSet || !summary) {
+  if (
+    !currentUser ||
+    !submission ||
+    submission.userId !== currentUser.id ||
+    !selectedVersion ||
+    !activeQuestionSet ||
+    !summary
+  ) {
     return (
       <AppShell title="Results" description="That submission could not be found.">
-        <Surface><p>Try returning to My Tests and opening one of your submissions.</p></Surface>
+        <Surface>
+          <p>Try returning to My Tests and opening one of your submissions.</p>
+        </Surface>
       </AppShell>
     );
   }
@@ -826,7 +854,10 @@ export function SubmissionDetailPage() {
           <div className="results-header-card__title-row">
             <div className="results-header-card__copy">
               <h1>{submission.productName}</h1>
-              <p>{submission.description || "All of your tester feedback will appear here as responses come in."}</p>
+              <p>
+                {submission.description ||
+                  "All of your tester feedback will appear here as responses come in."}
+              </p>
             </div>
             {accessLinks.length > 0 ? (
               <div className="results-header-card__actions inline-actions">
@@ -847,8 +878,14 @@ export function SubmissionDetailPage() {
           </div>
 
           <div className="results-header-card__meta">
-            <span>{allResponses.length} {allResponses.length === 1 ? "response" : "responses"}</span>
-            <span>{latestResponse ? `Latest feedback ${formatDateTime(latestResponse.submittedAt)}` : "No feedback yet"}</span>
+            <span>
+              {allResponses.length} {allResponses.length === 1 ? "response" : "responses"}
+            </span>
+            <span>
+              {latestResponse
+                ? `Latest feedback ${formatDateTime(latestResponse.submittedAt)}`
+                : "No feedback yet"}
+            </span>
           </div>
         </Surface>
 
@@ -859,9 +896,15 @@ export function SubmissionDetailPage() {
               <h2>14-day participant progress</h2>
             </div>
             <div className="google-play-owner-progress__metrics">
-              <span><strong>{activeGooglePlayClosedTests}</strong> active</span>
-              <span><strong>{completedGooglePlayClosedTests}</strong> completed</span>
-              <span><strong>{missedGooglePlayClosedTests}</strong> missed</span>
+              <span>
+                <strong>{activeGooglePlayClosedTests}</strong> active
+              </span>
+              <span>
+                <strong>{completedGooglePlayClosedTests}</strong> completed
+              </span>
+              <span>
+                <strong>{missedGooglePlayClosedTests}</strong> missed
+              </span>
             </div>
             {submission.googlePlayClosedTestInstructions.trim() ? (
               <p>{submission.googlePlayClosedTestInstructions}</p>
@@ -878,7 +921,7 @@ export function SubmissionDetailPage() {
             {shouldShowVersionSwitcher ? (
               <div
                 className={`results-version-switcher${submissionVersions.length === 1 ? " results-version-switcher--single" : " results-version-switcher--multi"}`}
-                role="tablist"
+                role="group"
                 aria-label="Versions"
               >
                 {submissionVersions.map((version) => {
@@ -911,7 +954,7 @@ export function SubmissionDetailPage() {
                               : `Delete Version ${version.versionNumber}`
                           }
                         >
-                          <X size={14} />
+                          <X size={16} />
                         </button>
                       ) : null}
                     </div>
@@ -925,11 +968,12 @@ export function SubmissionDetailPage() {
               New Version
             </button>
             {isRecordingResults ? null : (
-              <div className="results-toggle" role="tablist" aria-label="Response view">
+              <div className="results-toggle" role="group" aria-label="Response view">
                 <button
                   type="button"
                   className={`results-toggle__button${responseView === "all" ? " results-toggle__button--active" : ""}`}
                   onClick={() => setResponseView("all")}
+                  aria-pressed={responseView === "all"}
                 >
                   All Responses
                 </button>
@@ -937,13 +981,18 @@ export function SubmissionDetailPage() {
                   type="button"
                   className={`results-toggle__button${responseView === "individual" ? " results-toggle__button--active" : ""}`}
                   onClick={() => setResponseView("individual")}
+                  aria-pressed={responseView === "individual"}
                 >
                   Individual Responses
                 </button>
               </div>
             )}
             {submission.requiresRecording ? null : (
-              <button type="button" className="button button--secondary" onClick={openQuestionEditor}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={openQuestionEditor}
+              >
                 Edit questions
               </button>
             )}
@@ -960,14 +1009,22 @@ export function SubmissionDetailPage() {
                 {summary.analytics.map((item) => {
                   if (item.type === "paragraph") {
                     return (
-                      <article key={item.question.id} className="question-card question-card--studio question-card--results-overview">
+                      <article
+                        key={item.question.id}
+                        className="question-card question-card--studio question-card--results-overview"
+                      >
                         <div className="question-card__body">
                           <h4>{item.question.title}</h4>
                           {item.responses.length > 0 ? (
                             <div className="results-paragraph-list">
                               {item.responses.map((response, index) => (
-                                <article key={`${item.question.id}-${index}`} className="results-paragraph-card">
-                                  <span className="results-paragraph-card__label">Response {index + 1}</span>
+                                <article
+                                  key={`${item.question.id}-${index}`}
+                                  className="results-paragraph-card"
+                                >
+                                  <span className="results-paragraph-card__label">
+                                    Response {index + 1}
+                                  </span>
                                   <p>{response}</p>
                                 </article>
                               ))}
@@ -986,22 +1043,24 @@ export function SubmissionDetailPage() {
                   const maxCount = Math.max(...item.counts.map((count) => count.count), 0);
 
                   return (
-                    <article key={item.question.id} className="question-card question-card--studio question-card--results-overview">
+                    <article
+                      key={item.question.id}
+                      className="question-card question-card--studio question-card--results-overview"
+                    >
                       <div className="question-card__body">
                         <h4>{item.question.title}</h4>
                         <div className="results-choice-list">
                           {item.counts.map((count) => {
-                            const percent = item.total > 0 ? Math.round((count.count / item.total) * 100) : 0;
+                            const percent =
+                              item.total > 0 ? Math.round((count.count / item.total) * 100) : 0;
                             const emphasis = maxCount > 0 ? count.count / maxCount : 0;
 
                             return (
+                              /* ds-exception: runtime-measurements — response frequency intensity. */
                               <div
                                 key={count.option}
                                 className={`results-choice-row${maxCount > 0 && count.count === maxCount ? " results-choice-row--top" : ""}`}
-                                style={{
-                                  backgroundColor: `rgba(245, 142, 86, ${0.04 + emphasis * 0.18})`,
-                                  borderColor: `rgba(245, 142, 86, ${0.14 + emphasis * 0.22})`,
-                                }}
+                                style={{ "--choice-emphasis": emphasis } as CSSProperties}
                               >
                                 <span className="results-choice-row__icon" aria-hidden="true" />
                                 <span className="results-choice-row__label">{count.option}</span>
@@ -1020,10 +1079,15 @@ export function SubmissionDetailPage() {
             <div className="results-individual-shell">
               <div className="results-individual-shell__header">
                 <div className="results-individual-shell__identity">
-                  <span className="results-individual-shell__number">{selectedResponseIndex + 1}</span>
+                  <span className="results-individual-shell__number">
+                    {selectedResponseIndex + 1}
+                  </span>
                   <div>
                     <h3>Response {selectedResponseIndex + 1}</h3>
-                    <p>{formatDateTime(selectedResponse.submittedAt)} / {selectedResponse.anonymousLabel}</p>
+                    <p>
+                      {formatDateTime(selectedResponse.submittedAt)} /{" "}
+                      {selectedResponse.anonymousLabel}
+                    </p>
                   </div>
                 </div>
                 <div className="results-individual-shell__actions">
@@ -1031,38 +1095,52 @@ export function SubmissionDetailPage() {
                     <button
                       type="button"
                       className="icon-button"
-                      onClick={() => setSelectedResponseIndex((current) => Math.max(0, current - 1))}
+                      onClick={() =>
+                        setSelectedResponseIndex((current) => Math.max(0, current - 1))
+                      }
                       disabled={selectedResponseIndex === 0}
                       aria-label="Previous response"
                     >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={20} />
                     </button>
                     <button
                       type="button"
                       className="icon-button"
-                      onClick={() => setSelectedResponseIndex((current) => Math.min(responses.length - 1, current + 1))}
+                      onClick={() =>
+                        setSelectedResponseIndex((current) =>
+                          Math.min(responses.length - 1, current + 1),
+                        )
+                      }
                       disabled={selectedResponseIndex === responses.length - 1}
                       aria-label="Next response"
                     >
-                      <ChevronRight size={18} />
+                      <ChevronRight size={20} />
                     </button>
                   </div>
                   <div className="results-individual-shell__feedback-actions">
                     <ReactionFaces
                       value={selectedRating?.ratingValue}
-                      onChange={(value) => { void rateFeedback(selectedResponse.id, value); }}
+                      onChange={(value) => {
+                        void rateFeedback(selectedResponse.id, value);
+                      }}
                     />
                     {canTipSelectedResponse ? (
                       <button
                         type="button"
                         className={`reaction-face results-tip-button${showTipPanel ? " results-tip-button--active" : ""}`}
-                        onClick={() => { void handleTipToggle(); }}
+                        onClick={() => {
+                          void handleTipToggle();
+                        }}
                         disabled={isLoadingTipProfile}
                         aria-expanded={showTipPanel}
                         aria-pressed={showTipPanel}
                         aria-controls="response-tip-panel"
                       >
-                        {isLoadingTipProfile ? <span className="button__spinner" aria-hidden="true" /> : <HandCoins size={18} aria-hidden="true" />}
+                        {isLoadingTipProfile ? (
+                          <span className="button__spinner" aria-hidden="true" />
+                        ) : (
+                          <HandCoins size={20} aria-hidden="true" />
+                        )}
                         <span>{isLoadingTipProfile ? "Loading" : "Tip"}</span>
                       </button>
                     ) : null}
@@ -1071,7 +1149,12 @@ export function SubmissionDetailPage() {
               </div>
 
               {showTipPanel ? (
-                <div id="response-tip-panel" className="results-tip-panel" role="region" aria-label="Tip this tester">
+                <div
+                  id="response-tip-panel"
+                  className="results-tip-panel"
+                  role="region"
+                  aria-label="Tip this tester"
+                >
                   <div className="results-tip-panel__header">
                     <div>
                       <h4>Tip {tipProfile?.anonymousLabel ?? selectedResponse.anonymousLabel}</h4>
@@ -1083,7 +1166,7 @@ export function SubmissionDetailPage() {
                       onClick={() => setShowTipPanel(false)}
                       aria-label="Close tip options"
                     >
-                      <X size={18} />
+                      <X size={20} />
                     </button>
                   </div>
 
@@ -1093,7 +1176,10 @@ export function SubmissionDetailPage() {
                       <span>Loading tip methods...</span>
                     </div>
                   ) : tipError ? (
-                    <div className="results-tip-empty results-tip-empty--warning" aria-live="polite">
+                    <div
+                      className="results-tip-empty results-tip-empty--warning"
+                      aria-live="polite"
+                    >
                       <strong>Tip methods unavailable</strong>
                       <p>{tipError}</p>
                     </div>
@@ -1109,7 +1195,9 @@ export function SubmissionDetailPage() {
                             <button
                               type="button"
                               className="results-tip-chip"
-                              onClick={() => { void handleCopyTipMethod(method.key, method.value); }}
+                              onClick={() => {
+                                void handleCopyTipMethod(method.key, method.value);
+                              }}
                             >
                               {copiedTipMethod === method.key ? "Copied" : "Copy"}
                             </button>
@@ -1121,7 +1209,7 @@ export function SubmissionDetailPage() {
                                 rel="noreferrer"
                               >
                                 Open
-                                <ExternalLink size={14} aria-hidden="true" />
+                                <ExternalLink size={16} aria-hidden="true" />
                               </a>
                             ) : null}
                           </div>
@@ -1131,7 +1219,10 @@ export function SubmissionDetailPage() {
                   ) : (
                     <div className="results-tip-empty" aria-live="polite">
                       <strong>No tip methods yet</strong>
-                      <p>{tipNotice || "This tester has not added a payment method to their profile."}</p>
+                      <p>
+                        {tipNotice ||
+                          "This tester has not added a payment method to their profile."}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1141,8 +1232,16 @@ export function SubmissionDetailPage() {
                   <div className="results-recording-panel__copy">
                     {selectedRecording ? (
                       <>
-                        <strong>{recordingIsExpired ? "Expired" : `Available until ${formatDateTime(selectedRecording.expiresAt)}`}</strong>
-                        <p className={recordingIsExpired ? undefined : "results-recording-panel__file-meta"}>
+                        <strong>
+                          {recordingIsExpired
+                            ? "Expired"
+                            : `Available until ${formatDateTime(selectedRecording.expiresAt)}`}
+                        </strong>
+                        <p
+                          className={
+                            recordingIsExpired ? undefined : "results-recording-panel__file-meta"
+                          }
+                        >
                           {recordingIsExpired
                             ? "This recording has already been deleted or passed its 60-day retention window."
                             : `${selectedRecording.fileName} / ${formatRecordingSize(selectedRecording.fileSizeBytes)}`}
@@ -1176,7 +1275,9 @@ export function SubmissionDetailPage() {
                           </div>
                         ) : (
                           <div className="results-recording-player__loading" aria-live="polite">
-                            <span>Recording preview unavailable. Refresh the video link to try again.</span>
+                            <span>
+                              Recording preview unavailable. Refresh the video link to try again.
+                            </span>
                           </div>
                         )}
                       </div>
@@ -1184,19 +1285,29 @@ export function SubmissionDetailPage() {
                         <button
                           type="button"
                           className="button button--secondary"
-                          onClick={() => { void handleRecordingAccess("watch"); }}
+                          onClick={() => {
+                            void handleRecordingAccess("watch");
+                          }}
                           disabled={recordingAction !== null}
                         >
-                          {recordingAction === "watch" ? <span className="button__spinner" aria-hidden="true" /> : <RefreshCcw size={16} aria-hidden="true" />}
+                          {recordingAction === "watch" ? (
+                            <span className="button__spinner" aria-hidden="true" />
+                          ) : (
+                            <RefreshCcw size={16} aria-hidden="true" />
+                          )}
                           {recordingPreviewUrl ? "Refresh video" : "Load video"}
                         </button>
                         <button
                           type="button"
                           className="button button--primary"
-                          onClick={() => { void handleRecordingAccess("download"); }}
+                          onClick={() => {
+                            void handleRecordingAccess("download");
+                          }}
                           disabled={recordingAction !== null}
                         >
-                          {recordingAction === "download" ? <span className="button__spinner" aria-hidden="true" /> : null}
+                          {recordingAction === "download" ? (
+                            <span className="button__spinner" aria-hidden="true" />
+                          ) : null}
                           Download recording
                         </button>
                       </div>
@@ -1211,7 +1322,7 @@ export function SubmissionDetailPage() {
                 </div>
               ) : null}
 
-              <div className="answer-list"> 
+              <div className="answer-list">
                 {selectedResponse.answers.map((answer) => (
                   <article key={answer.questionId} className="answer-card">
                     <strong>{answer.questionTitle}</strong>
@@ -1222,7 +1333,7 @@ export function SubmissionDetailPage() {
 
               {selectedResponse.internalFlags.length > 0 ? (
                 <div className="callout callout--warning">
-                  <MessageSquareQuote size={18} />
+                  <MessageSquareQuote size={20} />
                   <span>{selectedResponse.internalFlags.join(" / ")}</span>
                 </div>
               ) : null}
@@ -1230,7 +1341,10 @@ export function SubmissionDetailPage() {
           ) : (
             <div className="results-placeholder">
               <strong>No responses yet</strong>
-              <p>When testers begin submitting feedback for this version, each response will appear here.</p>
+              <p>
+                When testers begin submitting feedback for this version, each response will appear
+                here.
+              </p>
             </div>
           )}
         </Surface>
@@ -1238,14 +1352,30 @@ export function SubmissionDetailPage() {
 
       {showVersionCreator ? (
         <div className="results-modal-backdrop" role="presentation" onClick={closeVersionCreator}>
-          <div className="results-modal results-modal--version-creator" role="dialog" aria-modal="true" aria-label="New version" onClick={(event) => event.stopPropagation()}>
+          <div
+            {...versionCreatorDialogFocus}
+            className="results-modal results-modal--version-creator"
+            role="dialog"
+            aria-modal="true"
+            aria-label="New version"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="results-modal__header">
               <div>
                 <h2>New Version</h2>
-                <p>Keep track of feedback and compare results with previous versions of your app. We recommend creating a new version only after you've released major updates or changes to your app.</p>
+                <p>
+                  Keep track of feedback and compare results with previous versions of your app. We
+                  recommend creating a new version only after you've released major updates or
+                  changes to your app.
+                </p>
               </div>
-              <button type="button" className="icon-button" onClick={closeVersionCreator} aria-label="Close new version">
-                <X size={18} />
+              <button
+                type="button"
+                className="icon-button"
+                onClick={closeVersionCreator}
+                aria-label="Close new version"
+              >
+                <X size={20} />
               </button>
             </div>
 
@@ -1275,13 +1405,20 @@ export function SubmissionDetailPage() {
             </div>
 
             <div className="wizard-actions">
-              <button type="button" className="button button--secondary" onClick={closeVersionCreator} disabled={isCreatingVersion}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={closeVersionCreator}
+                disabled={isCreatingVersion}
+              >
                 Cancel
               </button>
               <button
                 type="button"
                 className="button button--primary"
-                onClick={() => { void handleCreateVersion(); }}
+                onClick={() => {
+                  void handleCreateVersion();
+                }}
                 disabled={isCreatingVersion || !nextVersionTitle.trim()}
               >
                 {isCreatingVersion ? <span className="button__spinner" aria-hidden="true" /> : null}
@@ -1293,15 +1430,34 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {showVersionDeleteConfirm && versionPendingDelete ? (
-        <div className="results-modal-backdrop" role="presentation" onClick={closeVersionDeleteConfirm}>
-          <div className="results-modal results-modal--version-delete" role="dialog" aria-modal="true" aria-label="Delete version" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="results-modal-backdrop"
+          role="presentation"
+          onClick={closeVersionDeleteConfirm}
+        >
+          <div
+            {...versionDeleteDialogFocus}
+            className="results-modal results-modal--version-delete"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete version"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="results-modal__header">
               <div>
                 <h2>Delete Version</h2>
-                <p>Delete {versionPendingDelete.title}? Test responses for this version will be <strong>permanently deleted</strong>.</p>
+                <p>
+                  Delete {versionPendingDelete.title}? Test responses for this version will be{" "}
+                  <strong>permanently deleted</strong>.
+                </p>
               </div>
-              <button type="button" className="icon-button" onClick={closeVersionDeleteConfirm} aria-label="Close delete version">
-                <X size={18} />
+              <button
+                type="button"
+                className="icon-button"
+                onClick={closeVersionDeleteConfirm}
+                aria-label="Close delete version"
+              >
+                <X size={20} />
               </button>
             </div>
 
@@ -1319,13 +1475,20 @@ export function SubmissionDetailPage() {
             </div>
 
             <div className="wizard-actions">
-              <button type="button" className="button button--secondary" onClick={closeVersionDeleteConfirm} disabled={isDeletingVersion}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={closeVersionDeleteConfirm}
+                disabled={isDeletingVersion}
+              >
                 Cancel
               </button>
               <button
                 type="button"
                 className="button button--primary results-version-delete-button"
-                onClick={() => { void handleDeleteVersion(); }}
+                onClick={() => {
+                  void handleDeleteVersion();
+                }}
                 disabled={isDeletingVersion}
               >
                 {isDeletingVersion ? <span className="button__spinner" aria-hidden="true" /> : null}
@@ -1337,15 +1500,35 @@ export function SubmissionDetailPage() {
       ) : null}
 
       {showQuestionEditor ? (
-        <div className="results-modal-backdrop" role="presentation" onClick={() => setShowQuestionEditor(false)}>
-          <div className="results-modal" role="dialog" aria-modal="true" aria-label="Edit questions" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="results-modal-backdrop"
+          role="presentation"
+          onClick={() => setShowQuestionEditor(false)}
+        >
+          <div
+            {...questionEditorDialogFocus}
+            className="results-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit questions"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="results-modal__header">
               <div>
                 <h2>Edit questions</h2>
-                <p>Question edits update the current Test4Test questionnaire. They do not create a new app version, and past responses stay attached to what testers originally submitted.</p>
+                <p>
+                  Question edits update the current Test4Test questionnaire. They do not create a
+                  new app version, and past responses stay attached to what testers originally
+                  submitted.
+                </p>
               </div>
-              <button type="button" className="icon-button" onClick={() => setShowQuestionEditor(false)} aria-label="Close edit questions">
-                <X size={18} />
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowQuestionEditor(false)}
+                aria-label="Close edit questions"
+              >
+                <X size={20} />
               </button>
             </div>
             <div className="question-studio">
@@ -1387,7 +1570,9 @@ export function SubmissionDetailPage() {
                         <AutoResizeTextarea
                           className="question-card__prompt-input"
                           value={question.title}
-                          onChange={(event) => updateEditQuestion(index, { title: event.target.value })}
+                          onChange={(event) =>
+                            updateEditQuestion(index, { title: event.target.value })
+                          }
                           placeholder="Type your question here"
                         />
                       </div>
@@ -1410,13 +1595,15 @@ export function SubmissionDetailPage() {
                                 type="button"
                                 className="option-input-row__remove"
                                 onClick={() => {
-                                  const nextOptions = (question.options ?? []).filter((_, currentIndex) => currentIndex !== optionIndex);
+                                  const nextOptions = (question.options ?? []).filter(
+                                    (_, currentIndex) => currentIndex !== optionIndex,
+                                  );
                                   updateEditQuestion(index, { options: nextOptions });
                                 }}
                                 aria-label={`Remove option ${optionIndex + 1}`}
                                 disabled={(question.options?.length ?? 0) <= 2}
                               >
-                                <X size={16} strokeWidth={2} aria-hidden />
+                                <X size={16} aria-hidden />
                               </button>
                             </div>
                           ))}
@@ -1486,7 +1673,11 @@ export function SubmissionDetailPage() {
             </div>
 
             <div className="wizard-actions">
-              <button type="button" className="button button--secondary" onClick={() => refreshPreset(editMode)}>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => refreshPreset(editMode)}
+              >
                 <RefreshCcw size={16} />
                 Reset from preset
               </button>
@@ -1498,7 +1689,12 @@ export function SubmissionDetailPage() {
                     return;
                   }
 
-                  void updateQuestionSet(submission.id, activeQuestionSet.id, editMode, editQuestions);
+                  void updateQuestionSet(
+                    submission.id,
+                    activeQuestionSet.id,
+                    editMode,
+                    editQuestions,
+                  );
                   setShowQuestionEditor(false);
                 }}
               >
@@ -1512,34 +1708,3 @@ export function SubmissionDetailPage() {
     </AppShell>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

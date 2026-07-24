@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test4Test home hero mockups</title>
+    <link rel="stylesheet" href="../design-system/tokens/generated/tokens.css" />
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("../public/fonts/geist/GeistVF.woff2") format("woff2");
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("../public/fonts/geist/GeistMonoVF.woff2") format("woff2");
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-width: var(--ds-semantic-size-viewport-minimum);
+        min-height: var(--ds-semantic-size-viewport-fallback-height);
+        margin: var(--ds-semantic-space-zero);
+        background: var(--ds-semantic-color-background-canvas);
+        color: var(--ds-semantic-color-text-primary);
+        font-family: var(--ds-semantic-typography-family-body);
+        font-size: var(--ds-semantic-typography-body-size);
+        line-height: var(--ds-semantic-typography-body-line-height);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: var(--ds-semantic-space-zero);
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+        text-wrap: balance;
+      }
+
+      .siteHeader {
+        min-height: var(--ds-semantic-size-header-min);
+        border-block-end: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-subtle);
+      }
+
+      .headerInner {
+        display: flex;
+        width: min(
+          calc(100% - var(--ds-semantic-space-gutter-large) * 2),
+          var(--ds-semantic-size-content-container)
+        );
+        min-height: var(--ds-semantic-size-header-min);
+        margin-inline: auto;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--ds-semantic-space-inline-xl);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--ds-semantic-space-inline-sm);
+        color: var(--ds-semantic-color-text-primary);
+        font-size: var(--ds-semantic-typography-lead-desktop-size);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .brand svg {
+        width: var(--ds-semantic-space-inline-2xl);
+        color: var(--ds-semantic-color-action-primary);
+      }
+
+      .nav,
+      .navActions,
+      .audience {
+        display: flex;
+        align-items: center;
+        gap: var(--ds-semantic-space-inline-lg);
+      }
+
+      .nav {
+        color: var(--ds-semantic-color-text-primary);
+        font-size: var(--ds-semantic-typography-interface-size);
+      }
+
+      .audience {
+        gap: var(--ds-semantic-space-inline-sm);
+      }
+
+      .audience > span {
+        color: var(--ds-semantic-color-text-secondary);
+      }
+
+      .navButton,
+      .primaryButton {
+        display: inline-flex;
+        min-height: var(--ds-semantic-size-control-default);
+        align-items: center;
+        justify-content: center;
+        gap: var(--ds-semantic-space-inline-sm);
+        padding-inline: var(--ds-semantic-space-inline-lg);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        border-radius: var(--ds-semantic-radius-control);
+        background: var(--ds-semantic-color-surface-default);
+        color: var(--ds-semantic-color-text-primary);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .navButtonPrimary,
+      .primaryButton {
+        border-color: var(--ds-semantic-color-action-primary);
+        background: var(--ds-semantic-color-action-primary);
+        color: var(--ds-semantic-color-text-inverse);
+      }
+
+      .navButton.navButtonPrimary {
+        color: var(--ds-semantic-color-text-inverse);
+      }
+
+      main {
+        width: min(
+          calc(100% - var(--ds-semantic-space-gutter-large) * 2),
+          var(--ds-semantic-size-content-container)
+        );
+        margin-inline: auto;
+        padding-block: var(--ds-semantic-space-stack-xl);
+      }
+
+      .mockup {
+        display: none;
+      }
+
+      body[data-option="1"] .optionOne,
+      body[data-option="2"] .optionTwo,
+      body[data-option="3"] .optionThree {
+        display: grid;
+      }
+
+      .heroTitle {
+        max-width: var(--ds-semantic-size-content-data);
+        font-size: var(--ds-semantic-typography-heading-hero-desktop-size);
+        line-height: var(--ds-semantic-typography-heading-hero-desktop-line-height);
+        letter-spacing: var(--ds-semantic-typography-heading-hero-tracking);
+      }
+
+      .heroSubtitle {
+        max-width: var(--ds-semantic-size-content-prose);
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-lead-desktop-size);
+        line-height: var(--ds-semantic-typography-lead-desktop-line-height);
+        text-wrap: pretty;
+      }
+
+      .startCard {
+        display: grid;
+        width: min(100%, var(--ds-semantic-size-content-form));
+        gap: var(--ds-semantic-space-stack-md);
+        padding: var(--ds-semantic-space-inset-card-desktop);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        border-radius: var(--ds-semantic-radius-panel);
+        background: var(--ds-semantic-color-background-subtle);
+        text-align: start;
+      }
+
+      .field {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-sm);
+      }
+
+      .field label {
+        font-size: var(--ds-semantic-typography-interface-size);
+        font-weight: var(--ds-semantic-typography-weight-medium);
+      }
+
+      .field input {
+        width: 100%;
+        min-height: var(--ds-semantic-size-control-default);
+        padding-inline: var(--ds-semantic-space-inline-md);
+        border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-strong);
+        border-radius: var(--ds-semantic-radius-control);
+        background: var(--ds-semantic-color-surface-default);
+        color: var(--ds-semantic-color-text-primary);
+      }
+
+      .primaryButton {
+        width: 100%;
+        min-height: var(--ds-semantic-size-control-large);
+      }
+
+      .recordingBar,
+      .recordingCard {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-md);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        background: var(--ds-semantic-color-surface-raised);
+        box-shadow: var(--ds-semantic-shadow-overlay);
+      }
+
+      .recordingBar {
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        align-items: center;
+        padding: var(--ds-semantic-space-stack-md);
+        border-radius: var(--ds-semantic-radius-panel);
+      }
+
+      .recordingIdentity,
+      .recordingStatus,
+      .recordingPills {
+        display: flex;
+        align-items: center;
+        gap: var(--ds-semantic-space-inline-sm);
+      }
+
+      .recordingIdentity {
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .recordingDot {
+        width: var(--ds-semantic-space-inline-md);
+        height: var(--ds-semantic-space-inline-md);
+        flex: 0 0 var(--ds-semantic-space-inline-md);
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-action-primary);
+      }
+
+      .recordingTimer,
+      .recordingPill {
+        display: inline-flex;
+        min-height: var(--ds-semantic-space-inline-2xl);
+        align-items: center;
+        padding-inline: var(--ds-semantic-space-inline-md);
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-background-subtle);
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-caption-size);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .recordingTimer {
+        background: var(--ds-semantic-color-action-tint);
+        color: var(--ds-semantic-color-action-primary-strong);
+        font-family: var(--ds-semantic-typography-family-technical);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .recordingPillActive {
+        background: var(--ds-semantic-color-action-tint);
+        color: var(--ds-semantic-color-action-primary-strong);
+      }
+
+      .finishButton {
+        display: inline-flex;
+        min-height: var(--ds-semantic-size-control-compact);
+        align-items: center;
+        justify-content: center;
+        padding-inline: var(--ds-semantic-space-inline-lg);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-action-primary);
+        border-radius: var(--ds-semantic-radius-control);
+        background: var(--ds-semantic-color-action-primary);
+        color: var(--ds-semantic-color-text-inverse);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .optionOne {
+        min-height: calc(
+          var(--ds-semantic-size-viewport-fallback-height) - var(--ds-semantic-size-header-min) -
+            var(--ds-semantic-space-stack-section)
+        );
+        place-items: center;
+      }
+
+      .recordingCanvas {
+        display: grid;
+        width: 100%;
+        gap: var(--ds-semantic-space-stack-xl);
+        padding: var(--ds-semantic-space-stack-xl);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        border-radius: var(--ds-semantic-radius-feature);
+        background: var(--ds-semantic-color-background-subtle);
+      }
+
+      .recordingCanvasContent {
+        display: grid;
+        justify-items: center;
+        gap: var(--ds-semantic-space-stack-lg);
+        padding-block: var(--ds-semantic-space-stack-lg);
+        text-align: center;
+      }
+
+      .recordingCanvasContent .heroSubtitle {
+        max-width: var(--ds-semantic-size-content-data);
+      }
+
+      .optionTwo {
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        min-height: calc(
+          var(--ds-semantic-size-viewport-fallback-height) - var(--ds-semantic-size-header-min) -
+            var(--ds-semantic-space-stack-section)
+        );
+        align-items: center;
+        gap: var(--ds-semantic-space-stack-section);
+      }
+
+      .optionTwoCopy {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-lg);
+      }
+
+      .sessionStage {
+        position: relative;
+        display: grid;
+        min-height: calc(
+          var(--ds-semantic-size-overlay-max-height) - var(--ds-semantic-space-stack-2xl)
+        );
+        align-content: center;
+        padding: var(--ds-semantic-space-stack-xl);
+        border-radius: var(--ds-semantic-radius-feature);
+        background: var(--ds-semantic-color-background-subtle);
+      }
+
+      .appWindow {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-lg);
+        padding: var(--ds-semantic-space-inset-card-desktop);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        border-radius: var(--ds-semantic-radius-panel);
+        background: var(--ds-semantic-color-surface-default);
+        box-shadow: var(--ds-semantic-shadow-raised);
+      }
+
+      .windowToolbar,
+      .windowHeader,
+      .mockTask {
+        display: flex;
+        align-items: center;
+        gap: var(--ds-semantic-space-inline-md);
+      }
+
+      .windowToolbar {
+        padding-block-end: var(--ds-semantic-space-stack-md);
+        border-block-end: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-subtle);
+      }
+
+      .windowDot {
+        width: var(--ds-semantic-space-inline-sm);
+        height: var(--ds-semantic-space-inline-sm);
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-border-default);
+      }
+
+      .windowAddress {
+        flex: 1;
+        min-height: var(--ds-semantic-space-inline-2xl);
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-background-subtle);
+      }
+
+      .windowHeader {
+        justify-content: space-between;
+      }
+
+      .mockContent {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-md);
+      }
+
+      .mockTask {
+        align-items: flex-start;
+        padding: var(--ds-semantic-space-stack-md);
+        border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
+        border-radius: var(--ds-semantic-radius-surface);
+      }
+
+      .taskNumber {
+        display: grid;
+        width: var(--ds-semantic-space-inline-2xl);
+        height: var(--ds-semantic-space-inline-2xl);
+        flex: 0 0 var(--ds-semantic-space-inline-2xl);
+        place-items: center;
+        border-radius: var(--ds-semantic-radius-control);
+        background: var(--ds-semantic-color-action-tint);
+        color: var(--ds-semantic-color-action-primary-strong);
+        font-size: var(--ds-semantic-typography-interface-size);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      .taskCopy {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-xs);
+      }
+
+      .taskCopy p {
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-interface-size);
+      }
+
+      .recordingCard {
+        position: absolute;
+        inset-inline-end: var(--ds-semantic-space-inline-xl);
+        inset-block-end: var(--ds-semantic-space-stack-lg);
+        width: min(72%, var(--ds-semantic-size-overlay-toast));
+        padding: var(--ds-semantic-space-stack-md);
+        border-radius: var(--ds-semantic-radius-panel);
+      }
+
+      .recordingCardTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--ds-semantic-space-inline-md);
+      }
+
+      .recordingCard p {
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-interface-size);
+      }
+
+      .optionThree {
+        gap: var(--ds-semantic-space-stack-xl);
+      }
+
+      .optionThreeCopy {
+        display: grid;
+        justify-items: center;
+        gap: var(--ds-semantic-space-stack-lg);
+        text-align: center;
+      }
+
+      .optionThreeCopy .heroSubtitle {
+        max-width: var(--ds-semantic-size-content-data);
+      }
+
+      .storyboard {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--ds-semantic-space-stack-lg);
+      }
+
+      .storyCard {
+        display: grid;
+        align-content: space-between;
+        min-height: var(--ds-semantic-size-overlay-popover-min);
+        gap: var(--ds-semantic-space-stack-md);
+        padding: var(--ds-semantic-space-inset-card-desktop);
+        border: var(--ds-semantic-border-width-default) solid
+          var(--ds-semantic-color-border-default);
+        border-radius: var(--ds-semantic-radius-panel);
+        background: var(--ds-semantic-color-surface-default);
+        box-shadow: var(--ds-semantic-shadow-raised);
+      }
+
+      .storyCardPrimary {
+        border-color: var(--ds-semantic-color-border-accent);
+        background: var(--ds-semantic-color-action-tint);
+      }
+
+      .storyEyebrow {
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-caption-size);
+        font-weight: var(--ds-semantic-typography-weight-medium);
+      }
+
+      .storyCardHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--ds-semantic-space-inline-md);
+      }
+
+      .storyCardBody {
+        display: grid;
+        gap: var(--ds-semantic-space-stack-sm);
+      }
+
+      .storyCardBody p {
+        color: var(--ds-semantic-color-text-secondary);
+        font-size: var(--ds-semantic-typography-interface-size);
+      }
+
+      .progressTrack {
+        height: var(--ds-semantic-space-inline-sm);
+        overflow: hidden;
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-surface-track);
+      }
+
+      .progressTrack span {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: var(--ds-semantic-color-action-primary);
+      }
+
+      .feedbackQuote {
+        padding: var(--ds-semantic-space-stack-md);
+        border-inline-start: var(--ds-semantic-border-width-focus) solid
+          var(--ds-semantic-color-border-accent);
+        background: var(--ds-semantic-color-background-subtle);
+      }
+
+      .guaranteeRow {
+        display: flex;
+        align-items: center;
+        gap: var(--ds-semantic-space-inline-md);
+      }
+
+      .checkMark {
+        display: grid;
+        width: var(--ds-semantic-space-inline-2xl);
+        height: var(--ds-semantic-space-inline-2xl);
+        flex: 0 0 var(--ds-semantic-space-inline-2xl);
+        place-items: center;
+        border-radius: var(--ds-semantic-radius-pill);
+        background: var(--ds-semantic-color-status-success-tint);
+        color: var(--ds-semantic-color-status-success);
+        font-weight: var(--ds-semantic-typography-weight-semibold);
+      }
+
+      @media (max-width: 1023px) {
+        .nav,
+        .navActions {
+          display: none;
+        }
+
+        .headerInner,
+        main {
+          width: min(
+            calc(100% - var(--ds-semantic-space-gutter-medium) * 2),
+            var(--ds-semantic-size-content-container)
+          );
+        }
+
+        .optionTwo {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .storyboard {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      @media (max-width: 767px) {
+        .headerInner,
+        main {
+          width: min(
+            calc(100% - var(--ds-semantic-space-gutter-small) * 2),
+            var(--ds-semantic-size-content-container)
+          );
+        }
+
+        main {
+          padding-block: var(--ds-semantic-space-stack-lg);
+        }
+
+        .heroTitle {
+          font-size: var(--ds-semantic-typography-heading-hero-mobile-size);
+          line-height: var(--ds-semantic-typography-heading-hero-mobile-line-height);
+        }
+
+        .heroSubtitle {
+          font-size: var(--ds-semantic-typography-lead-mobile-size);
+          line-height: var(--ds-semantic-typography-lead-mobile-line-height);
+        }
+
+        .recordingCanvas,
+        .sessionStage {
+          padding: var(--ds-semantic-space-inset-card-mobile);
+        }
+
+        .recordingBar {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .recordingStatus,
+        .recordingBar .finishButton {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body data-option="1">
+    <header class="siteHeader">
+      <div class="headerInner">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path fill="currentColor" d="M5 4h22v7H19v17h-7V11H5z"></path>
+            <path fill="currentColor" fill-opacity="0.3" d="M20 13h7v7h-7zM5 21h7v7H5z"></path>
+          </svg>
+          <span>Test4Test</span>
+        </div>
+        <nav class="nav" aria-label="Primary">
+          <span>Blog</span>
+          <span>Get paid to test</span>
+        </nav>
+        <div class="navActions">
+          <div class="audience">
+            <span>Want to get paid to test?</span>
+            <span class="navButton navButtonPrimary">Founder</span>
+            <span class="navButton">Tester</span>
+          </div>
+          <span class="navButton">Log in</span>
+          <span class="navButton navButtonPrimary">Get started</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="mockup optionOne" aria-labelledby="option-one-title">
+        <div class="recordingCanvas">
+          <div class="recordingBar">
+            <div class="recordingIdentity">
+              <span class="recordingDot" aria-hidden="true"></span>
+              <span>Recording live</span>
+            </div>
+            <div class="recordingStatus">
+              <span class="recordingPill recordingPillActive">Mic connected</span>
+              <span class="recordingPill recordingPillActive">Screen sharing</span>
+            </div>
+            <strong class="recordingTimer">04:12</strong>
+            <span class="finishButton">Finish recording</span>
+          </div>
+          <div class="recordingCanvasContent">
+            <h1 class="heroTitle" id="option-one-title">
+              Get free user testing on your web or mobile app
+            </h1>
+            <p class="heroSubtitle">
+              The only 100% free user testing tool that offers video recordings and feedback
+              guaranteed
+            </p>
+            <form class="startCard">
+              <div class="field">
+                <label for="option-one-app">What's the name of your app?</label>
+                <input id="option-one-app" placeholder="Enter your app's name" />
+              </div>
+              <button class="primaryButton" type="button">
+                Get started <span aria-hidden="true">→</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="mockup optionTwo" aria-labelledby="option-two-title">
+        <div class="optionTwoCopy">
+          <h1 class="heroTitle" id="option-two-title">
+            Get free user testing on your web or mobile app
+          </h1>
+          <p class="heroSubtitle">
+            The only 100% free user testing tool that offers video recordings and feedback
+            guaranteed
+          </p>
+          <form class="startCard">
+            <div class="field">
+              <label for="option-two-app">What's the name of your app?</label>
+              <input id="option-two-app" placeholder="Enter your app's name" />
+            </div>
+            <button class="primaryButton" type="button">
+              Get started <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="sessionStage" aria-label="Example recorded usability test">
+          <div class="appWindow">
+            <div class="windowToolbar">
+              <span class="windowDot"></span>
+              <span class="windowDot"></span>
+              <span class="windowDot"></span>
+              <span class="windowAddress"></span>
+            </div>
+            <div class="windowHeader">
+              <div>
+                <span class="storyEyebrow">Test in progress</span>
+                <h2>Test Palette Pilot</h2>
+              </div>
+              <span class="recordingPill recordingPillActive">Screen shared</span>
+            </div>
+            <div class="mockContent">
+              <div class="mockTask">
+                <span class="taskNumber">1</span>
+                <div class="taskCopy">
+                  <strong>Find a reference image</strong>
+                  <p>Say what you expect before selecting a result.</p>
+                </div>
+              </div>
+              <div class="mockTask">
+                <span class="taskNumber">2</span>
+                <div class="taskCopy">
+                  <strong>Add it to a new board</strong>
+                  <p>Think out loud as you complete the task.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="recordingCard">
+            <div class="recordingCardTop">
+              <div class="recordingIdentity">
+                <span class="recordingDot" aria-hidden="true"></span>
+                <span>Recording live</span>
+              </div>
+              <strong class="recordingTimer">04:12</strong>
+            </div>
+            <p>You can move this window while you test. Click finish when you are done.</p>
+            <div class="recordingPills">
+              <span class="recordingPill recordingPillActive">Mic connected</span>
+              <span class="recordingPill recordingPillActive">Screen sharing</span>
+            </div>
+            <span class="finishButton">Finish recording</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="mockup optionThree" aria-labelledby="option-three-title">
+        <div class="optionThreeCopy">
+          <h1 class="heroTitle" id="option-three-title">
+            Get free user testing on your web or mobile app
+          </h1>
+          <p class="heroSubtitle">
+            The only 100% free user testing tool that offers video recordings and feedback
+            guaranteed
+          </p>
+          <form class="startCard">
+            <div class="field">
+              <label for="option-three-app">What's the name of your app?</label>
+              <input id="option-three-app" placeholder="Enter your app's name" />
+            </div>
+            <button class="primaryButton" type="button">
+              Get started <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="storyboard" aria-label="How recorded tests become guaranteed feedback">
+          <article class="storyCard storyCardPrimary">
+            <div class="storyCardHeader">
+              <div class="recordingIdentity">
+                <span class="recordingDot" aria-hidden="true"></span>
+                <span>Recording live</span>
+              </div>
+              <strong class="recordingTimer">04:12</strong>
+            </div>
+            <div class="storyCardBody">
+              <h3>See the experience</h3>
+              <p>Watch the tester's screen and hear their decisions in context.</p>
+            </div>
+            <div class="recordingPills">
+              <span class="recordingPill recordingPillActive">Mic connected</span>
+              <span class="recordingPill recordingPillActive">Screen sharing</span>
+            </div>
+          </article>
+
+          <article class="storyCard">
+            <div class="storyCardHeader">
+              <span class="storyEyebrow">Recording saved</span>
+              <span class="recordingPill recordingPillActive">Upload complete</span>
+            </div>
+            <div class="storyCardBody">
+              <h3>Review useful feedback</h3>
+              <p>Video, written answers, and task context stay together.</p>
+            </div>
+            <div class="feedbackQuote">
+              <strong>“The filter was easy to miss on mobile.”</strong>
+            </div>
+          </article>
+
+          <article class="storyCard">
+            <div class="storyCardHeader">
+              <span class="storyEyebrow">Test-back exchange</span>
+              <span class="recordingPill">1 test = 1 credit</span>
+            </div>
+            <div class="storyCardBody">
+              <h3>Feedback guaranteed</h3>
+              <p>Complete a test for someone else and your app moves up the queue.</p>
+            </div>
+            <div class="guaranteeRow">
+              <span class="checkMark" aria-hidden="true">✓</span>
+              <strong>Your app is ready for its next tester</strong>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const requestedOption = new URLSearchParams(window.location.search).get("option");
+      document.body.dataset.option = ["1", "2", "3"].includes(requestedOption)
+        ? requestedOption
+        : "1";
+      requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
+    </script>
+  </body>
+</html>

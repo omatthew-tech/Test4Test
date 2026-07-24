@@ -55,16 +55,10 @@ type QuestionAnalytics =
     };
 
 function sortResponsesDescending(first: TestResponse, second: TestResponse) {
-  return (
-    new Date(second.submittedAt).getTime() -
-    new Date(first.submittedAt).getTime()
-  );
+  return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
 }
 
-function sortQuestionSetVersionsDescending(
-  first: QuestionSetVersion,
-  second: QuestionSetVersion,
-) {
+function sortQuestionSetVersionsDescending(first: QuestionSetVersion, second: QuestionSetVersion) {
   if (first.versionNumber !== second.versionNumber) {
     return second.versionNumber - first.versionNumber;
   }
@@ -72,10 +66,7 @@ function sortQuestionSetVersionsDescending(
   return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
 }
 
-function sortSubmissionVersionsDescending(
-  first: SubmissionVersion,
-  second: SubmissionVersion,
-) {
+function sortSubmissionVersionsDescending(first: SubmissionVersion, second: SubmissionVersion) {
   if (first.versionNumber !== second.versionNumber) {
     return second.versionNumber - first.versionNumber;
   }
@@ -101,10 +92,7 @@ export function getCreditBalance(state: AppState, userId: string | null) {
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 }
 
-export function getSubmissionVersions(
-  state: AppState,
-  submissionId: string,
-) {
+export function getSubmissionVersions(state: AppState, submissionId: string) {
   return state.submissionVersions
     .filter((version) => version.submissionId === submissionId)
     .sort(sortSubmissionVersionsDescending);
@@ -119,23 +107,14 @@ export function getActiveSubmissionVersion(
   return versions.find((version) => version.isActive) ?? versions[0] ?? null;
 }
 
-export function getSubmissionQuestionSetVersions(
-  state: AppState,
-  submissionId: string,
-) {
+export function getSubmissionQuestionSetVersions(state: AppState, submissionId: string) {
   return state.questionSetVersions
     .filter((version) => version.submissionId === submissionId)
     .sort(sortQuestionSetVersionsDescending);
 }
 
-export function getQuestionSetVersionById(
-  state: AppState,
-  questionSetVersionId: string,
-) {
-  return (
-    state.questionSetVersions.find((version) => version.id === questionSetVersionId) ??
-    null
-  );
+export function getQuestionSetVersionById(state: AppState, questionSetVersionId: string) {
+  return state.questionSetVersions.find((version) => version.id === questionSetVersionId) ?? null;
 }
 
 export function getActiveQuestionSet(
@@ -167,15 +146,10 @@ export function getSubmissionResponsesForSubmissionVersion(
     .sort(sortResponsesDescending);
 }
 
-export function getResponseRating(
-  state: AppState,
-  responseId: string,
-  userId: string | null,
-) {
+export function getResponseRating(state: AppState, responseId: string, userId: string | null) {
   return (
     state.feedbackRatings.find(
-      (rating) =>
-        rating.testResponseId === responseId && rating.ratedByUserId === userId,
+      (rating) => rating.testResponseId === responseId && rating.ratedByUserId === userId,
     ) ?? null
   );
 }
@@ -184,8 +158,7 @@ export function getMySubmissions(state: AppState) {
   return state.submissions
     .filter((submission) => submission.userId === state.currentUserId)
     .sort(
-      (first, second) =>
-        new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+      (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
     );
 }
 
@@ -202,8 +175,7 @@ export function getAvailableSubmissions(state: AppState) {
 
       const completedByUser = state.responses.some(
         (response) =>
-          response.submissionId === submission.id &&
-          response.testerUserId === state.currentUserId,
+          response.submissionId === submission.id && response.testerUserId === state.currentUserId,
       );
 
       return !completedByUser;
@@ -217,9 +189,7 @@ export function getAvailableSubmissions(state: AppState) {
         return first.responseCount - second.responseCount;
       }
 
-      return (
-        new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
-      );
+      return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
     });
 }
 
@@ -241,9 +211,7 @@ export function buildQuestionAnalytics(
     })
     .map((question) => {
       const matchingAnswers = responses
-        .map((response) =>
-          response.answers.find((answer) => answer.questionId === question.id),
-        )
+        .map((response) => response.answers.find((answer) => answer.questionId === question.id))
         .filter((answer): answer is TestResponse["answers"][number] => Boolean(answer))
         .filter((answer) => answer.type === question.type);
 
@@ -265,16 +233,11 @@ export function buildQuestionAnalytics(
       const options = [...(question.options ?? [])];
       const counts = options.map((option) => ({
         option,
-        count: matchingAnswers.filter(
-          (answer) => answer.selectedOption?.trim() === option,
-        ).length,
+        count: matchingAnswers.filter((answer) => answer.selectedOption?.trim() === option).length,
       }));
       const total = counts.reduce((sum, count) => sum + count.count, 0);
       const sorted = [...counts].sort((first, second) => second.count - first.count);
-      const optionIndexSum = counts.reduce(
-        (sum, count, index) => sum + index * count.count,
-        0,
-      );
+      const optionIndexSum = counts.reduce((sum, count, index) => sum + index * count.count, 0);
 
       return {
         question: {
@@ -285,11 +248,7 @@ export function buildQuestionAnalytics(
         counts,
         total,
         topChoice: sorted[0]?.option ?? "No responses yet",
-        averageScore: clamp(
-          total > 0 ? (optionIndexSum / total) + 1 : 1,
-          1,
-          counts.length || 1,
-        ),
+        averageScore: clamp(total > 0 ? optionIndexSum / total + 1 : 1, 1, counts.length || 1),
       };
     });
 }
@@ -325,8 +284,7 @@ export function buildSubmissionSummary(
 
   const analytics = buildQuestionAnalytics(questionSet, responses);
   const paragraphGroups = analytics.filter(
-    (item): item is Extract<QuestionAnalytics, { type: "paragraph" }> =>
-      item.type === "paragraph",
+    (item): item is Extract<QuestionAnalytics, { type: "paragraph" }> => item.type === "paragraph",
   );
   const positiveTexts = paragraphGroups
     .filter((group) => /effective|clear|polished|stand/i.test(group.question.title))
@@ -367,15 +325,9 @@ export function getModerationQueue(state: AppState) {
     .sort((first, second) => first.qualityScore - second.qualityScore);
 }
 
-export function buildAnonymousLabel(
-  state: AppState,
-  submissionId: string,
-  testerUser: User,
-) {
+export function buildAnonymousLabel(state: AppState, submissionId: string, testerUser: User) {
   const index =
-    state.responses.filter((response) => response.submissionId === submissionId)
-      .length + 1;
+    state.responses.filter((response) => response.submissionId === submissionId).length + 1;
 
   return `${testerUser.displayName.split(" ")[0]} ${index}`;
 }
-

@@ -1,18 +1,11 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowRight,
-  ChevronDown,
-  Info,
-  PencilLine,
-  Share2,
-  X,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, Info, PencilLine, Share2, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Toast, useModalFocus } from "@test4test/design-system";
 import { EditSubmissionModal } from "../components/EditSubmissionModal";
 import { ShareTestModal } from "../components/ShareTestModal";
 import { AppShell, Surface } from "../components/Layout";
-import { Test4TestLogoBurst } from "../components/Test4TestLogoBurst";
 import { useAppState } from "../context/AppStateContext";
 import {
   EARN_CREDIT_CELEBRATION_COPY,
@@ -121,8 +114,7 @@ function getGooglePlayClosedTestPoolUserIds(submissions: Submission[]) {
   return new Set(
     submissions
       .filter(
-        (submission) =>
-          submission.status === "live" && submission.needsGooglePlayClosedTesters,
+        (submission) => submission.status === "live" && submission.needsGooglePlayClosedTesters,
       )
       .map((submission) => submission.userId)
       .filter((userId): userId is string => Boolean(userId)),
@@ -154,11 +146,11 @@ function compareEarnSubmissions(
   const firstTestBackRate =
     firstReputation?.ownerHasCompletedTest === false
       ? 0
-      : firstReputation?.ownerTestBackRatePercent ?? 0;
+      : (firstReputation?.ownerTestBackRatePercent ?? 0);
   const secondTestBackRate =
     secondReputation?.ownerHasCompletedTest === false
       ? 0
-      : secondReputation?.ownerTestBackRatePercent ?? 0;
+      : (secondReputation?.ownerTestBackRatePercent ?? 0);
 
   if (firstTestBackRate !== secondTestBackRate) {
     return secondTestBackRate - firstTestBackRate;
@@ -167,11 +159,11 @@ function compareEarnSubmissions(
   const firstSatisfactionRate =
     firstReputation?.ownerHasCompletedTest === false
       ? 0
-      : firstReputation?.ownerSatisfactionRatePercent ?? 0;
+      : (firstReputation?.ownerSatisfactionRatePercent ?? 0);
   const secondSatisfactionRate =
     secondReputation?.ownerHasCompletedTest === false
       ? 0
-      : secondReputation?.ownerSatisfactionRatePercent ?? 0;
+      : (secondReputation?.ownerSatisfactionRatePercent ?? 0);
 
   if (firstSatisfactionRate !== secondSatisfactionRate) {
     return secondSatisfactionRate - firstSatisfactionRate;
@@ -330,8 +322,7 @@ async function copyTextToClipboard(value: string) {
 
 function userPrefersReducedMotion() {
   return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
 
@@ -366,7 +357,8 @@ export function EarnPage() {
 
     return storedProductTypes ?? getDefaultSelectedProductTypes(state.submissions, currentUser.id);
   });
-  const [pendingProductTypes, setPendingProductTypes] = useState<ProductType[]>(selectedProductTypes);
+  const [pendingProductTypes, setPendingProductTypes] =
+    useState<ProductType[]>(selectedProductTypes);
   const [hasConfirmedPlatformFilter, setHasConfirmedPlatformFilter] = useState(() =>
     currentUser ? readStoredPlatformConfirmation(currentUser.id) : false,
   );
@@ -377,22 +369,29 @@ export function EarnPage() {
   const [serverEarnSubmissions, setServerEarnSubmissions] = useState<Submission[] | null>(null);
   const [isLoadingServerEarnSubmissions, setIsLoadingServerEarnSubmissions] = useState(false);
   const [serverEarnError, setServerEarnError] = useState("");
-  const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<Record<string, boolean>>({});
+  const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<
+    Record<string, boolean>
+  >({});
   const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
   const [visibilitySummary, setVisibilitySummary] = useState<EarnVisibilitySummary | null>(null);
   const [visibilitySubmission, setVisibilitySubmission] = useState<Submission | null>(null);
-  const [visibilityQuestionSet, setVisibilityQuestionSet] = useState<QuestionSetVersion | null>(null);
+  const [visibilityQuestionSet, setVisibilityQuestionSet] = useState<QuestionSetVersion | null>(
+    null,
+  );
   const [visibilityError, setVisibilityError] = useState("");
   const [revisionTargetResponseId, setRevisionTargetResponseId] = useState<string | null>(null);
   const [revisionTargetError, setRevisionTargetError] = useState("");
   const [isLoadingRevisionTarget, setIsLoadingRevisionTarget] = useState(false);
-  const [editingVisibilitySubmissionId, setEditingVisibilitySubmissionId] = useState<string | null>(null);
-  const [sharingVisibilitySubmissionId, setSharingVisibilitySubmissionId] = useState<string | null>(null);
+  const [editingVisibilitySubmissionId, setEditingVisibilitySubmissionId] = useState<string | null>(
+    null,
+  );
+  const [sharingVisibilitySubmissionId, setSharingVisibilitySubmissionId] = useState<string | null>(
+    null,
+  );
   const [visibilityShareCopyStatus, setVisibilityShareCopyStatus] = useState("");
   const [creditCelebration, setCreditCelebration] = useState(() =>
     parseEarnCreditCelebrationState(location.state),
   );
-  const [showEarnLogoBurst, setShowEarnLogoBurst] = useState(Boolean(creditCelebration));
   const [showCreditToast, setShowCreditToast] = useState(Boolean(creditCelebration));
   const available = getAvailableSubmissions(state);
 
@@ -413,16 +412,24 @@ export function EarnPage() {
   const editingVisibilitySubmission = useMemo(
     () =>
       editingVisibilitySubmissionId
-        ? state.submissions.find((submission) => submission.id === editingVisibilitySubmissionId) ??
-          (visibilitySubmission?.id === editingVisibilitySubmissionId ? visibilitySubmission : null)
+        ? (state.submissions.find(
+            (submission) => submission.id === editingVisibilitySubmissionId,
+          ) ??
+          (visibilitySubmission?.id === editingVisibilitySubmissionId
+            ? visibilitySubmission
+            : null))
         : null,
     [editingVisibilitySubmissionId, state.submissions, visibilitySubmission],
   );
   const sharingVisibilitySubmission = useMemo(
     () =>
       sharingVisibilitySubmissionId
-        ? state.submissions.find((submission) => submission.id === sharingVisibilitySubmissionId) ??
-          (visibilitySubmission?.id === sharingVisibilitySubmissionId ? visibilitySubmission : null)
+        ? (state.submissions.find(
+            (submission) => submission.id === sharingVisibilitySubmissionId,
+          ) ??
+          (visibilitySubmission?.id === sharingVisibilitySubmissionId
+            ? visibilitySubmission
+            : null))
         : null,
     [sharingVisibilitySubmissionId, state.submissions, visibilitySubmission],
   );
@@ -437,7 +444,9 @@ export function EarnPage() {
   const stateVisibilitySubmission = useMemo(
     () =>
       visibilitySummary?.submissionId
-        ? state.submissions.find((submission) => submission.id === visibilitySummary.submissionId) ?? null
+        ? (state.submissions.find(
+            (submission) => submission.id === visibilitySummary.submissionId,
+          ) ?? null)
         : null,
     [state.submissions, visibilitySummary?.submissionId],
   );
@@ -462,10 +471,8 @@ export function EarnPage() {
       return undefined;
     }
 
-    setShowEarnLogoBurst(true);
     setShowCreditToast(true);
 
-    const burstTimer = window.setTimeout(() => setShowEarnLogoBurst(false), 1600);
     const toastTimer = window.setTimeout(() => {
       setShowCreditToast(false);
       setCreditCelebration(null);
@@ -473,7 +480,6 @@ export function EarnPage() {
     }, 5200);
 
     return () => {
-      window.clearTimeout(burstTimer);
       window.clearTimeout(toastTimer);
     };
   }, [creditCelebration, location.pathname, location.search, navigate]);
@@ -634,11 +640,7 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [
-    currentUser?.id,
-    isConfigured,
-    visibilitySummary?.satisfactionRatePercent,
-  ]);
+  }, [currentUser?.id, isConfigured, visibilitySummary?.satisfactionRatePercent]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -802,14 +804,14 @@ export function EarnPage() {
 
     const baseSubmissions = serverEarnSubmissions ?? available;
 
-    return baseSubmissions.filter((item) =>
-      !hiddenReportedSubmissions.has(item.id) &&
-      (serverEarnSubmissions !== null ||
-        (
-          item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
-          googlePlayClosedTestPoolUserIds.has(item.userId ?? "") === isGooglePlayClosedTestPool
-        )) &&
-      item.productTypes.some((productType) => selectedProductTypes.includes(productType)),
+    return baseSubmissions.filter(
+      (item) =>
+        !hiddenReportedSubmissions.has(item.id) &&
+        (serverEarnSubmissions !== null ||
+          (item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
+            googlePlayClosedTestPoolUserIds.has(item.userId ?? "") ===
+              isGooglePlayClosedTestPool)) &&
+        item.productTypes.some((productType) => selectedProductTypes.includes(productType)),
     );
   }, [
     available,
@@ -933,9 +935,7 @@ export function EarnPage() {
   );
   const privatePlacementRank = visibilitySummary?.wouldRank ?? visibilitySummary?.rank ?? null;
   const privatePlacementRankedCount =
-    visibilitySummary?.wouldRankedSubmissionCount ??
-    visibilitySummary?.rankedSubmissionCount ??
-    0;
+    visibilitySummary?.wouldRankedSubmissionCount ?? visibilitySummary?.rankedSubmissionCount ?? 0;
   const shouldShowPrivatePlacement = Boolean(
     currentUser && visibilitySummary?.submissionId && visibilitySummary.productName,
   );
@@ -963,12 +963,10 @@ export function EarnPage() {
     !celebrationSnapshot?.ownerSubmissionId ||
     celebrationSnapshot.ownerSubmissionId === visibilitySummary?.submissionId;
   const previousPrivateRank = snapshotMatchesCurrentSubmission
-    ? celebrationSnapshot?.previousWouldRank ?? null
+    ? (celebrationSnapshot?.previousWouldRank ?? null)
     : null;
   const didPrivatePlacementImprove = Boolean(
-    previousPrivateRank &&
-    privatePlacementRank &&
-    privatePlacementRank < previousPrivateRank,
+    previousPrivateRank && privatePlacementRank && privatePlacementRank < previousPrivateRank,
   );
   const privatePlacementAnimationMode =
     creditCelebration && shouldShowPrivatePlacement
@@ -1020,10 +1018,7 @@ export function EarnPage() {
     target.focus({ preventScroll: true });
   };
 
-  const saveVisibilitySubmissionDetails = async (
-    submissionId: string,
-    draft: SubmissionDraft,
-  ) => {
+  const saveVisibilitySubmissionDetails = async (submissionId: string, draft: SubmissionDraft) => {
     await updateSubmissionDetails(submissionId, draft);
 
     try {
@@ -1066,7 +1061,10 @@ export function EarnPage() {
     }
 
     try {
-      const { slug } = await upsertSubmissionShareLink(sharingVisibilitySubmission.id, customMessage);
+      const { slug } = await upsertSubmissionShareLink(
+        sharingVisibilitySubmission.id,
+        customMessage,
+      );
       return buildShareUrlFromSlug(slug);
     } catch {
       return null;
@@ -1120,12 +1118,8 @@ export function EarnPage() {
     shouldShowPrivatePlacement,
   ]);
 
-  const leadingCards = shouldShowPrivatePlacement
-    ? cards.slice(0, privatePlacementIndex)
-    : cards;
-  const trailingCards = shouldShowPrivatePlacement
-    ? cards.slice(privatePlacementIndex)
-    : [];
+  const leadingCards = shouldShowPrivatePlacement ? cards.slice(0, privatePlacementIndex) : cards;
+  const trailingCards = shouldShowPrivatePlacement ? cards.slice(privatePlacementIndex) : [];
   const isShowingInitialEarnLoad =
     isLoadingServerEarnSubmissions &&
     serverEarnSubmissions === null &&
@@ -1133,15 +1127,10 @@ export function EarnPage() {
     selectedProductTypes.length > 0;
 
   return (
-    <AppShell eyebrowLabel={null}>
-      {showEarnLogoBurst ? (
-        <Test4TestLogoBurst className="test-success-burst--ephemeral earn-logo-burst" />
-      ) : null}
-      {showCreditToast ? (
-        <div className="earn-credit-toast" role="status">
-          {EARN_CREDIT_CELEBRATION_COPY}
-        </div>
-      ) : null}
+    <AppShell title="Earn" eyebrowLabel={null}>
+      <Toast open={showCreditToast} tone="success" title="Credit earned">
+        {EARN_CREDIT_CELEBRATION_COPY}
+      </Toast>
       <div className="page-stack earn-page">
         <EarnVisibilityPanel
           summary={visibilitySummary}
@@ -1256,8 +1245,13 @@ export function EarnPage() {
               ) : (
                 <>
                   <h3>No matching tests right now</h3>
-                  <p>Try a different filter or publish your own product so the exchange loop keeps moving.</p>
-                  <Link to="/submit" className="button button--primary">Submit your app</Link>
+                  <p>
+                    Try a different filter or publish your own product so the exchange loop keeps
+                    moving.
+                  </p>
+                  <Link to="/submit" className="button button--primary">
+                    Submit your app
+                  </Link>
                 </>
               )}
             </div>
@@ -1328,23 +1322,25 @@ function EarnVisibilityPanel({
   const isListingLocked = Boolean(summary && hasLiveTest && !hasCompletedTest);
   const hideMetricValues = Boolean(summary && !hasCompletedTest);
   const showImproveRate = Boolean(summary && hasCompletedTest && summary.testBackRatePercent < 100);
-  const showReviseReview = Boolean(summary && hasCompletedTest && summary.satisfactionRatePercent < 100);
+  const showReviseReview = Boolean(
+    summary && hasCompletedTest && summary.satisfactionRatePercent < 100,
+  );
   const rankValue = !summary
     ? "..."
     : isListingLocked
       ? "Your app isn't listed yet..."
       : hasLiveTest && summary.rank
-      ? `#${summary.rank}`
-      : "--";
+        ? `#${summary.rank}`
+        : "--";
   const rankDetail = !summary
     ? "Loading Rank"
     : isListingLocked
       ? null
-    : hasLiveTest && summary.rank
-      ? null
-      : hasLiveTest
-        ? "Not visible on Earn right now"
-        : "Submit an app to earn a Rank";
+      : hasLiveTest && summary.rank
+        ? null
+        : hasLiveTest
+          ? "Not visible on Earn right now"
+          : "Submit an app to earn a Rank";
   const appName = summary?.productName ?? (summary ? "No live test" : "Loading your visibility");
   const liveSubmissionId = summary?.submissionId ?? null;
   const testBackValue = !summary
@@ -1357,11 +1353,7 @@ function EarnVisibilityPanel({
     : hideMetricValues
       ? "--"
       : `${summary.satisfactionRatePercent}%`;
-  const creditValue = !summary
-    ? "..."
-    : hideMetricValues
-      ? "--"
-      : summary.tokenBalance;
+  const creditValue = !summary ? "..." : hideMetricValues ? "--" : summary.tokenBalance;
 
   if (!isSignedIn) {
     return (
@@ -1415,9 +1407,13 @@ function EarnVisibilityPanel({
       {error ? <div className="callout callout--warning">{error}</div> : null}
 
       <div className="earn-visibility__body" aria-label="Earn visibility metrics">
-        <div className={`earn-visibility__rank-panel${isListingLocked ? " earn-visibility__rank-panel--locked" : ""}`}>
+        <div
+          className={`earn-visibility__rank-panel${isListingLocked ? " earn-visibility__rank-panel--locked" : ""}`}
+        >
           <span className="earn-visibility__rank-label">Rank</span>
-          <div className={`earn-visibility__rank-value${isListingLocked ? " earn-visibility__rank-value--message" : ""}`}>
+          <div
+            className={`earn-visibility__rank-value${isListingLocked ? " earn-visibility__rank-value--message" : ""}`}
+          >
             <strong>{rankValue}</strong>
           </div>
           {isListingLocked ? (
@@ -1451,7 +1447,9 @@ function EarnVisibilityPanel({
             ) : null}
           </div>
           {showImproveRate && !hasTestBackTarget ? (
-            <small className="earn-visibility__detail-note">No available test-back target right now.</small>
+            <small className="earn-visibility__detail-note">
+              No available test-back target right now.
+            </small>
           ) : null}
 
           <div className="earn-visibility__detail-row earn-visibility__detail-row--action">
@@ -1482,8 +1480,13 @@ function EarnVisibilityPanel({
           {showReviseReview && !isLoadingRevisionTarget && revisionTargetError ? (
             <small className="earn-visibility__detail-note">{revisionTargetError}</small>
           ) : null}
-          {showReviseReview && !isLoadingRevisionTarget && !revisionTargetResponseId && !revisionTargetError ? (
-            <small className="earn-visibility__detail-note">No revisable low or okay reviews right now.</small>
+          {showReviseReview &&
+          !isLoadingRevisionTarget &&
+          !revisionTargetResponseId &&
+          !revisionTargetError ? (
+            <small className="earn-visibility__detail-note">
+              No revisable low or okay reviews right now.
+            </small>
           ) : null}
 
           <div className="earn-visibility__detail-row">
@@ -1497,7 +1500,7 @@ function EarnVisibilityPanel({
                   aria-label="What credits do"
                   aria-describedby="earn-token-tooltip"
                 >
-                  <Info size={14} />
+                  <Info size={16} />
                 </button>
                 <span id="earn-token-tooltip" className="earn-token-tooltip__bubble" role="tooltip">
                   The more credits you have, the more visibility your test gains
@@ -1524,6 +1527,8 @@ function EarnPlatformModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const modalFocus = useModalFocus<HTMLDivElement>(true, onClose);
+
   return (
     <div
       className="results-modal-backdrop earn-platform-modal-backdrop"
@@ -1531,6 +1536,7 @@ function EarnPlatformModal({
       onClick={onClose}
     >
       <div
+        {...modalFocus}
         className="results-modal earn-platform-modal"
         role="dialog"
         aria-modal="true"
@@ -1551,7 +1557,7 @@ function EarnPlatformModal({
             onClick={onClose}
             aria-label="Close platform selection"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1578,7 +1584,11 @@ function EarnPlatformModal({
           })}
         </div>
 
-        <button type="button" className="button button--primary earn-platform-confirm" onClick={onConfirm}>
+        <button
+          type="button"
+          className="button button--primary earn-platform-confirm"
+          onClick={onConfirm}
+        >
           {confirmLabel}
         </button>
       </div>
@@ -1613,18 +1623,20 @@ function EarnPrivatePlacementRow({
 }) {
   const productName = submission?.productName ?? summary.productName ?? "Your test";
   const description =
-    submission?.description ||
-    "This is your private placement preview on the Earn page.";
+    submission?.description || "This is your private placement preview on the Earn page.";
   const placementClasses = [
     "earn-row",
     "earn-row--private-placement",
     animationMode === "rise" ? "earn-row--private-placement-rise" : "",
     animationMode === "pulse" ? "earn-row--private-placement-pulse" : "",
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
   const placementStyle = {
     "--private-placement-offset": `${animationOffsetPx}px`,
   } as CSSProperties;
 
+  // ds-exception: runtime-measurements — measured placement offset for the private row.
   return (
     <Surface className={placementClasses} style={placementStyle}>
       <div className="earn-row__content">
@@ -1642,7 +1654,9 @@ function EarnPrivatePlacementRow({
               <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
             ) : null}
             {submission?.needsGooglePlayClosedTesters ? (
-              <span className="tag tag--warm earn-row__closed-test-tag">Google Play closed test</span>
+              <span className="tag tag--warm earn-row__closed-test-tag">
+                Google Play closed test
+              </span>
             ) : null}
           </div>
           <div className="earn-row__head">
@@ -1707,21 +1721,29 @@ function EarnRow({
               </span>
             ) : null}
             {productTypesBadges(submission.productTypes).map((badge) => (
-              <span key={`${submission.id}-${badge}`} className="pill pill--accent">{badge}</span>
+              <span key={`${submission.id}-${badge}`} className="pill pill--accent">
+                {badge}
+              </span>
             ))}
             {submission.requiresRecording ? (
               <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
             ) : null}
             {submission.needsGooglePlayClosedTesters ? (
-              <span className="tag tag--warm earn-row__closed-test-tag">Google Play closed test</span>
+              <span className="tag tag--warm earn-row__closed-test-tag">
+                Google Play closed test
+              </span>
             ) : null}
           </div>
           <div className="earn-row__head">
             <h3>{submission.productName}</h3>
-            <p>{submission.description || "Open the app, move through the main experience, and share thoughtful usability feedback."}</p>
+            <p>
+              {submission.description ||
+                "Open the app, move through the main experience, and share thoughtful usability feedback."}
+            </p>
             {submission.needsGooglePlayClosedTesters ? (
               <p className="earn-row__closed-test-note">
-                Google Play closed test: join the Android test and check in once a day for 14 consecutive days.
+                Google Play closed test: join the Android test and check in once a day for 14
+                consecutive days.
               </p>
             ) : null}
           </div>
@@ -1759,4 +1781,3 @@ function EarnRow({
     </Surface>
   );
 }
-

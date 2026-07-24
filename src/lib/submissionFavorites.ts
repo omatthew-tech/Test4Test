@@ -26,18 +26,16 @@ export async function syncSubmissionFavorites(userId: string, responseIds: strin
   }
 
   const supabase = requireSupabase();
-  const { error } = await supabase
-    .from("test_response_favorites")
-    .upsert(
-      responseIds.map((responseId) => ({
-        user_id: userId,
-        test_response_id: responseId,
-      })),
-      {
-        onConflict: "user_id,test_response_id",
-        ignoreDuplicates: true,
-      },
-    );
+  const { error } = await supabase.from("test_response_favorites").upsert(
+    responseIds.map((responseId) => ({
+      user_id: userId,
+      test_response_id: responseId,
+    })),
+    {
+      onConflict: "user_id,test_response_id",
+      ignoreDuplicates: true,
+    },
+  );
 
   if (error) {
     throw new Error(error.message);

@@ -1,0 +1,39 @@
+{
+  "id": "grid",
+  "name": "Grid",
+  "family": "layout",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/layout.tsx",
+  "story": "design-system/stories/Layout.stories.tsx",
+  "description": "Responsive intrinsic grid.",
+  "semantics": [
+    "Configurable semantic element"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Grid",
+  "sizes": [
+    "xs",
+    "sm",
+    "md",
+    "lg",
+    "xl"
+  ],
+  "variants": [
+    "intrinsic"
+  ],
+  "states": [
+    "default",
+    "narrow-width",
+    "long-content"
+  ],
+  "accessibleName": "Inherited from the configured semantic element when required.",
+  "controlMode": "not-applicable",
+  "storyExport": "GridContract",
+  "examples": [
+    "design-system/stories/Layout.stories.tsx#GridContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

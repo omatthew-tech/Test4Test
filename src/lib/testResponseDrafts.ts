@@ -66,7 +66,9 @@ function normalizeAnswerValues(value: unknown) {
 
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([questionId, answer]) => typeof questionId === "string" && typeof answer === "string")
+      .filter(
+        ([questionId, answer]) => typeof questionId === "string" && typeof answer === "string",
+      )
       .map(([questionId, answer]) => [questionId, answer]),
   );
 }
@@ -170,10 +172,7 @@ export function loadLocalTestResponseDraft(
   }
 }
 
-export function loadLocalTestResponseDraftProgress(
-  userId: string,
-  submissionIds: string[],
-) {
+export function loadLocalTestResponseDraftProgress(userId: string, submissionIds: string[]) {
   const progress = Object.fromEntries(
     submissionIds.map((submissionId) => [submissionId, false]),
   ) as Record<string, boolean>;
@@ -194,9 +193,7 @@ export function loadLocalTestResponseDraftProgress(
         }
 
         const stored = window.localStorage.getItem(key);
-        const draft = stored
-          ? mapStoredDraft(JSON.parse(stored) as StoredTestResponseDraft)
-          : null;
+        const draft = stored ? mapStoredDraft(JSON.parse(stored) as StoredTestResponseDraft) : null;
 
         if (draft && hasSavedAnswerValues(draft.answerValues)) {
           progress[submissionId] = true;
@@ -248,7 +245,9 @@ export function clearLocalTestResponseDraft(
 
   try {
     if (questionSetVersionId) {
-      window.localStorage.removeItem(buildDraftStorageKey(userId, submissionId, questionSetVersionId));
+      window.localStorage.removeItem(
+        buildDraftStorageKey(userId, submissionId, questionSetVersionId),
+      );
       return;
     }
 
@@ -301,10 +300,7 @@ export async function loadTestResponseDraft(
   }
 }
 
-export async function loadTestResponseDraftProgress(
-  userId: string,
-  submissionIds: string[],
-) {
+export async function loadTestResponseDraftProgress(userId: string, submissionIds: string[]) {
   const uniqueSubmissionIds = [...new Set(submissionIds)].filter(Boolean);
   const progress = loadLocalTestResponseDraftProgress(userId, uniqueSubmissionIds);
 
@@ -327,7 +323,8 @@ export async function loadTestResponseDraftProgress(
     ((data ?? []) as TestResponseDraftProgressRow[]).forEach((row) => {
       if (row.submission_id) {
         progress[row.submission_id] =
-          progress[row.submission_id] || hasSavedAnswerValues(normalizeAnswerValues(row.answer_values));
+          progress[row.submission_id] ||
+          hasSavedAnswerValues(normalizeAnswerValues(row.answer_values));
       }
     });
   } catch {
@@ -350,21 +347,19 @@ export async function saveTestResponseDraft(
   try {
     const now = new Date().toISOString();
     const supabase = requireSupabase();
-    const { error } = await supabase
-      .from("test_response_drafts")
-      .upsert(
-        {
-          tester_user_id: input.userId,
-          submission_id: input.submissionId,
-          submission_version_id: input.submissionVersionId,
-          question_set_version_id: input.questionSetVersionId,
-          answer_values: input.answerValues,
-          started_at: input.startedAt,
-          updated_at: now,
-          expires_at: getDraftExpiry(),
-        },
-        { onConflict: "submission_id,tester_user_id" },
-      );
+    const { error } = await supabase.from("test_response_drafts").upsert(
+      {
+        tester_user_id: input.userId,
+        submission_id: input.submissionId,
+        submission_version_id: input.submissionVersionId,
+        question_set_version_id: input.questionSetVersionId,
+        answer_values: input.answerValues,
+        started_at: input.startedAt,
+        updated_at: now,
+        expires_at: getDraftExpiry(),
+      },
+      { onConflict: "submission_id,tester_user_id" },
+    );
 
     if (error) {
       throw new Error(error.message);

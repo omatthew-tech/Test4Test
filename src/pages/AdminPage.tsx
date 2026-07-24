@@ -62,6 +62,10 @@ export function AdminPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const focusedReportId = searchParams.get("report")?.trim() ?? "";
+  const useDesignSystemReportFixture =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_DS_FIXTURES === "1" &&
+    searchParams.get("ds-reports") === "1";
   const [reports, setReports] = useState<AdminTestReport[]>([]);
   const [reviewSubmissions, setReviewSubmissions] = useState<AdminReviewSubmission[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
@@ -103,7 +107,19 @@ export function AdminPage() {
   };
 
   const loadReports = async () => {
-    if (!currentUser || !isConfigured) {
+    if (!currentUser) {
+      return;
+    }
+
+    if (useDesignSystemReportFixture) {
+      const { createDesignSystemAdminReportFixture } =
+        await import("../testing/designSystemFixtures");
+      setReports([createDesignSystemAdminReportFixture()]);
+      setReviewSubmissions([]);
+      return;
+    }
+
+    if (!isConfigured) {
       return;
     }
 
@@ -115,11 +131,7 @@ export function AdminPage() {
     } catch (error) {
       setReports([]);
       setReviewSubmissions([]);
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Admin reports could not be loaded.",
-      );
+      setLoadError(error instanceof Error ? error.message : "Admin reports could not be loaded.");
     } finally {
       setIsLoadingReports(false);
     }
@@ -127,7 +139,7 @@ export function AdminPage() {
 
   useEffect(() => {
     void loadReports();
-  }, [currentUser?.id, isConfigured]);
+  }, [currentUser?.id, isConfigured, useDesignSystemReportFixture]);
 
   const decideReport = async (reportId: string, decision: "ok" | "not_ok") => {
     const actionKey: AdminAction = `report:${reportId}:${decision}`;
@@ -139,11 +151,7 @@ export function AdminPage() {
       applyAdminResult(await decideAdminTestReport(reportId, decision));
       setPendingDecision(null);
     } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "That decision could not be saved.",
-      );
+      setLoadError(error instanceof Error ? error.message : "That decision could not be saved.");
     } finally {
       setActiveAction(null);
     }
@@ -158,11 +166,7 @@ export function AdminPage() {
     try {
       applyAdminResult(await restoreReportedSubmission(submissionId));
     } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "That app could not be restored.",
-      );
+      setLoadError(error instanceof Error ? error.message : "That app could not be restored.");
     } finally {
       setActiveAction(null);
     }
@@ -181,7 +185,9 @@ export function AdminPage() {
               <ShieldAlert size={24} />
               <h3>Sign in with the support account</h3>
               <p>Admin reports are only available to configured support users.</p>
-              <Link to={signInHref} className="button button--primary">Sign in</Link>
+              <Link to={signInHref} className="button button--primary">
+                Sign in
+              </Link>
             </div>
           </Surface>
         </div>
@@ -190,18 +196,22 @@ export function AdminPage() {
   }
 
   return (
-    <AppShell title="Admin" description="Review reported tests and restore edited apps." eyebrowLabel={null}>
+    <AppShell
+      title="Admin"
+      description="Review reported tests and restore edited apps."
+      eyebrowLabel={null}
+    >
       <div className="page-stack admin-page">
         {loadError ? (
           <Surface className="callout callout--warning">
-            <ShieldAlert size={18} />
+            <ShieldAlert size={20} />
             <span>{loadError}</span>
           </Surface>
         ) : null}
 
         {notice ? (
           <Surface className="callout callout--soft">
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={20} />
             <span>{notice}</span>
           </Surface>
         ) : null}
@@ -227,7 +237,8 @@ export function AdminPage() {
                   <div>
                     <strong>{submission.appName}</strong>
                     <p>
-                      {submission.founderDisplayName} / {submission.founderEmail} / Last report: {submission.reasonLabel}
+                      {submission.founderDisplayName} / {submission.founderEmail} / Last report:{" "}
+                      {submission.reasonLabel}
                     </p>
                   </div>
                   <button
@@ -294,8 +305,7 @@ function AdminReportCard({
   const activePendingDecision =
     pendingDecision?.reportId === report.id ? pendingDecision.decision : null;
   const isWorkingOnThisReport =
-    activeAction === `report:${report.id}:ok` ||
-    activeAction === `report:${report.id}:not_ok`;
+    activeAction === `report:${report.id}:ok` || activeAction === `report:${report.id}:not_ok`;
 
   return (
     <Surface className={`admin-report-card${isFocused ? " admin-report-card--focused" : ""}`}>
@@ -306,7 +316,9 @@ function AdminReportCard({
               <span className="submission-status__dot" />
               {appStatusLabel(report.appStatus)}
             </span>
-            <span className={`admin-report-card__status admin-report-card__status--${report.status}`}>
+            <span
+              className={`admin-report-card__status admin-report-card__status--${report.status}`}
+            >
               {reportStatusLabel(report.status)}
             </span>
             {report.needsGooglePlayClosedTesters ? (
@@ -314,7 +326,9 @@ function AdminReportCard({
             ) : null}
           </div>
           <h2>{report.appName}</h2>
-          <p>{report.reasonLabel} / Reported {formatDateTime(report.createdAt)}</p>
+          <p>
+            {report.reasonLabel} / Reported {formatDateTime(report.createdAt)}
+          </p>
         </div>
         <div className="admin-report-card__actions">
           {isPending ? (
@@ -328,7 +342,11 @@ function AdminReportCard({
                 <div className="inline-actions inline-actions--compact">
                   <button
                     type="button"
-                    className={activePendingDecision === "ok" ? "button button--primary" : "button button--danger"}
+                    className={
+                      activePendingDecision === "ok"
+                        ? "button button--primary"
+                        : "button button--danger"
+                    }
                     onClick={() => void onDecide(report.id, activePendingDecision)}
                     disabled={activeAction !== null}
                   >
@@ -404,7 +422,10 @@ function AdminReportCard({
       {report.needsGooglePlayClosedTesters ? (
         <div className="admin-report-card__message">
           <span className="eyebrow">Closed-test instructions</span>
-          <p>{report.googlePlayClosedTestInstructions || "No closed-test instructions were provided."}</p>
+          <p>
+            {report.googlePlayClosedTestInstructions ||
+              "No closed-test instructions were provided."}
+          </p>
         </div>
       ) : null}
 
@@ -421,7 +442,7 @@ function AdminReportCard({
                 className="button button--secondary button--small"
               >
                 {link.productType}
-                <ExternalLink size={14} />
+                <ExternalLink size={16} />
               </a>
             ))}
           </div>

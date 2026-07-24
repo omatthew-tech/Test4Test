@@ -40,11 +40,7 @@ export function formatDate(value: string) {
 export function formatCalendarDate(value: string) {
   const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   const date = dateOnlyMatch
-    ? new Date(
-        Number(dateOnlyMatch[1]),
-        Number(dateOnlyMatch[2]) - 1,
-        Number(dateOnlyMatch[3]),
-      )
+    ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
     : new Date(value);
 
   return new Intl.DateTimeFormat("en-US", {
@@ -211,9 +207,10 @@ export function accessLinkPlaceholder(productType: ProductType, isGooglePlayClos
 export function getOrderedAccessLinks(accessLinks: AccessLinks, productTypes: ProductType[] = []) {
   const normalizedLinks = normalizeAccessLinks(accessLinks);
   const orderedTypes = normalizeProductTypes(productTypes);
-  const sourceTypes = orderedTypes.length > 0
-    ? orderedTypes
-    : PRODUCT_TYPE_ORDER.filter((productType) => Boolean(normalizedLinks[productType]));
+  const sourceTypes =
+    orderedTypes.length > 0
+      ? orderedTypes
+      : PRODUCT_TYPE_ORDER.filter((productType) => Boolean(normalizedLinks[productType]));
 
   return sourceTypes.flatMap((productType) => {
     const url = normalizedLinks[productType];
@@ -222,16 +219,18 @@ export function getOrderedAccessLinks(accessLinks: AccessLinks, productTypes: Pr
       return [];
     }
 
-    return [{
-      productType,
-      label: productTypeLabel(productType),
-      buttonLabel: accessLinkButtonLabel(productType),
-      fieldLabel: accessLinkFieldLabel(productType),
-      placeholder: accessLinkPlaceholder(productType),
-      url,
-      normalizedUrl: normalizeAccessUrl(url),
-      displayUrl: displayAccessUrl(url),
-    } satisfies AccessLinkItem];
+    return [
+      {
+        productType,
+        label: productTypeLabel(productType),
+        buttonLabel: accessLinkButtonLabel(productType),
+        fieldLabel: accessLinkFieldLabel(productType),
+        placeholder: accessLinkPlaceholder(productType),
+        url,
+        normalizedUrl: normalizeAccessUrl(url),
+        displayUrl: displayAccessUrl(url),
+      } satisfies AccessLinkItem,
+    ];
   });
 }
 

@@ -133,7 +133,10 @@ function buildAiFunctionRequestPayload(draft: SubmissionDraft): AiFunctionReques
   };
 }
 
-function buildFallbackQuestions(draft: SubmissionDraft, notice: string): AiQuestionGenerationResult {
+function buildFallbackQuestions(
+  draft: SubmissionDraft,
+  notice: string,
+): AiQuestionGenerationResult {
   const fallbackQuestions = buildAiQuestions({
     ...draft,
     productName: normalizeText(draft.productName) || "Your product",
@@ -178,7 +181,9 @@ function shouldUseFallback(error: unknown, status?: number) {
     return true;
   }
 
-  return error instanceof FunctionsHttpError && [401, 403, 404, 500, 502, 503, 504].includes(status ?? 0);
+  return (
+    error instanceof FunctionsHttpError && [401, 403, 404, 500, 502, 503, 504].includes(status ?? 0)
+  );
 }
 
 function buildFallbackNotice(status?: number) {
@@ -220,7 +225,10 @@ function buildUserFacingError(error: unknown, status?: number, responseMessage?:
     }
   }
 
-  return responseMessage || (error instanceof Error ? error.message : "AI question generation failed. Please try again.");
+  return (
+    responseMessage ||
+    (error instanceof Error ? error.message : "AI question generation failed. Please try again.")
+  );
 }
 
 export function buildAiQuestionDraftKey(draft: SubmissionDraft) {
@@ -254,9 +262,12 @@ export async function generateAiQuestions(
   }
 
   const supabase = requireSupabase();
-  const { data, error, response } = await supabase.functions.invoke<AiQuestionResponse>(AI_FUNCTION_NAME, {
-    body: buildAiFunctionRequestPayload(draft),
-  });
+  const { data, error, response } = await supabase.functions.invoke<AiQuestionResponse>(
+    AI_FUNCTION_NAME,
+    {
+      body: buildAiFunctionRequestPayload(draft),
+    },
+  );
 
   if (error) {
     const status = response?.status;

@@ -1,0 +1,188 @@
+@import "../tokens/generated/tokens.css";
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist/GeistVF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/geist/GeistMonoVF.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  font-family: var(--ds-semantic-typography-family-body);
+  background: var(--ds-semantic-color-background-canvas);
+  color: var(--ds-semantic-color-text-primary);
+  text-size-adjust: 100%;
+  scroll-padding-block-start: var(--ds-semantic-space-stack-section-large);
+}
+
+body {
+  min-width: var(--ds-semantic-size-viewport-minimum);
+  min-height: var(--ds-semantic-size-viewport-fallback-height);
+  margin: var(--ds-semantic-space-zero);
+  background: var(--ds-semantic-color-background-canvas);
+  color: var(--ds-semantic-color-text-primary);
+  font-size: var(--ds-semantic-typography-body-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+  line-height: var(--ds-semantic-typography-body-line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a,
+input,
+textarea,
+select,
+[tabindex]:not([tabindex="-1"]) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-focus-ring);
+  outline-offset: var(--ds-semantic-border-offset-focus);
+}
+
+::selection {
+  background: var(--ds-semantic-color-action-tint);
+  color: var(--ds-semantic-color-text-primary);
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+blockquote,
+figure {
+  margin-block: var(--ds-semantic-space-zero);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--ds-semantic-color-text-primary);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--ds-semantic-color-text-link);
+  text-decoration-thickness: var(--ds-semantic-border-width-default);
+  text-underline-offset: var(--ds-semantic-space-inline-xs);
+}
+
+a:hover {
+  color: var(--ds-semantic-color-action-primary-strong);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--ds-semantic-typography-family-technical);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+dialog::backdrop {
+  background: color-mix(in srgb, var(--ds-semantic-color-surface-scrim) 42%, transparent);
+}
+
+.ds-sr-only {
+  position: absolute;
+  width: var(--ds-semantic-border-width-default);
+  height: var(--ds-semantic-border-width-default);
+  padding: var(--ds-semantic-space-zero);
+  margin: calc(var(--ds-semantic-border-width-default) * -1);
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: var(--ds-semantic-space-zero);
+}
+
+.ds-skip-link {
+  position: fixed;
+  z-index: 1000;
+  inset-block-start: var(--ds-semantic-space-inline-md);
+  inset-inline-start: var(--ds-semantic-space-inline-md);
+  min-height: var(--ds-semantic-size-control-default);
+  padding: var(--ds-semantic-space-inline-sm) var(--ds-semantic-space-inline-lg);
+  border-radius: var(--ds-semantic-radius-control);
+  background: var(--ds-semantic-color-action-primary);
+  color: var(--ds-semantic-color-text-inverse);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  transform: translateY(calc(-100% - var(--ds-semantic-space-stack-lg)));
+  transition: transform var(--ds-semantic-motion-interaction-duration)
+    var(--ds-semantic-motion-interaction-easing);
+}
+
+.ds-skip-link:focus {
+  color: var(--ds-semantic-color-text-inverse);
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: var(--ds-semantic-motion-reduced-duration) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--ds-semantic-motion-reduced-duration) !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    forced-color-adjust: auto;
+  }
+}

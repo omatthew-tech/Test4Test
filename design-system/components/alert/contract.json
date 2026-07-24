@@ -1,0 +1,39 @@
+{
+  "id": "alert",
+  "name": "Alert",
+  "family": "feedback",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/feedback.tsx",
+  "story": "design-system/stories/Feedback.stories.tsx",
+  "description": "Persistent contextual status message.",
+  "semantics": [
+    "Status for routine updates",
+    "Alert for urgent failures"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "Alert",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "info",
+    "success",
+    "warning",
+    "danger"
+  ],
+  "states": [
+    "routine",
+    "urgent",
+    "long-content"
+  ],
+  "accessibleName": "Visible title and content; danger uses alert, other tones use status.",
+  "controlMode": "not-applicable",
+  "storyExport": "AlertContract",
+  "examples": [
+    "design-system/stories/Feedback.stories.tsx#AlertContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

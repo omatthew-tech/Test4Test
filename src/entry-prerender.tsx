@@ -23,10 +23,7 @@ function getBlogRouteMetadata(path: string) {
 }
 
 export function getPrerenderBlogRoutes() {
-  return [
-    "/blog",
-    ...getPublishedBlogPosts().map((post) => `/blog/${post.slug}`),
-  ];
+  return ["/blog", ...getPublishedBlogPosts().map((post) => `/blog/${post.slug}`)];
 }
 
 export function renderBlogRoute(path: string) {

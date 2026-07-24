@@ -41,9 +41,7 @@ export async function loadEarnSubmissionReputations(submissionIds: string[]) {
         ? row.owner_credit_balance
         : 0,
     ownerTestBackRatePercent: normalizePercent(row.owner_test_back_rate_percent),
-    ownerSatisfactionRatePercent: normalizePercent(
-      row.owner_satisfaction_rate_percent,
-    ),
+    ownerSatisfactionRatePercent: normalizePercent(row.owner_satisfaction_rate_percent),
     ownerAvatarUrl: null,
   }));
 }
