@@ -171,6 +171,7 @@ export async function listMyUsabilityReports(): Promise<UsabilityReport[]> {
  */
 export async function generateUsabilityReport(
   submissionId: string,
+  responseIds: string[],
 ): Promise<{
   reportId: string;
   status: UsabilityReportStatus;
@@ -180,8 +181,13 @@ export async function generateUsabilityReport(
     throw new Error("Select an app to generate a report for.");
   }
 
+  if (responseIds.length === 0) {
+    throw new Error("Select at least one recording to generate a report.");
+  }
+
   const payload = await callFunction<GenerateReportResponse>("generate-usability-report", {
     submissionId,
+    responseIds,
   });
 
   if (!payload.reportId) {

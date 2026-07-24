@@ -12943,3 +12943,135 @@ select {
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
+
+.report-recording-modal {
+  width: min(100%, 36rem);
+}
+
+.report-recording-modal__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-top: var(--space-300);
+  color: var(--color-ink-800);
+  font-size: 0.9rem;
+}
+
+.report-recording-modal__select-all {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-orange-500);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.report-recording-modal__select-all:hover {
+  text-decoration: underline;
+}
+
+.report-recording-modal__select-all:focus-visible {
+  outline: 2px solid rgba(245, 142, 86, 0.45);
+  outline-offset: 3px;
+}
+
+.report-recording-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  max-height: min(46vh, 25rem);
+  margin-top: var(--space-150);
+  overflow-y: auto;
+}
+
+.report-recording-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-150);
+  padding: var(--space-150);
+  border: 1px solid rgba(143, 115, 93, 0.24);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-000);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.report-recording-option:hover {
+  border-color: rgba(245, 142, 86, 0.5);
+}
+
+.report-recording-option--selected {
+  border-color: rgba(245, 142, 86, 0.55);
+  background: var(--color-orange-050);
+}
+
+.report-recording-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.report-recording-option:focus-within {
+  outline: 2px solid rgba(245, 142, 86, 0.42);
+  outline-offset: 2px;
+}
+
+.report-recording-option__check {
+  display: inline-flex;
+  color: var(--color-orange-500);
+}
+
+.report-recording-option__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-050);
+}
+
+.report-recording-option__copy strong {
+  overflow: hidden;
+  color: var(--color-ink-900);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-recording-option__copy span {
+  color: var(--color-ink-600);
+  font-size: 0.84rem;
+}
+
+.report-recording-option > svg {
+  color: var(--color-ink-500);
+}
+
+.modal p.report-recording-modal__validation {
+  margin-top: var(--space-150);
+  color: var(--color-error);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+@media (max-width: 600px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: var(--space-150);
+  }
+
+  .report-recording-modal {
+    max-height: calc(100vh - var(--space-300));
+    overflow-y: auto;
+  }
+
+  .report-recording-modal .modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .report-recording-modal .modal__actions .button {
+    width: 100%;
+  }
+}

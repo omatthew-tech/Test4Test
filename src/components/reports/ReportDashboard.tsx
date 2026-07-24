@@ -4,8 +4,10 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  CheckSquare2,
   CircleDashed,
   FileText,
+  Square,
   Video,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +21,12 @@ import {
   listMyUsabilityReports,
   pollUsabilityReportUntilDone,
 } from "../../lib/usabilityReports";
-import { ResponseRecording, UsabilityReport, UsabilityReportPreviewFrame } from "../../types";
+import {
+  ResponseRecording,
+  TestResponse,
+  UsabilityReport,
+  UsabilityReportPreviewFrame,
+} from "../../types";
 import { ProcessingScreen } from "./ProcessingScreen";
 
 const NO_RECORDINGS_MESSAGE =
@@ -34,6 +41,13 @@ function isAnalyzableRecording(recording: ResponseRecording | null) {
       !recording.deletedAt &&
       new Date(recording.expiresAt).getTime() > Date.now(),
   );
+}
+
+function formatRecordingDuration(seconds: number) {
+  const wholeSeconds = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(wholeSeconds / 60);
+  const remainingSeconds = wholeSeconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 function reportStatusLabel(status: UsabilityReport["status"]) {
@@ -73,15 +87,25 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const { state } = useAppState();
   const submissions = useMemo(() => getMySubmissions(state), [state]);
 
-  /** Count of responses that actually carry a recording, per submission. */
-  const recordingCountBySubmission = useMemo(() => {
-    const counts = new Map<string, number>();
+  const recordingsBySubmission = useMemo(() => {
+    const recordings = new Map<string, TestResponse[]>();
+
     for (const response of state.responses) {
       if (isAnalyzableRecording(response.recording)) {
-        counts.set(response.submissionId, (counts.get(response.submissionId) ?? 0) + 1);
+        const submissionRecordings = recordings.get(response.submissionId) ?? [];
+        submissionRecordings.push(response);
+        recordings.set(response.submissionId, submissionRecordings);
       }
     }
-    return counts;
+
+    for (const submissionRecordings of recordings.values()) {
+      submissionRecordings.sort(
+        (first, second) =>
+          new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime(),
+      );
+    }
+
+    return recordings;
   }, [state.responses]);
 
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>(
@@ -93,6 +117,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const [history, setHistory] = useState<UsabilityReport[]>([]);
   const [previewFrames, setPreviewFrames] = useState<UsabilityReportPreviewFrame[]>([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedRecordingIds, setSelectedRecordingIds] = useState<string[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -130,9 +155,21 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   }, []);
 
   const selectedSubmission = submissions.find((submission) => submission.id === selectedSubmissionId) ?? null;
-  const selectedRecordingCount = selectedSubmission
-    ? recordingCountBySubmission.get(selectedSubmission.id) ?? 0
-    : 0;
+  const availableRecordings = useMemo(
+    () => recordingsBySubmission.get(selectedSubmissionId) ?? [],
+    [recordingsBySubmission, selectedSubmissionId],
+  );
+  const availableRecordingIdsKey = availableRecordings.map((response) => response.id).join(",");
+  const selectedRecordingIdSet = useMemo(
+    () => new Set(selectedRecordingIds),
+    [selectedRecordingIds],
+  );
+  const selectedRecordingCount = selectedRecordingIds.length;
+
+  useEffect(() => {
+    setSelectedRecordingIds(availableRecordings.map((response) => response.id));
+  }, [availableRecordingIdsKey, selectedSubmissionId]);
+
   const filteredHistory = useMemo(
     () =>
       history
@@ -157,8 +194,13 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
     }
 
     // Requirement: validate the user actually has videos before doing anything.
-    if (selectedRecordingCount === 0) {
+    if (availableRecordings.length === 0) {
       setError(NO_RECORDINGS_MESSAGE);
+      return;
+    }
+
+    if (selectedRecordingCount === 0) {
+      setError("Select at least one recording to generate a report.");
       return;
     }
 
@@ -170,7 +212,10 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
     setStatusLabel("Fetching your usability recordings...");
 
     try {
-      const { reportId, previewFrames: initialPreviewFrames } = await generateUsabilityReport(selectedSubmission.id);
+      const { reportId, previewFrames: initialPreviewFrames } = await generateUsabilityReport(
+        selectedSubmission.id,
+        selectedRecordingIds,
+      );
       setPreviewFrames(initialPreviewFrames);
 
       const result = await pollUsabilityReportUntilDone(reportId, {
@@ -251,7 +296,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                   }}
                 >
                   {submissions.map((submission) => {
-                    const count = recordingCountBySubmission.get(submission.id) ?? 0;
+                    const count = recordingsBySubmission.get(submission.id)?.length ?? 0;
                     return (
                       <option key={submission.id} value={submission.id}>
                         {submission.productName} ({count} recording{count === 1 ? "" : "s"})
@@ -269,8 +314,8 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
 
             <div className="report-dashboard__recording-hint">
               <Video size={16} strokeWidth={2.2} />
-              {selectedRecordingCount > 0
-                ? `${selectedRecordingCount} recording${selectedRecordingCount === 1 ? "" : "s"} available to analyze`
+              {availableRecordings.length > 0
+                ? `${availableRecordings.length} recording${availableRecordings.length === 1 ? "" : "s"} available to analyze`
                 : "You don't have any recordings for this app yet"}
             </div>
 
@@ -278,7 +323,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
               type="button"
               className="button button--primary report-dashboard__generate"
               onClick={() => setIsConfirmModalOpen(true)}
-              disabled={!selectedSubmission || selectedRecordingCount === 0}
+              disabled={!selectedSubmission || availableRecordings.length === 0}
             >
               Generate report
               <ArrowRight size={18} strokeWidth={2.2} />
@@ -294,19 +339,76 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
         ) : null}
       </Surface>
 
-       {isConfirmModalOpen ? (
+      {isConfirmModalOpen ? (
         <div className="modal-backdrop" role="presentation">
           <div
-            className="modal"
+            className="modal report-recording-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="generate-report-confirm-title"
           >
-            <h3 id="generate-report-confirm-title">Generate updated report?</h3>
+            <h3 id="generate-report-confirm-title">Generate a new report</h3>
             <p>
-              This will create a new report using the currently selected feedback.
-              Feedback that has been removed will not be included in the updated AI analysis.
+              Choose which tester videos AI should analyze for {selectedSubmission?.productName}.
             </p>
+            <div className="report-recording-modal__toolbar">
+              <strong>
+                {selectedRecordingCount} of {availableRecordings.length} selected
+              </strong>
+              <button
+                type="button"
+                className="report-recording-modal__select-all"
+                onClick={() =>
+                  setSelectedRecordingIds(
+                    selectedRecordingCount === availableRecordings.length
+                      ? []
+                      : availableRecordings.map((response) => response.id),
+                  )
+                }
+              >
+                {selectedRecordingCount === availableRecordings.length ? "Clear all" : "Select all"}
+              </button>
+            </div>
+            <div className="report-recording-modal__list" role="group" aria-label="Recordings to analyze">
+              {availableRecordings.map((response) => {
+                const isSelected = selectedRecordingIdSet.has(response.id);
+
+                return (
+                  <label
+                    key={response.id}
+                    className={`report-recording-option${isSelected ? " report-recording-option--selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setSelectedRecordingIds((current) =>
+                          current.includes(response.id)
+                            ? current.filter((id) => id !== response.id)
+                            : [...current, response.id],
+                        );
+                        setError(null);
+                      }}
+                    />
+                    <span className="report-recording-option__check" aria-hidden="true">
+                      {isSelected ? <CheckSquare2 size={22} /> : <Square size={22} />}
+                    </span>
+                    <span className="report-recording-option__copy">
+                      <strong>{response.anonymousLabel || "Anonymous tester"}</strong>
+                      <span>
+                        {formatDateTime(response.submittedAt)} · {formatRecordingDuration(response.durationSeconds)}
+                      </span>
+                    </span>
+                    <Video size={20} aria-hidden="true" />
+                  </label>
+                );
+              })}
+            </div>
+            {selectedRecordingCount === 0 ? (
+              <p className="report-recording-modal__validation" role="alert">
+                Select at least one video to continue.
+              </p>
+            ) : null}
             <div className="modal__actions">
               <button
                 type="button"
@@ -322,8 +424,9 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                   setIsConfirmModalOpen(false);
                   void handleGenerate();
                 }}
+                disabled={selectedRecordingCount === 0}
               >
-                Generate report
+                Generate from {selectedRecordingCount} video{selectedRecordingCount === 1 ? "" : "s"}
               </button>
             </div>
           </div>
