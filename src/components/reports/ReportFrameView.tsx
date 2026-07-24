@@ -223,7 +223,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
             onClick={() => navigate(`/ai-analysis/${report.id}`)}
           >
             <ArrowLeft size={16} strokeWidth={2.2} />
-            Report {report.reportNumber}
+            {report.reportName || `Report ${report.reportNumber}`}
           </button>
           <div className="report-frame-view__heading-row">
             <div>

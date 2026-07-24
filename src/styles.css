@@ -12349,6 +12349,66 @@ select {
   color: var(--color-ink-900);
 }
 
+.report-view__title-row,
+.report-view__name-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  min-width: 0;
+}
+
+.report-view__title-row .report-view__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.report-view__name-form input {
+  width: min(100%, 32rem);
+  min-height: 44px;
+  padding: var(--space-100) var(--space-150);
+  border: 1px solid var(--color-line-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-000);
+  color: var(--color-ink-900);
+  font: 700 clamp(1.15rem, 2.4vw, 1.55rem) "Sora", "Inter", sans-serif;
+}
+
+.report-view__name-form input:focus {
+  border-color: var(--color-orange-500);
+  outline: 2px solid rgba(245, 142, 86, 0.18);
+}
+
+.report-view__name-action {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--color-line-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-000);
+  color: var(--color-ink-500);
+  cursor: pointer;
+}
+
+.report-view__name-action:hover:not(:disabled) {
+  border-color: var(--color-orange-200);
+  background: var(--color-orange-050);
+  color: var(--color-orange-500);
+}
+
+.report-view__name-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.report-view__name-error {
+  align-self: flex-start;
+  margin-top: var(--space-075);
+}
+
 .report-view__meta {
   margin: 0;
   color: var(--color-ink-500);
@@ -12948,13 +13008,35 @@ select {
   width: min(100%, 36rem);
 }
 
+.report-recording-modal__name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-075);
+  margin-top: var(--space-250);
+}
+
+.report-recording-modal__name input {
+  min-height: 48px;
+  padding: var(--space-100) var(--space-150);
+  border: 1px solid var(--color-line-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-000);
+  color: var(--color-ink-900);
+  font: inherit;
+}
+
+.report-recording-modal__name input:focus {
+  border-color: var(--color-orange-500);
+  outline: 2px solid rgba(245, 142, 86, 0.18);
+}
+
 .report-recording-modal__toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-200);
   margin-top: var(--space-300);
-  color: var(--color-ink-800);
+  color: var(--color-ink-700);
   font-size: 0.9rem;
 }
 
@@ -13041,7 +13123,7 @@ select {
 }
 
 .report-recording-option__copy span {
-  color: var(--color-ink-600);
+  color: var(--color-ink-500);
   font-size: 0.84rem;
 }
 

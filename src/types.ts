@@ -355,6 +355,7 @@ export interface UsabilityReport {
   submissionId: string;
   submissionProductName: string;
   reportNumber: number;
+  reportName: string;
   status: UsabilityReportStatus;
   errorMessage?: string | null;
   sourceResponseCount: number;

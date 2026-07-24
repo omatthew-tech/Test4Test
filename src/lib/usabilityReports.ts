@@ -60,6 +60,14 @@ interface AnalyzeQuotesResponse {
   quoteAnalysis?: UsabilityReportQuoteAnalysis;
 }
 
+interface UpdateReportNameResponse {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  reportId?: string;
+  reportName?: string;
+}
+
 class FunctionCallError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
@@ -172,6 +180,7 @@ export async function listMyUsabilityReports(): Promise<UsabilityReport[]> {
 export async function generateUsabilityReport(
   submissionId: string,
   responseIds: string[],
+  reportName?: string,
 ): Promise<{
   reportId: string;
   status: UsabilityReportStatus;
@@ -185,9 +194,20 @@ export async function generateUsabilityReport(
     throw new Error("Select at least one recording to generate a report.");
   }
 
+  const normalizedReportName = reportName?.trim();
+
+  if (reportName !== undefined && !normalizedReportName) {
+    throw new Error("Enter a report name.");
+  }
+
+  if (normalizedReportName && normalizedReportName.length > 100) {
+    throw new Error("Report names must be 100 characters or fewer.");
+  }
+
   const payload = await callFunction<GenerateReportResponse>("generate-usability-report", {
     submissionId,
     responseIds,
+    ...(normalizedReportName ? { reportName: normalizedReportName } : {}),
   });
 
   if (!payload.reportId) {
@@ -199,6 +219,40 @@ export async function generateUsabilityReport(
     status: payload.status ?? "processing",
     previewFrames: payload.previewFrames ?? [],
   };
+}
+
+/** Rename a report owned by the current user. */
+export async function updateUsabilityReportName(
+  reportId: string,
+  reportName: string,
+): Promise<string> {
+  const normalizedReportName = reportName.trim();
+
+  if (!reportId) {
+    throw new Error("Missing report id.");
+  }
+
+  if (!normalizedReportName) {
+    throw new Error("Enter a report name.");
+  }
+
+  if (normalizedReportName.length > 100) {
+    throw new Error("Report names must be 100 characters or fewer.");
+  }
+
+  const payload = await callFunction<UpdateReportNameResponse>(
+    "update-usability-report-name",
+    {
+      reportId,
+      reportName: normalizedReportName,
+    },
+  );
+
+  if (!payload.reportName) {
+    throw new Error(payload.message ?? "The report name could not be updated.");
+  }
+
+  return payload.reportName;
 }
 
 /** Fetch the current processing status of a report. */

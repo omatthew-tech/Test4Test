@@ -118,6 +118,8 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const [previewFrames, setPreviewFrames] = useState<UsabilityReportPreviewFrame[]>([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedRecordingIds, setSelectedRecordingIds] = useState<string[]>([]);
+  const [reportName, setReportName] = useState("");
+  const [isReportNameCustomized, setIsReportNameCustomized] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -185,6 +187,18 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   );
   const hasMultipleSubmissions = submissions.length > 1;
 
+  function handleOpenGenerateModal() {
+    const nextReportNumber =
+      filteredHistory.reduce(
+        (latest, report) => Math.max(latest, report.reportNumber),
+        0,
+      ) + 1;
+    setReportName(`Report ${nextReportNumber}`);
+    setIsReportNameCustomized(false);
+    setError(null);
+    setIsConfirmModalOpen(true);
+  }
+
   async function handleGenerate() {
     setError(null);
 
@@ -204,6 +218,11 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
       return;
     }
 
+    if (!reportName.trim()) {
+      setError("Enter a report name.");
+      return;
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -215,6 +234,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
       const { reportId, previewFrames: initialPreviewFrames } = await generateUsabilityReport(
         selectedSubmission.id,
         selectedRecordingIds,
+        isReportNameCustomized ? reportName : undefined,
       );
       setPreviewFrames(initialPreviewFrames);
 
@@ -322,7 +342,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
             <button
               type="button"
               className="button button--primary report-dashboard__generate"
-              onClick={() => setIsConfirmModalOpen(true)}
+              onClick={handleOpenGenerateModal}
               disabled={!selectedSubmission || availableRecordings.length === 0}
             >
               Generate report
@@ -351,6 +371,21 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
             <p>
               Choose which tester videos AI should analyze for {selectedSubmission?.productName}.
             </p>
+            <label className="field report-recording-modal__name">
+              <span className="field__label">Report name</span>
+              <input
+                type="text"
+                value={reportName}
+                maxLength={100}
+                autoFocus
+                onChange={(event) => {
+                  setReportName(event.target.value);
+                  setIsReportNameCustomized(true);
+                  setError(null);
+                }}
+                placeholder="Report name"
+              />
+            </label>
             <div className="report-recording-modal__toolbar">
               <strong>
                 {selectedRecordingCount} of {availableRecordings.length} selected
@@ -409,6 +444,11 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                 Select at least one video to continue.
               </p>
             ) : null}
+            {!reportName.trim() ? (
+              <p className="report-recording-modal__validation" role="alert">
+                Enter a report name to continue.
+              </p>
+            ) : null}
             <div className="modal__actions">
               <button
                 type="button"
@@ -424,7 +464,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                   setIsConfirmModalOpen(false);
                   void handleGenerate();
                 }}
-                disabled={selectedRecordingCount === 0}
+                disabled={selectedRecordingCount === 0 || !reportName.trim()}
               >
                 Generate from {selectedRecordingCount} video{selectedRecordingCount === 1 ? "" : "s"}
               </button>
@@ -457,7 +497,9 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
                           <FileText size={30} strokeWidth={1.9} />
                         </span>
                         <span className="report-history__copy">
-                          <span className="report-history__name">Report {report.reportNumber}</span>
+                          <span className="report-history__name">
+                            {report.reportName || `Report ${report.reportNumber}`}
+                          </span>
                           <span className="report-history__meta">
                             {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
                             {report.sourceResponseCount === 1 ? "" : "s"} analyzed

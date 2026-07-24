@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Clock, RefreshCcw } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  Clock,
+  Pencil,
+  RefreshCcw,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Surface } from "../Layout";
 import { formatDateTime } from "../../lib/format";
 import { quoteAnalysisPromptVersion } from "../../lib/quoteAnalysisPrompt";
-import { analyzeUsabilityReportQuotes, getUsabilityReport } from "../../lib/usabilityReports";
+import {
+  analyzeUsabilityReportQuotes,
+  getUsabilityReport,
+  updateUsabilityReportName,
+} from "../../lib/usabilityReports";
 import { UsabilityReportDetail, UsabilityReportFrame } from "../../types";
 
 /** Format an exact millisecond offset as M:SS.mmm for the timestamp badge. */
@@ -32,6 +44,10 @@ export function ReportView({ reportId }: ReportViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
   const quoteAnalysisBackfills = useRef(new Set<string>());
 
   useEffect(() => {
@@ -125,6 +141,33 @@ export function ReportView({ reportId }: ReportViewProps) {
       ? report.quoteAnalysis.analysis?.summary?.trim() ?? ""
       : "";
 
+  async function handleSaveName() {
+    if (!report || isSavingName) {
+      return;
+    }
+
+    const normalizedName = nameDraft.trim();
+
+    if (!normalizedName) {
+      setNameError("Enter a report name.");
+      return;
+    }
+
+    setIsSavingName(true);
+    setNameError(null);
+
+    try {
+      const savedName = await updateUsabilityReportName(report.id, normalizedName);
+      setReport((current) => current ? { ...current, reportName: savedName } : current);
+      setNameDraft(savedName);
+      setIsEditingName(false);
+    } catch (caught) {
+      setNameError(caught instanceof Error ? caught.message : "The report name could not be updated.");
+    } finally {
+      setIsSavingName(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <Surface className="report-view__state">
@@ -166,7 +209,81 @@ export function ReportView({ reportId }: ReportViewProps) {
           <ArrowLeft size={16} strokeWidth={2.2} />
           AI Analysis
         </button>
-        <h2 className="report-view__title">Report {report.reportNumber}</h2>
+        {isEditingName ? (
+          <form
+            className="report-view__name-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSaveName();
+            }}
+          >
+            <input
+              type="text"
+              value={nameDraft}
+              maxLength={100}
+              autoFocus
+              aria-label="Report name"
+              onChange={(event) => {
+                setNameDraft(event.target.value);
+                setNameError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setIsEditingName(false);
+                  setNameError(null);
+                }
+              }}
+            />
+            <button
+              type="submit"
+              className="report-view__name-action"
+              disabled={isSavingName || !nameDraft.trim()}
+              aria-label="Save report name"
+            >
+              {isSavingName ? (
+                <span className="button__spinner" aria-hidden="true" />
+              ) : (
+                <Check size={19} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              className="report-view__name-action"
+              disabled={isSavingName}
+              onClick={() => {
+                setIsEditingName(false);
+                setNameError(null);
+              }}
+              aria-label="Cancel editing report name"
+            >
+              <X size={19} aria-hidden="true" />
+            </button>
+          </form>
+        ) : (
+          <div className="report-view__title-row">
+            <h2 className="report-view__title">
+              {report.reportName || `Report ${report.reportNumber}`}
+            </h2>
+            <button
+              type="button"
+              className="report-view__name-action"
+              onClick={() => {
+                setNameDraft(report.reportName || `Report ${report.reportNumber}`);
+                setNameError(null);
+                setIsEditingName(true);
+              }}
+              aria-label="Edit report name"
+            >
+              <Pencil size={18} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+        {nameError ? (
+          <div className="callout callout--warning report-view__name-error" role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <span>{nameError}</span>
+          </div>
+        ) : null}
         <p className="report-view__meta">
           {report.submissionProductName} - Generated{" "}
           {report.completedAt ? formatDateTime(report.completedAt) : formatDateTime(report.createdAt)} -{" "}
