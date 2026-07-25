@@ -35,6 +35,7 @@
    - `supabase/functions/report-test`
    - `supabase/functions/manage-test-reports`
    - `supabase/functions/generate-usability-report`
+   - `supabase/functions/regenerate-usability-report` with `--no-verify-jwt`
    - `supabase/functions/list-usability-reports`
    - `supabase/functions/get-usability-report-status`
    - `supabase/functions/get-usability-report`

@@ -1,4 +1,5 @@
 import {
+  createReportRow,
   enqueueWorkerReport,
   getAuthenticatedReportUser,
   getReportSupabaseEnvironment,
@@ -141,54 +142,6 @@ async function buildInitialPreviewFrames(rows: RecordingResponseRow[], workerEnv
   } catch (_error) {
     return [];
   }
-}
-
-async function createReportRow(
-  admin: ReturnType<typeof createReportAdminClient>,
-  submissionId: string,
-  ownerUserId: string,
-  sourceResponseCount: number,
-  requestedReportName: string | null,
-) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const { data: latestRows, error: latestError } = await admin
-      .from("usability_reports")
-      .select("report_number")
-      .eq("submission_id", submissionId)
-      .order("report_number", { ascending: false })
-      .limit(1);
-
-    if (latestError) {
-      throw new Error(latestError.message);
-    }
-
-    const latestNumber = Number((latestRows?.[0] as { report_number?: number } | undefined)?.report_number ?? 0);
-    const reportNumber = latestNumber + 1;
-    const { data, error } = await admin
-      .from("usability_reports")
-      .insert({
-        submission_id: submissionId,
-        owner_user_id: ownerUserId,
-        report_number: reportNumber,
-        report_name: requestedReportName ?? `Report ${reportNumber}`,
-        status: "pending",
-        source_response_count: sourceResponseCount,
-      })
-      .select("id, report_number")
-      .single();
-
-    if (!error && data) {
-      return data as { id: string; report_number: number };
-    }
-
-    if ((error as { code?: string } | null)?.code === "23505") {
-      continue;
-    }
-
-    throw new Error(error?.message ?? "The report could not be created.");
-  }
-
-  throw new Error("The report number could not be reserved. Please try again.");
 }
 
 Deno.serve(async (request) => {

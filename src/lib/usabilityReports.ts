@@ -68,6 +68,14 @@ interface UpdateReportNameResponse {
   reportName?: string;
 }
 
+interface RegenerateReportResponse {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  reportId?: string;
+  status?: UsabilityReportStatus;
+}
+
 class FunctionCallError extends Error {
   constructor(message: string, readonly status?: number) {
     super(message);
@@ -142,6 +150,12 @@ async function callFunction<T extends { ok?: boolean; error?: string; message?: 
 
     if (timeoutController?.signal.aborted) {
       throw new FunctionCallError("Request timed out.");
+    }
+
+    if (caught instanceof TypeError) {
+      throw new FunctionCallError(
+        "The reporting service could not be reached. Please try again in a moment.",
+      );
     }
 
     throw caught;
@@ -253,6 +267,92 @@ export async function updateUsabilityReportName(
   }
 
   return payload.reportName;
+}
+
+/** Persist whether one quote should be used by future AI analysis. */
+export async function updateUsabilityReportQuoteInclusion(
+  reportId: string,
+  quoteId: string,
+  includeInSummary: boolean,
+): Promise<boolean> {
+  if (!reportId || !quoteId) {
+    throw new Error("That feedback item could not be updated.");
+  }
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("usability_report_quotes")
+    .update({ include_in_summary: includeInSummary })
+    .eq("id", quoteId)
+    .eq("report_id", reportId)
+    .select("include_in_summary")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("That feedback item was not found.");
+  }
+
+  return data.include_in_summary !== false;
+}
+
+/** Restore every removed quote in a report owned by the current user. */
+export async function restoreAllUsabilityReportQuotes(reportId: string): Promise<void> {
+  if (!reportId) {
+    throw new Error("Missing report id.");
+  }
+
+  const supabase = requireSupabase();
+  const { error } = await supabase
+    .from("usability_report_quotes")
+    .update({ include_in_summary: true })
+    .eq("report_id", reportId)
+    .eq("include_in_summary", false);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+/** Create a new report snapshot and analyze only the feedback kept in the source report. */
+export async function regenerateUsabilityReport(
+  reportId: string,
+  reportName?: string,
+): Promise<{ reportId: string; status: UsabilityReportStatus }> {
+  if (!reportId) {
+    throw new Error("Missing report id.");
+  }
+
+  const normalizedReportName = reportName?.trim();
+
+  if (reportName !== undefined && !normalizedReportName) {
+    throw new Error("Enter a report name.");
+  }
+
+  if (normalizedReportName && normalizedReportName.length > 100) {
+    throw new Error("Report names must be 100 characters or fewer.");
+  }
+
+  const payload = await callFunction<RegenerateReportResponse>(
+    "regenerate-usability-report",
+    {
+      reportId,
+      ...(normalizedReportName ? { reportName: normalizedReportName } : {}),
+    },
+    { timeoutMs: 180000 },
+  );
+
+  if (!payload.reportId) {
+    throw new Error(payload.message ?? "The updated report could not be generated.");
+  }
+
+  return {
+    reportId: payload.reportId,
+    status: payload.status ?? "completed",
+  };
 }
 
 /** Fetch the current processing status of a report. */

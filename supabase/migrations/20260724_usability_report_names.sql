@@ -20,3 +20,5 @@ alter table public.usability_reports
 
 comment on column public.usability_reports.report_name is
   'Owner-editable display name. Legacy null values fall back to Report {report_number}.';
+
+notify pgrst, 'reload schema';

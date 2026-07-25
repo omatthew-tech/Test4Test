@@ -380,6 +380,9 @@ verify_jwt = false
 [functions.complete-usability-report]
 verify_jwt = false
 
+[functions.regenerate-usability-report]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
