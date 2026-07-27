@@ -57,7 +57,7 @@ export function BlogPage() {
               <span className="blog-hero__brand">Test4Test</span>
               <span className="blog-hero__label"> blog</span>
             </h1>
-            <p>Usability tips &amp; tricks for every day founders</p>
+            <p>User testing tips &amp; tricks for anyone with a website or app</p>
           </div>
         </section>
 
