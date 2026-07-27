@@ -10145,6 +10145,24 @@ select {
 }
 
 /* Tester landing page */
+.tester-coming-soon {
+  display: grid;
+  min-height: 100svh;
+  padding: var(--inset-page);
+  place-items: center;
+  background: var(--color-surface-100);
+  text-align: center;
+}
+
+.tester-coming-soon h1 {
+  margin: 0;
+  color: var(--color-ink-900);
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: clamp(4rem, 12vw, 9rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+
 .tester-page {
   --tester-green: #76bd31;
   --tester-green-dark: #4f9a26;

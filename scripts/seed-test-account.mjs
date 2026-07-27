@@ -172,6 +172,17 @@ function cloneRow(row, overrides, omittedKeys = []) {
   };
 }
 
+function thumbnailPayloadFromResponse(response) {
+  return {
+    recording_thumbnail_bucket: response.recording_thumbnail_bucket ?? null,
+    recording_thumbnail_path: response.recording_thumbnail_path ?? null,
+    recording_thumbnail_content_type: response.recording_thumbnail_content_type ?? null,
+    recording_thumbnail_size_bytes: response.recording_thumbnail_size_bytes ?? null,
+    recording_thumbnail_width: response.recording_thumbnail_width ?? null,
+    recording_thumbnail_height: response.recording_thumbnail_height ?? null,
+  };
+}
+
 async function getProfileByEmail(email) {
   const { data, error } = await supabase
     .from("profiles")
@@ -542,7 +553,6 @@ async function cloneResponses({
       submission_version_id: submissionVersionId,
       question_set_version_id: questionSetVersionId,
       credit_awarded: false,
-      affects_test_back_rate: false,
       owner_notified_at: nowIso,
     });
   });
@@ -550,8 +560,26 @@ async function cloneResponses({
   const { data, error } = await supabase
     .from("test_responses")
     .insert(payloads)
-    .select("id");
+    .select("id, recording_path");
 
   assertSupabase(error, "Could not clone test responses");
-  return (data ?? []).map((response) => response.id);
+  const clonedResponses = data ?? [];
+  const sourceByPath = new Map(sourceResponses.map((response) => [response.recording_path, response]));
+
+  for (const clonedResponse of clonedResponses) {
+    const sourceResponse = sourceByPath.get(clonedResponse.recording_path);
+
+    if (!sourceResponse?.recording_thumbnail_path) {
+      continue;
+    }
+
+    const { error: thumbnailError } = await supabase
+      .from("test_responses")
+      .update(thumbnailPayloadFromResponse(sourceResponse))
+      .eq("id", clonedResponse.id);
+
+    assertSupabase(thumbnailError, `Could not copy recording thumbnail metadata for cloned response ${clonedResponse.id}`);
+  }
+
+  return clonedResponses.map((response) => response.id);
 }
