@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MSB-98 — Share report modal (with MSB-100 confirmation)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================================
+   MSB-98 — Share report modal  +  MSB-100 — send confirmation (modal state)
+   Built on the existing .results-modal shell and .share-test-* classes in
+   src/styles.css. Verbatim production rules sit above the "NEW" banner; the
+   block below it is what gets appended to styles.css.
+   ========================================================================= */
+
+/* ---- Tokens (verbatim from :root) ------------------------------------- */
+:root {
+  --color-orange-500: #f58e56; --color-orange-200: #ffd0ae; --color-orange-050: #fff4ea;
+  --color-ink-900: #1d1815; --color-ink-700: #4f4741; --color-ink-500: #857b74;
+  --color-line-200: #d8d0c8; --color-surface-100: #f6f2ee; --color-surface-000: #fffefc;
+  --color-success: #4e9d72; --color-error: #c9574f;
+  --space-050: 4px; --space-075: 6px; --space-100: 8px; --space-150: 12px;
+  --space-200: 16px; --space-250: 20px; --space-300: 24px; --space-400: 32px;
+  --gap-stack-tight: 8px; --gap-stack-default: 16px;
+  --radius-md: 16px; --radius-lg: 24px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; font-family: "Inter", system-ui, sans-serif; color: var(--color-ink-900);
+  background:
+    radial-gradient(circle at top left, rgba(255, 208, 174, 0.34), transparent 26%),
+    linear-gradient(180deg, #fffaf6 0%, #fffefc 40%, #fff9f4 100%);
+}
+button { cursor: pointer; font: inherit; }
+svg { display: block; }
+
+/* ---- Buttons (verbatim) ----------------------------------------------- */
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-100);
+  border: 1px solid transparent; border-radius: var(--radius-md); padding: var(--space-200) var(--space-300);
+  font-weight: 600; transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:disabled { opacity: 0.52; cursor: not-allowed; }
+.button--primary { background: var(--color-orange-500); color: var(--color-ink-900); box-shadow: 0 6px 18px rgba(29, 24, 21, 0.06); }
+.button--secondary { background: var(--color-surface-000); color: var(--color-ink-900); border-color: var(--color-line-200); }
+.button--ghost { background: transparent; color: var(--color-ink-700); border-color: var(--color-line-200); }
+.button--small { padding: var(--space-100) var(--space-200); font-size: 0.875rem; }
+
+/* ---- Field / radio-card (verbatim) ------------------------------------ */
+.field { display: flex; flex-direction: column; gap: var(--gap-stack-tight); }
+.field span { color: var(--color-ink-700); font-size: 0.94rem; font-weight: 600; }
+.field input, .field textarea {
+  min-height: 48px; border: 1px solid rgba(216, 208, 200, 0.92); border-radius: 12px;
+  background: rgba(246, 242, 238, 0.64); color: var(--color-ink-900); font: inherit; padding: 0 var(--space-200);
+}
+.field textarea { min-height: 78px; padding: var(--space-150) var(--space-200); line-height: 1.5; resize: vertical; }
+.field input:focus, .field textarea:focus {
+  outline: none; border-color: rgba(245, 142, 86, 0.65); box-shadow: 0 0 0 2px rgba(245, 142, 86, 0.12);
+}
+.radio-card {
+  display: flex; align-items: center; gap: var(--gap-stack-tight); padding: var(--space-150) var(--space-200);
+  border: 1px solid var(--color-line-200); border-radius: var(--radius-md); background: var(--color-surface-000);
+}
+.radio-card--active { border-color: rgba(245, 142, 86, 0.42); background: var(--color-orange-050); }
+
+/* ---- Modal shell + existing share-test rules (verbatim) --------------- */
+.results-modal-backdrop {
+  position: fixed; inset: 0; z-index: 70; background: rgba(28, 23, 20, 0.36);
+  display: flex; align-items: center; justify-content: center; padding: var(--space-300);
+}
+.results-modal {
+  width: min(920px, 100%); max-height: min(88vh, 900px); overflow: auto; padding: var(--space-400);
+  border-radius: 28px; border: 1px solid rgba(216, 208, 200, 0.9); background: #fffefc;
+  box-shadow: 0 24px 60px rgba(29, 24, 21, 0.14); display: flex; flex-direction: column; gap: var(--space-300);
+}
+.results-modal__header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-250); }
+.results-modal__header h2 { margin: 0; font-family: "Sora", system-ui, sans-serif; font-size: clamp(1.7rem, 3vw, 2.1rem); }
+.results-modal__header p { margin: var(--space-100) 0 0; max-width: 58ch; color: #6b625b; line-height: 1.6; }
+.results-modal--share-test { width: min(620px, 100%); }
+/* The compose + confirm views own the vertical rhythm; the modal's own
+   gap only separates header from body, so bump section spacing here. */
+#compose-view { display: flex; flex-direction: column; gap: var(--space-400); }
+.results-modal { gap: var(--space-400); }
+.share-test-link-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gap-stack-tight); align-items: center; }
+.share-test-link-row input {
+  min-width: 0; width: 100%; min-height: 48px; border: 1px solid rgba(216, 208, 200, 0.92); border-radius: 12px;
+  background: rgba(246, 242, 238, 0.64); color: var(--color-ink-900); font: inherit; padding: 0 var(--space-200);
+}
+.share-test-link-row .button { min-height: 48px; white-space: nowrap; }
+.share-test-modal__copy { display: flex; flex-direction: column; gap: var(--space-100); }
+.share-test-modal__copy h3 { margin: 0; font-family: "Sora", system-ui, sans-serif; font-size: 1.18rem; line-height: 1.25; }
+.share-test-modal__copy p { margin: 0; color: var(--color-ink-700); line-height: 1.55; }
+.share-test-save-status { display: inline-flex; align-items: center; gap: var(--space-050); color: var(--color-ink-500); font-size: 0.82rem; font-weight: 600; }
+.share-test-save-status--saved { color: var(--color-success); }
+
+/* =========================================================================
+   NEW — MSB-98 + MSB-100 additions. Append to styles.css.
+   Namespaced .share-report-* so nothing collides with .share-test-*.
+   ========================================================================= */
+
+/* Modal-close button reused from the results modal --------------------- */
+.share-report-close {
+  flex: 0 0 auto; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border-radius: 12px; border: 1px solid var(--color-line-200);
+  background: var(--color-surface-000); color: var(--color-ink-700);
+}
+.share-report-close:hover { color: var(--color-ink-900); border-color: rgba(216, 208, 200, 1); }
+
+/* Method toggle: link vs. email --------------------------------------- */
+.share-report-methods { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-200); }
+.share-report-method {
+  display: flex; align-items: flex-start; gap: var(--space-200); text-align: left; width: 100%;
+  padding: var(--space-250); border: 1px solid var(--color-line-200); border-radius: var(--radius-md);
+  background: var(--color-surface-000); color: var(--color-ink-900);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.share-report-method:hover { border-color: rgba(245, 142, 86, 0.5); }
+.share-report-method--active {
+  border-color: rgba(245, 142, 86, 0.72); background: var(--color-orange-050);
+  box-shadow: 0 0 0 1px rgba(245, 142, 86, 0.28);
+}
+.share-report-method__icon {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-surface-100); color: var(--color-ink-700);
+}
+.share-report-method--active .share-report-method__icon { background: #ffffff; color: var(--color-orange-500); }
+.share-report-method__text { display: flex; flex-direction: column; gap: var(--space-050); min-width: 0; }
+.share-report-method__text strong { font-family: "Sora", "Inter", sans-serif; font-size: 0.98rem; }
+.share-report-method__text span { color: var(--color-ink-500); font-size: 0.82rem; line-height: 1.4; }
+
+/* One method panel visible at a time ----------------------------------- */
+.share-report-panel { display: flex; flex-direction: column; gap: var(--space-300); }
+.share-report-panel[hidden] { display: none; }
+
+/* Email compose --------------------------------------------------------- */
+.share-report-email-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--space-150); align-items: end; }
+.share-report-email-row .button { min-height: 48px; white-space: nowrap; }
+.share-report-note {
+  display: flex; gap: var(--space-100); align-items: flex-start; margin-top: var(--space-050);
+  color: var(--color-ink-500); font-size: 0.82rem; line-height: 1.5;
+}
+.share-report-note svg { flex: 0 0 auto; margin-top: 1px; color: var(--color-ink-500); }
+
+/* Recipient list -------------------------------------------------------- */
+.share-report-recipients { display: flex; flex-direction: column; gap: var(--space-200); }
+.share-report-recipients__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-150); }
+.share-report-recipients__head h3 { margin: 0; font-family: "Sora", "Inter", sans-serif; font-size: 1.02rem; }
+.share-report-recipients__count { color: var(--color-ink-500); font-size: 0.82rem; font-weight: 600; }
+.share-report-recipients__list { display: flex; flex-direction: column; gap: var(--space-150); }
+.share-report-recipient {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: var(--space-200); align-items: center;
+  padding: var(--space-200); border: 1px solid var(--color-line-200); border-radius: var(--radius-md); background: var(--color-surface-000);
+}
+.share-report-recipient__avatar {
+  width: 40px; height: 40px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-orange-050); color: var(--color-orange-500); font-weight: 700; font-size: 0.9rem;
+}
+.share-report-recipient__id { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.share-report-recipient__id strong { font-size: 0.92rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-report-recipient__id span { color: var(--color-ink-500); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-report-status {
+  display: inline-flex; align-items: center; gap: var(--space-050); flex: 0 0 auto;
+  padding: var(--space-050) var(--space-150); border-radius: 999px; font-size: 0.76rem; font-weight: 700;
+  border: 1px solid var(--color-line-200); background: var(--color-surface-100); color: var(--color-ink-500);
+}
+.share-report-status--opened { background: rgba(78, 157, 114, 0.12); border-color: rgba(78, 157, 114, 0.28); color: var(--color-success); }
+.share-report-status--reminding { background: var(--color-orange-050); border-color: rgba(245, 142, 86, 0.28); color: var(--color-orange-500); }
+.share-report-status__dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.share-report-empty { color: var(--color-ink-500); font-size: 0.88rem; padding: var(--space-100) 0; }
+
+/* Reminder sub-note under a not-yet-opened recipient ------------------- */
+.share-report-recipient__meta { grid-column: 2 / -1; margin-top: var(--space-050); color: var(--color-ink-500); font-size: 0.78rem; }
+
+/* MSB-100 — confirmation state ----------------------------------------- */
+.share-report-success {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--space-200); padding: var(--space-300) var(--space-200) var(--space-100);
+}
+.share-report-success__icon {
+  width: 68px; height: 68px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(78, 157, 114, 0.12); color: var(--color-success);
+}
+.share-report-success h2 { margin: 0; font-family: "Sora", system-ui, sans-serif; font-size: clamp(1.5rem, 3vw, 1.9rem); }
+.share-report-success__lead { margin: 0; max-width: 40ch; color: var(--color-ink-700); line-height: 1.6; }
+.share-report-success__card {
+  width: 100%; margin-top: var(--space-100); padding: var(--space-200);
+  border: 1px solid var(--color-line-200); border-radius: var(--radius-md); background: var(--color-surface-100);
+  display: flex; flex-direction: column; gap: var(--space-100); text-align: left;
+}
+.share-report-success__recipient { display: flex; align-items: center; gap: var(--space-150); }
+.share-report-success__whatnext { margin: 0; color: var(--color-ink-500); font-size: 0.82rem; line-height: 1.5; }
+.share-report-success__whatnext strong { color: var(--color-ink-700); }
+.share-report-success__actions { display: flex; gap: var(--space-150); flex-wrap: wrap; justify-content: center; width: 100%; margin-top: var(--space-100); }
+
+@media (max-width: 620px) {
+  .results-modal { padding: var(--space-300); }
+  .share-report-methods { grid-template-columns: 1fr; }
+  .share-report-email-row { grid-template-columns: 1fr; }
+  .share-report-link-row { grid-template-columns: 1fr; }
+  .share-report-success__actions .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .button, .share-report-method { transition: none; }
+  .button:hover:not(:disabled) { transform: none; }
+}
+
+/* ---- Mockup harness only (not for production) ------------------------- */
+.harness { display: flex; flex-direction: column; align-items: center; gap: var(--space-200); padding: var(--space-400) var(--space-200); }
+.harness__controls { display: inline-flex; gap: var(--space-100); flex-wrap: wrap; justify-content: center; }
+.harness__hint { color: var(--color-ink-500); font-size: 0.82rem; }
+.share-report-backdrop--inline { position: static; padding: 0; background: transparent; display: block; }
+.share-report-backdrop--inline .results-modal { margin: 0 auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <div class="harness__controls">
+    <button type="button" class="button button--secondary button--small" id="btn-link">Share by link</button>
+    <button type="button" class="button button--secondary button--small" id="btn-email">Share by email</button>
+    <button type="button" class="button button--secondary button--small" id="btn-confirm">Confirmation state</button>
+  </div>
+  <p class="harness__hint">Toggling above simulates opening the modal in each state. Inside the modal, the link/email tabs and the send button drive it live.</p>
+
+  <div class="results-modal-backdrop share-report-backdrop--inline">
+    <div class="results-modal results-modal--share-test" role="dialog" aria-modal="true" aria-labelledby="share-report-title">
+
+      <!-- COMPOSE view (MSB-98) -->
+      <div id="compose-view">
+        <div class="results-modal__header">
+          <div>
+            <h2 id="share-report-title">Share this report</h2>
+            <p>Send this report to a teammate. They'll be able to view your feedback and the updated summary — they'll sign up for a free account first.</p>
+          </div>
+          <button type="button" class="share-report-close" aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="share-report-methods" role="tablist" aria-label="Share method">
+          <button type="button" class="share-report-method share-report-method--active" id="method-link" role="tab" aria-selected="true" aria-controls="panel-link">
+            <span class="share-report-method__icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19"/></svg>
+            </span>
+            <span class="share-report-method__text">
+              <strong>Copy a link</strong>
+              <span>Anyone with the link can view</span>
+            </span>
+          </button>
+          <button type="button" class="share-report-method" id="method-email" role="tab" aria-selected="false" aria-controls="panel-email">
+            <span class="share-report-method__icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            </span>
+            <span class="share-report-method__text">
+              <strong>Invite by email</strong>
+              <span>We email them the link</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- Link panel -->
+        <div class="share-report-panel" id="panel-link" role="tabpanel" aria-labelledby="method-link">
+          <div class="share-test-modal__copy">
+            <h3>Report link</h3>
+            <p>Anyone you send this to can open the report after signing up.</p>
+          </div>
+          <div class="share-test-link-row share-report-link-row">
+            <input type="text" value="https://test4test.app/r/kp28-project-name" readonly aria-label="Report link" />
+            <button type="button" class="button button--primary" id="copy-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy link
+            </button>
+          </div>
+        </div>
+
+        <!-- Email panel -->
+        <div class="share-report-panel" id="panel-email" role="tabpanel" aria-labelledby="method-email" hidden>
+          <div class="share-test-modal__copy">
+            <h3>Invite by email</h3>
+            <p>We'll email them a link to the report. If they don't open it, we'll send up to three friendly reminders.</p>
+          </div>
+          <div class="share-report-email-row">
+            <label class="field">
+              <span>Name</span>
+              <input type="text" id="rcpt-name" placeholder="First Last" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input type="email" id="rcpt-email" placeholder="email@example.com" autocomplete="off" />
+            </label>
+            <button type="button" class="button button--primary" id="send-invite" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+              Send
+            </button>
+          </div>
+          <p class="share-report-note">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span>They'll be prompted to create a free account before they can view the report.</span>
+          </p>
+        </div>
+
+        <!-- Recipient list -->
+        <div class="share-report-recipients">
+          <div class="share-report-recipients__head">
+            <h3>Shared with</h3>
+            <span class="share-report-recipients__count" id="rcpt-count">3 people</span>
+          </div>
+          <div class="share-report-recipients__list" id="rcpt-list"></div>
+        </div>
+      </div>
+
+      <!-- CONFIRMATION view (MSB-100) -->
+      <div id="confirm-view" hidden>
+        <div class="share-report-success">
+          <span class="share-report-success__icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          <h2>Invite sent</h2>
+          <p class="share-report-success__lead" id="confirm-lead">Your report is on its way to First Last 4.</p>
+
+          <div class="share-report-success__card">
+            <div class="share-report-success__recipient">
+              <span class="share-report-recipient__avatar" id="confirm-avatar">4</span>
+              <span class="share-report-recipient__id">
+                <strong id="confirm-name">First Last 4</strong>
+                <span id="confirm-email">email4@example.com</span>
+              </span>
+            </div>
+            <p class="share-report-success__whatnext">
+              <strong>What happens next:</strong> they get an email with a link to the report. When they open it, they'll sign up for a free account to view your feedback. If they don't open it within a few days, we'll send up to <strong>3</strong> reminders — you'll see the status update here.
+            </p>
+          </div>
+
+          <div class="share-report-success__actions">
+            <button type="button" class="button button--secondary" id="confirm-another">Invite someone else</button>
+            <button type="button" class="button button--primary" id="confirm-done">Done</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <p class="sr-only" role="status" aria-live="polite" id="live-region"></p>
+</div>
+
+<script>
+const el = (id) => document.getElementById(id);
+
+let recipients = [
+  { name: "First Last 1", email: "email1@example.com", status: "opened" },
+  { name: "First Last 2", email: "email2@example.com", status: "reminding", reminders: 1 },
+  { name: "First Last 3", email: "email3@example.com", status: "sent" },
+];
+
+const initial = (name) => {
+  const digit = name.match(/\d+/);
+  return digit ? digit[0] : (name.trim()[0] || "?").toUpperCase();
+};
+
+const statusMeta = {
+  opened:    { cls: "share-report-status--opened",    label: "Opened" },
+  reminding: { cls: "share-report-status--reminding", label: "Reminder sent" },
+  sent:      { cls: "",                                label: "Not opened yet" },
+};
+
+function renderRecipients() {
+  const list = el("rcpt-list");
+  el("rcpt-count").textContent = `${recipients.length} ${recipients.length === 1 ? "person" : "people"}`;
+
+  if (recipients.length === 0) {
+    list.innerHTML = `<p class="share-report-empty">No one yet. Invite a teammate by email above, or copy the link.</p>`;
+    return;
+  }
+
+  list.innerHTML = recipients.map((r) => {
+    const m = statusMeta[r.status];
+    const meta = r.status === "reminding"
+      ? `<span class="share-report-recipient__meta">Reminder ${r.reminders} of 3 sent</span>`
+      : "";
+    return `
+      <div class="share-report-recipient">
+        <span class="share-report-recipient__avatar">${initial(r.name)}</span>
+        <span class="share-report-recipient__id">
+          <strong>${r.name}</strong>
+          <span>${r.email}</span>
+        </span>
+        <span class="share-report-status ${m.cls}"><span class="share-report-status__dot"></span>${m.label}</span>
+        ${meta}
+      </div>`;
+  }).join("");
+}
+
+/* Method tabs */
+function setMethod(method) {
+  const linkActive = method === "link";
+  el("method-link").classList.toggle("share-report-method--active", linkActive);
+  el("method-email").classList.toggle("share-report-method--active", !linkActive);
+  el("method-link").setAttribute("aria-selected", String(linkActive));
+  el("method-email").setAttribute("aria-selected", String(!linkActive));
+  el("panel-link").hidden = !linkActive;
+  el("panel-email").hidden = linkActive;
+}
+el("method-link").addEventListener("click", () => setMethod("link"));
+el("method-email").addEventListener("click", () => setMethod("email"));
+
+/* Copy link */
+el("copy-link").addEventListener("click", (e) => {
+  const b = e.currentTarget;
+  b.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Copied`;
+  el("live-region").textContent = "Report link copied.";
+  setTimeout(() => {
+    b.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy link`;
+  }, 1800);
+});
+
+/* Email validation gate */
+function refreshSendGate() {
+  const name = el("rcpt-name").value.trim();
+  const email = el("rcpt-email").value.trim();
+  const ok = name.length > 0 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  el("send-invite").disabled = !ok;
+}
+el("rcpt-name").addEventListener("input", refreshSendGate);
+el("rcpt-email").addEventListener("input", refreshSendGate);
+
+/* Send -> confirmation (MSB-100) */
+function showConfirmation(name, email) {
+  el("confirm-lead").textContent = `Your report is on its way to ${name}.`;
+  el("confirm-avatar").textContent = initial(name);
+  el("confirm-name").textContent = name;
+  el("confirm-email").textContent = email;
+  el("compose-view").hidden = true;
+  el("confirm-view").hidden = false;
+  el("live-region").textContent = `Report shared with ${name}.`;
+}
+
+el("send-invite").addEventListener("click", () => {
+  const name = el("rcpt-name").value.trim();
+  const email = el("rcpt-email").value.trim();
+  recipients = [{ name, email, status: "sent" }, ...recipients];
+  renderRecipients();
+  showConfirmation(name, email);
+  el("rcpt-name").value = "";
+  el("rcpt-email").value = "";
+  refreshSendGate();
+});
+
+/* Confirmation actions */
+function backToCompose(method) {
+  el("confirm-view").hidden = true;
+  el("compose-view").hidden = false;
+  if (method) setMethod(method);
+}
+el("confirm-another").addEventListener("click", () => backToCompose("email"));
+el("confirm-done").addEventListener("click", () => backToCompose("link"));
+
+/* Harness buttons */
+el("btn-link").addEventListener("click", () => { backToCompose("link"); });
+el("btn-email").addEventListener("click", () => { backToCompose("email"); });
+el("btn-confirm").addEventListener("click", () => showConfirmation("First Last 4", "email4@example.com"));
+
+renderRecipients();
+refreshSendGate();
+</script>
+</body>
+</html>
