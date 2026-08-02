@@ -197,8 +197,7 @@ Deno.serve(async (request) => {
     normalizeName(sender?.display_name)
     || sender?.email?.trim()
     || "A Test4Test user";
-  const returnTo = `/ai-analysis/${report.id}`;
-  const reportUrl = `${env.appBaseUrl}/sign-in?returnTo=${encodeURIComponent(returnTo)}&email=${encodeURIComponent(recipientEmail)}`;
+  const reportUrl = `${env.appBaseUrl}/shared-report/${shareData.id}`;
   let subject = `${senderName} shared a usability report with you`;
 
   try {

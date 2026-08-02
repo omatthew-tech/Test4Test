@@ -213,7 +213,7 @@ interface AppStateContextValue {
   currentUser: User | null;
   isLoading: boolean;
   isConfigured: boolean;
-  requestOtp: (email: string, submissionId?: string) => Promise<OTPChallenge>;
+  requestOtp: (email: string, submissionId?: string, displayName?: string) => Promise<OTPChallenge>;
   verifyOtp: (
     code: string,
   ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
@@ -567,6 +567,7 @@ function shouldLoadFullStateForPath(pathname: string, currentUserId: string | nu
     normalizedPathname === "/" ||
     normalizedPathname === "/earn" ||
     normalizedPathname === "/sign-in" ||
+    normalizedPathname.startsWith("/shared-report/") ||
     normalizedPathname === "/verify" ||
     normalizedPathname === "/get-paid-to-test" ||
     normalizedPathname === "/blog" ||
@@ -1495,14 +1496,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       currentUser,
       isLoading: effectiveIsLoading,
       isConfigured: hasSupabaseConfig,
-      async requestOtp(email, submissionId) {
+      async requestOtp(email, submissionId, displayName) {
         const normalizedEmail = email.trim().toLowerCase();
+        const normalizedDisplayName = displayName?.trim().replace(/\s+/g, " ").slice(0, 100) ?? "";
 
         if (!normalizedEmail) {
           throw new Error("Add an email so we can send the one-time code.");
         }
 
-        const requestKey = `${normalizedEmail}::${submissionId ?? ""}`;
+        const requestKey = `${normalizedEmail}::${submissionId ?? ""}::${normalizedDisplayName}`;
         const now = Date.now();
 
         for (const [key, entry] of recentOtpRequestsRef.current.entries()) {
@@ -1536,6 +1538,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               email: normalizedEmail,
               options: {
                 shouldCreateUser: true,
+                ...(normalizedDisplayName
+                  ? { data: { display_name: normalizedDisplayName } }
+                  : {}),
               },
             });
 

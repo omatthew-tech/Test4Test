@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ defa
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const ReviseSubmissionPage = lazy(() => import("./pages/ReviseSubmissionPage").then((m) => ({ default: m.ReviseSubmissionPage })));
 const SignInPage = lazy(() => import("./pages/SignInPage").then((m) => ({ default: m.SignInPage })));
+const SharedReportSignupPage = lazy(() => import("./pages/SharedReportSignupPage").then((m) => ({ default: m.SharedReportSignupPage })));
 const SubmissionDetailPage = lazy(() => import("./pages/SubmissionDetailPage").then((m) => ({ default: m.SubmissionDetailPage })));
 const SubmissionsPage = lazy(() => import("./pages/SubmissionsPage").then((m) => ({ default: m.SubmissionsPage })));
 const SubmitFlowPage = lazy(() => import("./pages/SubmitFlowPage").then((m) => ({ default: m.SubmitFlowPage })));
@@ -92,6 +93,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<RootPage />} />
             <Route path="/sign-in" element={<BanRedirectRoute><SignInPage /></BanRedirectRoute>} />
+            <Route path="/shared-report/:shareId" element={<SharedReportSignupPage />} />
             <Route path="/submit" element={<BanRedirectRoute><SubmitFlowPage /></BanRedirectRoute>} />
             <Route path="/verify" element={<BanRedirectRoute><VerifyPage /></BanRedirectRoute>} />
             <Route path="/get-paid-to-test" element={<BanRedirectRoute><TesterLandingPage /></BanRedirectRoute>} />
