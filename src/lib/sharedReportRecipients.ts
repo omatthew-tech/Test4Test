@@ -32,3 +32,11 @@ export async function saveSharedReportRecipient({
 
   return data;
 }
+
+export function buildSharedReportUrl(shareToken: string, baseUrl?: string) {
+  const origin =
+    baseUrl ??
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  return `${origin}/shared-report/${shareToken}`;
+}
