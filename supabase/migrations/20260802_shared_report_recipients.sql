@@ -15,3 +15,15 @@ create index if not exists shared_report_recipients_created_by_user_id_idx
 
 create index if not exists shared_report_recipients_recipient_email_idx
   on public.shared_report_recipients(recipient_email);
+
+alter table public.shared_report_recipients enable row level security;
+
+create policy "Users can view shared recipients for their reports"
+  on public.shared_report_recipients
+  for select
+  using (created_by_user_id = auth.uid());
+
+create policy "Users can insert shared recipients for their reports"
+  on public.shared_report_recipients
+  for insert
+  with check (created_by_user_id = auth.uid());
