@@ -15,13 +15,19 @@ function sanitizeReturnTo(value: string | null) {
   return value;
 }
 
+function sanitizeEmail(value: string | null) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : "";
+}
+
 export function SignInPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentUser, requestOtp, state, verifyOtp } = useAppState();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
+  const invitedEmail = sanitizeEmail(searchParams.get("email"));
   const activeChallenge = state.otpChallenge && !state.otpChallenge.submissionId ? state.otpChallenge : null;
-  const [email, setEmail] = useState(activeChallenge?.email ?? "");
+  const [email, setEmail] = useState(activeChallenge?.email ?? invitedEmail);
   const isCurrentEmailTestAccount = isTestAccountEmail(email);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");

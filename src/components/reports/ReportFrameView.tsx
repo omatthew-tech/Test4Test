@@ -130,7 +130,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
   }, [reportId, reloadToken]);
 
   useEffect(() => {
-    if (!report) {
+    if (!report || report.canManage === false) {
       return;
     }
 
@@ -174,7 +174,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
   ]);
 
   useEffect(() => {
-    if (!report || report.status !== "completed") {
+    if (!report || report.status !== "completed" || report.canManage === false) {
       return;
     }
 
@@ -201,6 +201,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
       });
   }, [
     report?.id,
+    report?.canManage,
     report?.quoteAnalysis?.analysis?.pageInsights,
     report?.quoteAnalysis?.promptVersion,
     report?.quoteAnalysis?.status,
@@ -256,7 +257,8 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
     : 0;
   const hasPendingSelectionSave = savingQuoteIds.size > 0 || isRestoringAll;
   const canRegenerate =
-    removedQuotes.length > 0
+    report?.canManage !== false
+    && removedQuotes.length > 0
     && includedQuoteCount > 0
     && !hasPendingSelectionSave
     && !isRegenerating;
@@ -545,39 +547,42 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
                           ) : null}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="report-frame-view__quote-action"
-                        onClick={() => void handleQuoteInclusionChange(quote, !isIncluded)}
-                        disabled={isSaving || isRestoringAll}
-                        aria-label={
-                          isIncluded
-                            ? `Remove feedback: ${quote.text}`
-                            : `Restore feedback: ${quote.text}`
-                        }
-                      >
-                        {isSaving ? (
-                          <span className="button__spinner" aria-hidden="true" />
-                        ) : isIncluded ? (
-                          <X size={17} strokeWidth={2.1} aria-hidden="true" />
-                        ) : (
-                          <RefreshCcw size={16} strokeWidth={2.1} aria-hidden="true" />
-                        )}
-                      </button>
+                      {report.canManage !== false ? (
+                        <button
+                          type="button"
+                          className="report-frame-view__quote-action"
+                          onClick={() => void handleQuoteInclusionChange(quote, !isIncluded)}
+                          disabled={isSaving || isRestoringAll}
+                          aria-label={
+                            isIncluded
+                              ? `Remove feedback: ${quote.text}`
+                              : `Restore feedback: ${quote.text}`
+                          }
+                        >
+                          {isSaving ? (
+                            <span className="button__spinner" aria-hidden="true" />
+                          ) : isIncluded ? (
+                            <X size={17} strokeWidth={2.1} aria-hidden="true" />
+                          ) : (
+                            <RefreshCcw size={16} strokeWidth={2.1} aria-hidden="true" />
+                          )}
+                        </button>
+                      ) : null}
                     </li>
                   );
                 })}
               </ol>
             )}
 
-            {selectionError ? (
+            {report.canManage !== false && selectionError ? (
               <div className="callout callout--warning report-frame-view__selection-error" role="alert">
                 <AlertTriangle size={16} strokeWidth={2.2} />
                 <span>{selectionError}</span>
               </div>
             ) : null}
 
-            <footer className="report-frame-view__quotes-footer">
+            {report.canManage !== false ? (
+              <footer className="report-frame-view__quotes-footer">
               <div className="report-frame-view__selection-summary">
                 <p>
                   {removedQuotes.length === 0
@@ -607,7 +612,8 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
                 <Sparkles size={17} strokeWidth={2.1} aria-hidden="true" />
                 Generate new report
               </button>
-            </footer>
+              </footer>
+            ) : null}
           </section>
         </div>
       </Surface>

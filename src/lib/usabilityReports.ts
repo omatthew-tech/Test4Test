@@ -68,6 +68,18 @@ interface UpdateReportNameResponse {
   reportName?: string;
 }
 
+interface ShareReportResponse {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  share?: {
+    id: string;
+    recipientName: string;
+    recipientEmail: string;
+    status: "sent";
+  };
+}
+
 interface RegenerateReportResponse {
   ok?: boolean;
   error?: string;
@@ -267,6 +279,40 @@ export async function updateUsabilityReportName(
   }
 
   return payload.reportName;
+}
+
+/** Email an owner-authorized report invitation to one recipient. */
+export async function shareUsabilityReport(
+  reportId: string,
+  recipientName: string,
+  recipientEmail: string,
+) {
+  const normalizedName = recipientName.trim().replace(/\s+/g, " ");
+  const normalizedEmail = recipientEmail.trim().toLowerCase();
+
+  if (!normalizedName) {
+    throw new Error("Enter the recipient's name.");
+  }
+
+  if (normalizedName.length > 100) {
+    throw new Error("Recipient names must be 100 characters or fewer.");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new Error("Enter a valid recipient email address.");
+  }
+
+  const payload = await callFunction<ShareReportResponse>("share-usability-report", {
+    reportId,
+    recipientName: normalizedName,
+    recipientEmail: normalizedEmail,
+  });
+
+  if (!payload.share) {
+    throw new Error(payload.message ?? "The report invitation could not be sent.");
+  }
+
+  return payload.share;
 }
 
 /** Persist whether one quote should be used by future AI analysis. */

@@ -6,6 +6,7 @@ import {
   Clock,
   Pencil,
   RefreshCcw,
+  Share2,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import {
   updateUsabilityReportName,
 } from "../../lib/usabilityReports";
 import { UsabilityReportDetail, UsabilityReportFrame } from "../../types";
+import { ShareReportModal } from "./ShareReportModal";
 
 /** Format an exact millisecond offset as M:SS.mmm for the timestamp badge. */
 function formatTimestamp(timestampMs: number) {
@@ -48,6 +50,7 @@ export function ReportView({ reportId }: ReportViewProps) {
   const [nameDraft, setNameDraft] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const quoteAnalysisBackfills = useRef(new Set<string>());
 
   useEffect(() => {
@@ -78,7 +81,7 @@ export function ReportView({ reportId }: ReportViewProps) {
   }, [reportId, reloadToken]);
 
   useEffect(() => {
-    if (!report || report.status !== "completed") {
+    if (!report || report.status !== "completed" || report.canManage === false) {
       return;
     }
 
@@ -105,6 +108,7 @@ export function ReportView({ reportId }: ReportViewProps) {
       });
   }, [
     report?.id,
+    report?.canManage,
     report?.quoteAnalysis?.analysis?.pageInsights,
     report?.quoteAnalysis?.promptVersion,
     report?.quoteAnalysis?.status,
@@ -264,18 +268,30 @@ export function ReportView({ reportId }: ReportViewProps) {
             <h2 className="report-view__title">
               {report.reportName || `Report ${report.reportNumber}`}
             </h2>
-            <button
-              type="button"
-              className="report-view__name-action"
-              onClick={() => {
-                setNameDraft(report.reportName || `Report ${report.reportNumber}`);
-                setNameError(null);
-                setIsEditingName(true);
-              }}
-              aria-label="Edit report name"
-            >
-              <Pencil size={18} aria-hidden="true" />
-            </button>
+            {report.canManage !== false ? (
+              <>
+                <button
+                  type="button"
+                  className="report-view__name-action"
+                  onClick={() => {
+                    setNameDraft(report.reportName || `Report ${report.reportNumber}`);
+                    setNameError(null);
+                    setIsEditingName(true);
+                  }}
+                  aria-label="Edit report name"
+                >
+                  <Pencil size={18} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="button button--secondary report-view__share"
+                  onClick={() => setIsShareModalOpen(true)}
+                >
+                  <Share2 size={17} aria-hidden="true" />
+                  Share
+                </button>
+              </>
+            ) : null}
           </div>
         )}
         {nameError ? (
@@ -333,6 +349,15 @@ export function ReportView({ reportId }: ReportViewProps) {
           </Surface>
         ))
       )}
+
+      {isShareModalOpen ? (
+        <ShareReportModal
+          reportId={report.id}
+          reportName={report.reportName || `Report ${report.reportNumber}`}
+          productName={report.submissionProductName}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

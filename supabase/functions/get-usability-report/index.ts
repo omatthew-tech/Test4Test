@@ -116,11 +116,48 @@ Deno.serve(async (request) => {
       )
     `)
     .eq("id", reportId)
-    .eq("owner_user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (reportError || !reportData) {
     return reportJson({ error: reportError?.message ?? "Report not found." }, 404);
+  }
+
+  const reportRecord = reportData as ReportRow;
+  const canManage = reportRecord.owner_user_id === user.id;
+
+  if (!canManage) {
+    const recipientEmail = user.email?.trim().toLowerCase() ?? "";
+
+    if (!recipientEmail) {
+      return reportJson({ error: "Report not found." }, 404);
+    }
+
+    const { data: share, error: shareError } = await admin
+      .from("usability_report_shares")
+      .select("id, status, opened_at")
+      .eq("report_id", reportId)
+      .eq("recipient_email", recipientEmail)
+      .in("status", ["sent", "opened"])
+      .maybeSingle();
+
+    if (shareError) {
+      return reportJson({ error: shareError.message }, 500);
+    }
+
+    if (!share) {
+      return reportJson({ error: "Report not found." }, 404);
+    }
+
+    if (share.status !== "opened" || !share.opened_at) {
+      await admin
+        .from("usability_report_shares")
+        .update({
+          status: "opened",
+          opened_at: share.opened_at ?? new Date().toISOString(),
+          recipient_user_id: user.id,
+        })
+        .eq("id", share.id);
+    }
   }
 
   const { data: frameRows, error: frameError } = await admin
@@ -222,7 +259,8 @@ Deno.serve(async (request) => {
   return reportJson({
     ok: true,
     report: {
-      ...mapReportSummary(reportData as ReportRow),
+      ...mapReportSummary(reportRecord),
+      canManage,
       frames,
       quotes,
       quoteAnalysis,
