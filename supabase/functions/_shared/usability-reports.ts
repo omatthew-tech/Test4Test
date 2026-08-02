@@ -151,6 +151,13 @@ export interface ReportRow {
   submissions?: { product_name?: string | null } | Array<{ product_name?: string | null }> | null;
 }
 
+export type UsabilityReportAccess = "owner" | "shared";
+
+interface ReportAccessUser {
+  id: string;
+  email?: string | null;
+}
+
 interface TranscriptRow {
   id: string;
   test_response_id: string;
@@ -249,6 +256,38 @@ export async function getAuthenticatedReportUser(admin: SupabaseClient, request:
   }
 
   return user;
+}
+
+/** Resolve whether an authenticated user owns a report or has an active email invitation. */
+export async function getUsabilityReportAccess(
+  admin: SupabaseClient,
+  reportId: string,
+  ownerUserId: string,
+  user: ReportAccessUser,
+): Promise<UsabilityReportAccess | null> {
+  if (ownerUserId === user.id) {
+    return "owner";
+  }
+
+  const recipientEmail = user.email?.trim().toLowerCase() ?? "";
+
+  if (!recipientEmail) {
+    return null;
+  }
+
+  const { data, error } = await admin
+    .from("usability_report_shares")
+    .select("id")
+    .eq("report_id", reportId)
+    .eq("recipient_email", recipientEmail)
+    .in("status", ["sent", "opened"])
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ? "shared" : null;
 }
 
 function getSubmissionProductName(report: ReportRow) {

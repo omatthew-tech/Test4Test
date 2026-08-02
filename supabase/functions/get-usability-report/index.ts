@@ -2,6 +2,7 @@ import { loadReportQuoteAnalysis } from "../_shared/quote-analysis.ts";
 import {
   createReportAdminClient,
   getAuthenticatedReportUser,
+  getUsabilityReportAccess,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
   mapReportSummary,
@@ -123,14 +124,27 @@ Deno.serve(async (request) => {
   }
 
   const reportRecord = reportData as ReportRow;
-  const canManage = reportRecord.owner_user_id === user.id;
+  let access;
 
-  if (!canManage) {
+  try {
+    access = await getUsabilityReportAccess(
+      admin,
+      reportId,
+      reportRecord.owner_user_id,
+      user,
+    );
+  } catch (error) {
+    return reportJson({
+      error: error instanceof Error ? error.message : "Report access could not be checked.",
+    }, 500);
+  }
+
+  if (!access) {
+    return reportJson({ error: "Report not found." }, 404);
+  }
+
+  if (access === "shared") {
     const recipientEmail = user.email?.trim().toLowerCase() ?? "";
-
-    if (!recipientEmail) {
-      return reportJson({ error: "Report not found." }, 404);
-    }
 
     const { data: share, error: shareError } = await admin
       .from("usability_report_shares")
@@ -159,6 +173,22 @@ Deno.serve(async (request) => {
         .eq("id", share.id);
     }
   }
+
+  const { data: latestReportRows, error: latestReportError } = await admin
+    .from("usability_reports")
+    .select("report_number")
+    .eq("submission_id", reportRecord.submission_id)
+    .order("report_number", { ascending: false })
+    .limit(1);
+
+  if (latestReportError) {
+    return reportJson({ error: latestReportError.message }, 500);
+  }
+
+  const latestReportNumber = Number(
+    (latestReportRows?.[0] as { report_number?: number } | undefined)?.report_number
+      ?? reportRecord.report_number,
+  );
 
   const { data: frameRows, error: frameError } = await admin
     .from("usability_report_frames")
@@ -260,7 +290,9 @@ Deno.serve(async (request) => {
     ok: true,
     report: {
       ...mapReportSummary(reportRecord),
-      canManage,
+      canManage: true,
+      accessRole: access,
+      suggestedNextReportName: `Report ${latestReportNumber + 1}`,
       frames,
       quotes,
       quoteAnalysis,

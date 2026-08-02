@@ -3,6 +3,7 @@ import {
   createReportAdminClient,
   createReportRow,
   getAuthenticatedReportUser,
+  getUsabilityReportAccess,
   getReportSupabaseEnvironment,
   markReportFailed,
   reportCorsHeaders,
@@ -58,6 +59,17 @@ interface ReportQuoteRow {
   quote_text: string;
   speaker: string | null;
   include_in_summary: boolean;
+}
+
+interface ReportShareRow {
+  owner_user_id: string;
+  recipient_user_id: string | null;
+  recipient_name: string;
+  recipient_email: string;
+  status: "sent" | "opened";
+  invited_at: string;
+  sent_at: string | null;
+  opened_at: string | null;
 }
 
 async function responseFromAuthError(error: unknown) {
@@ -140,7 +152,6 @@ Deno.serve(async (request) => {
     .from("usability_reports")
     .select("id, submission_id, owner_user_id, status")
     .eq("id", sourceReportId)
-    .eq("owner_user_id", user.id)
     .maybeSingle();
 
   if (sourceReportError) {
@@ -153,11 +164,30 @@ Deno.serve(async (request) => {
 
   const sourceReport = sourceReportData as SourceReportRow;
 
+  let access;
+
+  try {
+    access = await getUsabilityReportAccess(
+      admin,
+      sourceReport.id,
+      sourceReport.owner_user_id,
+      user,
+    );
+  } catch (error) {
+    return reportJson({
+      error: error instanceof Error ? error.message : "Report access could not be checked.",
+    }, 500);
+  }
+
+  if (!access) {
+    return reportJson({ error: "Report not found." }, 404);
+  }
+
   if (sourceReport.status !== "completed") {
     return reportJson({ error: "Only completed reports can be regenerated." }, 409);
   }
 
-  const [sourcesResult, framesResult, quotesResult] = await Promise.all([
+  const [sourcesResult, framesResult, quotesResult, sharesResult] = await Promise.all([
     admin
       .from("usability_report_sources")
       .select(`
@@ -206,14 +236,29 @@ Deno.serve(async (request) => {
       .eq("report_id", sourceReportId)
       .order("test_response_id", { ascending: true })
       .order("timestamp_ms", { ascending: true }),
+    admin
+      .from("usability_report_shares")
+      .select(`
+        owner_user_id,
+        recipient_user_id,
+        recipient_name,
+        recipient_email,
+        status,
+        invited_at,
+        sent_at,
+        opened_at
+      `)
+      .eq("report_id", sourceReportId)
+      .in("status", ["sent", "opened"]),
   ]);
 
-  if (sourcesResult.error || framesResult.error || quotesResult.error) {
+  if (sourcesResult.error || framesResult.error || quotesResult.error || sharesResult.error) {
     return reportJson({
       error:
         sourcesResult.error?.message ??
         framesResult.error?.message ??
         quotesResult.error?.message ??
+        sharesResult.error?.message ??
         "The source report could not be loaded.",
     }, 500);
   }
@@ -221,6 +266,7 @@ Deno.serve(async (request) => {
   const sources = (sourcesResult.data ?? []) as ReportSourceRow[];
   const frames = (framesResult.data ?? []) as ReportFrameRow[];
   const quotes = (quotesResult.data ?? []) as ReportQuoteRow[];
+  const shares = (sharesResult.data ?? []) as ReportShareRow[];
   const includedQuoteCount = quotes.filter((quote) => quote.include_in_summary !== false).length;
 
   if (sources.length === 0 || frames.length === 0) {
@@ -239,7 +285,7 @@ Deno.serve(async (request) => {
     const newReport = await createReportRow(
       admin,
       sourceReport.submission_id,
-      user.id,
+      sourceReport.owner_user_id,
       sources.length,
       requestedReportName,
     );
@@ -301,6 +347,24 @@ Deno.serve(async (request) => {
       })),
     );
 
+    if (shares.length > 0) {
+      await insertInBatches(
+        admin,
+        "usability_report_shares",
+        shares.map((share) => ({
+          report_id: newReport.id,
+          owner_user_id: share.owner_user_id,
+          recipient_user_id: share.recipient_user_id,
+          recipient_name: share.recipient_name,
+          recipient_email: share.recipient_email,
+          status: share.status,
+          invited_at: share.invited_at,
+          sent_at: share.sent_at,
+          opened_at: share.opened_at,
+        })),
+      );
+    }
+
     const { error: processingError } = await admin
       .from("usability_reports")
       .update({
@@ -336,7 +400,7 @@ Deno.serve(async (request) => {
     await sendReportReadyNotification(admin, {
       reportId: newReport.id,
       submissionId: sourceReport.submission_id,
-      ownerUserId: user.id,
+      ownerUserId: sourceReport.owner_user_id,
       frameCount: frames.length,
     }).catch((error) => {
       console.error("Failed to send regenerated report notification", {

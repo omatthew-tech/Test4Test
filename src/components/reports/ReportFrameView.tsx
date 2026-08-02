@@ -16,7 +16,6 @@ import { quoteAnalysisPromptVersion } from "../../lib/quoteAnalysisPrompt";
 import {
   analyzeUsabilityReportQuotes,
   getUsabilityReport,
-  listMyUsabilityReports,
   regenerateUsabilityReport,
   restoreAllUsabilityReportQuotes,
   updateUsabilityReportQuoteInclusion,
@@ -134,34 +133,10 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
       return;
     }
 
-    let isCancelled = false;
-    const fallbackName = `Report ${report.reportNumber + 1}`;
-    setSuggestedRegenerateReportName(fallbackName);
-
-    listMyUsabilityReports()
-      .then((reports) => {
-        if (isCancelled) {
-          return;
-        }
-
-        const nextReportNumber =
-          reports
-            .filter((candidate) => candidate.submissionId === report.submissionId)
-            .reduce(
-              (latest, candidate) => Math.max(latest, candidate.reportNumber),
-              0,
-            ) + 1;
-
-        setSuggestedRegenerateReportName(`Report ${nextReportNumber}`);
-      })
-      .catch(() => {
-        // The server remains authoritative for untouched default names.
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [report?.id, report?.reportNumber, report?.submissionId]);
+    setSuggestedRegenerateReportName(
+      report.suggestedNextReportName || `Report ${report.reportNumber + 1}`,
+    );
+  }, [report?.canManage, report?.id, report?.reportNumber, report?.suggestedNextReportName]);
 
   useEffect(() => {
     if (isRegenerateModalOpen && !isRegenerateReportNameCustomized) {

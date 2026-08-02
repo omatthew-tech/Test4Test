@@ -492,6 +492,8 @@ export interface UsabilityReportQuoteAnalysis {
 
 export interface UsabilityReportDetail extends UsabilityReport {
   canManage?: boolean;
+  accessRole?: "owner" | "shared";
+  suggestedNextReportName?: string;
   frames: UsabilityReportFrame[];
   quotes?: UsabilityReportQuote[];
   quoteAnalysis?: UsabilityReportQuoteAnalysis | null;

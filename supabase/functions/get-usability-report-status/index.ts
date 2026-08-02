@@ -1,6 +1,7 @@
 import {
   createReportAdminClient,
   getAuthenticatedReportUser,
+  getUsabilityReportAccess,
   getReportSupabaseEnvironment,
   getReportWorkerEnvironment,
   getWorkerJob,
@@ -40,17 +41,22 @@ async function responseFromAuthError(error: unknown) {
 async function loadReport(
   admin: ReturnType<typeof createReportAdminClient>,
   reportId: string,
-  ownerUserId: string,
+  user: { id: string; email?: string | null },
 ) {
   const { data, error } = await admin
     .from("usability_reports")
     .select("id, owner_user_id, status, error_message, frame_count, source_response_count, completed_at, worker_job_id")
     .eq("id", reportId)
-    .eq("owner_user_id", ownerUserId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     throw new Error(error?.message ?? "Report not found.");
+  }
+
+  const access = await getUsabilityReportAccess(admin, reportId, data.owner_user_id, user);
+
+  if (!access) {
+    throw new Error("Report not found.");
   }
 
   return data as ReportRow;
@@ -203,7 +209,7 @@ Deno.serve(async (request) => {
   let report: ReportRow;
 
   try {
-    report = await loadReport(admin, reportId, user.id);
+    report = await loadReport(admin, reportId, user);
   } catch (error) {
     return reportJson({ error: error instanceof Error ? error.message : "Report not found." }, 404);
   }
@@ -215,7 +221,7 @@ Deno.serve(async (request) => {
   if (!report.worker_job_id) {
     const message = "This report does not have a video processing job.";
     await markReportFailed(admin, report.id, message);
-    const failedReport = await loadReport(admin, reportId, user.id);
+    const failedReport = await loadReport(admin, reportId, user);
     return statusResponse(failedReport);
   }
 
@@ -239,7 +245,7 @@ Deno.serve(async (request) => {
       }
     }
 
-    const updatedReport = await loadReport(admin, reportId, user.id);
+    const updatedReport = await loadReport(admin, reportId, user);
     const partialFrames = workerJob.result?.frames ?? workerJob.partialFrames ?? [];
     const previewFrames = await buildPreviewFrames(admin, report.id, partialFrames, workerEnv);
     const frameCount = Math.max(updatedReport.frame_count, partialFrames.length);

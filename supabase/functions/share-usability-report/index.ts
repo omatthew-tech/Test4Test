@@ -8,7 +8,10 @@ import {
   renderEmailTemplate,
   sendEmail,
 } from "../_shared/email-system.ts";
-import { getAuthenticatedReportUser } from "../_shared/usability-reports.ts";
+import {
+  getAuthenticatedReportUser,
+  getUsabilityReportAccess,
+} from "../_shared/usability-reports.ts";
 
 const templateKey = "usability_report_share_invite";
 
@@ -133,7 +136,6 @@ Deno.serve(async (request) => {
       )
     `)
     .eq("id", reportId)
-    .eq("owner_user_id", user.id)
     .maybeSingle();
 
   if (reportError) {
@@ -145,6 +147,20 @@ Deno.serve(async (request) => {
   }
 
   const report = reportData as ReportRow;
+
+  let access;
+
+  try {
+    access = await getUsabilityReportAccess(admin, report.id, report.owner_user_id, user);
+  } catch (error) {
+    return json({
+      error: error instanceof Error ? error.message : "Report access could not be checked.",
+    }, 500);
+  }
+
+  if (!access) {
+    return json({ error: "Report not found." }, 404);
+  }
 
   if (report.status !== "completed") {
     return json({ error: "Only completed reports can be shared." }, 400);
@@ -167,6 +183,11 @@ Deno.serve(async (request) => {
     .eq("email", recipientEmail)
     .maybeSingle();
   const recipient = recipientData as ProfileRow | null;
+
+  if (recipient?.id === report.owner_user_id) {
+    return json({ error: "This report is already available to that account." }, 400);
+  }
+
   const now = new Date().toISOString();
 
   const { data: shareData, error: shareError } = await admin

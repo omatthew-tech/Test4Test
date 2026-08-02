@@ -281,7 +281,7 @@ export async function updateUsabilityReportName(
   return payload.reportName;
 }
 
-/** Email an owner-authorized report invitation to one recipient. */
+/** Email a report invitation as an owner or existing collaborator. */
 export async function shareUsabilityReport(
   reportId: string,
   recipientName: string,
@@ -345,7 +345,7 @@ export async function updateUsabilityReportQuoteInclusion(
   return data.include_in_summary !== false;
 }
 
-/** Restore every removed quote in a report owned by the current user. */
+/** Restore every removed quote in a report managed by the current user. */
 export async function restoreAllUsabilityReportQuotes(reportId: string): Promise<void> {
   if (!reportId) {
     throw new Error("Missing report id.");

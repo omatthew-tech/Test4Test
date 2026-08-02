@@ -2,6 +2,7 @@ import { analyzeReportQuotes } from "../_shared/quote-analysis.ts";
 import {
   createReportAdminClient,
   getAuthenticatedReportUser,
+  getUsabilityReportAccess,
   getReportSupabaseEnvironment,
   reportCorsHeaders,
   reportJson,
@@ -62,11 +63,24 @@ Deno.serve(async (request) => {
     .from("usability_reports")
     .select("id, owner_user_id")
     .eq("id", reportId)
-    .eq("owner_user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (reportError || !reportRow) {
     return reportJson({ error: reportError?.message ?? "Report not found." }, 404);
+  }
+
+  let access;
+
+  try {
+    access = await getUsabilityReportAccess(admin, reportRow.id, reportRow.owner_user_id, user);
+  } catch (error) {
+    return reportJson({
+      error: error instanceof Error ? error.message : "Report access could not be checked.",
+    }, 500);
+  }
+
+  if (!access) {
+    return reportJson({ error: "Report not found." }, 404);
   }
 
   try {

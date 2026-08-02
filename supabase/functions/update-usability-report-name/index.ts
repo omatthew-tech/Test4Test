@@ -1,6 +1,7 @@
 import {
   createReportAdminClient,
   getAuthenticatedReportUser,
+  getUsabilityReportAccess,
   getReportSupabaseEnvironment,
   reportCorsHeaders,
   reportJson,
@@ -68,11 +69,38 @@ Deno.serve(async (request) => {
     return reportJson({ error: "Report names must be 100 characters or fewer." }, 400);
   }
 
+  const { data: report, error: reportError } = await admin
+    .from("usability_reports")
+    .select("id, owner_user_id")
+    .eq("id", reportId)
+    .maybeSingle();
+
+  if (reportError) {
+    return reportJson({ error: reportError.message }, 500);
+  }
+
+  if (!report) {
+    return reportJson({ error: "Report not found." }, 404);
+  }
+
+  let access;
+
+  try {
+    access = await getUsabilityReportAccess(admin, report.id, report.owner_user_id, user);
+  } catch (error) {
+    return reportJson({
+      error: error instanceof Error ? error.message : "Report access could not be checked.",
+    }, 500);
+  }
+
+  if (!access) {
+    return reportJson({ error: "Report not found." }, 404);
+  }
+
   const { data, error } = await admin
     .from("usability_reports")
     .update({ report_name: reportName })
     .eq("id", reportId)
-    .eq("owner_user_id", user.id)
     .select("id, report_name")
     .maybeSingle();
 
