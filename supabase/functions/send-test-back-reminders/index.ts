@@ -15,11 +15,17 @@ import {
   processReminderSequence,
   reminderTemplateKeys,
 } from "../_shared/test-back-reminders.ts";
+import {
+  loadDueReportShareReminders,
+  processReportShareReminder,
+  reportShareReminderTemplateKeys,
+} from "../_shared/report-share-reminders.ts";
 
 interface ReminderRunRequest {
   limit?: number;
   feedbackLimit?: number;
   feedbackLookbackHours?: number;
+  reportShareLimit?: number;
 }
 
 function getSuppliedSecret(request: Request) {
@@ -67,6 +73,8 @@ Deno.serve(async (request) => {
   const feedbackLimit = typeof payload.feedbackLimit === "number" ? payload.feedbackLimit : limit;
   const feedbackLookbackHours =
     typeof payload.feedbackLookbackHours === "number" ? payload.feedbackLookbackHours : 24 * 7;
+  const reportShareLimit =
+    typeof payload.reportShareLimit === "number" ? payload.reportShareLimit : limit;
 
   const admin = createAdminClient(env);
   const unnotifiedFeedbackResponses = await loadUnnotifiedNewFeedbackResponses(
@@ -75,6 +83,7 @@ Deno.serve(async (request) => {
     feedbackLookbackHours,
   );
   const dueReminders = await loadDueReminderSequences(admin, limit);
+  const dueReportShareReminders = await loadDueReportShareReminders(admin, reportShareLimit);
   const feedbackTemplateMap =
     unnotifiedFeedbackResponses.length > 0
       ? await loadEmailTemplates(admin, [newFeedbackTemplateKey])
@@ -83,6 +92,10 @@ Deno.serve(async (request) => {
     dueReminders.length > 0
       ? await loadEmailTemplates(admin, [...reminderTemplateKeys])
       : new Map();
+  const reportShareTemplateMap =
+    dueReportShareReminders.length > 0
+      ? await loadEmailTemplates(admin, [...reportShareReminderTemplateKeys])
+      : new Map();
 
   const errors: string[] = [];
   let feedbackSent = 0;
@@ -90,6 +103,9 @@ Deno.serve(async (request) => {
   let sent = 0;
   let resolved = 0;
   let cancelled = 0;
+  let reportShareSent = 0;
+  let reportShareSkipped = 0;
+  let reportShareCancelled = 0;
 
   for (const response of unnotifiedFeedbackResponses) {
     try {
@@ -126,9 +142,33 @@ Deno.serve(async (request) => {
     }
   }
 
+  for (const reminder of dueReportShareReminders) {
+    try {
+      const result = await processReportShareReminder(
+        admin,
+        env,
+        reminder,
+        reportShareTemplateMap,
+      );
+
+      if (result.outcome === "sent") {
+        reportShareSent += 1;
+      } else if (result.outcome === "cancelled") {
+        reportShareCancelled += 1;
+      } else {
+        reportShareSkipped += 1;
+      }
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Failed to process a report invitation reminder.");
+    }
+  }
+
   return json({
     ok: errors.length === 0,
-    processed: dueReminders.length + unnotifiedFeedbackResponses.length,
+    processed:
+      dueReminders.length
+      + dueReportShareReminders.length
+      + unnotifiedFeedbackResponses.length,
     feedbackProcessed: unnotifiedFeedbackResponses.length,
     feedbackSent,
     feedbackSkipped,
@@ -136,6 +176,10 @@ Deno.serve(async (request) => {
     sent,
     resolved,
     cancelled,
+    reportSharesProcessed: dueReportShareReminders.length,
+    reportShareSent,
+    reportShareSkipped,
+    reportShareCancelled,
     errors,
   });
 });

@@ -233,6 +233,7 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
   const hasPendingSelectionSave = savingQuoteIds.size > 0 || isRestoringAll;
   const canRegenerate =
     report?.canManage !== false
+    && report?.canRegenerate !== false
     && removedQuotes.length > 0
     && includedQuoteCount > 0
     && !hasPendingSelectionSave
@@ -563,8 +564,12 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
                   {removedQuotes.length === 0
                     ? "All feedback is currently included."
                     : includedQuoteCount === 0
-                      ? "Restore at least one feedback item to generate a new report."
-                      : `${removedQuotes.length} feedback item${removedQuotes.length === 1 ? "" : "s"} removed across ${removedScreenCount} screen${removedScreenCount === 1 ? "" : "s"}. The new report will use everything you kept.`}
+                      ? report.canRegenerate === false
+                        ? "Restore at least one feedback item to keep feedback in this shared report."
+                        : "Restore at least one feedback item to generate a new report."
+                      : report.canRegenerate === false
+                        ? `${removedQuotes.length} feedback item${removedQuotes.length === 1 ? "" : "s"} removed from this shared report.`
+                        : `${removedQuotes.length} feedback item${removedQuotes.length === 1 ? "" : "s"} removed across ${removedScreenCount} screen${removedScreenCount === 1 ? "" : "s"}. The new report will use everything you kept.`}
                 </p>
                 {removedQuotes.length > 0 ? (
                   <button
@@ -578,15 +583,17 @@ export function ReportFrameView({ reportId, frameId }: ReportFrameViewProps) {
                   </button>
                 ) : null}
               </div>
-              <button
-                type="button"
-                className="button button--primary report-frame-view__regenerate"
-                onClick={handleOpenRegenerateModal}
-                disabled={!canRegenerate}
-              >
-                <Sparkles size={17} strokeWidth={2.1} aria-hidden="true" />
-                Generate new report
-              </button>
+              {report.canRegenerate !== false ? (
+                <button
+                  type="button"
+                  className="button button--primary report-frame-view__regenerate"
+                  onClick={handleOpenRegenerateModal}
+                  disabled={!canRegenerate}
+                >
+                  <Sparkles size={17} strokeWidth={2.1} aria-hidden="true" />
+                  Generate new report
+                </button>
+              ) : null}
               </footer>
             ) : null}
           </section>

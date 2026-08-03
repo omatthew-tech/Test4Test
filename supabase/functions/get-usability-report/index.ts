@@ -163,14 +163,20 @@ Deno.serve(async (request) => {
     }
 
     if (share.status !== "opened" || !share.opened_at) {
-      await admin
+      const { error: openedError } = await admin
         .from("usability_report_shares")
         .update({
           status: "opened",
           opened_at: share.opened_at ?? new Date().toISOString(),
           recipient_user_id: user.id,
+          next_reminder_at: null,
+          error_message: null,
         })
         .eq("id", share.id);
+
+      if (openedError) {
+        return reportJson({ error: openedError.message }, 500);
+      }
     }
   }
 
@@ -291,6 +297,7 @@ Deno.serve(async (request) => {
     report: {
       ...mapReportSummary(reportRecord),
       canManage: true,
+      canRegenerate: access === "owner",
       accessRole: access,
       suggestedNextReportName: `Report ${latestReportNumber + 1}`,
       frames,

@@ -47,7 +47,7 @@ Deno.serve(async (request) => {
     return reportJson({ error: "Unauthorized." }, 401);
   }
 
-  const { data, error } = await admin
+  const { data: ownedData, error: ownedError } = await admin
     .from("usability_reports")
     .select(`
       id,
@@ -68,12 +68,79 @@ Deno.serve(async (request) => {
     .eq("owner_user_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    return reportJson({ error: error.message }, 500);
+  if (ownedError) {
+    return reportJson({ error: ownedError.message }, 500);
   }
+
+  const recipientEmail = user.email?.trim().toLowerCase() ?? "";
+  let sharedData: ReportRow[] = [];
+
+  if (recipientEmail) {
+    const { data: shareRows, error: shareError } = await admin
+      .from("usability_report_shares")
+      .select("report_id")
+      .eq("recipient_email", recipientEmail)
+      .in("status", ["sent", "opened"]);
+
+    if (shareError) {
+      return reportJson({ error: shareError.message }, 500);
+    }
+
+    const ownedIds = new Set(((ownedData ?? []) as ReportRow[]).map((report) => report.id));
+    const sharedReportIds = [
+      ...new Set(
+        (shareRows ?? [])
+          .map((share) => share.report_id as string)
+          .filter((reportId) => !ownedIds.has(reportId)),
+      ),
+    ];
+
+    if (sharedReportIds.length > 0) {
+      const { data, error } = await admin
+        .from("usability_reports")
+        .select(`
+          id,
+          submission_id,
+          owner_user_id,
+          report_number,
+          report_name,
+          status,
+          error_message,
+          source_response_count,
+          frame_count,
+          created_at,
+          completed_at,
+          submissions (
+            product_name
+          )
+        `)
+        .in("id", sharedReportIds)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return reportJson({ error: error.message }, 500);
+      }
+
+      sharedData = (data ?? []) as ReportRow[];
+    }
+  }
+
+  const reports = [
+    ...((ownedData ?? []) as ReportRow[]).map((report) => ({
+      ...mapReportSummary(report),
+      accessRole: "owner" as const,
+    })),
+    ...sharedData.map((report) => ({
+      ...mapReportSummary(report),
+      accessRole: "shared" as const,
+    })),
+  ].sort(
+    (first, second) =>
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+  );
 
   return reportJson({
     ok: true,
-    reports: ((data ?? []) as ReportRow[]).map(mapReportSummary),
+    reports,
   });
 });

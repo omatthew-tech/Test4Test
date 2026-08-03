@@ -45,8 +45,8 @@
    - `supabase/functions/analyze-usability-report-quotes`
    - `supabase/functions/complete-usability-report`
    - `supabase/functions/test-account-login` with `--no-verify-jwt`
-9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`.
-10. If you want to adjust copy later, edit rows in the `public.email_templates` table. The new feedback and reminder emails now render from database templates instead of hard-coded copy.
+9. Create the reminder schedule described in `supabase/test-back-reminders-setup.txt`, and schedule `send-google-play-closed-test-reminders` daily with the same `TEST_BACK_REMINDER_CRON_SECRET`. The hourly `send-test-back-reminders` run also sends the three unopened shared-report reminders added by `20260802_complete_sprint5_report_sharing.sql`.
+10. If you want to adjust copy later, edit rows in the `public.email_templates` table. Feedback, test-back reminders, report invitations, and shared-report reminders render from database templates instead of hard-coded copy.
 11. The final test-back reminder now applies the test-back-rate penalty at send time, so the Earn-page percentage and the email warning stay in sync.
 12. Google Play closed-test matching uses a separate 14-day self-attested participation table. Earn discovery and test-back reminders stay pool-aware; direct/shared test URLs remain accessible for live submissions.
 13. Seed the shared test fixture after secrets are set:

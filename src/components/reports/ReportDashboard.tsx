@@ -82,6 +82,67 @@ export interface ReportDashboardProps {
   initialSubmissionId?: string;
 }
 
+function ReportHistoryList({
+  reports,
+  emptyMessage,
+  onOpen,
+}: {
+  reports: UsabilityReport[];
+  emptyMessage: string;
+  onOpen: (reportId: string) => void;
+}) {
+  if (reports.length === 0) {
+    return (
+      <div className="empty-state empty-state--left">
+        <p>{emptyMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="report-history">
+      {reports.map((report) => {
+        const isReady = report.status === "completed";
+
+        return (
+          <li key={report.id} className="report-history__item">
+            <button
+              type="button"
+              className="report-history__link"
+              onClick={() => onOpen(report.id)}
+              disabled={!isReady}
+            >
+              <span className="report-history__main">
+                <span className="report-history__icon" aria-hidden="true">
+                  <FileText size={30} strokeWidth={1.9} />
+                </span>
+                <span className="report-history__copy">
+                  <span className="report-history__name">
+                    {report.reportName || `Report ${report.reportNumber}`}
+                  </span>
+                  <span className="report-history__meta">
+                    {report.submissionProductName} - {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
+                    {report.sourceResponseCount === 1 ? "" : "s"} analyzed
+                  </span>
+                </span>
+              </span>
+              <span className="report-history__actions">
+                <span className={`report-history__status report-history__status--${report.status}`}>
+                  {reportStatusIcon(report.status)}
+                  {reportStatusLabel(report.status)}
+                </span>
+                <span className="report-history__arrow" aria-hidden="true">
+                  <ArrowRight size={26} strokeWidth={1.9} />
+                </span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const navigate = useNavigate();
   const { state } = useAppState();
@@ -175,7 +236,11 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const filteredHistory = useMemo(
     () =>
       history
-        .filter((report) => report.submissionId === selectedSubmissionId)
+        .filter(
+          (report) =>
+            report.accessRole !== "shared"
+            && report.submissionId === selectedSubmissionId,
+        )
         .sort((first, second) => {
           if (first.reportNumber !== second.reportNumber) {
             return second.reportNumber - first.reportNumber;
@@ -184,6 +249,16 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
           return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
         }),
     [history, selectedSubmissionId],
+  );
+  const sharedHistory = useMemo(
+    () =>
+      history
+        .filter((report) => report.accessRole === "shared")
+        .sort(
+          (first, second) =>
+            new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+        ),
+    [history],
   );
   const hasMultipleSubmissions = submissions.length > 1;
 
@@ -476,53 +551,22 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
       {submissions.length > 0 ? (
         <section className="report-dashboard__history">
           <h3 className="report-dashboard__history-title">Previous reports</h3>
-          {filteredHistory.length === 0 ? (
-            <div className="empty-state empty-state--left">
-              <p>No reports yet for this app. Generate your first report above.</p>
-            </div>
-          ) : (
-            <ul className="report-history">
-              {filteredHistory.map((report) => {
-                const isReady = report.status === "completed";
-                return (
-                  <li key={report.id} className="report-history__item">
-                    <button
-                      type="button"
-                      className="report-history__link"
-                      onClick={() => navigate(`/ai-analysis/${report.id}`)}
-                      disabled={!isReady}
-                    >
-                      <span className="report-history__main">
-                        <span className="report-history__icon" aria-hidden="true">
-                          <FileText size={30} strokeWidth={1.9} />
-                        </span>
-                        <span className="report-history__copy">
-                          <span className="report-history__name">
-                            {report.reportName || `Report ${report.reportNumber}`}
-                          </span>
-                          <span className="report-history__meta">
-                            {formatDateTime(report.createdAt)} - {report.sourceResponseCount} recording
-                            {report.sourceResponseCount === 1 ? "" : "s"} analyzed
-                          </span>
-                        </span>
-                      </span>
-                      <span className="report-history__actions">
-                        <span
-                          className={`report-history__status report-history__status--${report.status}`}
-                        >
-                          {reportStatusIcon(report.status)}
-                          {reportStatusLabel(report.status)}
-                        </span>
-                        <span className="report-history__arrow" aria-hidden="true">
-                          <ArrowRight size={26} strokeWidth={1.9} />
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          <ReportHistoryList
+            reports={filteredHistory}
+            emptyMessage="No reports yet for this app. Generate your first report above."
+            onOpen={(reportId) => navigate(`/ai-analysis/${reportId}`)}
+          />
+        </section>
+      ) : null}
+
+      {sharedHistory.length > 0 ? (
+        <section className="report-dashboard__history">
+          <h3 className="report-dashboard__history-title">Shared with you</h3>
+          <ReportHistoryList
+            reports={sharedHistory}
+            emptyMessage="No reports have been shared with this account."
+            onOpen={(reportId) => navigate(`/ai-analysis/${reportId}`)}
+          />
         </section>
       ) : null}
     </div>

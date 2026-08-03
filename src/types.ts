@@ -362,6 +362,7 @@ export interface UsabilityReport {
   frameCount: number;
   createdAt: string;
   completedAt?: string | null;
+  accessRole?: "owner" | "shared";
 }
 
 export interface UsabilityReportFrame {
@@ -492,11 +493,10 @@ export interface UsabilityReportQuoteAnalysis {
 
 export interface UsabilityReportDetail extends UsabilityReport {
   canManage?: boolean;
+  canRegenerate?: boolean;
   accessRole?: "owner" | "shared";
   suggestedNextReportName?: string;
   frames: UsabilityReportFrame[];
   quotes?: UsabilityReportQuote[];
   quoteAnalysis?: UsabilityReportQuoteAnalysis | null;
 }
-
-

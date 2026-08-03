@@ -76,8 +76,33 @@ interface ShareReportResponse {
     id: string;
     recipientName: string;
     recipientEmail: string;
-    status: "sent";
+    status: UsabilityReportShareRecipient["status"];
+    shareUrl?: string;
   };
+}
+
+interface ReportSharingOverviewResponse {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  overview?: {
+    recipients?: UsabilityReportShareRecipient[];
+  };
+}
+
+export interface UsabilityReportShareRecipient {
+  id: string;
+  name: string;
+  email: string;
+  status: "pending" | "sent" | "opened" | "failed";
+  deliveryMethod: "email" | "link";
+  remindersSent: number;
+  invitedAt: string;
+  sentAt?: string | null;
+  openedAt?: string | null;
+  nextReminderAt?: string | null;
+  lastReminderSentAt?: string | null;
+  shareUrl: string;
 }
 
 interface RegenerateReportResponse {
@@ -313,6 +338,51 @@ export async function shareUsabilityReport(
   }
 
   return payload.share;
+}
+
+/** Create an email-bound report link without sending an invitation email. */
+export async function createUsabilityReportShareLink(
+  reportId: string,
+  recipientName: string,
+  recipientEmail: string,
+) {
+  const normalizedName = recipientName.trim().replace(/\s+/g, " ");
+  const normalizedEmail = recipientEmail.trim().toLowerCase();
+
+  if (!normalizedName) {
+    throw new Error("Enter the recipient's name.");
+  }
+
+  if (normalizedName.length > 100) {
+    throw new Error("Recipient names must be 100 characters or fewer.");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new Error("Enter a valid recipient email address.");
+  }
+
+  const payload = await callFunction<ShareReportResponse>("share-usability-report", {
+    action: "create-link",
+    reportId,
+    recipientName: normalizedName,
+    recipientEmail: normalizedEmail,
+  });
+
+  if (!payload.share?.shareUrl) {
+    throw new Error(payload.message ?? "The report link could not be created.");
+  }
+
+  return payload.share;
+}
+
+/** Load every email-bound recipient and their latest open/reminder status. */
+export async function getUsabilityReportSharingOverview(reportId: string) {
+  const payload = await callFunction<ReportSharingOverviewResponse>(
+    "share-usability-report",
+    { action: "overview", reportId },
+  );
+
+  return payload.overview?.recipients ?? [];
 }
 
 /** Persist whether one quote should be used by future AI analysis. */

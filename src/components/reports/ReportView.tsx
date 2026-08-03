@@ -282,14 +282,16 @@ export function ReportView({ reportId }: ReportViewProps) {
                 >
                   <Pencil size={18} aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  className="button button--secondary report-view__share"
-                  onClick={() => setIsShareModalOpen(true)}
-                >
-                  <Share2 size={17} aria-hidden="true" />
-                  Share
-                </button>
+                {report.accessRole !== "shared" ? (
+                  <button
+                    type="button"
+                    className="button button--secondary report-view__share"
+                    onClick={() => setIsShareModalOpen(true)}
+                  >
+                    <Share2 size={17} aria-hidden="true" />
+                    Share
+                  </button>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -350,7 +352,7 @@ export function ReportView({ reportId }: ReportViewProps) {
         ))
       )}
 
-      {isShareModalOpen ? (
+      {isShareModalOpen && report.accessRole !== "shared" ? (
         <ShareReportModal
           reportId={report.id}
           reportName={report.reportName || `Report ${report.reportNumber}`}
