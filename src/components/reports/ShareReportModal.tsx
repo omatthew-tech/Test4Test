@@ -229,10 +229,6 @@ export function ShareReportModal({
                   <span>{sentRecipient.email}</span>
                 </span>
               </div>
-              <p>
-                They received a personalized email with a secure sign-in link to {reportName}.
-                If they do not open it, Test4Test will send up to three reminders.
-              </p>
             </div>
             <div className="share-report-success__actions">
               <button type="button" className="button button--secondary" onClick={inviteAnother}>
@@ -301,14 +297,6 @@ export function ShareReportModal({
             </div>
 
             <form className="share-report-form" onSubmit={(event) => void handleSubmit(event)}>
-              <div className="share-test-modal__copy">
-                <h3>{method === "email" ? "Invite by email" : "Create a secure link"}</h3>
-                <p>
-                  {method === "email"
-                    ? "We’ll email them a link and send up to three reminders until they open it."
-                    : "The copied link only works after the named recipient signs in with this email."}
-                </p>
-              </div>
               <div className="share-report-email-row">
                 <label className="field">
                   <span>Name</span>
@@ -349,7 +337,7 @@ export function ShareReportModal({
                   ) : (
                     <Copy size={16} aria-hidden="true" />
                   )}
-                  {isWorking ? "Working..." : method === "email" ? "Send" : "Create & copy"}
+                  {isWorking ? "Working..." : method === "email" ? "Send" : "Copy"}
                 </button>
               </div>
 
