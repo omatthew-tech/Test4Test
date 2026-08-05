@@ -17,6 +17,13 @@
       "expires": "2027-07-23"
     },
     {
+      "id": "earn-platform-modal-mockup-treatment",
+      "owner": "Test4Test",
+      "scope": "The Earn platform-preferences dialog in src/pages/EarnPage.tsx and src/Application.module.css: its token-colored SVG surface gradient, small sparkle details, device illustration, and Apple and Android platform marks.",
+      "rationale": "The design owner explicitly requested full fidelity to the supplied modal mockup after the gradient and non-Lucide artwork conflicts were reported. The exception is limited to decorative artwork; Dialog, Checkbox, Button, semantic colors, spacing, typography, focus, and responsive behavior remain design-system controlled.",
+      "expires": "2027-02-04"
+    },
+    {
       "id": "supabase-transactional-email-functions",
       "owner": "Test4Test Backend",
       "scope": "Existing HTML embedded in Supabase Edge Functions under supabase/functions.",

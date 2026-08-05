@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Mail, MailCheck, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Mail, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Alert, Button, Stack, TextField } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
 import { isTestAccountEmail } from "../lib/supabase";
 import { wait } from "../lib/timing";
+import styles from "./AuthPage.module.css";
 
 function sanitizeReturnTo(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -96,121 +98,99 @@ export function SignInPage() {
       <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel">
         {hasRequestedCode ? (
           <>
-            <button
+            <Button
               type="button"
-              className="button button--ghost sign-in-back-button"
+              className={styles.back}
+              variant="quiet"
               onClick={handleChangeEmail}
               disabled={isSendingCode || isVerifying}
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft aria-hidden="true" size={16} />
               Change email
-            </button>
-            <h2>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h2>
-            {isCurrentEmailTestAccount ? (
-              <p>
-                Enter the configured test account passcode for{" "}
-                <strong>{email || "your email"}</strong>.
-              </p>
-            ) : (
-              <p>
-                We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it below
-                to sign in.
-              </p>
-            )}
-            <label className="field field--otp">
-              <span>
-                {isCurrentEmailTestAccount ? "Test account passcode" : "One-time passcode"}
-              </span>
-              <div className="otp-row">
-                <MailCheck size={20} />
-                <input
-                  className="otp-row__input"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  placeholder="123456"
-                  inputMode="numeric"
-                />
-              </div>
-            </label>
-            {message ? <div className="callout callout--soft">{message}</div> : null}
-            <div className="inline-actions verify-actions">
-              <button
+            </Button>
+            <Stack className={styles.copy} gap="sm">
+              <h2>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h2>
+              {isCurrentEmailTestAccount ? (
+                <p>
+                  Enter the configured test account passcode for{" "}
+                  <strong>{email || "your email"}</strong>.
+                </p>
+              ) : (
+                <p>
+                  We sent a six-digit code to <strong>{email || "your email"}</strong>. Enter it
+                  below to sign in.
+                </p>
+              )}
+            </Stack>
+            <TextField
+              autoComplete="one-time-code"
+              className={styles.codeInput}
+              inputMode="numeric"
+              label={isCurrentEmailTestAccount ? "Test account passcode" : "One-time passcode"}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="123456"
+              value={code}
+            />
+            {message ? <Alert>{message}</Alert> : null}
+            <div className={styles.actions}>
+              <Button
                 type="button"
-                className="button button--secondary"
+                variant="secondary"
                 onClick={() => void handleRequestCode()}
                 disabled={isSendingCode || isVerifying}
+                loading={isSendingCode}
+                loadingLabel={isCurrentEmailTestAccount ? "Resetting" : "Sending"}
               >
-                {isSendingCode ? (
-                  <span className="button__spinner" aria-hidden="true" />
-                ) : (
-                  <RefreshCcw size={16} />
-                )}
-                {isSendingCode
-                  ? isCurrentEmailTestAccount
-                    ? "Resetting..."
-                    : "Sending..."
-                  : isCurrentEmailTestAccount
-                    ? "Restart"
-                    : "Resend code"}
-              </button>
-              <button
+                <RefreshCcw aria-hidden="true" size={16} />
+                {isCurrentEmailTestAccount ? "Restart" : "Resend code"}
+              </Button>
+              <Button
                 type="button"
-                className="button button--primary"
                 onClick={() => void handleVerify()}
                 disabled={isVerifying || isSendingCode || !code.trim()}
+                loading={isVerifying}
+                loadingLabel="Verifying"
               >
                 Verify and continue
-              </button>
+              </Button>
             </div>
           </>
         ) : (
           <>
-            <h2>Sign in with email</h2>
-            <p>
-              {isCurrentEmailTestAccount
-                ? "Enter the test account email to continue."
-                : "Enter your email and we'll send you a one-time code."}
-            </p>
-            <label className="field sign-in-panel__field">
-              <span>Email address</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-            </label>
-            {message ? <div className="callout callout--soft">{message}</div> : null}
-            <div className="inline-actions sign-in-panel__actions">
-              <button
+            <Stack className={styles.copy} gap="sm">
+              <h2>Sign in with email</h2>
+              <p>
+                {isCurrentEmailTestAccount
+                  ? "Enter the test account email to continue."
+                  : "Enter your email and we'll send you a one-time code."}
+              </p>
+            </Stack>
+            <TextField
+              autoComplete="email"
+              label="Email address"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              type="email"
+              value={email}
+            />
+            {message ? <Alert>{message}</Alert> : null}
+            <div className={styles.actions}>
+              <Button
                 type="button"
-                className="button button--primary"
                 onClick={() => void handleRequestCode()}
                 disabled={isSendingCode || !email.trim()}
+                loading={isSendingCode}
+                loadingLabel={isCurrentEmailTestAccount ? "Opening" : "Sending"}
               >
-                {isSendingCode ? (
-                  <span className="button__spinner" aria-hidden="true" />
-                ) : (
-                  <Mail size={16} />
-                )}
-                {isSendingCode
-                  ? isCurrentEmailTestAccount
-                    ? "Opening..."
-                    : "Sending..."
-                  : isCurrentEmailTestAccount
-                    ? "Continue"
-                    : "Send one-time code"}
-              </button>
+                <Mail aria-hidden="true" size={16} />
+                {isCurrentEmailTestAccount ? "Continue" : "Send one-time code"}
+              </Button>
             </div>
-            <div className="sign-in-panel__footer">
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={() => navigate("/submit")}
-              >
+            <div className={styles.footer}>
+              <p>New to Test4Test?</p>
+              <Button type="button" variant="secondary" onClick={() => navigate("/submit")}>
                 Sign up
-              </button>
+              </Button>
             </div>
           </>
         )}

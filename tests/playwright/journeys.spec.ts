@@ -84,6 +84,27 @@ test("My Tests share and edit dialogs close with Escape and restore focus", asyn
   await expect(share).toBeFocused();
 });
 
+test("Earn platform preferences expose named checkbox choices and save accessibly", async ({
+  page,
+}) => {
+  await page.goto("/earn?ds-user=user-avery");
+
+  const dialog = page.getByRole("dialog", {
+    name: "What platforms can you reliably access?",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("checkbox")).toHaveCount(3);
+
+  const websites = dialog.getByRole("checkbox", { name: "Websites" });
+  await websites.focus();
+  await page.keyboard.press("Space");
+  await expect(websites).not.toBeChecked();
+
+  await dialog.getByRole("button", { name: "Save preferences" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole("button", { name: /Choose platforms you can test/ })).toBeVisible();
+});
+
 test("response viewer navigation exposes each response without changing data", async ({ page }) => {
   await page.goto("/my-tests/submission-palette?ds-user=user-mateo&ds-responses=2");
   await page.getByRole("button", { name: "Individual Responses" }).click();
@@ -124,7 +145,8 @@ test("recording permission denial provides recovery guidance and keeps start dis
       .first(),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Start test" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Enable screen sharing" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Enable screen sharing" })).toHaveCount(0);
+  await expect(page.getByText("Screen", { exact: true })).toBeVisible();
 });
 
 test("test report dialog is keyboard-dismissible and restores focus", async ({ page }) => {

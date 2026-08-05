@@ -1,7 +1,5 @@
 import "./styles/base.css";
 
-import "./styles/base.css";
-
 export * from "./components/actions";
 export * from "./components/brand";
 export * from "./components/data-display";

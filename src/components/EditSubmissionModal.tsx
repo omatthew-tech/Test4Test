@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
-import { useModalFocus } from "@test4test/design-system";
+import { Alert, Button, Checkbox, Dialog, Textarea, TextField } from "@test4test/design-system";
 import { GooglePlayClosedTestOption } from "./GooglePlayClosedTestOption";
 import {
   accessLinkFieldLabel,
@@ -68,7 +67,6 @@ export function EditSubmissionModal({
 
     onClose();
   };
-  const modalFocus = useModalFocus<HTMLDivElement>(true, closeEditTest);
 
   const updateEditDraft = (next: Partial<SubmissionDraft>) => {
     setEditError("");
@@ -200,194 +198,137 @@ export function EditSubmissionModal({
   };
 
   return (
-    <div className="results-modal-backdrop" role="presentation" onClick={closeEditTest}>
-      <div
-        {...modalFocus}
-        className="results-modal results-modal--edit-test"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit app"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="results-modal__header">
-          <div>
-            <h2>Edit app</h2>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) closeEditTest();
+      }}
+      title="Edit app"
+      description="Update the app details, access links, tester instructions, and recording requirements."
+    >
+      <div className="form-stack form-stack--edit-test-modal">
+        <div className="edit-test-modal__section">
+          <div className="section-heading">
+            <h2>What&apos;s the name of your app?</h2>
           </div>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={closeEditTest}
-            aria-label="Close edit test"
-          >
-            <X size={20} />
-          </button>
+          <TextField
+            label="App name"
+            value={editDraft.productName}
+            onChange={(event) => updateEditDraft({ productName: event.target.value })}
+            placeholder="Palette Pilot"
+          />
+          <Textarea
+            label="Short app description visible to testers (optional)"
+            rows={4}
+            value={editDraft.description}
+            onChange={(event) => updateEditDraft({ description: event.target.value })}
+            placeholder="Write something interesting to catch a tester's attention, such as how Palette Pilot helps teams shape ideas faster."
+          />
         </div>
 
-        <div className="form-stack form-stack--edit-test-modal">
-          <div className="edit-test-modal__section">
-            <div className="section-heading">
-              <h2>What&apos;s the name of your app?</h2>
-            </div>
-            <label className="field">
-              <span>App name</span>
-              <input
-                value={editDraft.productName}
-                onChange={(event) => updateEditDraft({ productName: event.target.value })}
-                placeholder="Palette Pilot"
-              />
-            </label>
-            <label className="field">
-              <span>(optional) Short app description visible to testers</span>
-              <textarea
-                rows={4}
-                value={editDraft.description}
-                onChange={(event) => updateEditDraft({ description: event.target.value })}
-                placeholder="Write something interesting to catch tester's attention i.e. Palette Pilot helps teams shape ideas faster."
-              />
-            </label>
+        <div className="edit-test-modal__section">
+          <div className="section-heading">
+            <h2>What kind of app is it?</h2>
+            <p>Choose every platform testers can use right now.</p>
           </div>
-
-          <div className="edit-test-modal__section">
-            <div className="section-heading">
-              <h2>What kind of app is it?</h2>
-              <p>Choose every platform testers can use right now.</p>
-            </div>
-            <div className="choice-grid">
-              {productTypeOptions.map((option) => {
-                const isSelected = editDraft.productTypes.includes(option.value);
-                const isDisabled = isEditGooglePlayClosedTestLocked;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}${isDisabled ? " choice-card--disabled" : ""}`}
-                    onClick={() => toggleEditProductType(option.value)}
-                    aria-pressed={isSelected}
-                    disabled={isDisabled}
-                  >
-                    <span
-                      className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`}
-                      aria-hidden="true"
-                    >
-                      {isSelected ? <Check size={16} /> : null}
-                    </span>
-                    <span className="choice-card__content">
-                      <strong>{option.title}</strong>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            {showEditGooglePlayClosedTestOption ? (
-              <GooglePlayClosedTestOption
-                checked={editDraft.needsGooglePlayClosedTesters}
-                onChange={setEditGooglePlayClosedTestRequirement}
-              />
-            ) : null}
-          </div>
-
-          <div className="edit-test-modal__section">
-            <div className="section-heading">
-              <h2>
-                {selectedEditProductTypes.length > 1
-                  ? "What are the links to your app?"
-                  : "What's the link to your app?"}
-              </h2>
-              {selectedEditProductTypes.length > 1 ? (
-                <p>Add one public link for each selected platform.</p>
-              ) : null}
-            </div>
-            {selectedEditProductTypes.map((productType) => {
-              const value = editDraft.accessLinks[productType] ?? "";
-              const validation = validateAccessLink(value, productType);
-              const isGooglePlayClosedTestLink =
-                editDraft.needsGooglePlayClosedTesters && productType === "android";
+          <div className="choice-grid">
+            {productTypeOptions.map((option) => {
+              const isSelected = editDraft.productTypes.includes(option.value);
+              const isDisabled = isEditGooglePlayClosedTestLocked;
 
               return (
-                <label key={productType} className="field">
-                  <span>{accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}</span>
-                  <input
-                    value={value}
-                    onChange={(event) => updateEditAccessLink(productType, event.target.value)}
-                    placeholder={accessLinkPlaceholder(productType, isGooglePlayClosedTestLink)}
-                  />
-                  {value.trim() ? (
-                    <small
-                      className={`helper-text ${validation.valid ? "helper-text--success" : "helper-text--warning"}`}
-                    >
-                      {validation.message}
-                    </small>
-                  ) : null}
-                </label>
+                <Checkbox
+                  key={option.value}
+                  label={option.title}
+                  checked={isSelected}
+                  onChange={() => toggleEditProductType(option.value)}
+                  disabled={isDisabled}
+                />
               );
             })}
-            {editDraft.needsGooglePlayClosedTesters ? (
-              <label className="field field--google-play-instructions">
-                <span>Google Play closed-test access instructions</span>
-                <textarea
-                  rows={4}
-                  value={editDraft.googlePlayClosedTestInstructions}
-                  onChange={(event) =>
-                    updateEditDraft({
-                      googlePlayClosedTestInstructions: event.target.value,
-                    })
-                  }
-                  placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
-                />
-                <small className="helper-text">
-                  Include any tester group, opt-in, or install steps needed before users can access
-                  the Android closed test.
-                </small>
-              </label>
-            ) : null}
-            <label className="field">
-              <span>(optional) Tester Instructions</span>
-              <textarea
-                rows={4}
-                value={editDraft.instructions}
-                onChange={(event) => updateEditDraft({ instructions: event.target.value })}
-                placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
-              />
-            </label>
-            <div className="field field--checkbox field--recording-toggle">
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={editDraft.requiresRecording}
-                  onChange={(event) => updateEditDraft({ requiresRecording: event.target.checked })}
-                />
-                <span>Require testers to record their screen and voice</span>
-              </label>
-              <small>
-                Recording uploads stay available for 60 days, then Test4Test deletes them
-                automatically.
-              </small>
-            </div>
           </div>
+          {showEditGooglePlayClosedTestOption ? (
+            <GooglePlayClosedTestOption
+              checked={editDraft.needsGooglePlayClosedTesters}
+              onChange={setEditGooglePlayClosedTestRequirement}
+            />
+          ) : null}
         </div>
 
-        {editError ? <div className="callout callout--warning">{editError}</div> : null}
+        <div className="edit-test-modal__section">
+          <div className="section-heading">
+            <h2>
+              {selectedEditProductTypes.length > 1
+                ? "What are the links to your app?"
+                : "What's the link to your app?"}
+            </h2>
+            {selectedEditProductTypes.length > 1 ? (
+              <p>Add one public link for each selected platform.</p>
+            ) : null}
+          </div>
+          {selectedEditProductTypes.map((productType) => {
+            const value = editDraft.accessLinks[productType] ?? "";
+            const validation = validateAccessLink(value, productType);
+            const isGooglePlayClosedTestLink =
+              editDraft.needsGooglePlayClosedTesters && productType === "android";
 
-        <div className="wizard-actions">
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={closeEditTest}
-            disabled={isSavingEdit}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={() => void saveEditTest()}
-            disabled={isSavingEdit}
-          >
-            {isSavingEdit ? "Saving..." : "Save changes"}
-          </button>
+            return (
+              <TextField
+                key={productType}
+                label={accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}
+                value={value}
+                onChange={(event) => updateEditAccessLink(productType, event.target.value)}
+                placeholder={accessLinkPlaceholder(productType, isGooglePlayClosedTestLink)}
+                helpText={value.trim() && validation.valid ? validation.message : undefined}
+                error={value.trim() && !validation.valid ? validation.message : undefined}
+              />
+            );
+          })}
+          {editDraft.needsGooglePlayClosedTesters ? (
+            <Textarea
+              label="Google Play closed-test access instructions"
+              rows={4}
+              value={editDraft.googlePlayClosedTestInstructions}
+              onChange={(event) =>
+                updateEditDraft({
+                  googlePlayClosedTestInstructions: event.target.value,
+                })
+              }
+              placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
+              helpText="Include any tester group, opt-in, or install steps needed before users can access the Android closed test."
+            />
+          ) : null}
+          <Textarea
+            label="Tester instructions (optional)"
+            rows={4}
+            value={editDraft.instructions}
+            onChange={(event) => updateEditDraft({ instructions: event.target.value })}
+            placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
+          />
+          <Checkbox
+            checked={editDraft.requiresRecording}
+            onChange={(event) => updateEditDraft({ requiresRecording: event.target.checked })}
+            label="Require testers to record their screen and voice"
+            description="Recording uploads stay available for 60 days, then Test4Test deletes them automatically."
+          />
         </div>
       </div>
-    </div>
+
+      {editError ? <Alert tone="danger">{editError}</Alert> : null}
+
+      <div className="wizard-actions">
+        <Button type="button" variant="secondary" onClick={closeEditTest} disabled={isSavingEdit}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={() => void saveEditTest()}
+          loading={isSavingEdit}
+          loadingLabel="Saving changes..."
+        >
+          Save changes
+        </Button>
+      </div>
+    </Dialog>
   );
 }

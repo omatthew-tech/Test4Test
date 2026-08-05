@@ -1,8 +1,24 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ExternalLink, Flag, Mic, Trash2, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, Flag, Mic, Trash2 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { tokens, useModalFocus } from "@test4test/design-system";
-import { AppShell, Surface } from "../components/Layout";
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  Dialog,
+  Link,
+  Radio,
+  RecordingStatus,
+  Select,
+  Stack,
+  Stepper,
+  Surface,
+  Textarea,
+  TextField,
+  tokens,
+} from "@test4test/design-system";
+import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { consumeEarnPlacementSnapshot } from "../lib/earnPlacementCelebration";
 import { getOrderedAccessLinks, type AccessLinkItem } from "../lib/format";
@@ -659,6 +675,9 @@ export function TestSessionPage() {
   const [confirmedRecording, setConfirmedRecording] = useState(
     initialRecordingSessionRef.current?.confirmedRecording ?? false,
   );
+  const [manualRecordingGuideStep, setManualRecordingGuideStep] = useState(
+    initialRecordingSessionRef.current?.confirmedRecording ? 2 : 0,
+  );
   const [uploadedRecording, setUploadedRecording] = useState<ResponseRecording | null>(
     initialRecordingSessionRef.current?.recording ?? null,
   );
@@ -698,9 +717,6 @@ export function TestSessionPage() {
   const [reportError, setReportError] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [hasSubmittedReport, setHasSubmittedReport] = useState(false);
-  const reportDialogFocus = useModalFocus<HTMLDivElement>(isReportModalOpen, () => {
-    if (!isSubmittingReport) setIsReportModalOpen(false);
-  });
   const [closedTestAction, setClosedTestAction] = useState<"joining" | "checking-in" | null>(null);
   const [closedTestNotice, setClosedTestNotice] = useState("");
   const deviceRecordingExperience = useMemo(() => resolveRecordingExperience(null), []);
@@ -2586,6 +2602,7 @@ export function TestSessionPage() {
       setNativeUploadError("");
       setNativeRecoveryUploadEnabled(false);
       setConfirmedRecording(false);
+      setManualRecordingGuideStep(0);
       setRecordingPhase("preflight");
       setLiveRecordingStartedAt(null);
       setLiveElapsedSeconds(0);
@@ -2643,6 +2660,19 @@ export function TestSessionPage() {
         "Start recording your screen and microphone.",
       ]
     : recordingInstructions.steps;
+  const nativeRecordingSetupStep =
+    microphoneStatus !== "ready"
+      ? "microphone"
+      : screenShareStatus !== "active"
+        ? "screen"
+        : "ready";
+  const manualRecordingGuideSteps = [
+    { id: "prepare", label: "Prepare" },
+    { id: "task", label: "Review task" },
+    { id: "record", label: "Start recording" },
+  ];
+  const activeManualRecordingStep =
+    manualRecordingSteps[manualRecordingGuideStep] ?? manualRecordingSteps[0];
   const screenRecordingIllustrationDevice =
     manualRecordingDevice === "ios" || manualRecordingDevice === "android"
       ? manualRecordingDevice
@@ -2688,9 +2718,10 @@ export function TestSessionPage() {
                 {accessLinks.length > 0 ? (
                   <div className="test-session__link-list">
                     {accessLinks.map((link) => (
-                      <a
+                      <Link
                         key={link.productType}
-                        href={link.normalizedUrl}
+                        to={link.normalizedUrl}
+                        external
                         target="_blank"
                         rel="noreferrer"
                         className="test-session__link"
@@ -2698,7 +2729,7 @@ export function TestSessionPage() {
                         <span className="test-session__link-label">{link.label}</span>
                         <span>{link.displayUrl}</span>
                         <ExternalLink size={16} />
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -2706,9 +2737,10 @@ export function TestSessionPage() {
                 )}
               </div>
               {currentUser ? (
-                <button
+                <Button
                   type="button"
-                  className="test-session__report-button"
+                  variant="secondary"
+                  size="compact"
                   onClick={() => {
                     setReportError("");
                     setIsReportModalOpen(true);
@@ -2717,7 +2749,7 @@ export function TestSessionPage() {
                 >
                   <Flag size={16} />
                   {hasSubmittedReport ? "Report submitted" : "Report"}
-                </button>
+                </Button>
               ) : null}
             </div>
             <div className="test-session__resource">
@@ -2739,19 +2771,19 @@ export function TestSessionPage() {
                   {currentUser ? <small>{googlePlayClosedTestProgressLabel}</small> : null}
                 </div>
                 <div className="google-play-session-panel__actions">
-                  <button
+                  <Button
                     type="button"
-                    className="button button--primary"
                     onClick={() => void handleGooglePlayClosedTestAction()}
+                    loading={closedTestAction !== null}
+                    loadingLabel="Saving..."
                     disabled={
-                      closedTestAction !== null ||
                       googlePlayClosedTestParticipation?.status === "completed" ||
                       (googlePlayClosedTestParticipation?.status === "active" &&
                         hasGooglePlayClosedTestCheckInToday)
                     }
                   >
-                    {closedTestAction ? "Saving..." : googlePlayClosedTestActionLabel}
-                  </button>
+                    {googlePlayClosedTestActionLabel}
+                  </Button>
                   {closedTestNotice ? (
                     <small className="google-play-session-panel__notice">{closedTestNotice}</small>
                   ) : null}
@@ -2778,212 +2810,289 @@ export function TestSessionPage() {
               {recordingPhase === "preflight" ? (
                 <div className="recording-phase-stack">
                   {isNativeDesktopRecording ? (
-                    <div className="recording-quickstart">
-                      <div className="recording-quickstart__step">
-                        <span className="recording-quickstart__number">1.</span>
-                        <div className="recording-quickstart__content">
-                          <div className="recording-quickstart__copy">
-                            <strong>Enable microphone access</strong>
-                            <div className="recording-microphone-setup">
-                              <div className="recording-microphone-input-row">
-                                {availableMicrophones.length > 0 ? (
-                                  <label className="recording-microphone-select">
-                                    <select
-                                      aria-label="Microphone device"
-                                      value={selectedMicrophoneId}
-                                      onChange={(event) => {
-                                        const nextMicrophoneId = event.target.value;
-                                        setSelectedMicrophoneId(nextMicrophoneId);
-                                        void prepareMicrophonePreview(nextMicrophoneId);
-                                      }}
-                                      disabled={microphoneStatus === "requesting"}
-                                    >
-                                      {availableMicrophones.map((microphone) => (
-                                        <option
-                                          key={microphone.deviceId}
-                                          value={microphone.deviceId}
-                                        >
-                                          {microphone.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </label>
-                                ) : null}
-                                {microphoneStatus === "ready" ? (
-                                  <div
-                                    className="recording-mic-indicator recording-mic-indicator--active"
-                                    role="img"
-                                    aria-label="Voice activity level for the selected microphone"
-                                  >
-                                    {microphoneBarHeights.map((height, index) => (
-                                      /* ds-exception: runtime-measurements — measured waveform height. */
-                                      <span
-                                        key={`mic-bar-${index}`}
-                                        style={{ height: `${height}px` }}
-                                      />
-                                    ))}
+                    <Stack gap="lg">
+                      <Stepper
+                        steps={[
+                          { id: "microphone", label: "Microphone" },
+                          { id: "screen", label: "Screen" },
+                          { id: "ready", label: "Ready" },
+                        ]}
+                        currentStep={nativeRecordingSetupStep}
+                      />
+                      <Card as="section" className={styles.setupCard}>
+                        {nativeRecordingSetupStep === "microphone" ? (
+                          <div className="recording-quickstart__step">
+                            <span className="recording-quickstart__number">1.</span>
+                            <div className="recording-quickstart__content">
+                              <div className="recording-quickstart__copy">
+                                <strong>Enable microphone access</strong>
+                                <div className="recording-microphone-setup">
+                                  <div className="recording-microphone-input-row">
+                                    {availableMicrophones.length > 0 ? (
+                                      <Select
+                                        label="Microphone device"
+                                        value={selectedMicrophoneId}
+                                        onChange={(event) => {
+                                          const nextMicrophoneId = event.target.value;
+                                          setSelectedMicrophoneId(nextMicrophoneId);
+                                          void prepareMicrophonePreview(nextMicrophoneId);
+                                        }}
+                                        disabled={microphoneStatus === "requesting"}
+                                      >
+                                        {availableMicrophones.map((microphone) => (
+                                          <option
+                                            key={microphone.deviceId}
+                                            value={microphone.deviceId}
+                                          >
+                                            {microphone.label}
+                                          </option>
+                                        ))}
+                                      </Select>
+                                    ) : null}
+                                    {microphoneStatus === "ready" ? (
+                                      <div
+                                        className="recording-mic-indicator recording-mic-indicator--active"
+                                        role="img"
+                                        aria-label="Voice activity level for the selected microphone"
+                                      >
+                                        {microphoneBarHeights.map((height, index) => (
+                                          /* ds-exception: runtime-measurements — measured waveform height. */
+                                          <span
+                                            key={`mic-bar-${index}`}
+                                            style={{ height: `${height}px` }}
+                                          />
+                                        ))}
+                                      </div>
+                                    ) : null}
                                   </div>
-                                ) : null}
-                              </div>
-                              {microphoneStatus !== "ready" || microphoneError ? (
-                                <div className="recording-microphone-actions">
-                                  {microphoneStatus !== "ready" ? (
-                                    <button
-                                      type="button"
-                                      className="button button--secondary button--small"
-                                      onClick={() => {
-                                        void prepareMicrophonePreview(
-                                          selectedMicrophoneId || undefined,
-                                        );
-                                      }}
-                                      disabled={microphoneStatus === "requesting"}
-                                    >
-                                      {microphoneStatus === "requesting"
-                                        ? "Checking microphone..."
-                                        : "Enable microphone"}
-                                    </button>
-                                  ) : null}
-                                  {microphoneStatus !== "ready" ? (
-                                    <div
-                                      className="recording-mic-indicator recording-mic-indicator--inactive"
-                                      role="img"
-                                      aria-label="Microphone activity is inactive until microphone access is enabled"
-                                    >
-                                      {microphoneBarHeights.map((height, index) => (
-                                        /* ds-exception: runtime-measurements — measured waveform height. */
-                                        <span
-                                          key={`inactive-mic-bar-${index}`}
-                                          style={{ height: `${height}px` }}
-                                        />
-                                      ))}
+                                  {microphoneStatus !== "ready" || microphoneError ? (
+                                    <div className="recording-microphone-actions">
+                                      {microphoneStatus !== "ready" ? (
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          size="compact"
+                                          loading={microphoneStatus === "requesting"}
+                                          loadingLabel="Checking microphone..."
+                                          onClick={() => {
+                                            void prepareMicrophonePreview(
+                                              selectedMicrophoneId || undefined,
+                                            );
+                                          }}
+                                        >
+                                          Enable microphone
+                                        </Button>
+                                      ) : null}
+                                      {microphoneStatus !== "ready" ? (
+                                        <div
+                                          className="recording-mic-indicator recording-mic-indicator--inactive"
+                                          role="img"
+                                          aria-label="Microphone activity is inactive until microphone access is enabled"
+                                        >
+                                          {microphoneBarHeights.map((height, index) => (
+                                            /* ds-exception: runtime-measurements — measured waveform height. */
+                                            <span
+                                              key={`inactive-mic-bar-${index}`}
+                                              style={{ height: `${height}px` }}
+                                            />
+                                          ))}
+                                        </div>
+                                      ) : null}
+                                      {microphoneError ? (
+                                        <Alert tone="danger">{microphoneError}</Alert>
+                                      ) : null}
                                     </div>
                                   ) : null}
-                                  {microphoneError ? (
-                                    <small className="helper-text helper-text--warning">
-                                      {microphoneError}
-                                    </small>
-                                  ) : null}
                                 </div>
-                              ) : null}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                      <div
-                        className={`recording-quickstart__step${microphoneStatus === "ready" ? "" : " recording-quickstart__step--pending"}`}
-                      >
-                        <span className="recording-quickstart__number">2.</span>
-                        <div className="recording-quickstart__content">
-                          <div className="recording-quickstart__copy">
-                            <strong className="recording-quickstart__title">
-                              Enable screen sharing
-                            </strong>
-                            <div className="recording-microphone-actions">
-                              <button
-                                type="button"
-                                className="button button--secondary button--small"
-                                onClick={() => {
-                                  void prepareScreenSharePreview();
-                                }}
-                                disabled={
-                                  microphoneStatus !== "ready" || screenShareStatus === "requesting"
-                                }
-                              >
-                                {screenShareStatus === "active"
-                                  ? "Select screen again"
-                                  : screenShareStatus === "requesting"
-                                    ? "Waiting for screen share..."
-                                    : "Enable screen sharing"}
-                              </button>
+                        ) : null}
+                        {nativeRecordingSetupStep === "screen" ? (
+                          <div className="recording-quickstart__step">
+                            <span className="recording-quickstart__number">2.</span>
+                            <div className="recording-quickstart__content">
+                              <div className="recording-quickstart__copy">
+                                <strong className="recording-quickstart__title">
+                                  Enable screen sharing
+                                </strong>
+                                <RecordingStatus
+                                  status="Microphone connected"
+                                  description="Speak normally and confirm the activity bars move."
+                                  tone="success"
+                                />
+                                {availableMicrophones.length > 0 ? (
+                                  <Select
+                                    label="Microphone device"
+                                    value={selectedMicrophoneId}
+                                    onChange={(event) => {
+                                      const nextMicrophoneId = event.target.value;
+                                      setSelectedMicrophoneId(nextMicrophoneId);
+                                      void prepareMicrophonePreview(nextMicrophoneId);
+                                    }}
+                                    disabled={microphoneStatus === "requesting"}
+                                  >
+                                    {availableMicrophones.map((microphone) => (
+                                      <option key={microphone.deviceId} value={microphone.deviceId}>
+                                        {microphone.label}
+                                      </option>
+                                    ))}
+                                  </Select>
+                                ) : null}
+                                <div className="recording-microphone-actions">
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="compact"
+                                    loading={screenShareStatus === "requesting"}
+                                    loadingLabel="Waiting for screen share..."
+                                    onClick={() => {
+                                      void prepareScreenSharePreview();
+                                    }}
+                                    disabled={microphoneStatus !== "ready"}
+                                  >
+                                    Enable screen sharing
+                                  </Button>
+                                </div>
+                                {screenShareStatus === "active" ? null : (
+                                  <Alert
+                                    tone={
+                                      screenShareStatus === "error" || screenShareStatus === "ended"
+                                        ? "danger"
+                                        : "info"
+                                    }
+                                  >
+                                    {screenShareStatus === "requesting"
+                                      ? 'Select "Entire screen" and then click "Share"'
+                                      : screenShareStatus === "error"
+                                        ? "Screen sharing did not start. Try again."
+                                        : screenShareStatus === "ended"
+                                          ? "Screen sharing stopped. Enable it again before starting."
+                                          : 'Select "Entire screen" and then click "Share"'}
+                                  </Alert>
+                                )}
+                              </div>
                             </div>
-                            {screenShareStatus === "active" ? null : (
-                              <small
-                                className={`helper-text ${screenShareStatus === "error" ? "helper-text--warning" : ""}`}
-                              >
-                                {screenShareStatus === "requesting"
-                                  ? 'Select "Entire screen" and then click "Share"'
-                                  : screenShareStatus === "error"
-                                    ? "Screen sharing did not start. Try again."
-                                    : screenShareStatus === "ended"
-                                      ? "Screen sharing stopped. Enable it again before starting."
-                                      : 'Select "Entire screen" and then click "Share"'}
-                              </small>
-                            )}
                           </div>
-                        </div>
-                      </div>
-                      <div
-                        className={`recording-quickstart__step${screenShareStatus === "active" ? "" : " recording-quickstart__step--pending"}`}
-                      >
-                        <span className="recording-quickstart__number">3.</span>
-                        <div className="recording-quickstart__content">
-                          <div className="recording-quickstart__copy">
-                            <strong className="recording-quickstart__title">
-                              Prepare to think out loud
-                            </strong>
-                            <small className="helper-text">
-                              Find a quiet place. Close out any unwanted tabs. And share your honest
-                              thoughts. There are no right or wrong answers.
-                            </small>
+                        ) : null}
+                        {nativeRecordingSetupStep === "ready" ? (
+                          <div className="recording-quickstart__step">
+                            <span className="recording-quickstart__number">3.</span>
+                            <div className="recording-quickstart__content">
+                              <div className="recording-quickstart__copy">
+                                <strong className="recording-quickstart__title">
+                                  Prepare to think out loud
+                                </strong>
+                                <small className="helper-text">
+                                  Find a quiet place. Close out any unwanted tabs. And share your
+                                  honest thoughts. There are no right or wrong answers.
+                                </small>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
+                        ) : null}
+                      </Card>
+                    </Stack>
                   ) : (
                     <>
                       {shouldShowManualRecordingGuidance ? (
-                        <>
-                          <div className="recording-guidance">
-                            <div className="recording-guidance__intro">
-                              <h2>{manualRecordingTitle}</h2>
-                              {manualRecordingIntro ? <p>{manualRecordingIntro}</p> : null}
-                            </div>
-                            <ol className="recording-guidance__steps">
-                              {manualRecordingSteps.map((step, index) => (
-                                <li key={step}>
-                                  {index === 2 && manualRecordingGuideUrl ? (
-                                    <span>
-                                      Start recording your screen and microphone. If you&apos;re not
-                                      sure how to record, check out{" "}
-                                      <a
-                                        className="recording-guide-link"
-                                        href={manualRecordingGuideUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        this guide
-                                      </a>
-                                    </span>
-                                  ) : (
-                                    <span>{step}</span>
-                                  )}
-                                  {index === 2 && screenRecordingIllustrationDevice ? (
-                                    <ScreenRecordingMenuIllustration
-                                      device={screenRecordingIllustrationDevice}
-                                    />
-                                  ) : null}
-                                </li>
-                              ))}
-                            </ol>
+                        <Stack gap="lg">
+                          <div className="recording-guidance__intro">
+                            <h2>{manualRecordingTitle}</h2>
+                            {manualRecordingIntro ? <p>{manualRecordingIntro}</p> : null}
                           </div>
-                        </>
+                          <Stepper
+                            steps={manualRecordingGuideSteps}
+                            currentStep={
+                              manualRecordingGuideSteps[manualRecordingGuideStep]?.id ?? "prepare"
+                            }
+                          />
+                          <Card as="section" className={styles.setupCard}>
+                            <Stack gap="md">
+                              <div>
+                                <span className="test-session__label">
+                                  Step {manualRecordingGuideStep + 1} of 3
+                                </span>
+                                <h3>
+                                  {manualRecordingGuideSteps[manualRecordingGuideStep]?.label}
+                                </h3>
+                              </div>
+                              {manualRecordingGuideStep === 2 && manualRecordingGuideUrl ? (
+                                <p>
+                                  Start recording your screen and microphone. If you are not sure
+                                  how to record,{" "}
+                                  <Link
+                                    to={manualRecordingGuideUrl}
+                                    external
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    open the recording guide
+                                  </Link>
+                                  .
+                                </p>
+                              ) : (
+                                <p>{activeManualRecordingStep}</p>
+                              )}
+                              {manualRecordingGuideStep === 2 &&
+                              screenRecordingIllustrationDevice ? (
+                                <ScreenRecordingMenuIllustration
+                                  device={screenRecordingIllustrationDevice}
+                                />
+                              ) : null}
+                              {manualRecordingGuideStep === 2 ? (
+                                <Checkbox
+                                  className={styles.attestation}
+                                  checked={confirmedRecording}
+                                  onChange={(event) => setConfirmedRecording(event.target.checked)}
+                                  label={
+                                    <span>
+                                      I started recording and can see the{" "}
+                                      <span
+                                        className="recording-attestation__recording-dot"
+                                        aria-hidden="true"
+                                      />{" "}
+                                      at the top of my screen
+                                    </span>
+                                  }
+                                />
+                              ) : null}
+                              <div className="inline-actions">
+                                {manualRecordingGuideStep > 0 ? (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() =>
+                                      setManualRecordingGuideStep((step) => Math.max(0, step - 1))
+                                    }
+                                  >
+                                    Back
+                                  </Button>
+                                ) : null}
+                                {manualRecordingGuideStep < 2 ? (
+                                  <Button
+                                    type="button"
+                                    onClick={() =>
+                                      setManualRecordingGuideStep((step) => Math.min(2, step + 1))
+                                    }
+                                  >
+                                    Continue
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </Stack>
+                          </Card>
+                        </Stack>
                       ) : null}
 
-                      <label className="checkbox-row recording-attestation">
-                        <input
-                          type="checkbox"
+                      {!shouldShowManualRecordingGuidance ? (
+                        <Checkbox
+                          className={styles.attestation}
                           checked={confirmedRecording}
                           onChange={(event) => setConfirmedRecording(event.target.checked)}
+                          label="I started recording my screen and microphone."
                         />
-                        <span>
-                          I started recording and I see the{" "}
-                          <span
-                            className="recording-attestation__recording-dot"
-                            aria-hidden="true"
-                          />{" "}
-                          on the upper part of my screen
-                        </span>
-                      </label>
+                      ) : null}
                     </>
                   )}
 
@@ -3000,23 +3109,22 @@ export function TestSessionPage() {
                             submit without recording again.
                           </small>
                         </div>
-                        <label className="field recording-recovery-upload__field">
-                          <span>Upload saved recording</span>
-                          <input
-                            type="file"
-                            accept={RECORDING_ACCEPT_ATTRIBUTE}
-                            onChange={handleRecordingUpload}
-                            disabled={isUploadingRecording}
-                          />
-                        </label>
+                        <TextField
+                          className="recording-recovery-upload__field"
+                          type="file"
+                          label="Upload saved recording"
+                          helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
+                          accept={RECORDING_ACCEPT_ATTRIBUTE}
+                          onChange={handleRecordingUpload}
+                          disabled={isUploadingRecording}
+                        />
                       </div>
                     </details>
                   ) : null}
 
                   <div className="wizard-actions">
-                    <button
+                    <Button
                       type="button"
-                      className="button button--primary"
                       onClick={() => {
                         if (isNativeDesktopRecording) {
                           void handleNativeRecordingStart();
@@ -3031,15 +3139,11 @@ export function TestSessionPage() {
                       }
                     >
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
-                    </button>
+                    </Button>
                     {shouldShowBackToTests ? (
-                      <button
-                        type="button"
-                        className="button button--secondary"
-                        onClick={handleBackToEarn}
-                      >
+                      <Button type="button" variant="secondary" onClick={handleBackToEarn}>
                         {backToTestsLabel}
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 </div>
@@ -3072,22 +3176,23 @@ export function TestSessionPage() {
                   </div>
                   <div className="recording-phase-card__actions inline-actions">
                     {selectedLink ? (
-                      <a
-                        href={selectedLink.normalizedUrl}
+                      <Link
+                        to={selectedLink.normalizedUrl}
+                        external
                         target="_blank"
                         rel="noreferrer"
-                        className="button button--secondary"
+                        className={styles.actionLink}
                       >
                         {isNativeDesktopRecording
                           ? "Open website again"
                           : recordingInstructions.launchButtonLabel}
                         <ExternalLink size={16} />
-                      </a>
+                      </Link>
                     ) : null}
                     {isNativeDesktopRecording ? (
-                      <button
+                      <Button
                         type="button"
-                        className="button button--secondary"
+                        variant="secondary"
                         onClick={() => {
                           void openRecordingPipWindow().then((opened) => {
                             if (!opened) {
@@ -3099,11 +3204,10 @@ export function TestSessionPage() {
                         }}
                       >
                         Show floating recorder
-                      </button>
+                      </Button>
                     ) : null}
-                    <button
+                    <Button
                       type="button"
-                      className="button button--primary"
                       onClick={() => {
                         if (isNativeDesktopRecording) {
                           stopNativeRecording();
@@ -3116,15 +3220,15 @@ export function TestSessionPage() {
                       }}
                     >
                       I&apos;m finished testing
-                    </button>
+                    </Button>
                   </div>
                   {popupBlocked ? (
-                    <div className="callout callout--warning">
+                    <Alert tone="warning">
                       <span>
                         The website did not open automatically. Use the button above to open it in a
                         new tab.
                       </span>
-                    </div>
+                    </Alert>
                   ) : null}
                 </div>
               ) : null}
@@ -3138,28 +3242,16 @@ export function TestSessionPage() {
                       Stay on this page while Test4Test saves the screen recording automatically.
                     </p>
                   </div>
-                  <div className="callout callout--soft">
-                    <span className="button__spinner" aria-hidden="true" />
-                    <span>
-                      {recordingUploadProgress?.state === "retrying"
-                        ? "Upload paused briefly. Retrying..."
-                        : "Uploading recording..."}
-                    </span>
-                  </div>
-                  <div className="recording-upload-progress" aria-live="polite">
-                    <div
-                      className="recording-upload-progress__track"
-                      aria-label="Recording upload progress"
-                    >
-                      {/* ds-exception: runtime-measurements — determinate upload percentage. */}
-                      <span
-                        style={{
-                          width: `${Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}%`,
-                        }}
-                      />
-                    </div>
-                    <small>{formatUploadProgress(recordingUploadProgress)}</small>
-                  </div>
+                  <RecordingStatus
+                    status={
+                      recordingUploadProgress?.state === "retrying"
+                        ? "Upload paused briefly. Retrying"
+                        : "Uploading recording"
+                    }
+                    description={formatUploadProgress(recordingUploadProgress)}
+                    progress={Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}
+                    tone={recordingUploadProgress?.state === "retrying" ? "warning" : "info"}
+                  />
                 </div>
               ) : null}
 
@@ -3168,21 +3260,20 @@ export function TestSessionPage() {
                   {uploadedRecording ? (
                     <div className="recording-upload-card__uploaded">
                       <h2>RECORDING UPLOADED</h2>
-                      <button
+                      <Button
                         type="button"
-                        className="button button--danger button--small"
+                        variant="danger"
+                        size="compact"
+                        loading={isDeletingRecording}
+                        loadingLabel="Deleting..."
                         onClick={() => {
                           void handleDeleteUploadedRecording();
                         }}
                         disabled={isDeletingRecording || isUploadingRecording || isSubmitting}
                       >
-                        {isDeletingRecording ? (
-                          <span className="button__spinner" aria-hidden="true" />
-                        ) : (
-                          <Trash2 size={16} aria-hidden="true" />
-                        )}
-                        {isDeletingRecording ? "Deleting..." : "Delete and re-record"}
-                      </button>
+                        <Trash2 size={16} aria-hidden="true" />
+                        Delete and re-record
+                      </Button>
                     </div>
                   ) : (
                     <div className="recording-upload-card__copy">
@@ -3201,95 +3292,75 @@ export function TestSessionPage() {
                   )}
 
                   {!isNativeDesktopRecording && !uploadedRecording ? (
-                    <label className="field recording-upload-card__field">
-                      <span>Screen recording upload</span>
-                      <input
-                        type="file"
-                        accept={RECORDING_ACCEPT_ATTRIBUTE}
-                        onChange={handleRecordingUpload}
-                        disabled={isUploadingRecording}
-                      />
-                      <small className="helper-text">Accepted: MP4, MOV, or WEBM up to 1 GB.</small>
-                    </label>
+                    <TextField
+                      className="recording-upload-card__field"
+                      type="file"
+                      label="Screen recording upload"
+                      helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
+                      accept={RECORDING_ACCEPT_ATTRIBUTE}
+                      onChange={handleRecordingUpload}
+                      disabled={isUploadingRecording}
+                    />
                   ) : null}
 
                   {isUploadingRecording && recordingUploadProgress ? (
-                    <div className="recording-upload-progress" aria-live="polite">
-                      <div
-                        className="recording-upload-progress__track"
-                        aria-label="Recording upload progress"
-                      >
-                        {/* ds-exception: runtime-measurements — determinate upload percentage. */}
-                        <span
-                          style={{
-                            width: `${Math.min(100, Math.max(0, recordingUploadProgress.percentage))}%`,
-                          }}
-                        />
-                      </div>
-                      <small>
-                        {recordingUploadProgress.state === "retrying"
-                          ? `Retrying upload - ${formatUploadProgress(recordingUploadProgress)}`
-                          : formatUploadProgress(recordingUploadProgress)}
-                      </small>
-                    </div>
+                    <RecordingStatus
+                      status={
+                        recordingUploadProgress.state === "retrying"
+                          ? "Retrying upload"
+                          : "Uploading recording"
+                      }
+                      description={formatUploadProgress(recordingUploadProgress)}
+                      progress={Math.min(100, Math.max(0, recordingUploadProgress.percentage))}
+                      tone={recordingUploadProgress.state === "retrying" ? "warning" : "info"}
+                    />
                   ) : null}
 
                   {isNativeDesktopRecording && !uploadedRecording && nativeRecordingBlob ? (
                     <div className="recording-upload-card__actions inline-actions">
-                      <button
+                      <Button
                         type="button"
-                        className="button button--primary"
+                        loading={isUploadingRecording}
+                        loadingLabel="Retrying upload..."
                         onClick={() => {
                           void finalizeNativeRecording(
                             nativeRecordingBlob,
                             nativeRecordingMimeType,
                           );
                         }}
-                        disabled={isUploadingRecording}
                       >
                         Retry upload
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        className="button button--secondary"
+                        variant="secondary"
                         onClick={() =>
                           downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName)
                         }
                       >
                         Download backup
-                      </button>
-                      <button
-                        type="button"
-                        className="button button--ghost"
-                        onClick={resetNativeDesktopFlow}
-                      >
+                      </Button>
+                      <Button type="button" variant="quiet" onClick={resetNativeDesktopFlow}>
                         Start a new recording
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
 
                   {shouldShowManualRecoveryUpload ? (
                     <>
-                      <label className="field recording-upload-card__field">
-                        <span>Upload a saved backup file</span>
-                        <input
-                          type="file"
-                          accept={RECORDING_ACCEPT_ATTRIBUTE}
-                          onChange={handleRecordingUpload}
-                          disabled={isUploadingRecording}
-                        />
-                        <small className="helper-text">
-                          Use this only if you already saved a local backup recording.
-                        </small>
-                      </label>
+                      <TextField
+                        className="recording-upload-card__field"
+                        type="file"
+                        label="Upload a saved backup file"
+                        helpText="Use this only if you already saved a local backup recording."
+                        accept={RECORDING_ACCEPT_ATTRIBUTE}
+                        onChange={handleRecordingUpload}
+                        disabled={isUploadingRecording}
+                      />
                       <div className="recording-upload-card__actions inline-actions">
-                        <button
-                          type="button"
-                          className="button button--secondary"
-                          onClick={resetNativeDesktopFlow}
-                        >
+                        <Button type="button" variant="secondary" onClick={resetNativeDesktopFlow}>
                           Start a new recording
-                        </button>
+                        </Button>
                       </div>
                     </>
                   ) : null}
@@ -3305,42 +3376,33 @@ export function TestSessionPage() {
                   {questionSet.questions.map((question) => (
                     <article key={question.id} className="question-card question-card--spacious">
                       <div className="test-session__question-body">
-                        <h3>
-                          {question.sortOrder}. {question.title}
-                        </h3>
                         {question.type === "multiple" ? (
-                          <div className="radio-list">
-                            {(question.options ?? []).map((option) => (
-                              <label
-                                key={option}
-                                className={`radio-card${answers[question.id] === option ? " radio-card--active" : ""}`}
-                              >
-                                <input
-                                  className="radio-card__control"
-                                  type="radio"
+                          <fieldset className={styles.choiceFieldset} role="radiogroup">
+                            <legend className={styles.questionLegend}>
+                              {question.sortOrder}. {question.title}
+                            </legend>
+                            <div className="radio-list">
+                              {(question.options ?? []).map((option) => (
+                                <Radio
+                                  key={option}
+                                  className={styles.choiceOption}
                                   name={question.id}
                                   checked={answers[question.id] === option}
                                   onChange={() => updateAnswer(question.id, option)}
+                                  label={option}
                                 />
-                                <span>{option}</span>
-                              </label>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          </fieldset>
                         ) : (
-                          <label className="field">
-                            <textarea
-                              rows={5}
-                              value={answers[question.id] ?? ""}
-                              onChange={(event) => updateAnswer(question.id, event.target.value)}
-                              placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
-                            />
-                            <small
-                              className={`helper-text ${(answers[question.id]?.trim().length ?? 0) >= 40 ? "helper-text--success" : ""}`}
-                            >
-                              {answers[question.id]?.trim().length ?? 0} / 40 recommended minimum
-                              characters
-                            </small>
-                          </label>
+                          <Textarea
+                            label={`${question.sortOrder}. ${question.title}`}
+                            rows={5}
+                            value={answers[question.id] ?? ""}
+                            onChange={(event) => updateAnswer(question.id, event.target.value)}
+                            placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
+                            helpText={`${answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters`}
+                          />
                         )}
                       </div>
                     </article>
@@ -3356,23 +3418,15 @@ export function TestSessionPage() {
               ) : null}
 
               {message ? (
-                <div
-                  className={`callout ${nativeUploadError ? "callout--warning" : "callout--soft"}`}
-                >
-                  <span>{message}</span>
-                </div>
+                <Alert tone={nativeUploadError ? "danger" : "info"}>{message}</Alert>
               ) : null}
 
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
                 {isRecordingTest && !hasQuestions ? (
                   shouldShowBackToTests ? (
-                    <button
-                      type="button"
-                      className="button button--secondary"
-                      onClick={handleBackToEarn}
-                    >
+                    <Button type="button" variant="secondary" onClick={handleBackToEarn}>
                       {backToTestsLabel}
-                    </button>
+                    </Button>
                   ) : null
                 ) : (
                   <div className="test-session__progress">
@@ -3383,171 +3437,119 @@ export function TestSessionPage() {
                 )}
                 <div className="inline-actions">
                   {shouldShowBackToTests && !(isRecordingTest && !hasQuestions) ? (
-                    <button
-                      type="button"
-                      className="button button--secondary"
-                      onClick={handleBackToEarn}
-                    >
+                    <Button type="button" variant="secondary" onClick={handleBackToEarn}>
                       {backToTestsLabel}
-                    </button>
+                    </Button>
                   ) : null}
-                  <button
+                  <Button
                     type="button"
-                    className="button button--primary"
+                    loading={isSubmitting}
+                    loadingLabel="Submitting test..."
                     onClick={() => void submit()}
                     disabled={submitDisabled}
                   >
                     Submit test
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>
           ) : message ? (
-            <div className="callout callout--warning">{message}</div>
+            <Alert tone="warning">{message}</Alert>
           ) : null}
         </Surface>
       </div>
 
-      {isReportModalOpen ? (
-        <div
-          className={`${styles.modalBackdrop} results-modal-backdrop`}
-          role="presentation"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              closeReportModal();
-            }
-          }}
-        >
-          <div
-            {...reportDialogFocus}
-            className="results-modal test-report-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="test-report-title"
-            aria-describedby="test-report-description"
-          >
-            {hasSubmittedReport ? (
-              <div className="submission-report-modal__success test-report-modal__success">
-                <span className="submission-report-modal__success-icon" aria-hidden="true">
-                  <CheckCircle2 size={24} />
-                </span>
-                <h2 id="test-report-title">Report submitted</h2>
-                <p id="test-report-description">
-                  Thanks for submitting a report. We&apos;ll investigate it, and if there&apos;s a
-                  problem with the app, you&apos;ll receive a free credit.
-                </p>
-                <div className="inline-actions inline-actions--compact">
-                  <button
-                    type="button"
-                    className="button button--secondary"
-                    onClick={closeReportModal}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--primary"
-                    onClick={() => navigate("/earn")}
-                  >
-                    Back to Earn
-                  </button>
-                </div>
+      <Dialog
+        open={isReportModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeReportModal();
+        }}
+        title={hasSubmittedReport ? "Report submitted" : <>Report {submission.productName}</>}
+        description={
+          hasSubmittedReport
+            ? "Thanks for submitting a report. We will investigate it and issue a free credit if the app has a problem."
+            : "Tell us what went wrong. We will review the app before asking you to test it."
+        }
+        footer={
+          hasSubmittedReport ? (
+            <div className="inline-actions inline-actions--compact">
+              <Button type="button" variant="secondary" onClick={closeReportModal}>
+                Close
+              </Button>
+              <Button type="button" onClick={() => navigate("/earn")}>
+                Back to Earn
+              </Button>
+            </div>
+          ) : (
+            <div className="inline-actions inline-actions--compact">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeReportModal}
+                disabled={isSubmittingReport}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void submitReport()}
+                loading={isSubmittingReport}
+                loadingLabel="Sending report..."
+              >
+                Submit report
+              </Button>
+            </div>
+          )
+        }
+      >
+        {hasSubmittedReport ? (
+          <Alert tone="success" title="Your report is with the review team">
+            <span className={styles.reportSuccess}>
+              <CheckCircle2 size={20} aria-hidden="true" />
+              You can return to the Earn page while we investigate.
+            </span>
+          </Alert>
+        ) : (
+          <Stack gap="md">
+            <fieldset className={styles.choiceFieldset} role="radiogroup">
+              <legend className={styles.questionLegend}>Report reason</legend>
+              <div className="test-report-modal__reasons">
+                {reportReasons.map((reason) => (
+                  <Radio
+                    key={reason.value}
+                    className={styles.choiceOption}
+                    name="test-report-reason"
+                    checked={reportReason === reason.value}
+                    onChange={() => {
+                      setReportReason(reason.value);
+                      setReportError("");
+                    }}
+                    label={reason.label}
+                  />
+                ))}
               </div>
-            ) : (
-              <>
-                <div className="results-modal__header">
-                  <div>
-                    <h2 id="test-report-title">Report {submission.productName}</h2>
-                    <p id="test-report-description">
-                      Tell us what went wrong. We&apos;ll review the app before asking you to test
-                      it.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    onClick={closeReportModal}
-                    aria-label="Close report dialog"
-                    disabled={isSubmittingReport}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
+            </fieldset>
 
-                <div className="test-report-modal__body">
-                  <div
-                    className="test-report-modal__reasons"
-                    role="radiogroup"
-                    aria-label="Report reason"
-                  >
-                    {reportReasons.map((reason) => (
-                      <label
-                        key={reason.value}
-                        className={`radio-card${reportReason === reason.value ? " radio-card--active" : ""}`}
-                      >
-                        <input
-                          className="radio-card__control"
-                          type="radio"
-                          name="test-report-reason"
-                          checked={reportReason === reason.value}
-                          onChange={() => {
-                            setReportReason(reason.value);
-                            setReportError("");
-                          }}
-                        />
-                        <span>{reason.label}</span>
-                      </label>
-                    ))}
-                  </div>
+            {reportReason === "other" ? (
+              <Textarea
+                label="What happened?"
+                rows={4}
+                maxLength={REPORT_MESSAGE_LIMIT}
+                value={reportMessage}
+                onChange={(event) => {
+                  setReportMessage(event.target.value);
+                  setReportError("");
+                }}
+                placeholder="Share the issue so support knows what to review."
+                helpText={reportMessage.length + " / " + REPORT_MESSAGE_LIMIT + " characters"}
+                autoFocus
+              />
+            ) : null}
 
-                  {reportReason === "other" ? (
-                    <label className="field">
-                      <span>What happened?</span>
-                      <textarea
-                        rows={4}
-                        maxLength={REPORT_MESSAGE_LIMIT}
-                        value={reportMessage}
-                        onChange={(event) => {
-                          setReportMessage(event.target.value);
-                          setReportError("");
-                        }}
-                        placeholder="Share the issue so support knows what to review."
-                        autoFocus
-                      />
-                      <small className="helper-text">
-                        {reportMessage.length} / {REPORT_MESSAGE_LIMIT} characters
-                      </small>
-                    </label>
-                  ) : null}
-
-                  {reportError ? (
-                    <div className="callout callout--warning">{reportError}</div>
-                  ) : null}
-                </div>
-
-                <div className="inline-actions inline-actions--compact">
-                  <button
-                    type="button"
-                    className="button button--secondary"
-                    onClick={closeReportModal}
-                    disabled={isSubmittingReport}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--primary"
-                    onClick={() => void submitReport()}
-                    disabled={isSubmittingReport}
-                  >
-                    {isSubmittingReport ? "Sending..." : "Submit report"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
+            {reportError ? <Alert tone="danger">{reportError}</Alert> : null}
+          </Stack>
+        )}
+      </Dialog>
     </AppShell>
   );
 }

@@ -1,0 +1,22 @@
+.flow {
+  width: 100%;
+  padding-block: var(--ds-semantic-space-stack-md) var(--ds-semantic-space-stack-2xl);
+}
+
+.card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.card :is(h2, p) {
+  max-width: var(--ds-semantic-size-content-prose);
+}
+
+@media (min-width: 768px) {
+  .flow {
+    padding-block-start: var(--ds-semantic-space-stack-lg);
+  }
+}

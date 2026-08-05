@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, Info, PencilLine, Share2, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Globe2, Info, PencilLine, Share2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Toast, useModalFocus } from "@test4test/design-system";
+import { Button, Checkbox, Dialog, Toast } from "@test4test/design-system";
 import { EditSubmissionModal } from "../components/EditSubmissionModal";
 import { ShareTestModal } from "../components/ShareTestModal";
 import { AppShell, Surface } from "../components/Layout";
@@ -179,7 +179,7 @@ function earnPlatformLabel(productType: ProductType) {
     case "android":
       return "Android";
     default:
-      return "Website / Web app";
+      return "Websites";
   }
 }
 
@@ -359,9 +359,6 @@ export function EarnPage() {
   });
   const [pendingProductTypes, setPendingProductTypes] =
     useState<ProductType[]>(selectedProductTypes);
-  const [hasConfirmedPlatformFilter, setHasConfirmedPlatformFilter] = useState(() =>
-    currentUser ? readStoredPlatformConfirmation(currentUser.id) : false,
-  );
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
@@ -646,7 +643,6 @@ export function EarnPage() {
     if (!currentUser) {
       setSelectedProductTypes(defaultSelectedProductTypes);
       setPendingProductTypes(defaultSelectedProductTypes);
-      setHasConfirmedPlatformFilter(false);
       setIsPlatformModalOpen(false);
       return;
     }
@@ -657,7 +653,6 @@ export function EarnPage() {
 
     setSelectedProductTypes(nextSelectedProductTypes);
     setPendingProductTypes(nextSelectedProductTypes);
-    setHasConfirmedPlatformFilter(isConfirmed);
     setIsPlatformModalOpen(!isConfirmed);
   }, [currentUser?.id, defaultSelectedProductTypesKey]);
 
@@ -791,7 +786,6 @@ export function EarnPage() {
 
     setSelectedProductTypes(next);
     setPendingProductTypes(next);
-    setHasConfirmedPlatformFilter(true);
     setIsPlatformModalOpen(false);
   };
 
@@ -1161,14 +1155,15 @@ export function EarnPage() {
               </div>
             </label>
             <div className="earn-platform-summary">
-              <button
-                type="button"
-                className="button button--secondary button--small earn-platform-summary-button"
+              <Button
+                variant="secondary"
+                size="compact"
+                className="earn-platform-summary-button"
                 onClick={openPlatformModal}
                 aria-label={`Choose platforms you can test. Current selection: ${formatSelectedPlatformSummary(selectedProductTypes)}.`}
               >
-                Edit Preferences
-              </button>
+                Edit preferences
+              </Button>
             </div>
           </div>
         </Surface>
@@ -1262,7 +1257,6 @@ export function EarnPage() {
       {isPlatformModalOpen ? (
         <EarnPlatformModal
           selectedProductTypes={pendingProductTypes}
-          confirmLabel={hasConfirmedPlatformFilter ? "Save" : "I Confirm"}
           onToggle={togglePendingProductType}
           onClose={closePlatformModal}
           onConfirm={confirmPlatformSelection}
@@ -1514,85 +1508,154 @@ function EarnVisibilityPanel({
   );
 }
 
+function PlatformAccessIllustration() {
+  return (
+    // ds-exception: earn-platform-modal-mockup-treatment
+    <svg className="earn-platform-modal__illustration" viewBox="8 8 96 60" aria-hidden="true">
+      <g className="earn-platform-modal__sparkles" aria-hidden="true">
+        <path d="M14 14h8M18 10v8" />
+        <path d="M94 17h6M97 14v6" />
+        <path d="M17 53h5M19.5 50.5v5" />
+        <path d="M97 58h7M100.5 54.5v7" />
+      </g>
+      <g className="earn-platform-modal__device-outline" aria-hidden="true">
+        <rect x="24" y="16" width="57" height="40" rx="5" />
+        <path d="M45 65h19M51 56v9M59 56v9" />
+        <path className="earn-platform-modal__device-check" d="m42 34 6 6 12-13" />
+        <rect x="74" y="28" width="22" height="37" rx="4" />
+        <path d="M81 59h8" />
+        <path className="earn-platform-modal__device-check" d="m80 43 4 4 7-8" />
+      </g>
+    </svg>
+  );
+}
+
+function PlatformMark({ productType }: { productType: ProductType }) {
+  if (productType === "website") {
+    return (
+      <span className="earn-platform-choice__mark earn-platform-choice__mark--website">
+        <Globe2 aria-hidden="true" size={24} />
+      </span>
+    );
+  }
+
+  if (productType === "ios") {
+    return (
+      <span className="earn-platform-choice__mark earn-platform-choice__mark--ios">
+        {/* ds-exception: earn-platform-modal-mockup-treatment */}
+        <svg viewBox="6 2 17 23" aria-hidden="true">
+          <path d="M19.66 13.17c-.02-2.26 1.85-3.36 1.94-3.42-1.06-1.55-2.71-1.76-3.3-1.78-1.39-.15-2.74.83-3.45.83-.72 0-1.82-.81-2.99-.79-1.51.02-2.93.9-3.71 2.29-1.6 2.77-.41 6.84 1.13 9.08.77 1.1 1.67 2.33 2.84 2.29 1.14-.05 1.57-.73 2.96-.73 1.38 0 1.77.73 2.96.7 1.23-.02 2-1.1 2.74-2.21.89-1.27 1.25-2.53 1.27-2.59-.03-.01-2.37-.92-2.39-3.67Zm-2.26-6.67c.62-.77 1.04-1.81.93-2.87-.9.04-2.03.62-2.68 1.37-.58.66-1.09 1.74-.96 2.76 1.02.08 2.07-.52 2.71-1.26Z" />
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className="earn-platform-choice__mark earn-platform-choice__mark--android">
+      {/* ds-exception: earn-platform-modal-mockup-treatment */}
+      <svg viewBox="0 0 28 28" aria-hidden="true">
+        <path d="m8.1 7.2-1.8-2.6a.8.8 0 0 1 .2-1.1.8.8 0 0 1 1.1.2l1.9 2.7A10.6 10.6 0 0 1 14 5.2c1.6 0 3.1.4 4.5 1.1l1.9-2.7a.8.8 0 0 1 1.1-.2.8.8 0 0 1 .2 1.1l-1.8 2.6A8.4 8.4 0 0 1 23 13H5a8.4 8.4 0 0 1 3.1-5.8ZM10 9.3a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm8 0a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2ZM5 14.5h18v7.2c0 1.2-1 2.1-2.1 2.1h-1.1V27h-2.5v-3.2h-6.6V27H8.2v-3.2H7.1c-1.2 0-2.1-1-2.1-2.1v-7.2Zm-3 0h2v7.2a1 1 0 0 1-2 0v-7.2Zm22 0h2v7.2a1 1 0 0 1-2 0v-7.2Z" />
+      </svg>
+    </span>
+  );
+}
+
+function EarnPlatformModalBackground() {
+  return (
+    // ds-exception: earn-platform-modal-mockup-treatment
+    <svg
+      className="earn-platform-modal__background"
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="earn-platform-modal-background" x1="0" y1="0" x2="0" y2="1">
+          <stop
+            offset="0"
+            stopColor="color-mix(in srgb, var(--ds-semantic-color-action-tint) 55%, var(--ds-semantic-color-surface-default))"
+          />
+          <stop offset="0.72" stopColor="var(--ds-semantic-color-surface-default)" />
+        </linearGradient>
+      </defs>
+      <rect width="1" height="1" fill="url(#earn-platform-modal-background)" />
+    </svg>
+  );
+}
+
 function EarnPlatformModal({
   selectedProductTypes,
-  confirmLabel,
   onToggle,
   onClose,
   onConfirm,
 }: {
   selectedProductTypes: ProductType[];
-  confirmLabel: string;
   onToggle: (productType: ProductType) => void;
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  const modalFocus = useModalFocus<HTMLDivElement>(true, onClose);
-
   return (
-    <div
-      className="results-modal-backdrop earn-platform-modal-backdrop"
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        {...modalFocus}
-        className="results-modal earn-platform-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="earn-platform-modal-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="results-modal__header earn-platform-modal__header">
-          <div>
-            <h2 id="earn-platform-modal-title">What platforms can you reliably access?</h2>
-            <p>
-              It&apos;s important to keep your preferences up to date so it&apos;s easy to test back
-              other users. Your preferences can be changed at anytime.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onClose}
-            aria-label="Close platform selection"
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      className="earn-platform-modal"
+      title={
+        <span className="earn-platform-modal__title">
+          <PlatformAccessIllustration />
+          <span>What platforms can you reliably access?</span>
+        </span>
+      }
+      description={
+        <span className="earn-platform-modal__description">
+          It&apos;s important to keep your preferences up to date so it&apos;s easy to test back
+          other users.
+        </span>
+      }
+      footer={
+        <div className="earn-platform-modal__footer">
+          <p className="earn-platform-modal__helper">
+            <Info aria-hidden="true" size={16} />
+            <span>You can update this anytime.</span>
+          </p>
+          <Button
+            className="earn-platform-modal__button"
+            size="compact"
+            fullWidth
+            onClick={onConfirm}
           >
-            <X size={20} />
-          </button>
+            Save preferences
+            <ArrowRight aria-hidden="true" size={16} />
+          </Button>
         </div>
-
-        <div className="earn-platform-toggle-list" aria-label="Platforms you can test">
-          {PRODUCT_TYPE_ORDER.map((productType) => {
-            const isSelected = selectedProductTypes.includes(productType);
-
-            return (
-              <button
-                key={productType}
-                type="button"
-                className={`earn-platform-toggle${isSelected ? " earn-platform-toggle--selected" : ""}`}
-                aria-pressed={isSelected}
-                onClick={() => onToggle(productType)}
-              >
-                <span className="earn-platform-toggle__label">
-                  {earnPlatformLabel(productType)}
+      }
+    >
+      <EarnPlatformModalBackground />
+      <fieldset className="earn-platform-choice-list">
+        <legend className="ds-sr-only">Platforms you can test</legend>
+        {PRODUCT_TYPE_ORDER.map((productType) => {
+          const isSelected = selectedProductTypes.includes(productType);
+          return (
+            <Checkbox
+              key={productType}
+              className="earn-platform-choice"
+              checked={isSelected}
+              label={
+                <span className="earn-platform-choice__content">
+                  <PlatformMark productType={productType} />
+                  <span>{earnPlatformLabel(productType)}</span>
+                  <span className="earn-platform-choice__selected" aria-hidden="true">
+                    <Check size={16} />
+                  </span>
                 </span>
-                <span className="earn-platform-toggle__switch" aria-hidden="true">
-                  <span />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          type="button"
-          className="button button--primary earn-platform-confirm"
-          onClick={onConfirm}
-        >
-          {confirmLabel}
-        </button>
-      </div>
-    </div>
+              }
+              onChange={() => onToggle(productType)}
+            />
+          );
+        })}
+      </fieldset>
+    </Dialog>
   );
 }
 

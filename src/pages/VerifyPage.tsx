@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, MailCheck, RefreshCcw } from "lucide-react";
+import { ArrowLeft, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Alert, Button, Stack, TextField } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
@@ -10,6 +11,7 @@ import {
   saveSubmitFlowResume,
 } from "../lib/pendingSubmission";
 import { isTestAccountEmail } from "../lib/supabase";
+import styles from "./AuthPage.module.css";
 
 export function VerifyPage() {
   const [searchParams] = useSearchParams();
@@ -105,69 +107,61 @@ export function VerifyPage() {
   return (
     <AppShell eyebrowLabel={null}>
       <VerificationFlowShell title="Verify your email" cardClassName="verify-panel">
-        <button
+        <Button
           type="button"
-          className="button button--ghost verify-back-button"
+          className={styles.back}
+          variant="quiet"
           disabled={isSendingCode || isVerifying}
           onClick={handleChangeEmail}
         >
-          <ArrowLeft size={16} />
-          Change Email
-        </button>
-        <h2>{isTestAccountChallenge ? "Enter test passcode" : "Enter the six-digit code"}</h2>
-        {isTestAccountChallenge ? (
-          <p>
-            Enter the configured test account passcode for <strong>{email || "your email"}</strong>.
-          </p>
-        ) : (
-          <p>
-            We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish
-            verifying your account.
-          </p>
-        )}
-        <label className="field field--otp">
-          <span>{isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}</span>
-          <div className="otp-row">
-            <MailCheck size={20} />
-            <input
-              className="otp-row__input"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="123456"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-            />
-          </div>
-        </label>
-        {message ? <div className="callout callout--soft">{message}</div> : null}
-        <div className="inline-actions verify-actions">
-          <button
+          <ArrowLeft aria-hidden="true" size={16} />
+          Change email
+        </Button>
+        <Stack className={styles.copy} gap="sm">
+          <h2>{isTestAccountChallenge ? "Enter test passcode" : "Enter the six-digit code"}</h2>
+          {isTestAccountChallenge ? (
+            <p>
+              Enter the configured test account passcode for{" "}
+              <strong>{email || "your email"}</strong>.
+            </p>
+          ) : (
+            <p>
+              We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish
+              verifying your account.
+            </p>
+          )}
+        </Stack>
+        <TextField
+          autoComplete="one-time-code"
+          className={styles.codeInput}
+          inputMode="numeric"
+          label={isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}
+          onChange={(event) => setCode(event.target.value)}
+          placeholder="123456"
+          value={code}
+        />
+        {message ? <Alert>{message}</Alert> : null}
+        <div className={styles.actions}>
+          <Button
             type="button"
-            className="button button--primary"
             onClick={handleVerify}
             disabled={isVerifying || isSendingCode || !code.trim()}
+            loading={isVerifying}
+            loadingLabel="Verifying"
           >
             Verify and continue
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="button button--secondary"
+            variant="secondary"
             onClick={() => void resend()}
             disabled={isSendingCode || isVerifying}
+            loading={isSendingCode}
+            loadingLabel={isTestAccountChallenge ? "Resetting" : "Sending"}
           >
-            {isSendingCode ? (
-              <span className="button__spinner" aria-hidden="true" />
-            ) : (
-              <RefreshCcw size={16} />
-            )}
-            {isSendingCode
-              ? isTestAccountChallenge
-                ? "Resetting..."
-                : "Sending..."
-              : isTestAccountChallenge
-                ? "Restart"
-                : "Resend code"}
-          </button>
+            <RefreshCcw aria-hidden="true" size={16} />
+            {isTestAccountChallenge ? "Restart" : "Resend code"}
+          </Button>
         </div>
       </VerificationFlowShell>
     </AppShell>

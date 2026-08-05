@@ -1,0 +1,56 @@
+.copy {
+  max-width: var(--ds-semantic-size-content-prose);
+}
+
+.copy h2 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.copy p {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.codeInput {
+  font-family: var(--ds-semantic-typography-family-technical);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.back {
+  width: fit-content;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-md);
+  flex-wrap: wrap;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-lg);
+  padding-block-start: var(--ds-semantic-space-stack-lg);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+}
+
+.footer p {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+@media (max-width: 767px) {
+  .actions,
+  .footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions > *,
+  .footer > * {
+    width: 100%;
+  }
+}

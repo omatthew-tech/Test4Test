@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Surface } from "./Layout";
+import { Card, Container, PageHeader, Stack } from "@test4test/design-system";
+import styles from "./VerificationFlowShell.module.css";
 
 export function VerificationFlowShell({
   title,
@@ -12,18 +13,20 @@ export function VerificationFlowShell({
   hideTitle?: boolean;
   children: ReactNode;
 }) {
-  const cardClasses = ["success-panel", "verification-flow__card", cardClassName]
+  const cardClasses = [styles.card, "success-panel", "verification-flow__card", cardClassName]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <div className="verification-flow">
-      {hideTitle ? null : (
-        <div className="verification-flow__header">
-          <h1>{title}</h1>
-        </div>
-      )}
-      <Surface className={cardClasses}>{children}</Surface>
+    <div className={`${styles.flow} verification-flow`}>
+      <Container size="form">
+        <Stack gap="lg">
+          {hideTitle ? null : <PageHeader title={title} />}
+          <Card as="section" className={cardClasses}>
+            {children}
+          </Card>
+        </Stack>
+      </Container>
     </div>
   );
 }
