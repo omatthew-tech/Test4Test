@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   ApplicationShell as DesignSystemApplicationShell,
-  Button,
   Cluster,
   Container,
   PageHeader,
@@ -15,40 +14,7 @@ import { useAppState } from "../context/AppStateContext";
 import { getMySubmissions } from "../lib/selectors";
 import styles from "./Layout.module.css";
 
-const audienceRoleOptions = ["Founder", "Tester"] as const;
-export type AudienceRole = (typeof audienceRoleOptions)[number];
 const supportEmail = "support@test4test.io";
-
-function HeaderAudienceToggle({
-  audienceRole,
-  onAudienceRoleChange,
-}: {
-  audienceRole: AudienceRole;
-  onAudienceRoleChange?: (role: AudienceRole) => void;
-}) {
-  const audiencePrompt =
-    audienceRole === "Tester" ? "Want free user testing?" : "Want to get paid to test?";
-
-  return (
-    <div className={styles.audience} aria-label="Testing audience selector">
-      <span className={styles.audiencePrompt}>{audiencePrompt}</span>
-      <Cluster gap="xs" role="group" aria-label="Choose your role">
-        {audienceRoleOptions.map((role) => (
-          <Button
-            key={role}
-            type="button"
-            size="compact"
-            variant={audienceRole === role ? "primary" : "secondary"}
-            aria-pressed={audienceRole === role}
-            onClick={() => onAudienceRoleChange?.(role)}
-          >
-            {role}
-          </Button>
-        ))}
-      </Cluster>
-    </div>
-  );
-}
 
 function SiteFooter() {
   return (
@@ -94,12 +60,8 @@ export function AppShell({
   actions,
   eyebrowLabel,
   variant = "default",
-  headerVariant = variant,
   hideMemberChrome = false,
   hideSiteHeader = false,
-  showAudienceToggle = false,
-  audienceRole = "Founder",
-  onAudienceRoleChange,
   contentWidth = "container",
   children,
 }: {
@@ -108,12 +70,8 @@ export function AppShell({
   actions?: ReactNode;
   eyebrowLabel?: string | null;
   variant?: "default" | "marketing";
-  headerVariant?: "default" | "marketing";
   hideMemberChrome?: boolean;
   hideSiteHeader?: boolean;
-  showAudienceToggle?: boolean;
-  audienceRole?: AudienceRole;
-  onAudienceRoleChange?: (role: AudienceRole) => void;
   contentWidth?: "container" | "viewport";
   children: ReactNode;
 }) {
@@ -124,7 +82,6 @@ export function AppShell({
     ? `/my-tests/${myFeedbackSubmission.id}`
     : "/my-tests";
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
-  const hasMarketingHeader = headerVariant === "marketing";
   const profileHref = currentUser ? "/profile" : "/sign-in";
 
   const memberItems = [
@@ -140,12 +97,6 @@ export function AppShell({
 
   const navigationActions = !hideMemberChrome ? (
     <Cluster gap="sm">
-      {showAudienceToggle && hasMarketingHeader && !showMemberNav ? (
-        <HeaderAudienceToggle
-          audienceRole={audienceRole}
-          onAudienceRoleChange={onAudienceRoleChange}
-        />
-      ) : null}
       <NavLink
         to={profileHref}
         className={({ isActive }) =>

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Test4TestMark } from "@test4test/design-system";
-import { AppShell, type AudienceRole } from "../components/Layout";
+import { AppShell } from "../components/Layout";
 import styles from "./TesterLandingPage.module.css";
 
 const paypalSymbolPath = "/Assets/PayPal%20P.svg";
@@ -38,19 +38,8 @@ const testerSteps = [
 export function TesterLandingPage() {
   const navigate = useNavigate();
 
-  const handleAudienceRoleChange = (role: AudienceRole) => {
-    if (role === "Founder") {
-      navigate("/");
-    }
-  };
-
   return (
-    <AppShell
-      variant="marketing"
-      showAudienceToggle
-      audienceRole="Tester"
-      onAudienceRoleChange={handleAudienceRoleChange}
-    >
+    <AppShell variant="marketing">
       <div className={styles.page}>
         <section className={styles.hero} aria-labelledby="tester-hero-title">
           <div className={styles.heroCopy}>

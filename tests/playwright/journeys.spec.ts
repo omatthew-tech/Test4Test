@@ -1,5 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+const homeFeedbackQuotes = [
+  "“I knew exactly what to do next.”",
+  "“The save button was easy to miss.”",
+  "“The sign-up flow felt quick.”",
+  "“I wanted clearer pricing.”",
+  "“The navigation made sense.”",
+  "“I wasn’t sure my changes saved.”",
+  "“The page felt fast and focused.”",
+  "“I’d make the main action stand out.”",
+] as const;
+
 test.beforeEach(async ({ page }) => {
   await page.route(/https:\/\/[^/]*\.supabase\.co\//, (route) => {
     throw new Error(`Design-system journeys must not contact Supabase: ${route.request().url()}`);
@@ -8,13 +19,266 @@ test.beforeEach(async ({ page }) => {
 
 test("home starts a named submission without losing the draft", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "What's the name of your app?" }).fill("Checkout audit");
+  await page.getByRole("textbox", { name: "App name" }).fill("Checkout audit");
   await page
     .getByRole("region", { name: "Get free user testing on your web or mobile app" })
     .getByRole("button", { name: "Get started" })
     .click();
   await expect(page).toHaveURL(/\/submit(?:\?|$)/);
   await expect(page.getByRole("textbox", { name: "App name" })).toHaveValue("Checkout audit");
+});
+
+test("home hover feedback pauses before continuing without repeating while hovered", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+
+  const panel = page.getByTestId("home-hero-panel");
+  const quote = page.getByTestId("home-hover-feedback");
+  const panelBounds = await panel.boundingBox();
+  if (!panelBounds) throw new Error("Expected the home hero panel to have layout bounds.");
+
+  await page.mouse.move(0, 0);
+  const entryPoint = {
+    x: panelBounds.x + 8,
+    y: panelBounds.y + 8,
+  };
+  await page.mouse.move(entryPoint.x, entryPoint.y);
+
+  await expect(quote).toBeVisible();
+  await expect(quote).toHaveAttribute("aria-hidden", "true");
+  await expect(quote).toHaveAttribute("data-phase", "visible");
+  await expect(quote).toHaveCSS("pointer-events", "none");
+  await expect(quote).toHaveCSS("transition-property", "opacity");
+  await quote.evaluate((element) => {
+    const fadeState = window as Window & {
+      __homeFeedbackFadeState?: {
+        elapsedMilliseconds: number | null;
+        nextAddedAt: number | null;
+        removedAt: number | null;
+        started: boolean;
+        visibleAt: number;
+      };
+    };
+    fadeState.__homeFeedbackFadeState = {
+      elapsedMilliseconds: null,
+      nextAddedAt: null,
+      removedAt: null,
+      started: false,
+      visibleAt: performance.now(),
+    };
+
+    const panelElement = element.parentElement;
+    const quoteCycleObserver = new MutationObserver(() => {
+      const currentFadeState = fadeState.__homeFeedbackFadeState;
+      if (!currentFadeState || !panelElement) return;
+
+      const currentQuote = panelElement.querySelector('[data-testid="home-hover-feedback"]');
+      if (!currentQuote && currentFadeState.removedAt === null) {
+        currentFadeState.removedAt = performance.now();
+      } else if (
+        currentQuote &&
+        currentFadeState.removedAt !== null &&
+        currentFadeState.nextAddedAt === null
+      ) {
+        currentFadeState.nextAddedAt = performance.now();
+        quoteCycleObserver.disconnect();
+      }
+    });
+    if (panelElement) quoteCycleObserver.observe(panelElement, { childList: true });
+
+    element.addEventListener(
+      "transitionrun",
+      () => {
+        const currentFadeState = fadeState.__homeFeedbackFadeState;
+        if (!currentFadeState) return;
+        currentFadeState.elapsedMilliseconds = performance.now() - currentFadeState.visibleAt;
+        currentFadeState.started = true;
+      },
+      { once: true },
+    );
+  });
+
+  const firstText = (await quote.textContent()) ?? "";
+  expect(homeFeedbackQuotes).toContain(firstText);
+
+  const firstQuoteBounds = await quote.boundingBox();
+  if (!firstQuoteBounds) throw new Error("Expected the feedback quote to have layout bounds.");
+
+  expect(firstQuoteBounds.x).toBeGreaterThanOrEqual(panelBounds.x - 1);
+  expect(firstQuoteBounds.x + firstQuoteBounds.width).toBeLessThanOrEqual(
+    panelBounds.x + panelBounds.width + 1,
+  );
+  expect(firstQuoteBounds.y).toBeGreaterThan(entryPoint.y);
+  expect(firstQuoteBounds.y + firstQuoteBounds.height).toBeLessThanOrEqual(
+    panelBounds.y + panelBounds.height + 1,
+  );
+
+  const quoteInterceptsPointer = await quote.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const hitTarget = document.elementFromPoint(
+      bounds.x + bounds.width / 2,
+      bounds.y + bounds.height / 2,
+    );
+    return hitTarget === element || (hitTarget !== null && element.contains(hitTarget));
+  });
+  expect(quoteInterceptsPointer).toBe(false);
+
+  const continuationPoint = {
+    x: panelBounds.x + panelBounds.width - 8,
+    y: panelBounds.y + panelBounds.height / 2,
+  };
+  await page.mouse.move(continuationPoint.x, continuationPoint.y);
+  await expect(quote).toHaveCount(1);
+  await expect(quote).toHaveText(firstText);
+
+  const fixedQuoteBounds = await quote.boundingBox();
+  if (!fixedQuoteBounds) throw new Error("Expected the feedback quote to remain visible.");
+  expect(Math.abs(fixedQuoteBounds.x - firstQuoteBounds.x)).toBeLessThan(1);
+  expect(Math.abs(fixedQuoteBounds.y - firstQuoteBounds.y)).toBeLessThan(1);
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            (
+              window as Window & {
+                __homeFeedbackFadeState?: { started: boolean };
+              }
+            ).__homeFeedbackFadeState?.started ?? false,
+        ),
+      { timeout: 3_000 },
+    )
+    .toBe(true);
+  const fadeElapsedMilliseconds = await page.evaluate(
+    () =>
+      (
+        window as Window & {
+          __homeFeedbackFadeState?: { elapsedMilliseconds: number | null };
+        }
+      ).__homeFeedbackFadeState?.elapsedMilliseconds ?? 0,
+  );
+  expect(fadeElapsedMilliseconds).toBeGreaterThanOrEqual(1_700);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            (
+              window as Window & {
+                __homeFeedbackFadeState?: { removedAt: number | null };
+              }
+            ).__homeFeedbackFadeState?.removedAt ?? null,
+        ),
+      { timeout: 1_000 },
+    )
+    .not.toBeNull();
+  await page.waitForTimeout(500);
+  await expect(quote).toHaveCount(0);
+  await expect
+    .poll(
+      async () => {
+        const currentText = await quote.evaluateAll((elements) => elements[0]?.textContent ?? "");
+        return (
+          currentText !== firstText &&
+          homeFeedbackQuotes.includes(currentText as (typeof homeFeedbackQuotes)[number])
+        );
+      },
+      { timeout: 2_000 },
+    )
+    .toBe(true);
+  await expect(quote).toBeVisible();
+  await expect(quote).toHaveCount(1);
+
+  const secondText = (await quote.textContent()) ?? "";
+  expect(homeFeedbackQuotes).toContain(secondText);
+  expect(secondText).not.toBe(firstText);
+
+  const cyclePauseMilliseconds = await page.evaluate(() => {
+    const cycleState = (
+      window as Window & {
+        __homeFeedbackFadeState?: {
+          nextAddedAt: number | null;
+          removedAt: number | null;
+        };
+      }
+    ).__homeFeedbackFadeState;
+    if (!cycleState || cycleState.nextAddedAt === null || cycleState.removedAt === null) return 0;
+    return cycleState.nextAddedAt - cycleState.removedAt;
+  });
+  expect(cyclePauseMilliseconds).toBeGreaterThanOrEqual(900);
+  expect(cyclePauseMilliseconds).toBeLessThan(2_000);
+
+  const secondQuoteBounds = await quote.boundingBox();
+  if (!secondQuoteBounds) throw new Error("Expected the second quote to have layout bounds.");
+  expect(secondQuoteBounds.x).toBeGreaterThanOrEqual(panelBounds.x - 1);
+  expect(secondQuoteBounds.x + secondQuoteBounds.width).toBeLessThanOrEqual(
+    panelBounds.x + panelBounds.width + 1,
+  );
+  expect(secondQuoteBounds.y + secondQuoteBounds.height).toBeLessThanOrEqual(continuationPoint.y);
+
+  const textbox = page.getByRole("textbox", { name: "App name" });
+  await textbox.click();
+  await textbox.fill("Hover feedback test");
+  await panel.getByRole("button", { name: "Get started" }).click();
+  await expect(page).toHaveURL(/\/submit\?productName=Hover%20feedback%20test$/);
+});
+
+test("home hover feedback ignores touch-like and pen pointer entry", async ({ page }) => {
+  await page.goto("/");
+
+  const panel = page.getByTestId("home-hero-panel");
+  const quote = page.getByTestId("home-hover-feedback");
+  const panelBounds = await panel.boundingBox();
+  if (!panelBounds) throw new Error("Expected the home hero panel to have layout bounds.");
+
+  for (const [index, pointerType] of ["touch", "pen"].entries()) {
+    const eventInit = {
+      bubbles: true,
+      cancelable: true,
+      clientX: panelBounds.x + panelBounds.width / 2,
+      clientY: panelBounds.y + panelBounds.height / 2,
+      composed: true,
+      isPrimary: true,
+      pointerId: index + 10,
+      pointerType,
+    };
+
+    await panel.dispatchEvent("pointerover", eventInit);
+    await page.waitForTimeout(50);
+    await expect(quote).toHaveCount(0);
+    await panel.dispatchEvent("pointerout", eventInit);
+  }
+
+  await page.mouse.move(0, 0);
+  await page.mouse.move(
+    panelBounds.x + panelBounds.width / 2,
+    panelBounds.y + panelBounds.height / 2,
+  );
+  await expect(quote).toBeVisible();
+});
+
+test("home hover feedback is suppressed for reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const panel = page.getByTestId("home-hero-panel");
+  const quote = page.getByTestId("home-hover-feedback");
+
+  await panel.hover({ position: { x: 32, y: 32 } });
+  await page.waitForTimeout(50);
+  await expect(quote).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(quote).toBeVisible();
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(quote).toHaveCount(0);
 });
 
 test("public audience selection reaches the tester landing route", async ({ page }) => {

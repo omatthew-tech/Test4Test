@@ -20,6 +20,7 @@
 }
 
 .heroPanel {
+  position: relative;
   display: grid;
   min-width: 0;
   grid-template-rows: auto minmax(0, 1fr);
@@ -28,6 +29,37 @@
   border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
   border-radius: var(--ds-semantic-radius-feature);
   background: var(--ds-semantic-color-background-subtle);
+  isolation: isolate;
+}
+
+.homeFeedbackQuote {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: var(--home-feedback-quote-y);
+  inset-inline-start: var(--home-feedback-quote-x);
+  inline-size: max-content;
+  max-inline-size: calc(
+    100% - var(--ds-semantic-space-inline-sm) - var(--ds-semantic-space-inline-sm)
+  );
+  color: var(--ds-semantic-color-text-primary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  font-weight: var(--ds-semantic-typography-weight-medium);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  text-align: center;
+  transform: translateX(-50%);
+  transition: opacity var(--ds-semantic-motion-interaction-duration)
+    var(--ds-semantic-motion-interaction-easing);
+  user-select: none;
+}
+
+.homeFeedbackQuotePositioning {
+  visibility: hidden;
+}
+
+.homeFeedbackQuoteFading {
+  opacity: 0;
 }
 
 .heroStatus {
@@ -107,10 +139,9 @@
   line-height: var(--ds-semantic-typography-lead-mobile-line-height);
 }
 
-.startCard {
+.startForm {
   width: 100%;
-  max-width: var(--ds-semantic-size-content-form);
-  background: var(--ds-semantic-color-background-subtle);
+  max-width: var(--ds-semantic-size-content-compact-form);
   text-align: start;
 }
 
@@ -252,8 +283,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroStatus::before {
+  .heroStatus::before,
+  .homeFeedbackQuote {
     animation: none;
+  }
+
+  .homeFeedbackQuote {
+    display: none;
+    transition: none;
   }
 }
 
@@ -295,8 +332,8 @@
   }
 
   .heroTitle {
-    font-size: var(--ds-semantic-typography-heading-hero-desktop-size);
-    line-height: var(--ds-semantic-typography-heading-hero-desktop-line-height);
+    font-size: var(--ds-semantic-typography-heading-display-desktop-size);
+    line-height: var(--ds-semantic-typography-heading-display-desktop-line-height);
   }
 
   .heroLead {

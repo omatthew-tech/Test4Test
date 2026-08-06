@@ -1,5 +1,9 @@
 # Test4Test design-system changelog
 
+## Unreleased
+
+- Added a semantic 288 px compact-form width for focused lead-capture compositions.
+
 ## 1.0.0
 
 - Replaced the legacy warm/orange stylesheet and glossy mascot language.

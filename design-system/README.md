@@ -1,7 +1,3 @@
-# Test4Test design system
-
-This directory is the authoritative source for Test4Test interface design and implementation. The supplied human specification is preserved in [specification.md](specification.md); machine-readable tokens, contracts, and the component catalog are the enforceable runtime contract.
-
 ## Start here
 
 1. Read [specification.md](specification.md).
@@ -32,4 +28,4 @@ remains separate from automated conformance evidence.
 
 ## Ownership and releases
 
-The user is the design-system owner. Test4Test Design System `1.0.0` is internal and repository-local. Publishing, Git tags, breaking token changes, and external deployment require explicit approval. See [CHANGELOG.md](CHANGELOG.md) and [provenance.json](provenance.json).
+Test4Test Design System `1.0.0` is internal and repository-local. Publishing, Git tags, breaking token changes, and external deployment require explicit approval. See [CHANGELOG.md](CHANGELOG.md) and [provenance.json](provenance.json).

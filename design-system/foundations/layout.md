@@ -4,6 +4,7 @@ Use the shared 4 px foundation and 8 px primary rhythm. Prefer semantic aliases 
 
 - Page width: 1280 px.
 - Prose width: 720 px.
+- Compact form width: 288 px.
 - Form width: 640 px.
 - Data width: 960 px.
 - Gutters: 16 px small, 24 px medium, and 32–48 px large.

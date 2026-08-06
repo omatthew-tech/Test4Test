@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "format": "DTCG 2025.10",
   "source": "design-system/tokens/source/tokens.json",
-  "sourceSha256": "de8a25e1438caf27e0a18d93f7c144cb936cf7b27f414eccc1ea4f158f9e25ca",
+  "sourceSha256": "20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa",
   "outputs": [
     "design-system/tokens/generated/tokens.css",
     "design-system/tokens/generated/tokens.ts"

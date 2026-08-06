@@ -208,8 +208,6 @@ AVOID: Activity feeds where every event is recent, positive, and evenly spaced.
 
 AVOID: Green online dots, unread badges, and notification counts scattered everywhere.
 
-AVOID: Invented testimonials, headshots, customer logos, ratings, or usage totals.
-
 AVOID: Controls that do not correspond to the data shown beneath them.
 
 AVOID: A pristine dashboard with no empty, partial, stale, delayed, failed, or
@@ -483,7 +481,7 @@ Mobile uses the same token family, concentrating on 12, 16, 20, and 24 px compon
 
 - Full-width page shell with a centered content container.
 - Default desktop content width: 1280 px.
-- Semantic subcontainers: 720 px prose, 640 px forms, 960 px data-focused content, and 1280 px full layouts.
+- Semantic subcontainers: 288 px compact lead-capture forms, 720 px prose, 640 px standard forms, 960 px data-focused content, and 1280 px full layouts.
 - Responsive side gutters: 16 px mobile, 24 px tablet, 32–48 px desktop.
 - Grid: 4 columns mobile, 8 columns tablet, and 12 columns desktop.
 - Use CSS Grid for page and two-dimensional layouts; Flexbox for one-dimensional component alignment.

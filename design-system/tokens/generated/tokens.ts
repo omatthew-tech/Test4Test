@@ -1,8 +1,8 @@
 /* Generated from design-system/tokens/source/tokens.json.
- * Source SHA-256: de8a25e1438caf27e0a18d93f7c144cb936cf7b27f414eccc1ea4f158f9e25ca
+ * Source SHA-256: 20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa
  * Do not edit manually.
  */
-export const tokenSourceHash = "de8a25e1438caf27e0a18d93f7c144cb936cf7b27f414eccc1ea4f158f9e25ca" as const;
+export const tokenSourceHash = "20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa" as const;
 
 export const tokens = {
   "component.button.primary.background.default": {
@@ -2024,6 +2024,14 @@ export const tokens = {
       "unit": "px"
     }
   },
+  "semantic.size.content.compact-form": {
+    "type": "dimension",
+    "value": "288px",
+    "dtcgValue": {
+      "value": 288,
+      "unit": "px"
+    }
+  },
   "semantic.size.content.container": {
     "type": "dimension",
     "value": "1280px",
@@ -2447,6 +2455,38 @@ export const tokens = {
       "Consolas",
       "monospace"
     ]
+  },
+  "semantic.typography.heading.display-desktop-line-height": {
+    "type": "dimension",
+    "value": "68px",
+    "dtcgValue": {
+      "value": 68,
+      "unit": "px"
+    }
+  },
+  "semantic.typography.heading.display-desktop-size": {
+    "type": "dimension",
+    "value": "64px",
+    "dtcgValue": {
+      "value": 64,
+      "unit": "px"
+    }
+  },
+  "semantic.typography.heading.display-mobile-line-height": {
+    "type": "dimension",
+    "value": "52px",
+    "dtcgValue": {
+      "value": 52,
+      "unit": "px"
+    }
+  },
+  "semantic.typography.heading.display-mobile-size": {
+    "type": "dimension",
+    "value": "48px",
+    "dtcgValue": {
+      "value": 48,
+      "unit": "px"
+    }
   },
   "semantic.typography.heading.hero-desktop-line-height": {
     "type": "dimension",

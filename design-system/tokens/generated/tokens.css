@@ -1,5 +1,5 @@
 /* Generated from design-system/tokens/source/tokens.json.
- * Source SHA-256: de8a25e1438caf27e0a18d93f7c144cb936cf7b27f414eccc1ea4f158f9e25ca
+ * Source SHA-256: 20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa
  * Do not edit manually.
  */
 :root {
@@ -192,6 +192,7 @@
   --ds-semantic-shadow-overlay: 0px 16px 40px 0px rgba(22, 27, 32, 0.16);
   --ds-semantic-shadow-raised: 0px 4px 16px 0px rgba(22, 27, 32, 0.08);
   --ds-semantic-size-content-choice-min: 192px;
+  --ds-semantic-size-content-compact-form: 288px;
   --ds-semantic-size-content-container: 1280px;
   --ds-semantic-size-content-data: 960px;
   --ds-semantic-size-content-footer-column-min: 160px;
@@ -246,6 +247,10 @@
   --ds-semantic-typography-caption-size: 12px;
   --ds-semantic-typography-family-body: "Geist", "Inter", system-ui, sans-serif;
   --ds-semantic-typography-family-technical: "Geist Mono", "SFMono-Regular", "Consolas", monospace;
+  --ds-semantic-typography-heading-display-desktop-line-height: 68px;
+  --ds-semantic-typography-heading-display-desktop-size: 64px;
+  --ds-semantic-typography-heading-display-mobile-line-height: 52px;
+  --ds-semantic-typography-heading-display-mobile-size: 48px;
   --ds-semantic-typography-heading-hero-desktop-line-height: 60px;
   --ds-semantic-typography-heading-hero-desktop-size: 56px;
   --ds-semantic-typography-heading-hero-mobile-line-height: 44px;

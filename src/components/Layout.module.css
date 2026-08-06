@@ -26,17 +26,6 @@
   line-height: var(--ds-semantic-typography-interface-line-height);
 }
 
-.audience {
-  display: none;
-  align-items: center;
-  gap: var(--ds-semantic-space-inline-md);
-}
-
-.audiencePrompt {
-  color: var(--ds-semantic-color-text-secondary);
-  font-size: var(--ds-semantic-typography-interface-size);
-}
-
 .profileLink,
 .startLink {
   display: inline-flex;
@@ -119,11 +108,5 @@
     grid-template-columns:
       minmax(0, 2fr) minmax(var(--ds-semantic-size-content-footer-column-min), 1fr)
       minmax(var(--ds-semantic-size-content-footer-column-min), 1fr);
-  }
-}
-
-@media (min-width: 1440px) {
-  .audience {
-    display: flex;
   }
 }
