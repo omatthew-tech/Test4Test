@@ -123,6 +123,22 @@ async function settleRouteImages(page: Page) {
       .toBe(true);
     await page.evaluate(() => window.scrollTo(0, 0));
   }
+
+  const homeHeroPanel = page.getByTestId("home-hero-panel");
+  if ((await homeHeroPanel.count()) > 0) {
+    const backgroundImageUrl = await homeHeroPanel.evaluate((element) => {
+      const backgroundImage = window.getComputedStyle(element).backgroundImage;
+      return backgroundImage.match(/^url\(["']?(.*?)["']?\)$/)?.[1] ?? null;
+    });
+
+    if (backgroundImageUrl) {
+      await page.evaluate(async (source) => {
+        const image = new Image();
+        image.src = source;
+        await image.decode();
+      }, backgroundImageUrl);
+    }
+  }
 }
 
 for (const story of stories) {

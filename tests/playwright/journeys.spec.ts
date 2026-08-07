@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 const homeFeedbackQuotes = [
-  "“I knew exactly what to do next.”",
-  "“The save button was easy to miss.”",
-  "“The sign-up flow felt quick.”",
-  "“I wanted clearer pricing.”",
-  "“The navigation made sense.”",
-  "“I wasn’t sure my changes saved.”",
-  "“The page felt fast and focused.”",
-  "“I’d make the main action stand out.”",
+  "“I knew exactly what to do next”",
+  "“The save button was easy to miss”",
+  "“The sign-up flow felt quick”",
+  "“I wanted clearer pricing”",
+  "“The navigation made sense”",
+  "“I wasn’t sure my changes saved”",
+  "“The page felt fast and focused”",
+  "“I’d make the main action stand out”",
 ] as const;
 
 test.beforeEach(async ({ page }) => {
@@ -39,6 +39,7 @@ test("home hover feedback pauses before continuing without repeating while hover
 
   const panel = page.getByTestId("home-hero-panel");
   const quote = page.getByTestId("home-hover-feedback");
+  const quoteParticles = page.getByTestId("home-hover-feedback-particle");
   const panelBounds = await panel.boundingBox();
   if (!panelBounds) throw new Error("Expected the home hero panel to have layout bounds.");
 
@@ -54,6 +55,7 @@ test("home hover feedback pauses before continuing without repeating while hover
   await expect(quote).toHaveAttribute("data-phase", "visible");
   await expect(quote).toHaveCSS("pointer-events", "none");
   await expect(quote).toHaveCSS("transition-property", "opacity");
+  await expect(quoteParticles).toHaveCount(12);
   await quote.evaluate((element) => {
     const fadeState = window as Window & {
       __homeFeedbackFadeState?: {
@@ -102,6 +104,49 @@ test("home hover feedback pauses before continuing without repeating while hover
       { once: true },
     );
   });
+
+  const entranceMotion = await quote.evaluate((element) => {
+    const particles = Array.from(
+      element.querySelectorAll<HTMLElement>('[data-testid="home-hover-feedback-particle"]'),
+    );
+    const quoteText = element.querySelector<HTMLElement>(
+      '[data-testid="home-hover-feedback-text"]',
+    );
+    const rootStyles = window.getComputedStyle(document.documentElement);
+    const accentColorProbe = document.createElement("span");
+    accentColorProbe.style.color = rootStyles
+      .getPropertyValue("--ds-semantic-color-action-primary")
+      .trim();
+    document.body.append(accentColorProbe);
+    const accentColor = window.getComputedStyle(accentColorProbe).color;
+    accentColorProbe.remove();
+    const quoteAnimations = quoteText?.getAnimations() ?? [];
+    const particleAnimations = particles.flatMap((particle) => particle.getAnimations());
+
+    return {
+      accentColor,
+      quoteAnimationDurations: quoteAnimations.map(
+        (animation) => Number(animation.effect?.getTiming().duration) || 0,
+      ),
+      particleAnimationDurations: particleAnimations.map(
+        (animation) => Number(animation.effect?.getTiming().duration) || 0,
+      ),
+      particleColors: particles.map(
+        (particle) => window.getComputedStyle(particle).backgroundColor,
+      ),
+    };
+  });
+  expect(entranceMotion.quoteAnimationDurations).toHaveLength(1);
+  expect(entranceMotion.quoteAnimationDurations[0]).toBeGreaterThan(0);
+  expect(entranceMotion.quoteAnimationDurations[0]).toBeLessThanOrEqual(200);
+  expect(entranceMotion.particleAnimationDurations).toHaveLength(12);
+  expect(entranceMotion.particleAnimationDurations.every((duration) => duration > 0)).toBe(true);
+  expect(entranceMotion.particleAnimationDurations.every((duration) => duration <= 200)).toBe(true);
+  expect(entranceMotion.particleColors.every((color) => color === entranceMotion.accentColor)).toBe(
+    true,
+  );
+  await page.waitForTimeout(200);
+  await expect(quoteParticles.first()).toHaveCSS("opacity", "0");
 
   const firstText = (await quote.textContent()) ?? "";
   expect(homeFeedbackQuotes).toContain(firstText);

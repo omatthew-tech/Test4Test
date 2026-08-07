@@ -18,7 +18,6 @@ import {
   Grid,
   Section,
   Stack,
-  StatusIndicator,
   TextField,
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
@@ -30,7 +29,7 @@ import {
   siteUrl,
   usePageMetadata,
 } from "../lib/pageMetadata";
-import { getSubmitFlowResume } from "../lib/pendingSubmission";
+import { clearSubmitFlowResume, getSubmitFlowResume } from "../lib/pendingSubmission";
 import styles from "./HomePage.module.css";
 
 const homeOrganizationJsonLd = {
@@ -46,16 +45,16 @@ const homeOrganizationJsonLd = {
 
 const processSteps = [
   {
-    title: "Submit",
-    body: "Add your app name, live link, and questions, or let AI generate them for you.",
+    title: "Bring your own testers",
+    body: "Create a usability test in seconds. Add your app, your instructions and share it as much as you want. It's 100% free - no credit cards required.",
   },
   {
-    title: "Test",
-    body: "Review apps from other users and earn credits for your app.",
+    title: "Earn free test credits",
+    body: "Are you looking for quick and fast user testing? Earn credits 1:1 by testing out other users apps. The more you test and the higher feedback quality you give, the more you'll receive.",
   },
   {
-    title: "Review",
-    body: "Monitor your app's feedback with detailed summaries and raw responses.",
+    title: "Use AI to find testers",
+    body: "Use Test4Test's cyborgs (half human/half AI) to find real users from social media, forums and online communities. This is perfect if you're looking for the highest quality feedback.",
   },
 ];
 
@@ -82,18 +81,19 @@ const exampleRanks = [
 ];
 
 const homeFeedbackQuotes = [
-  "“I knew exactly what to do next.”",
-  "“The save button was easy to miss.”",
-  "“The sign-up flow felt quick.”",
-  "“I wanted clearer pricing.”",
-  "“The navigation made sense.”",
-  "“I wasn’t sure my changes saved.”",
-  "“The page felt fast and focused.”",
-  "“I’d make the main action stand out.”",
+  "“I knew exactly what to do next”",
+  "“The save button was easy to miss”",
+  "“The sign-up flow felt quick”",
+  "“I wanted clearer pricing”",
+  "“The navigation made sense”",
+  "“I wasn’t sure my changes saved”",
+  "“The page felt fast and focused”",
+  "“I’d make the main action stand out”",
 ] as const;
 
 const homeFeedbackQuoteDwellMilliseconds = 1_800;
 const homeFeedbackQuotePauseMilliseconds = 1_000;
+const homeFeedbackQuoteParticleIndexes = Array.from({ length: 12 }, (_, index) => index);
 
 type HomeFeedbackQuotePhase = "positioning" | "visible" | "fading";
 
@@ -230,19 +230,25 @@ export function HomePage() {
     const panelStyles = window.getComputedStyle(panel);
     const edgeInset =
       Number.parseFloat(panelStyles.getPropertyValue("--ds-semantic-space-inline-sm")) || 0;
+    const burstOutset =
+      (Number.parseFloat(panelStyles.getPropertyValue("--ds-semantic-space-inline-2xl")) || 0) +
+      (Number.parseFloat(panelStyles.getPropertyValue("--ds-semantic-space-inline-xl")) || 0);
+    const visualEdgeInset = edgeInset + burstOutset;
     const quoteWidth = quote.offsetWidth;
     const quoteHeight = quote.offsetHeight;
     const panelWidth = panel.clientWidth;
     const panelHeight = panel.clientHeight;
-    const minimumX = edgeInset + quoteWidth / 2;
-    const maximumX = panelWidth - edgeInset - quoteWidth / 2;
-    const maximumY = Math.max(edgeInset, panelHeight - edgeInset - quoteHeight);
+    const minimumX = visualEdgeInset + quoteWidth / 2;
+    const maximumX = panelWidth - visualEdgeInset - quoteWidth / 2;
+    const maximumY = Math.max(visualEdgeInset, panelHeight - visualEdgeInset - quoteHeight);
     const abovePointerY = homeFeedbackQuote.pointerY - edgeInset - quoteHeight;
     const belowPointerY = homeFeedbackQuote.pointerY + edgeInset;
     const x =
       maximumX < minimumX ? panelWidth / 2 : clamp(homeFeedbackQuote.pointerX, minimumX, maximumX);
     const y =
-      abovePointerY >= edgeInset ? abovePointerY : clamp(belowPointerY, edgeInset, maximumY);
+      abovePointerY >= visualEdgeInset
+        ? abovePointerY
+        : clamp(belowPointerY, visualEdgeInset, maximumY);
 
     setHomeFeedbackQuote((currentQuote) =>
       currentQuote?.id === homeFeedbackQuote.id
@@ -311,6 +317,11 @@ export function HomePage() {
   };
 
   const continueSubmission = () => navigate("/submit");
+
+  const startNewSubmission = () => {
+    clearSubmitFlowResume();
+    navigate("/submit");
+  };
 
   const updateHomeFeedbackPointerPosition = (event: ReactPointerEvent<HTMLDivElement>) => {
     const panelBounds = event.currentTarget.getBoundingClientRect();
@@ -392,6 +403,10 @@ export function HomePage() {
                       ? ` ${styles.homeFeedbackQuotePositioning}`
                       : ""
                   }${
+                    homeFeedbackQuote.phase === "visible"
+                      ? ` ${styles.homeFeedbackQuoteVisible}`
+                      : ""
+                  }${
                     homeFeedbackQuote.phase === "fading" ? ` ${styles.homeFeedbackQuoteFading}` : ""
                   }`}
                   data-phase={homeFeedbackQuote.phase}
@@ -400,31 +415,47 @@ export function HomePage() {
                   onTransitionEnd={handleHomeFeedbackQuoteTransitionEnd}
                   ref={homeFeedbackQuoteRef}
                 >
-                  {homeFeedbackQuote.text}
+                  <span className={styles.homeFeedbackQuoteBurst}>
+                    {homeFeedbackQuoteParticleIndexes.map((particleIndex) => (
+                      <span
+                        className={styles.homeFeedbackQuoteParticle}
+                        data-testid="home-hover-feedback-particle"
+                        key={particleIndex}
+                      />
+                    ))}
+                  </span>
+                  <span
+                    className={styles.homeFeedbackQuoteText}
+                    data-testid="home-hover-feedback-text"
+                  >
+                    {homeFeedbackQuote.text}
+                  </span>
                 </span>
               </>
             ) : null}
-            <div className={styles.heroStatus}>
-              <StatusIndicator tone="info">Recording live</StatusIndicator>
-            </div>
             <div className={styles.heroContent}>
               <h1 className={styles.heroTitle} id="home-hero-title">
                 Get <mark className={styles.freeHighlight}>FREE</mark> user testing on your web or
                 mobile app
               </h1>
               <p className={styles.heroLead}>
-                The only 100% free user testing tool that offers video recordings and feedback
+                The only 100% free user testing platform with recordings and meaningful feedback
                 guaranteed
               </p>
-              <Stack className={styles.startForm} gap="sm">
+              <Stack
+                className={`${styles.startForm} ${hasResumeSubmission ? styles.resumeForm : ""}`}
+                gap="sm"
+              >
                 {hasResumeSubmission ? (
-                  <>
-                    <p>You have a saved submission in progress.</p>
+                  <Cluster className={styles.resumeActions} gap="sm">
                     <Button onClick={continueSubmission}>
-                      Continue submission
+                      Continue signing up
                       <ArrowRight aria-hidden="true" size={16} />
                     </Button>
-                  </>
+                    <Button onClick={startNewSubmission} variant="secondary">
+                      Start new
+                    </Button>
+                  </Cluster>
                 ) : (
                   <>
                     <TextField
@@ -451,14 +482,11 @@ export function HomePage() {
               <Stack gap="xl">
                 <Stack className={styles.sectionHeading} gap="sm">
                   <h2 id="home-process-title">How it works</h2>
-                  <p>One shared workflow turns useful testing into useful feedback.</p>
+                  <p>One shared dashboard to keep track of every insight</p>
                 </Stack>
                 <Grid>
-                  {processSteps.map(({ title, body }, index) => (
+                  {processSteps.map(({ title, body }) => (
                     <article className={styles.step} key={title}>
-                      <span className={styles.stepNumber} aria-hidden="true">
-                        {index + 1}
-                      </span>
                       <h3>{title}</h3>
                       <p>{body}</p>
                     </article>
