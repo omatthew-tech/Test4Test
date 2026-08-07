@@ -335,17 +335,42 @@
 
 .sectionHeading p,
 .qualityCopy p,
+.step p,
 .benefit p,
 .finalCta p {
   color: var(--ds-semantic-color-text-secondary);
 }
 
+.processGrid {
+  align-items: stretch;
+}
+
 .step {
   display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--ds-semantic-space-stack-lg);
+  height: 100%;
+  overflow: hidden;
+}
+
+.stepCopy {
+  display: grid;
+  align-content: start;
   gap: var(--ds-semantic-space-stack-md);
-  padding-block: var(--ds-semantic-space-stack-md);
-  border-block-start: var(--ds-semantic-border-width-default) solid
-    var(--ds-semantic-color-border-default);
+}
+
+.stepCopy h3 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.processIllustration {
+  display: block;
+  width: 100%;
+  height: calc(var(--ds-semantic-size-control-large) * 4);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-action-tint);
+  object-fit: cover;
 }
 
 .quality {
