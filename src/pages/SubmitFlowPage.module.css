@@ -1,7 +1,18 @@
+.layout {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+  padding-inline: var(--ds-semantic-space-gutter-small);
+}
+
 .page {
   width: 100%;
   max-width: var(--ds-semantic-size-content-form);
   margin-inline: auto;
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
 }
 
 .wizard,
@@ -23,7 +34,7 @@
   gap: var(--ds-semantic-space-stack-sm);
 }
 
-.heading h2 {
+.heading h1 {
   font-size: var(--ds-semantic-typography-heading-section-mobile-size);
   line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
 }
@@ -136,7 +147,18 @@
 }
 
 @media (min-width: 768px) {
+  .layout {
+    padding-inline: var(--ds-semantic-space-gutter-medium);
+  }
+
+  .layout,
   .wizard {
     gap: var(--ds-semantic-space-stack-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    padding-inline: var(--ds-semantic-space-gutter-large);
   }
 }

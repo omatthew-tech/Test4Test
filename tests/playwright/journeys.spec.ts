@@ -354,7 +354,12 @@ test("test-account sign-in exposes the passcode state and recovery path", async 
 
 test("submission wizard uses three input steps and an unnumbered review", async ({ page }) => {
   await page.goto("/submit");
-  await expect(page.getByRole("heading", { level: 1, name: "Submit a test" })).toBeVisible();
+  await expect(page.getByRole("banner")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Test4Test home" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Submit a test" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "What's the name of your app?" }),
+  ).toBeVisible();
   await expect(
     page.getByText("Share your app and a short task, then review everything before publishing.", {
       exact: true,
@@ -362,6 +367,26 @@ test("submission wizard uses three input steps and an unnumbered review", async 
   ).toHaveCount(0);
 
   const progress = page.getByRole("list", { name: "Progress" });
+  const brand = page.getByRole("link", { name: "Test4Test home" });
+  await expect(progress).toBeVisible();
+  const brandPosition = await brand.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { center: bounds.left + bounds.width / 2, top: bounds.top };
+  });
+  const progressPosition = await progress.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { center: bounds.left + bounds.width / 2, top: bounds.top };
+  });
+  expect(Math.abs(brandPosition.center - progressPosition.center)).toBeLessThan(0.5);
+  expect(brandPosition.top).toBeLessThan(progressPosition.top);
+  await expect(
+    progress.evaluate((element) =>
+      Boolean(
+        element.compareDocumentPosition(document.querySelector("h1") as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ),
+  ).resolves.toBe(true);
   const progressItems = progress.getByRole("listitem");
   await expect(progressItems).toHaveCount(3);
   await expect(progressItems.first()).toHaveAttribute("aria-current", "step");

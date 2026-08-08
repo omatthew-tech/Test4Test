@@ -8,6 +8,7 @@ import {
   IconButton,
   Select,
   Surface,
+  Test4TestBrand,
   Textarea,
   TextField,
   type FormSummaryItem,
@@ -617,106 +618,142 @@ export function SubmitFlowPage() {
   };
 
   return (
-    <AppShell title="Submit a test" eyebrowLabel={null} headerAlignment="center">
-      <div className={styles.page}>
-        {currentStep <= REVIEW_STEP ? (
-          <div className={styles.wizard}>
-            {currentStep < REVIEW_STEP ? (
-              <StepIndicator steps={steps} currentStep={currentStep} />
-            ) : null}
+    <AppShell eyebrowLabel={null} hideSiteHeader contentWidth="viewport">
+      <div className={styles.layout}>
+        <div className={styles.brand}>
+          <Test4TestBrand />
+        </div>
 
-            <Surface className={styles.stage}>
-              {currentStep === 0 ? (
-                <div className={styles.stack}>
-                  <div className={styles.heading}>
-                    <h2>What&apos;s the name of your app?</h2>
-                  </div>
-                  <TextField
-                    id="app-name"
-                    label="App name"
-                    value={draft.productName}
-                    onChange={(event) => updateDraft({ productName: event.target.value })}
-                    placeholder="Palette Pilot"
-                    error={getFieldError("app-name")}
-                    required
-                  />
-                  <Textarea
-                    id="app-description"
-                    label="Short app description visible to testers (optional)"
-                    rows={4}
-                    value={draft.description}
-                    onChange={(event) => updateDraft({ description: event.target.value })}
-                    placeholder="Write something interesting to catch a tester's attention, such as how Palette Pilot helps teams shape ideas faster."
-                  />
-                </div>
+        <div className={styles.page}>
+          {currentStep <= REVIEW_STEP ? (
+            <div className={styles.wizard}>
+              {currentStep < REVIEW_STEP ? (
+                <StepIndicator steps={steps} currentStep={currentStep} />
               ) : null}
 
-              {currentStep === 1 ? (
-                <div className={styles.stack}>
-                  <div className={styles.heading}>
-                    <h2>Where can testers open your app?</h2>
-                    <p>
-                      Add your website, then include any other links that help testers complete the
-                      task.
-                    </p>
+              <Surface className={styles.stage}>
+                {currentStep === 0 ? (
+                  <div className={styles.stack}>
+                    <div className={styles.heading}>
+                      <h1>What&apos;s the name of your app?</h1>
+                    </div>
+                    <TextField
+                      id="app-name"
+                      label="App name"
+                      value={draft.productName}
+                      onChange={(event) => updateDraft({ productName: event.target.value })}
+                      placeholder="Palette Pilot"
+                      error={getFieldError("app-name")}
+                      required
+                    />
+                    <Textarea
+                      id="app-description"
+                      label="Short app description visible to testers (optional)"
+                      rows={4}
+                      value={draft.description}
+                      onChange={(event) => updateDraft({ description: event.target.value })}
+                      placeholder="Write something interesting to catch a tester's attention, such as how Palette Pilot helps teams shape ideas faster."
+                    />
                   </div>
-                  <TextField
-                    id="website-link"
-                    type="url"
-                    label="Website / Web app link"
-                    value={draft.accessLinks.website ?? ""}
-                    onChange={(event) =>
-                      updateAccessLinks({ ...draft.accessLinks, website: event.target.value })
-                    }
-                    placeholder={accessLinkPlaceholder("website")}
-                    error={getFieldError("website-link")}
-                    required
-                  />
+                ) : null}
 
-                  {activeAdditionalKinds.map((kind) => {
-                    if (kind === "other") {
+                {currentStep === 1 ? (
+                  <div className={styles.stack}>
+                    <div className={styles.heading}>
+                      <h1>Where can testers open your app?</h1>
+                      <p>
+                        Add your website, then include any other links that help testers complete
+                        the task.
+                      </p>
+                    </div>
+                    <TextField
+                      id="website-link"
+                      type="url"
+                      label="Website / Web app link"
+                      value={draft.accessLinks.website ?? ""}
+                      onChange={(event) =>
+                        updateAccessLinks({ ...draft.accessLinks, website: event.target.value })
+                      }
+                      placeholder={accessLinkPlaceholder("website")}
+                      error={getFieldError("website-link")}
+                      required
+                    />
+
+                    {activeAdditionalKinds.map((kind) => {
+                      if (kind === "other") {
+                        return (
+                          <div className={styles.linkRow} key={kind}>
+                            <div className={styles.linkFields}>
+                              <TextField
+                                id="other-link-label"
+                                label="Other link name"
+                                value={draft.accessLinks.other?.label ?? ""}
+                                onChange={(event) =>
+                                  updateAccessLinks({
+                                    ...draft.accessLinks,
+                                    other: {
+                                      label: event.target.value,
+                                      url: draft.accessLinks.other?.url ?? "",
+                                    },
+                                  })
+                                }
+                                placeholder="Interactive prototype"
+                                error={getFieldError("other-link-label")}
+                                required
+                              />
+                              <TextField
+                                id="other-link"
+                                type="url"
+                                label="Other link URL"
+                                value={draft.accessLinks.other?.url ?? ""}
+                                onChange={(event) =>
+                                  updateAccessLinks({
+                                    ...draft.accessLinks,
+                                    other: {
+                                      label: draft.accessLinks.other?.label ?? "",
+                                      url: event.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder={accessLinkPlaceholder("other")}
+                                error={getFieldError("other-link")}
+                                required
+                              />
+                            </div>
+                            <IconButton
+                              type="button"
+                              label="Remove Other link"
+                              variant="danger"
+                              onClick={() => removeAdditionalLink(kind)}
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div className={styles.linkRow} key={kind}>
                           <div className={styles.linkFields}>
                             <TextField
-                              id="other-link-label"
-                              label="Other link name"
-                              value={draft.accessLinks.other?.label ?? ""}
-                              onChange={(event) =>
-                                updateAccessLinks({
-                                  ...draft.accessLinks,
-                                  other: {
-                                    label: event.target.value,
-                                    url: draft.accessLinks.other?.url ?? "",
-                                  },
-                                })
-                              }
-                              placeholder="Interactive prototype"
-                              error={getFieldError("other-link-label")}
-                              required
-                            />
-                            <TextField
-                              id="other-link"
+                              id={`${kind}-link`}
                               type="url"
-                              label="Other link URL"
-                              value={draft.accessLinks.other?.url ?? ""}
+                              label={accessLinkFieldLabel(kind)}
+                              value={draft.accessLinks[kind] ?? ""}
                               onChange={(event) =>
                                 updateAccessLinks({
                                   ...draft.accessLinks,
-                                  other: {
-                                    label: draft.accessLinks.other?.label ?? "",
-                                    url: event.target.value,
-                                  },
+                                  [kind]: event.target.value,
                                 })
                               }
-                              placeholder={accessLinkPlaceholder("other")}
-                              error={getFieldError("other-link")}
+                              placeholder={accessLinkPlaceholder(kind)}
+                              error={getFieldError(`${kind}-link`)}
                               required
                             />
                           </div>
                           <IconButton
                             type="button"
-                            label="Remove Other link"
+                            label={`Remove ${additionalLinkLabels[kind]} link`}
                             variant="danger"
                             onClick={() => removeAdditionalLink(kind)}
                           >
@@ -724,270 +761,243 @@ export function SubmitFlowPage() {
                           </IconButton>
                         </div>
                       );
-                    }
+                    })}
 
-                    return (
-                      <div className={styles.linkRow} key={kind}>
-                        <div className={styles.linkFields}>
-                          <TextField
-                            id={`${kind}-link`}
-                            type="url"
-                            label={accessLinkFieldLabel(kind)}
-                            value={draft.accessLinks[kind] ?? ""}
-                            onChange={(event) =>
-                              updateAccessLinks({
-                                ...draft.accessLinks,
-                                [kind]: event.target.value,
-                              })
-                            }
-                            placeholder={accessLinkPlaceholder(kind)}
-                            error={getFieldError(`${kind}-link`)}
-                            required
-                          />
-                        </div>
-                        <IconButton
-                          type="button"
-                          label={`Remove ${additionalLinkLabels[kind]} link`}
-                          variant="danger"
-                          onClick={() => removeAdditionalLink(kind)}
+                    {availableAdditionalKinds.length > 0 ? (
+                      <div className={styles.addLink}>
+                        <Select
+                          label="Additional link type"
+                          value={selectedAdditionalKind}
+                          onChange={(event) =>
+                            setSelectedAdditionalKind(event.target.value as AdditionalLinkKind)
+                          }
                         >
-                          <Trash2 size={16} />
-                        </IconButton>
+                          {availableAdditionalKinds.map((kind) => (
+                            <option key={kind} value={kind}>
+                              {additionalLinkLabels[kind]}
+                            </option>
+                          ))}
+                        </Select>
+                        <Button type="button" variant="secondary" onClick={addAdditionalLink}>
+                          <Plus size={16} />
+                          Add another link
+                        </Button>
                       </div>
-                    );
-                  })}
+                    ) : null}
+                  </div>
+                ) : null}
 
-                  {availableAdditionalKinds.length > 0 ? (
-                    <div className={styles.addLink}>
-                      <Select
-                        label="Additional link type"
-                        value={selectedAdditionalKind}
-                        onChange={(event) =>
-                          setSelectedAdditionalKind(event.target.value as AdditionalLinkKind)
-                        }
-                      >
-                        {availableAdditionalKinds.map((kind) => (
-                          <option key={kind} value={kind}>
-                            {additionalLinkLabels[kind]}
-                          </option>
-                        ))}
-                      </Select>
-                      <Button type="button" variant="secondary" onClick={addAdditionalLink}>
-                        <Plus size={16} />
-                        Add another link
-                      </Button>
+                {currentStep === 2 ? (
+                  <div className={styles.stack}>
+                    <div className={styles.heading}>
+                      <h1>Add instructions</h1>
+                      <p>
+                        Give testers a set of task(s) while they think out loud. This should take
+                        around 5-10 minutes to complete.
+                      </p>
                     </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {currentStep === 2 ? (
-                <div className={styles.stack}>
-                  <div className={styles.heading}>
-                    <h2>Add instructions</h2>
-                    <p>
-                      Give testers a set of task(s) while they think out loud. This should take
-                      around 5-10 minutes to complete.
-                    </p>
-                  </div>
-                  <div className={styles.instructionList}>
-                    {draft.instructionSteps.map((instruction, index) => (
-                      <div className={styles.instructionRow} key={`instruction-${index}`}>
-                        <div className={styles.instructionField}>
-                          <Textarea
-                            id={`instruction-step-${index}`}
-                            label={`Step ${index + 1}`}
-                            rows={3}
-                            value={instruction}
-                            onChange={(event) => updateInstructionStep(index, event.target.value)}
-                            placeholder={
-                              index === 0
-                                ? "Browse the home page and tell us what you think the app does."
-                                : "Describe the next task for the tester."
-                            }
-                            error={getFieldError(`instruction-step-${index}`)}
-                            required
-                          />
+                    <div className={styles.instructionList}>
+                      {draft.instructionSteps.map((instruction, index) => (
+                        <div className={styles.instructionRow} key={`instruction-${index}`}>
+                          <div className={styles.instructionField}>
+                            <Textarea
+                              id={`instruction-step-${index}`}
+                              label={`Step ${index + 1}`}
+                              rows={3}
+                              value={instruction}
+                              onChange={(event) => updateInstructionStep(index, event.target.value)}
+                              placeholder={
+                                index === 0
+                                  ? "Browse the home page and tell us what you think the app does."
+                                  : "Describe the next task for the tester."
+                              }
+                              error={getFieldError(`instruction-step-${index}`)}
+                              required
+                            />
+                          </div>
+                          {index > 0 ? (
+                            <IconButton
+                              type="button"
+                              label={`Remove Step ${index + 1}`}
+                              variant="danger"
+                              onClick={() => removeInstructionStep(index)}
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          ) : null}
                         </div>
-                        {index > 0 ? (
-                          <IconButton
+                      ))}
+                    </div>
+                    {draft.instructionSteps.length < MAX_INSTRUCTION_STEPS ? (
+                      <Button type="button" variant="secondary" onClick={addInstructionStep}>
+                        <Plus size={16} />
+                        Add another step
+                      </Button>
+                    ) : (
+                      <Alert>Five steps is the maximum for a focused tester task.</Alert>
+                    )}
+                  </div>
+                ) : null}
+
+                {currentStep === REVIEW_STEP ? (
+                  <div className={styles.stack}>
+                    <div className={styles.heading}>
+                      <h1>Review before publishing</h1>
+                      <p>Check the three sections below, then submit your app.</p>
+                    </div>
+                    {currentLiveSubmission ? (
+                      <Alert>
+                        Submitting this app will make it your live Earn test and pause{" "}
+                        {currentLiveSubmission.productName}.
+                      </Alert>
+                    ) : null}
+                    <div className={styles.reviewList}>
+                      <section className={styles.reviewSection} aria-labelledby="review-app-name">
+                        <div className={styles.reviewHeader}>
+                          <div>
+                            <span>1</span>
+                            <h3 id="review-app-name">App name</h3>
+                          </div>
+                          <Button
                             type="button"
-                            label={`Remove Step ${index + 1}`}
-                            variant="danger"
-                            onClick={() => removeInstructionStep(index)}
+                            variant="quiet"
+                            size="compact"
+                            onClick={() => jumpToStep(0)}
                           >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        ) : null}
-                      </div>
-                    ))}
+                            <Pencil size={16} />
+                            Edit
+                          </Button>
+                        </div>
+                        <strong>{draft.productName}</strong>
+                        {draft.description.trim() ? <p>{draft.description}</p> : null}
+                      </section>
+                      <section className={styles.reviewSection} aria-labelledby="review-app-links">
+                        <div className={styles.reviewHeader}>
+                          <div>
+                            <span>2</span>
+                            <h3 id="review-app-links">App links</h3>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="quiet"
+                            size="compact"
+                            onClick={() => jumpToStep(1)}
+                          >
+                            <Pencil size={16} />
+                            Edit
+                          </Button>
+                        </div>
+                        <ul className={styles.resourceList}>
+                          {orderedAccessLinks.map((link) => (
+                            <li key={link.kind}>
+                              <strong>{link.label}</strong>
+                              <span>{link.displayUrl}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                      <section
+                        className={styles.reviewSection}
+                        aria-labelledby="review-instructions"
+                      >
+                        <div className={styles.reviewHeader}>
+                          <div>
+                            <span>3</span>
+                            <h3 id="review-instructions">Instructions</h3>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="quiet"
+                            size="compact"
+                            onClick={() => jumpToStep(2)}
+                          >
+                            <Pencil size={16} />
+                            Edit
+                          </Button>
+                        </div>
+                        <ol className={styles.taskList}>
+                          {draft.instructionSteps.map((instruction, index) => (
+                            <li key={`review-instruction-${index}`}>{instruction}</li>
+                          ))}
+                        </ol>
+                      </section>
+                    </div>
                   </div>
-                  {draft.instructionSteps.length < MAX_INSTRUCTION_STEPS ? (
-                    <Button type="button" variant="secondary" onClick={addInstructionStep}>
-                      <Plus size={16} />
-                      Add another step
-                    </Button>
-                  ) : (
-                    <Alert>Five steps is the maximum for a focused tester task.</Alert>
-                  )}
+                ) : null}
+
+                <FormSummary ref={formSummaryRef} items={formErrors} title="Check this step" />
+
+                <div className={styles.actions}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={goBack}
+                    disabled={currentStep === 0 || isSubmitting}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    id="submit-app"
+                    type="button"
+                    onClick={goNext}
+                    loading={isSubmitting}
+                    loadingLabel="Submitting app..."
+                  >
+                    {currentStep === REVIEW_STEP ? "Submit my app" : "Continue"}
+                    {!isSubmitting ? <ArrowRight size={16} /> : null}
+                  </Button>
                 </div>
-              ) : null}
-
-              {currentStep === REVIEW_STEP ? (
-                <div className={styles.stack}>
-                  <div className={styles.heading}>
-                    <h2>Review before publishing</h2>
-                    <p>Check the three sections below, then submit your app.</p>
-                  </div>
-                  {currentLiveSubmission ? (
-                    <Alert>
-                      Submitting this app will make it your live Earn test and pause{" "}
-                      {currentLiveSubmission.productName}.
-                    </Alert>
-                  ) : null}
-                  <div className={styles.reviewList}>
-                    <section className={styles.reviewSection} aria-labelledby="review-app-name">
-                      <div className={styles.reviewHeader}>
-                        <div>
-                          <span>1</span>
-                          <h3 id="review-app-name">App name</h3>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="quiet"
-                          size="compact"
-                          onClick={() => jumpToStep(0)}
-                        >
-                          <Pencil size={16} />
-                          Edit
-                        </Button>
-                      </div>
-                      <strong>{draft.productName}</strong>
-                      {draft.description.trim() ? <p>{draft.description}</p> : null}
-                    </section>
-                    <section className={styles.reviewSection} aria-labelledby="review-app-links">
-                      <div className={styles.reviewHeader}>
-                        <div>
-                          <span>2</span>
-                          <h3 id="review-app-links">App links</h3>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="quiet"
-                          size="compact"
-                          onClick={() => jumpToStep(1)}
-                        >
-                          <Pencil size={16} />
-                          Edit
-                        </Button>
-                      </div>
-                      <ul className={styles.resourceList}>
-                        {orderedAccessLinks.map((link) => (
-                          <li key={link.kind}>
-                            <strong>{link.label}</strong>
-                            <span>{link.displayUrl}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                    <section className={styles.reviewSection} aria-labelledby="review-instructions">
-                      <div className={styles.reviewHeader}>
-                        <div>
-                          <span>3</span>
-                          <h3 id="review-instructions">Instructions</h3>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="quiet"
-                          size="compact"
-                          onClick={() => jumpToStep(2)}
-                        >
-                          <Pencil size={16} />
-                          Edit
-                        </Button>
-                      </div>
-                      <ol className={styles.taskList}>
-                        {draft.instructionSteps.map((instruction, index) => (
-                          <li key={`review-instruction-${index}`}>{instruction}</li>
-                        ))}
-                      </ol>
-                    </section>
-                  </div>
+              </Surface>
+            </div>
+          ) : (
+            <VerificationFlowShell title="Your app has been submitted">
+              <h2>
+                {currentUser
+                  ? "Your app has been submitted."
+                  : "Verify your email to start receiving feedback"}
+              </h2>
+              <p>{submitSuccessMessage}</p>
+              {!currentUser ? (
+                <div className={styles.verificationForm}>
+                  <TextField
+                    id="verification-email"
+                    type="email"
+                    label="Email address"
+                    value={email}
+                    onChange={(event) => {
+                      clearErrors();
+                      setEmail(event.target.value);
+                    }}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    error={getFieldError("verification-email")}
+                    required
+                  />
+                  <FormSummary ref={formSummaryRef} items={formErrors} title="Check your email" />
+                  <Button
+                    type="button"
+                    onClick={() => void sendOtp()}
+                    loading={isSendingCode}
+                    loadingLabel="Sending..."
+                    disabled={!email.trim() || !submissionId}
+                  >
+                    {!isSendingCode ? <Sparkles size={16} /> : null}
+                    Send one-time code
+                  </Button>
                 </div>
-              ) : null}
-
-              <FormSummary ref={formSummaryRef} items={formErrors} title="Check this step" />
-
-              <div className={styles.actions}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={goBack}
-                  disabled={currentStep === 0 || isSubmitting}
-                >
-                  Back
-                </Button>
-                <Button
-                  id="submit-app"
-                  type="button"
-                  onClick={goNext}
-                  loading={isSubmitting}
-                  loadingLabel="Submitting app..."
-                >
-                  {currentStep === REVIEW_STEP ? "Submit my app" : "Continue"}
-                  {!isSubmitting ? <ArrowRight size={16} /> : null}
-                </Button>
-              </div>
-            </Surface>
-          </div>
-        ) : (
-          <VerificationFlowShell title="Your app has been submitted">
-            <h2>
-              {currentUser
-                ? "Your app has been submitted."
-                : "Verify your email to start receiving feedback"}
-            </h2>
-            <p>{submitSuccessMessage}</p>
-            {!currentUser ? (
-              <div className={styles.verificationForm}>
-                <TextField
-                  id="verification-email"
-                  type="email"
-                  label="Email address"
-                  value={email}
-                  onChange={(event) => {
-                    clearErrors();
-                    setEmail(event.target.value);
-                  }}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  error={getFieldError("verification-email")}
-                  required
-                />
-                <FormSummary ref={formSummaryRef} items={formErrors} title="Check your email" />
-                <Button
-                  type="button"
-                  onClick={() => void sendOtp()}
-                  loading={isSendingCode}
-                  loadingLabel="Sending..."
-                  disabled={!email.trim() || !submissionId}
-                >
-                  {!isSendingCode ? <Sparkles size={16} /> : null}
-                  Send one-time code
-                </Button>
-              </div>
-            ) : (
-              <div className={styles.successActions}>
-                <Button type="button" onClick={() => navigate("/earn")}>
-                  Go to Earn
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => navigate("/my-tests")}>
-                  View My Tests
-                </Button>
-              </div>
-            )}
-          </VerificationFlowShell>
-        )}
+              ) : (
+                <div className={styles.successActions}>
+                  <Button type="button" onClick={() => navigate("/earn")}>
+                    Go to Earn
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => navigate("/my-tests")}>
+                    View My Tests
+                  </Button>
+                </div>
+              )}
+            </VerificationFlowShell>
+          )}
+        </div>
       </div>
     </AppShell>
   );
