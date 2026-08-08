@@ -1,4 +1,5 @@
 import { Question, SubmissionDraft } from "../types";
+import { normalizeInstructionSteps, serializeInstructionSteps } from "./instructions";
 
 const PENDING_SUBMISSION_PREFIX = "test4test-pending-submission:";
 const OTP_CHALLENGE_KEY = "test4test-otp-challenge";
@@ -10,6 +11,7 @@ export type SubmitFlowResumePhase = "wizard" | "email" | "verify-code";
 type StoredAiQuestionStatus = "idle" | "ready" | "error";
 
 export interface PendingSubmissionPayload {
+  version?: 1 | 2;
   id: string;
   draft: SubmissionDraft;
   questions: Question[];
@@ -43,7 +45,7 @@ export interface SubmitFlowResumePayload {
 }
 
 interface VersionedSubmitFlowResumePayload extends SubmitFlowResumePayload {
-  version: 1;
+  version: 1 | 2;
 }
 
 function isBrowser() {
@@ -119,8 +121,12 @@ function hasExpired(timestamp: string, retentionMs: number) {
 }
 
 function normalizeSubmissionDraft(draft: SubmissionDraft): SubmissionDraft {
+  const instructionSteps = normalizeInstructionSteps(draft.instructionSteps, draft.instructions);
+
   return {
     ...draft,
+    instructions: serializeInstructionSteps(instructionSteps),
+    instructionSteps,
     googlePlayClosedTestInstructions:
       typeof draft.googlePlayClosedTestInstructions === "string"
         ? draft.googlePlayClosedTestInstructions
@@ -210,7 +216,7 @@ export function saveSubmitFlowResume(payload: SubmitFlowResumePayload) {
   writeStoredValue(
     SUBMIT_FLOW_RESUME_KEY,
     JSON.stringify({
-      version: 1,
+      version: 2,
       ...payload,
     } satisfies VersionedSubmitFlowResumePayload),
   );
@@ -226,7 +232,10 @@ export function getSubmitFlowResume() {
   try {
     const payload = JSON.parse(stored) as VersionedSubmitFlowResumePayload;
 
-    if (payload.version !== 1 || hasExpired(payload.updatedAt, SUBMIT_FLOW_RESUME_RETENTION_MS)) {
+    if (
+      (payload.version !== 1 && payload.version !== 2) ||
+      hasExpired(payload.updatedAt, SUBMIT_FLOW_RESUME_RETENTION_MS)
+    ) {
       removeStoredValue(SUBMIT_FLOW_RESUME_KEY);
       return null;
     }

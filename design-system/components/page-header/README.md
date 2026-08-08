@@ -13,7 +13,7 @@ Route title, supporting copy, and primary actions.
 ## Public API
 
 - Sizes: `responsive`
-- Variants: `with-actions`, `without-actions`
+- Variants: `with-actions`, `without-actions`, `centered`
 - States: `default`, `long-content`, `narrow-width`
 - Accessible name: Required title prop renders the route h1.
 

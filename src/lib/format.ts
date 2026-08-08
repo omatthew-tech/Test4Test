@@ -1,9 +1,17 @@
-import { AccessLinks, ProductType } from "../types";
+import { AccessLinkKind, AccessLinks, ProductType } from "../types";
 
 export const PRODUCT_TYPE_ORDER: ProductType[] = ["website", "ios", "android"];
+export const ACCESS_LINK_KIND_ORDER: AccessLinkKind[] = [
+  "website",
+  "ios",
+  "android",
+  "figma",
+  "other",
+];
 
 export interface AccessLinkItem {
-  productType: ProductType;
+  kind: AccessLinkKind;
+  productType: ProductType | null;
   label: string;
   buttonLabel: string;
   fieldLabel: string;
@@ -149,22 +157,47 @@ export function hasNativeProductTypes(values: ProductType[]) {
   return normalizeProductTypes(values).some(isNativeAppType);
 }
 
-export function normalizeAccessLinks(accessLinks: AccessLinks) {
+export function normalizeAccessLinks(accessLinks: unknown) {
   const normalized: AccessLinks = {};
 
-  PRODUCT_TYPE_ORDER.forEach((productType) => {
-    const value = accessLinks[productType];
+  if (!accessLinks || typeof accessLinks !== "object" || Array.isArray(accessLinks)) {
+    return normalized;
+  }
+
+  const source = accessLinks as Record<string, unknown>;
+
+  (["website", "ios", "android", "figma"] as const).forEach((kind) => {
+    const value = source[kind];
 
     if (typeof value === "string" && value.trim()) {
-      normalized[productType] = value.trim();
+      normalized[kind] = value.trim();
     }
   });
+
+  const other = source.other;
+
+  if (typeof other === "string" && other.trim()) {
+    normalized.other = { label: "Other", url: other.trim() };
+  } else if (other && typeof other === "object" && !Array.isArray(other)) {
+    const candidate = other as Record<string, unknown>;
+    const label = typeof candidate.label === "string" ? candidate.label.trim() : "";
+    const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
+
+    if (label && url) {
+      normalized.other = { label, url };
+    }
+  }
 
   return normalized;
 }
 
-export function accessLinkFieldLabel(productType: ProductType, isGooglePlayClosedTest = false) {
-  switch (productType) {
+export function productTypesFromAccessLinks(accessLinks: unknown) {
+  const normalized = normalizeAccessLinks(accessLinks);
+  return PRODUCT_TYPE_ORDER.filter((productType) => Boolean(normalized[productType]));
+}
+
+export function accessLinkFieldLabel(kind: AccessLinkKind, isGooglePlayClosedTest = false) {
+  switch (kind) {
     case "ios":
       return "iOS app link";
     case "android":
@@ -173,24 +206,32 @@ export function accessLinkFieldLabel(productType: ProductType, isGooglePlayClose
       }
 
       return "Android app link";
+    case "figma":
+      return "Figma link";
+    case "other":
+      return "Other link";
     default:
       return "Website / Web app link";
   }
 }
 
-export function accessLinkButtonLabel(productType: ProductType) {
-  switch (productType) {
+export function accessLinkButtonLabel(kind: AccessLinkKind, otherLabel = "Other") {
+  switch (kind) {
     case "ios":
       return "Open iOS app";
     case "android":
       return "Open Android app";
+    case "figma":
+      return "Open Figma";
+    case "other":
+      return `Open ${otherLabel}`;
     default:
       return "Open website";
   }
 }
 
-export function accessLinkPlaceholder(productType: ProductType, isGooglePlayClosedTest = false) {
-  switch (productType) {
+export function accessLinkPlaceholder(kind: AccessLinkKind, isGooglePlayClosedTest = false) {
+  switch (kind) {
     case "ios":
       return "apps.apple.com/app/... or testflight.apple.com/join/...";
     case "android":
@@ -199,6 +240,10 @@ export function accessLinkPlaceholder(productType: ProductType, isGooglePlayClos
       }
 
       return "play.google.com/store/apps/...";
+    case "figma":
+      return "figma.com/proto/...";
+    case "other":
+      return "example.com/demo";
     default:
       return "yourapp.com";
   }
@@ -207,25 +252,41 @@ export function accessLinkPlaceholder(productType: ProductType, isGooglePlayClos
 export function getOrderedAccessLinks(accessLinks: AccessLinks, productTypes: ProductType[] = []) {
   const normalizedLinks = normalizeAccessLinks(accessLinks);
   const orderedTypes = normalizeProductTypes(productTypes);
-  const sourceTypes =
+  const sourceKinds: AccessLinkKind[] =
     orderedTypes.length > 0
-      ? orderedTypes
-      : PRODUCT_TYPE_ORDER.filter((productType) => Boolean(normalizedLinks[productType]));
+      ? [
+          ...orderedTypes.filter((productType) => Boolean(normalizedLinks[productType])),
+          ...(["figma", "other"] as const).filter((kind) => Boolean(normalizedLinks[kind])),
+        ]
+      : ACCESS_LINK_KIND_ORDER.filter((kind) => Boolean(normalizedLinks[kind]));
 
-  return sourceTypes.flatMap((productType) => {
-    const url = normalizedLinks[productType];
+  return sourceKinds.flatMap((kind) => {
+    const value = normalizedLinks[kind];
 
-    if (!url) {
+    if (!value) {
       return [];
     }
 
+    const otherLabel = kind === "other" && typeof value !== "string" ? value.label : "Other";
+    const url = typeof value === "string" ? value : value.url;
+    const productType = PRODUCT_TYPE_ORDER.includes(kind as ProductType)
+      ? (kind as ProductType)
+      : null;
+    const label =
+      kind === "other"
+        ? otherLabel
+        : kind === "figma"
+          ? "Figma"
+          : productTypeLabel(kind as ProductType);
+
     return [
       {
+        kind,
         productType,
-        label: productTypeLabel(productType),
-        buttonLabel: accessLinkButtonLabel(productType),
-        fieldLabel: accessLinkFieldLabel(productType),
-        placeholder: accessLinkPlaceholder(productType),
+        label,
+        buttonLabel: accessLinkButtonLabel(kind, otherLabel),
+        fieldLabel: accessLinkFieldLabel(kind),
+        placeholder: accessLinkPlaceholder(kind),
         url,
         normalizedUrl: normalizeAccessUrl(url),
         displayUrl: displayAccessUrl(url),

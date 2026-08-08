@@ -411,6 +411,14 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+.application
+  :is([class~="test-session__instruction-list"], [class~="results-header-card__instruction-list"]) {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+  padding-inline-start: var(--ds-semantic-space-stack-xl);
+  color: var(--ds-semantic-color-text-secondary);
+}
+
 .application [class~="empty-state"] {
   display: grid;
   gap: var(--ds-semantic-space-stack-md);
@@ -1040,6 +1048,14 @@
   gap: var(--ds-semantic-space-stack-sm);
 }
 
+.application [class~="results-header-card__instructions"] {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+  padding-block-start: var(--ds-semantic-space-stack-lg);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+}
+
 .application [class~="results-header-card__meta"] {
   display: flex;
   gap: var(--ds-semantic-space-inline-md);
@@ -1615,6 +1631,31 @@
 
 .application :is([class~="form-stack--question-studio"], [class~="form-stack--edit-test-modal"]) {
   gap: var(--ds-semantic-space-stack-xl);
+}
+
+.application [class~="edit-test-modal__field-row"] {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.application [class~="edit-test-modal__field-stack"] {
+  display: grid;
+  width: 100%;
+  gap: var(--ds-semantic-space-stack-md);
+}
+
+.application [class~="edit-test-modal__add-link"] {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ds-semantic-size-content-choice-min)), 1fr)
+  );
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-sm);
 }
 
 .application [class~="field--checkbox"] {

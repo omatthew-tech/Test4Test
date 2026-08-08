@@ -1,5 +1,18 @@
 export type ProductType = "website" | "ios" | "android";
-export type AccessLinks = Partial<Record<ProductType, string>>;
+export type AccessLinkKind = ProductType | "figma" | "other";
+
+export interface OtherAccessLink {
+  label: string;
+  url: string;
+}
+
+export interface AccessLinks {
+  website?: string;
+  ios?: string;
+  android?: string;
+  figma?: string;
+  other?: OtherAccessLink;
+}
 export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
 export type SubmissionStatus = "draft" | "pending_verification" | "live" | "paused" | "flagged";
@@ -79,6 +92,7 @@ export interface Submission {
   description: string;
   targetAudience: string;
   instructions: string;
+  instructionSteps: string[];
   googlePlayClosedTestInstructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;
@@ -301,6 +315,7 @@ export interface SubmissionDraft {
   description: string;
   targetAudience: string;
   instructions: string;
+  instructionSteps: string[];
   googlePlayClosedTestInstructions: string;
   accessLinks: AccessLinks;
   requiresRecording: boolean;

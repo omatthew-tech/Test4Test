@@ -1,163 +1,69 @@
 .page {
   width: 100%;
-  max-width: var(--ds-semantic-size-content-data);
+  max-width: var(--ds-semantic-size-content-form);
+  margin-inline: auto;
 }
 
-.page :global(.wizard-layout),
-.page :global(.wizard-stage),
-.page :global(.form-stack),
-.page :global(.question-studio),
-.page :global(.question-list),
-.page :global(.review-edit-list) {
+.wizard,
+.stack,
+.reviewList,
+.instructionList,
+.verificationForm {
   display: grid;
   gap: var(--ds-semantic-space-stack-lg);
 }
 
-.page :global(.wizard-stage__surface) {
+.stage {
   display: grid;
   gap: var(--ds-semantic-space-stack-xl);
 }
 
-.page :global(.section-heading) {
+.heading {
   display: grid;
   gap: var(--ds-semantic-space-stack-sm);
 }
 
-.page :global(.section-heading h2) {
+.heading h2 {
   font-size: var(--ds-semantic-typography-heading-section-mobile-size);
   line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
 }
 
-.page :global(.section-heading p),
-.page :global(.helper-text) {
+.heading p,
+.reviewSection p,
+.resourceList span {
   color: var(--ds-semantic-color-text-secondary);
 }
 
-.page :global(.field) {
+.linkRow,
+.instructionRow {
   display: grid;
-  gap: var(--ds-semantic-space-stack-sm);
-  color: var(--ds-semantic-color-text-primary);
-  font-size: var(--ds-semantic-typography-interface-size);
-  font-weight: var(--ds-semantic-typography-weight-medium);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-sm);
 }
 
-.page :global(.field input),
-.page :global(.field textarea),
-.page :global(.question-card input),
-.page :global(.question-card textarea),
-.page :global(.recording-preview-field textarea) {
-  width: 100%;
-  min-height: var(--ds-semantic-size-control-default);
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
-  border-radius: var(--ds-semantic-radius-control);
-  padding: var(--ds-semantic-space-inline-sm) var(--ds-semantic-space-inline-md);
-  background: var(--ds-semantic-color-surface-default);
-  color: var(--ds-semantic-color-text-primary);
+.linkFields,
+.instructionField {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
 }
 
-.page :global(.field textarea),
-.page :global(.question-card textarea),
-.page :global(.recording-preview-field textarea) {
-  min-height: var(--ds-semantic-space-stack-macro);
-  resize: vertical;
-}
-
-.page :global(.field input:focus),
-.page :global(.field textarea:focus),
-.page :global(.question-card input:focus),
-.page :global(.question-card textarea:focus) {
-  border-color: var(--ds-semantic-color-focus-ring);
-  box-shadow: 0 0 0 var(--ds-semantic-border-width-default) var(--ds-semantic-color-action-tint);
-}
-
-.page :global(.choice-grid),
-.page :global(.option-grid) {
+.addLink {
   display: grid;
   grid-template-columns: repeat(
     auto-fit,
     minmax(min(100%, var(--ds-semantic-size-content-choice-min)), 1fr)
   );
-  gap: var(--ds-semantic-space-stack-md);
-}
-
-.page :global(.choice-card),
-.page :global(.question-mode-button) {
-  display: flex;
-  min-height: var(--ds-semantic-size-control-large);
-  align-items: center;
-  gap: var(--ds-semantic-space-inline-sm);
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
-  border-radius: var(--ds-semantic-radius-surface);
-  padding: var(--ds-semantic-space-inline-md);
-  background: var(--ds-semantic-color-surface-default);
-  color: var(--ds-semantic-color-text-primary);
-  font-weight: var(--ds-semantic-typography-weight-medium);
-  text-align: start;
-  cursor: pointer;
-}
-
-.page :global(.choice-card:hover),
-.page :global(.question-mode-button:hover) {
-  border-color: var(--ds-semantic-color-border-accent);
-  background: var(--ds-semantic-color-action-tint);
-}
-
-.page :global(.choice-card--active),
-.page :global(.question-mode-button--active) {
-  border-color: var(--ds-semantic-color-action-primary);
-  background: var(--ds-semantic-color-action-tint);
-  color: var(--ds-semantic-color-action-primary-strong);
-}
-
-.page :global(.choice-card__check) {
-  display: grid;
-  width: var(--ds-semantic-space-stack-lg);
-  height: var(--ds-semantic-space-stack-lg);
-  flex: 0 0 auto;
-  place-items: center;
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-strong);
-  border-radius: var(--ds-semantic-radius-compact);
-}
-
-.page :global(.choice-card__check--active) {
-  border-color: var(--ds-semantic-color-action-primary);
-  background: var(--ds-semantic-color-action-primary);
-  color: var(--ds-semantic-color-text-inverse);
-}
-
-.page :global(.question-mode-strip),
-.page :global(.inline-actions),
-.page :global(.wizard-actions),
-.page :global(.question-card__custom-actions) {
-  display: flex;
-  flex-wrap: wrap;
+  align-items: end;
   gap: var(--ds-semantic-space-inline-sm);
 }
 
-.page :global(.question-mode-strip) {
-  padding: var(--ds-semantic-space-inline-sm);
-  border-radius: var(--ds-semantic-radius-surface);
-  background: var(--ds-semantic-color-background-subtle);
+.addLink button,
+.stack > button {
+  justify-self: start;
 }
 
-.page :global(.question-studio__note),
-.page :global(.recording-setup-copy),
-.page :global(.callout),
-.page :global(.question-card__response-preview),
-.page :global(.closed-test) {
-  padding: var(--ds-semantic-space-stack-md);
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
-  border-radius: var(--ds-semantic-radius-surface);
-  background: var(--ds-semantic-color-background-subtle);
-}
-
-.page :global(.callout--warning) {
-  border-color: var(--ds-semantic-color-status-warning);
-  background: var(--ds-semantic-color-status-warning-tint);
-}
-
-.page :global(.question-card--studio),
-.page :global(.review-card) {
+.reviewSection {
   display: grid;
   gap: var(--ds-semantic-space-stack-md);
   padding: var(--ds-semantic-space-stack-lg);
@@ -166,122 +72,71 @@
   background: var(--ds-semantic-color-surface-default);
 }
 
-.page :global(.question-card__topbar),
-.page :global(.question-card__prompt-row),
-.page :global(.option-input-row),
-.page :global(.review-edit-row) {
+.reviewHeader,
+.reviewHeader > div,
+.successActions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ds-semantic-space-inline-sm);
 }
 
-.page :global(.question-card__topbar) {
-  justify-content: flex-end;
+.reviewHeader {
+  justify-content: space-between;
 }
 
-.page :global(.option-list) {
+.reviewHeader > div > span {
+  display: grid;
+  width: var(--ds-semantic-size-control-compact);
+  height: var(--ds-semantic-size-control-compact);
+  place-items: center;
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-action-tint);
+  color: var(--ds-semantic-color-action-primary-strong);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+.reviewHeader h3 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.resourceList,
+.taskList {
   display: grid;
   gap: var(--ds-semantic-space-stack-sm);
+  padding-inline-start: var(--ds-semantic-space-stack-xl);
 }
 
-.page :global(.option-input-row__input) {
-  flex: 1;
-}
-
-.page :global(.icon-button),
-.page :global(.option-input-row__remove) {
-  display: grid;
-  width: var(--ds-semantic-size-control-default);
-  height: var(--ds-semantic-size-control-default);
-  flex: 0 0 auto;
-  place-items: center;
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
-  border-radius: var(--ds-semantic-radius-control);
-  background: var(--ds-semantic-color-surface-default);
-  color: var(--ds-semantic-color-text-secondary);
-  cursor: pointer;
-}
-
-.page :global(.review-edit-row) {
-  width: 100%;
-  min-height: var(--ds-semantic-size-control-large);
-  justify-content: space-between;
-  border: 0;
-  border-block-end: var(--ds-semantic-border-width-default) solid
-    var(--ds-semantic-color-border-subtle);
-  padding: var(--ds-semantic-space-inline-md);
-  background: transparent;
-  color: var(--ds-semantic-color-text-primary);
-  text-align: start;
-  cursor: pointer;
-}
-
-.page :global(.review-edit-row:hover) {
-  background: var(--ds-semantic-color-action-tint);
-}
-
-.page :global(.review-edit-row__copy) {
+.resourceList li {
   display: grid;
   gap: var(--ds-semantic-space-stack-xs);
+  overflow-wrap: anywhere;
 }
 
-.page :global(.review-edit-row__label) {
-  color: var(--ds-semantic-color-text-secondary);
-  font-size: var(--ds-semantic-typography-caption-size);
-}
-
-.page :global(.wizard-actions) {
-  justify-content: space-between;
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ds-semantic-space-inline-sm);
   padding-block-start: var(--ds-semantic-space-stack-lg);
   border-block-start: var(--ds-semantic-border-width-default) solid
     var(--ds-semantic-color-border-subtle);
 }
 
-.page :global(.button) {
-  display: inline-flex;
-  min-height: var(--ds-semantic-size-control-default);
-  align-items: center;
+.actions button:first-child {
+  justify-self: start;
+}
+
+.actions button:last-child {
+  justify-self: end;
+}
+
+.successActions {
   justify-content: center;
-  gap: var(--ds-semantic-space-inline-sm);
-  border: var(--ds-semantic-border-width-default) solid transparent;
-  border-radius: var(--ds-semantic-radius-control);
-  padding-inline: var(--ds-semantic-space-inline-lg);
-  font-size: var(--ds-semantic-typography-interface-size);
-  font-weight: var(--ds-semantic-typography-weight-semibold);
-  cursor: pointer;
 }
 
-.page :global(.button--primary) {
-  background: var(--ds-semantic-color-action-primary);
-  color: var(--ds-semantic-color-text-inverse);
-}
-
-.page :global(.button--secondary),
-.page :global(.button--ghost) {
-  border-color: var(--ds-semantic-color-border-default);
-  background: var(--ds-semantic-color-surface-default);
-  color: var(--ds-semantic-color-text-primary);
-}
-
-.page :global(.button:disabled) {
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-@media (min-width: 1024px) {
-  .page :global(.section-heading h2) {
-    font-size: var(--ds-semantic-typography-heading-section-desktop-size);
-    line-height: var(--ds-semantic-typography-heading-section-desktop-line-height);
-  }
-}
-
-@media (max-width: 767px) {
-  .page :global(.wizard-actions) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .page :global(.wizard-actions .button) {
-    width: 100%;
+@media (min-width: 768px) {
+  .wizard {
+    gap: var(--ds-semantic-space-stack-xl);
   }
 }

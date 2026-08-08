@@ -740,6 +740,7 @@ export function SubmissionDetailPage() {
           description: submission.description,
           targetAudience: submission.targetAudience,
           instructions: submission.instructions,
+          instructionSteps: submission.instructionSteps,
           googlePlayClosedTestInstructions: submission.googlePlayClosedTestInstructions,
           accessLinks: submission.accessLinks,
           requiresRecording: submission.requiresRecording,
@@ -863,7 +864,7 @@ export function SubmissionDetailPage() {
               <div className="results-header-card__actions inline-actions">
                 {accessLinks.map((link) => (
                   <a
-                    key={link.productType}
+                    key={link.kind}
                     href={link.normalizedUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -876,6 +877,17 @@ export function SubmissionDetailPage() {
               </div>
             ) : null}
           </div>
+
+          {submission.instructionSteps.length > 0 ? (
+            <div className="results-header-card__instructions">
+              <h2>Tester instructions</h2>
+              <ol className="results-header-card__instruction-list">
+                {submission.instructionSteps.map((instruction, index) => (
+                  <li key={`${index}-${instruction}`}>{instruction}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
 
           <div className="results-header-card__meta">
             <span>

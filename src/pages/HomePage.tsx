@@ -45,17 +45,17 @@ const homeOrganizationJsonLd = {
 
 const processSteps = [
   {
-    illustration: "/images/how-it-works-bring-testers.webp",
+    illustration: "/images/how-it-works-bring-testers.png",
     title: "Bring your own testers",
     body: "Create a usability test in seconds. Add your app, your instructions and share it as much as you want. It's 100% free - no credit cards required.",
   },
   {
-    illustration: "/images/how-it-works-test-credits.webp",
+    illustration: "/images/how-it-works-test-credits.png",
     title: "Earn free test credits",
     body: "Are you looking for quick and fast user testing? Earn credits 1:1 by testing out other users apps. The more you test and the higher feedback quality you give, the more you'll receive.",
   },
   {
-    illustration: "/images/how-it-works-ai-testers.webp",
+    illustration: "/images/how-it-works-ai-testers.png",
     title: "Use AI to find testers",
     body: "Use Test4Test's cyborgs (half human/half AI) to find real users from social media, forums and online communities. This is perfect if you're looking for the highest quality feedback.",
   },
@@ -496,9 +496,8 @@ export function HomePage() {
                         alt=""
                         aria-hidden="true"
                         decoding="async"
-                        loading="lazy"
                         width={960}
-                        height={576}
+                        height={540}
                       />
                       <div className={styles.stepCopy}>
                         <h3>{title}</h3>

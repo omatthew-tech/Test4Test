@@ -6,10 +6,11 @@
   "lifecycle": "stable",
   "source": "design-system/components/product.tsx",
   "story": "design-system/stories/Product.stories.tsx",
-  "description": "Ordered workflow progress with current-step text.",
+  "description": "Ordered workflow progress with labeled and numbers-only presentations.",
   "semantics": [
     "Ordered list",
-    "Current step uses aria-current"
+    "Current step uses aria-current",
+    "Numbers-only presentation visually hides step names without removing them from the accessibility tree"
   ],
   "keyboard": [],
   "targetSize": 44,
@@ -19,7 +20,8 @@
     "responsive"
   ],
   "variants": [
-    "ordered-progress"
+    "labeled",
+    "numbers-only"
   ],
   "states": [
     "upcoming",
@@ -27,7 +29,7 @@
     "complete",
     "long-label"
   ],
-  "accessibleName": "Progress list label and visible step names; current step uses aria-current.",
+  "accessibleName": "Progress list label and step names; the numbers-only presentation keeps names available to assistive technology.",
   "controlMode": "controlled",
   "storyExport": "StepperContract",
   "examples": [

@@ -111,7 +111,7 @@ function normalizeGeneratedQuestions(payload: GeneratedAiQuestionPayload[]) {
 
 function buildAccessLinkPayload(draft: SubmissionDraft): AccessLinkPayload[] {
   return getOrderedAccessLinks(draft.accessLinks, draft.productTypes).map((link) => ({
-    productType: link.productType,
+    productType: link.kind,
     url: normalizeAccessUrl(link.url),
   }));
 }

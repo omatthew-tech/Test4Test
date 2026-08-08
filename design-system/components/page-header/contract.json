@@ -23,7 +23,8 @@
   ],
   "variants": [
     "with-actions",
-    "without-actions"
+    "without-actions",
+    "centered"
   ],
   "states": [
     "default",

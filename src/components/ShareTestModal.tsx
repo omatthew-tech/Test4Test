@@ -33,9 +33,12 @@ export function ShareTestModal({
   const previewQuestions = [...(questionSet?.questions ?? [])].sort(
     (first, second) => first.sortOrder - second.sortOrder,
   );
-  const testerInstructions = submission.instructions.trim()
-    ? submission.instructions.trim()
-    : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
+  const testerInstructionSteps =
+    submission.instructionSteps.length > 0
+      ? submission.instructionSteps
+      : [
+          "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.",
+        ];
   const sharedTestTitle = `Congrats! You've been selected to try ${submission.productName}`;
   const isResettableCustomMessage = (value: string) => {
     const trimmedValue = value.trim();
@@ -173,7 +176,7 @@ export function ShareTestModal({
                     <div className="test-session__link-list">
                       {accessLinks.map((link) => (
                         <div
-                          key={link.productType}
+                          key={link.kind}
                           className="test-session__link share-test-page-preview__link"
                         >
                           <span className="test-session__link-label">{link.label}</span>
@@ -189,7 +192,11 @@ export function ShareTestModal({
 
                 <div className="test-session__resource">
                   <span className="test-session__label">Tester instructions</span>
-                  <p>{testerInstructions}</p>
+                  <ol className="test-session__instruction-list">
+                    {testerInstructionSteps.map((instruction, index) => (
+                      <li key={`${index}-${instruction}`}>{instruction}</li>
+                    ))}
+                  </ol>
                 </div>
               </div>
 

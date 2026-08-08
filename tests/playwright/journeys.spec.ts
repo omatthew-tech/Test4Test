@@ -352,21 +352,185 @@ test("test-account sign-in exposes the passcode state and recovery path", async 
   );
 });
 
-test("submission wizard exposes validation and keyboard-operable choices", async ({ page }) => {
+test("submission wizard uses three input steps and an unnumbered review", async ({ page }) => {
   await page.goto("/submit");
+  await expect(page.getByRole("heading", { level: 1, name: "Submit a test" })).toBeVisible();
+  await expect(
+    page.getByText("Share your app and a short task, then review everything before publishing.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+
+  const progress = page.getByRole("list", { name: "Progress" });
+  const progressItems = progress.getByRole("listitem");
+  await expect(progressItems).toHaveCount(3);
+  await expect(progressItems.first()).toHaveAttribute("aria-current", "step");
+  for (const label of ["App name", "App links", "Instructions"]) {
+    await expect(progress.getByText(label, { exact: true })).toHaveClass("ds-sr-only");
+  }
+
   const continueButton = page.getByRole("button", { name: /Continue/ });
   await continueButton.click();
-  await expect(page.getByText("Add an app name to continue.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Add an app name to continue." })).toBeVisible();
   await page.getByRole("textbox", { name: "App name" }).fill("Keyboard test");
   await expect(continueButton).toBeEnabled();
   await continueButton.click();
-  await expect(page.getByRole("heading", { name: "What kind of app is it?" })).toBeVisible();
-  const website = page.getByRole("button", { name: "Website" });
-  await website.focus();
-  await page.keyboard.press("Space");
-  await expect(website).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: /Continue/ }).click();
-  await expect(page.getByRole("heading", { name: "What's the link to your app?" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Where can testers open your app?" }),
+  ).toBeVisible();
+  await continueButton.click();
+  await expect(
+    page.getByRole("link", { name: "Add a public website link for testers." }),
+  ).toBeVisible();
+  await page.getByRole("textbox", { name: "Website / Web app link" }).fill("test4test.io");
+
+  const linkType = page.getByLabel("Additional link type");
+  await linkType.selectOption("ios");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "iOS app link" }).fill("apps.apple.com/app/example");
+  await page.getByRole("button", { name: "Remove iOS app link" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("textbox", { name: "iOS app link" })).toHaveCount(0);
+
+  await linkType.selectOption("figma");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "Figma link" }).fill("figma.com/proto/example");
+  await linkType.selectOption("other");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "Other link name" }).fill("Interactive demo");
+  await page.getByRole("textbox", { name: "Other link URL" }).fill("example.com/demo");
+  await linkType.selectOption("android");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page
+    .getByRole("textbox", { name: "Android app link" })
+    .fill("play.google.com/store/apps/details?id=example");
+
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Website / Web app link" })).toHaveValue(
+    "test4test.io",
+  );
+  await expect(page.getByRole("textbox", { name: "Figma link" })).toHaveValue(
+    "figma.com/proto/example",
+  );
+
+  await page.getByRole("button", { name: "Remove Figma link" }).click();
+  await expect(page.getByRole("textbox", { name: "Figma link" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Remove Other link" }).click();
+  await expect(page.getByRole("textbox", { name: "Other link name" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Remove Android app link" }).click();
+  await expect(page.getByRole("textbox", { name: "Android app link" })).toHaveCount(0);
+
+  await linkType.selectOption("ios");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "iOS app link" }).fill("apps.apple.com/app/example");
+  await linkType.selectOption("android");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page
+    .getByRole("textbox", { name: "Android app link" })
+    .fill("play.google.com/store/apps/details?id=example");
+  await linkType.selectOption("figma");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "Figma link" }).fill("figma.com/proto/example");
+  await linkType.selectOption("other");
+  await page.getByRole("button", { name: "Add another link" }).click();
+  await page.getByRole("textbox", { name: "Other link name" }).fill("Interactive demo");
+  await page.getByRole("textbox", { name: "Other link URL" }).fill("example.com/demo");
+  await continueButton.click();
+
+  await expect(page.getByRole("heading", { name: "Add instructions" })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Give testers a set of task(s) while they think out loud. This should take around 5-10 minutes to complete.",
+    ),
+  ).toBeVisible();
+  await continueButton.click();
+  await expect(
+    page.getByRole("link", { name: "Add a task for Step 1 or remove it." }),
+  ).toBeVisible();
+  await page.getByRole("textbox", { name: "Step 1" }).fill("Browse the home page.");
+
+  for (let step = 2; step <= 5; step += 1) {
+    await page.getByRole("button", { name: "Add another step" }).click();
+    await page.getByRole("textbox", { name: `Step ${step}` }).fill(`Complete task ${step}.`);
+  }
+  await expect(
+    page.getByText("Five steps is the maximum for a focused tester task."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Remove Step 5" }).click();
+  await expect(page.getByRole("button", { name: "Add another step" })).toBeVisible();
+
+  await continueButton.click();
+  await expect(page.getByRole("heading", { name: "Review before publishing" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Progress" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "App name" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "App links" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Instructions" })).toBeVisible();
+  await expect(page.getByText("Screen + voice recording")).toHaveCount(0);
+  await expect(page.getByText("What kind of app is it?")).toHaveCount(0);
+
+  const linksReview = page.getByRole("region", { name: "App links" });
+  await expect(linksReview.getByText("iOS app", { exact: true })).toBeVisible();
+  await expect(linksReview.getByText("Android app", { exact: true })).toBeVisible();
+  await expect(linksReview.getByText("Figma", { exact: true })).toBeVisible();
+  await expect(linksReview.getByText("Interactive demo", { exact: true })).toBeVisible();
+  await linksReview.getByRole("button", { name: "Edit" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Where can testers open your app?" }),
+  ).toBeVisible();
+});
+
+test("legacy submission drafts migrate to the first missing three-step stage", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "test4test-submit-flow-resume:v1",
+      JSON.stringify({
+        version: 1,
+        phase: "wizard",
+        currentStep: 4,
+        draft: {
+          productName: "Legacy draft",
+          productTypes: ["ios"],
+          description: "Preserved description",
+          targetAudience: "Obsolete audience choice",
+          instructions: "Browse the home page and note anything confusing.",
+          accessLinks: { ios: "apps.apple.com/app/example" },
+          requiresRecording: false,
+          needsGooglePlayClosedTesters: true,
+          googlePlayClosedTestInstructions: "Obsolete closed-test instructions",
+          questionMode: "custom",
+        },
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+  });
+
+  await page.goto("/submit");
+  await expect(
+    page.getByRole("heading", { name: "Where can testers open your app?" }),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "iOS app link" })).toHaveValue(
+    "apps.apple.com/app/example",
+  );
+  await expect(page.getByText("Google Play closed test")).toHaveCount(0);
+
+  await page.getByRole("textbox", { name: "Website / Web app link" }).fill("legacy.example.com");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Add instructions" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Step 1" })).toHaveValue(
+    "Browse the home page and note anything confusing.",
+  );
+
+  const migratedResume = await page.evaluate(() =>
+    JSON.parse(window.localStorage.getItem("test4test-submit-flow-resume:v1") ?? "null"),
+  );
+  expect(migratedResume).toMatchObject({
+    version: 2,
+    draft: {
+      requiresRecording: true,
+      needsGooglePlayClosedTesters: false,
+      questionMode: "general",
+    },
+  });
 });
 
 test("My Tests share and edit dialogs close with Escape and restore focus", async ({ page }) => {

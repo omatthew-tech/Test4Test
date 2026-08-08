@@ -28,6 +28,7 @@ import {
 } from "../lib/pendingSubmission";
 import { trackAuthenticatedVisit, trackEvent } from "../lib/analytics";
 import { estimateSubmissionMinutes } from "../lib/questions";
+import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/instructions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
@@ -76,6 +77,7 @@ interface SubmissionRow {
   description: string;
   target_audience: string;
   instructions: string;
+  instruction_steps?: string[] | null;
   google_play_closed_test_instructions?: string | null;
   access_links?: Submission["accessLinks"] | null;
   access_url: string;
@@ -216,7 +218,7 @@ interface AppStateContextValue {
   verifyOtp: (
     code: string,
   ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
-  createSubmission: (draft: SubmissionDraft, questions: Question[]) => Promise<string>;
+  createSubmission: (draft: SubmissionDraft) => Promise<string>;
   updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
   createSubmissionVersion: (
     submissionId: string,
@@ -403,6 +405,7 @@ function mapSubmission(row: SubmissionRow): Submission {
         ? [row.product_type]
         : (Object.keys(accessLinks) as Submission["productTypes"]),
   );
+  const instructionSteps = normalizeInstructionSteps(row.instruction_steps, row.instructions);
 
   return {
     id: row.id,
@@ -412,6 +415,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     description: row.description ?? "",
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
+    instructionSteps,
     googlePlayClosedTestInstructions: row.google_play_closed_test_instructions ?? "",
     accessLinks,
     requiresRecording: row.requires_recording === true,
@@ -749,6 +753,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('column "access_links" of relation "submissions" does not exist') ||
     normalized.includes('column "product_types" of relation "submissions" does not exist') ||
     normalized.includes('column "requires_recording" of relation "submissions" does not exist') ||
+    normalized.includes('column "instruction_steps" of relation "submissions" does not exist') ||
     normalized.includes(
       'column "needs_google_play_closed_testers" of relation "submissions" does not exist',
     ) ||
@@ -770,6 +775,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes('relation "public.submission_versions" does not exist') ||
     normalized.includes("submission_versions") ||
     normalized.includes("create_submission_with_questions") ||
+    normalized.includes("create_recording_submission") ||
     normalized.includes("create_submission_version") ||
     normalized.includes("delete_submission_version") ||
     normalized.includes("update_question_set") ||
@@ -1092,7 +1098,7 @@ async function loadEarnSubmissionsForProductTypes(productTypes: Submission["prod
   return ((data ?? []) as SubmissionRow[]).map(mapSubmission);
 }
 
-async function persistSubmission(draft: SubmissionDraft, questions: Question[]) {
+async function persistLegacySubmission(draft: SubmissionDraft, questions: Question[]) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before publishing your app.",
   );
@@ -1146,6 +1152,39 @@ async function persistSubmission(draft: SubmissionDraft, questions: Question[]) 
   return data;
 }
 
+async function persistRecordingSubmission(draft: SubmissionDraft) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before publishing your app.",
+  );
+  const instructionSteps = normalizeInstructionSteps(draft.instructionSteps, draft.instructions);
+  const accessLinks = normalizeAccessLinks(draft.accessLinks);
+
+  if (!accessLinks.website) {
+    throw new Error("Add a public website link before creating the submission.");
+  }
+
+  const { data, error } = await supabase.rpc("create_recording_submission", {
+    p_product_name: draft.productName,
+    p_description: draft.description,
+    p_instruction_steps: instructionSteps,
+    p_access_links: accessLinks,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  if (typeof data !== "string") {
+    throw new Error("The submission could not be created.");
+  }
+
+  return data;
+}
+
 async function persistSubmissionDetails(
   submissionId: string,
   draft: SubmissionDraft,
@@ -1161,17 +1200,7 @@ async function persistSubmissionDetails(
     throw new Error("Select at least one app type before saving.");
   }
 
-  const accessLinks = normalizeAccessLinks(
-    productTypes.reduce<SubmissionDraft["accessLinks"]>((links, productType) => {
-      const value = draft.accessLinks[productType];
-
-      if (typeof value === "string") {
-        links[productType] = value;
-      }
-
-      return links;
-    }, {}),
-  );
+  const accessLinks = normalizeAccessLinks(draft.accessLinks);
   const primaryAccessLink = getPrimaryAccessLink(accessLinks, productTypes);
 
   if (!primaryAccessLink) {
@@ -1186,7 +1215,8 @@ async function persistSubmissionDetails(
       product_types: productTypes,
       description: draft.description,
       target_audience: draft.targetAudience,
-      instructions: draft.instructions,
+      instructions: serializeInstructionSteps(draft.instructionSteps),
+      instruction_steps: normalizeInstructionSteps(draft.instructionSteps, draft.instructions),
       google_play_closed_test_instructions: draft.needsGooglePlayClosedTesters
         ? draft.googlePlayClosedTestInstructions
         : "",
@@ -1687,10 +1717,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const pendingSubmission = getPendingSubmission(challenge.submissionId);
 
           if (pendingSubmission) {
-            createdSubmissionId = await persistSubmission(
-              pendingSubmission.draft,
-              pendingSubmission.questions,
-            );
+            createdSubmissionId =
+              pendingSubmission.version === 2
+                ? await persistRecordingSubmission(pendingSubmission.draft)
+                : await persistLegacySubmission(
+                    pendingSubmission.draft,
+                    pendingSubmission.questions,
+                  );
             clearPendingSubmission(challenge.submissionId);
           }
         }
@@ -1703,19 +1736,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           submissionId: createdSubmissionId,
         };
       },
-      async createSubmission(draft, questions) {
+      async createSubmission(draft) {
         if (!currentUser) {
           const pendingId = createPendingSubmissionId();
           savePendingSubmission({
+            version: 2,
             id: pendingId,
             draft,
-            questions,
+            questions: [],
             createdAt: new Date().toISOString(),
           });
           return pendingId;
         }
 
-        const createdId = await persistSubmission(draft, questions);
+        const createdId = await persistRecordingSubmission(draft);
         await refreshState();
         return createdId;
       },

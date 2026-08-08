@@ -369,8 +369,9 @@
   width: 100%;
   height: calc(var(--ds-semantic-size-control-large) * 4);
   border-radius: var(--ds-semantic-radius-surface);
-  background: var(--ds-semantic-color-action-tint);
+  background: var(--ds-semantic-color-background-subtle);
   object-fit: cover;
+  object-position: center;
 }
 
 .quality {

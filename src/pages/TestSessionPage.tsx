@@ -750,9 +750,12 @@ export function TestSessionPage() {
     selectedProductType === "website" &&
     recordingExperience.mode === "native-desktop";
   const recordingInstructions = getRecordingInstructions(selectedProductType ?? "website");
-  const testerInstructions = submission?.instructions.trim()
-    ? submission.instructions.trim()
-    : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.";
+  const testerInstructionSteps =
+    submission && submission.instructionSteps.length > 0
+      ? submission.instructionSteps
+      : [
+          "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.",
+        ];
   const todayUtcDate = new Date().toISOString().slice(0, 10);
   const googlePlayClosedTestParticipation = useMemo(() => {
     if (!currentUser || !submission?.needsGooglePlayClosedTesters) {
@@ -2719,7 +2722,7 @@ export function TestSessionPage() {
                   <div className="test-session__link-list">
                     {accessLinks.map((link) => (
                       <Link
-                        key={link.productType}
+                        key={link.kind}
                         to={link.normalizedUrl}
                         external
                         target="_blank"
@@ -2754,7 +2757,11 @@ export function TestSessionPage() {
             </div>
             <div className="test-session__resource">
               <span className="test-session__label">Tester instructions</span>
-              <p>{testerInstructions}</p>
+              <ol className="test-session__instruction-list">
+                {testerInstructionSteps.map((instruction, index) => (
+                  <li key={`${index}-${instruction}`}>{instruction}</li>
+                ))}
+              </ol>
             </div>
             {submission.needsGooglePlayClosedTesters ? (
               <div className="google-play-session-panel">

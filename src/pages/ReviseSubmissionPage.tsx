@@ -425,7 +425,7 @@ export function ReviseSubmissionPage() {
                 <div className="test-session__link-list">
                   {accessLinks.map((link) => (
                     <a
-                      key={link.productType}
+                      key={link.kind}
                       href={link.normalizedUrl}
                       target="_blank"
                       rel="noreferrer"
@@ -443,11 +443,16 @@ export function ReviseSubmissionPage() {
             </div>
             <div className="test-session__resource">
               <span className="test-session__label">Tester instructions</span>
-              <p>
-                {submission?.instructions.trim()
-                  ? submission.instructions
-                  : "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience."}
-              </p>
+              <ol className="test-session__instruction-list">
+                {(submission && submission.instructionSteps.length > 0
+                  ? submission.instructionSteps
+                  : [
+                      "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.",
+                    ]
+                ).map((instruction, index) => (
+                  <li key={`${index}-${instruction}`}>{instruction}</li>
+                ))}
+              </ol>
             </div>
           </div>
 

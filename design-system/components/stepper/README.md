@@ -1,6 +1,6 @@
 # Stepper
 
-Ordered workflow progress with current-step text.
+Ordered workflow progress with labeled and numbers-only presentations.
 
 - Family: product
 - Lifecycle: stable
@@ -13,14 +13,15 @@ Ordered workflow progress with current-step text.
 ## Public API
 
 - Sizes: `responsive`
-- Variants: `ordered-progress`
+- Variants: `labeled`, `numbers-only`
 - States: `upcoming`, `current`, `complete`, `long-label`
-- Accessible name: Progress list label and visible step names; current step uses aria-current.
+- Accessible name: Progress list label and step names; the numbers-only presentation keeps names available to assistive technology.
 
 ## Accessibility contract
 
 - Ordered list
 - Current step uses aria-current
+- Numbers-only presentation visually hides step names without removing them from the accessibility tree
 
 Minimum interactive target: 44 × 44 px.
 

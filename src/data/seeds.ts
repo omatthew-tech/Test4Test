@@ -73,6 +73,7 @@ const paletteQuestions = withIds(
     description: "A collaborative moodboard and creative direction tool for freelance designers.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a sample moodboard and invite a collaborator.",
+    instructionSteps: ["Create a sample moodboard and invite a collaborator."],
     googlePlayClosedTestInstructions: "",
     accessLinks: {
       website: "https://palettepilot.app",
@@ -95,6 +96,7 @@ const submissions: Submission[] = [
     description: "A habit-tracking app focused on gentle accountability and daily routines.",
     targetAudience: "people building healthier daily habits",
     instructions: "Try adding a habit and reviewing the weekly summary.",
+    instructionSteps: ["Try adding a habit and review the weekly summary."],
     googlePlayClosedTestInstructions: "",
     accessLinks: {
       ios: "https://testflight.apple.com/join/sprouthabit",
@@ -119,6 +121,7 @@ const submissions: Submission[] = [
     description: "A collaborative moodboard and creative direction workspace for design teams.",
     targetAudience: "freelance designers and small studios",
     instructions: "Create a board and inspect how easy it is to add references.",
+    instructionSteps: ["Create a board and inspect how easy it is to add references."],
     googlePlayClosedTestInstructions: "",
     accessLinks: {
       website: "https://palettepilot.app",
@@ -144,6 +147,7 @@ const submissions: Submission[] = [
       "A meal planning tool that helps users turn pantry items into realistic weekly dinners.",
     targetAudience: "busy households that want low-friction meal planning",
     instructions: "Search for a pantry-based recipe and save it to the week plan.",
+    instructionSteps: ["Search for a pantry-based recipe and save it to the week plan."],
     googlePlayClosedTestInstructions: "",
     accessLinks: {
       website: "https://pocketpantry.app",
@@ -169,6 +173,7 @@ const submissions: Submission[] = [
       "A trip-planning companion for stitching outdoor routes, packing lists, and weather together.",
     targetAudience: "casual hikers planning day trips",
     instructions: "Plan a route and check what would help you trust the trip details.",
+    instructionSteps: ["Plan a route and check what would help you trust the trip details."],
     googlePlayClosedTestInstructions: "",
     accessLinks: {
       ios: "https://apps.apple.com/app/trailmixer/id1234567890",

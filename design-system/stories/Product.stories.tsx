@@ -157,13 +157,14 @@ export const RecordingFlow: Story = {
   ),
 };
 
-// @test4test-coverage page-header | sizes: responsive | variants: with-actions, without-actions | states: default, long-content, narrow-width
+// @test4test-coverage page-header | sizes: responsive | variants: with-actions, without-actions, centered | states: default, long-content, narrow-width
 export const PageHeaderContract: Story = {
   render: () => (
     <PageHeader
       title="Submission details"
       description="Review responses and manage the public testing link for a deliberately long workspace name without losing access to the primary action at narrow widths."
       actions={<Button>Share test</Button>}
+      alignment="center"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -175,22 +176,41 @@ export const PageHeaderContract: Story = {
   },
 };
 
-// @test4test-coverage stepper | sizes: responsive | variants: ordered-progress | states: upcoming, current, complete, long-label
+// @test4test-coverage stepper | sizes: responsive | variants: labeled, numbers-only | states: upcoming, current, complete, long-label
 export const StepperContract: Story = {
   render: () => (
-    <Stepper
-      currentStep="questions"
-      steps={[
-        { id: "details", label: "Test details" },
-        { id: "questions", label: "Questions with a deliberately long label" },
-        { id: "review", label: "Review" },
-      ]}
-    />
+    <Stack gap="xl">
+      <Stepper
+        currentStep="questions"
+        steps={[
+          { id: "details", label: "Test details" },
+          { id: "questions", label: "Questions with a deliberately long label" },
+          { id: "review", label: "Review" },
+        ]}
+      />
+      <Stepper
+        currentStep="questions"
+        variant="numbers-only"
+        steps={[
+          { id: "details", label: "Test details" },
+          { id: "questions", label: "Questions with a deliberately long label" },
+          { id: "review", label: "Review" },
+        ]}
+      />
+    </Stack>
   ),
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText("Questions with a deliberately long label"),
-    ).toHaveAttribute("aria-current", "step");
+    const progressLists = within(canvasElement).getAllByRole("list", { name: "Progress" });
+    const labeledCurrentStep = within(progressLists[0])
+      .getByText("Questions with a deliberately long label")
+      .closest("li");
+    const numbersOnlyLabel = within(progressLists[1]).getByText(
+      "Questions with a deliberately long label",
+    );
+
+    await expect(labeledCurrentStep).toHaveAttribute("aria-current", "step");
+    await expect(numbersOnlyLabel).toHaveClass("ds-sr-only");
+    await expect(numbersOnlyLabel.closest("li")).toHaveAttribute("aria-current", "step");
   },
 };
 

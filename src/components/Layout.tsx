@@ -63,6 +63,7 @@ export function AppShell({
   hideMemberChrome = false,
   hideSiteHeader = false,
   contentWidth = "container",
+  headerAlignment = "start",
   children,
 }: {
   title?: string;
@@ -73,6 +74,7 @@ export function AppShell({
   hideMemberChrome?: boolean;
   hideSiteHeader?: boolean;
   contentWidth?: "container" | "viewport";
+  headerAlignment?: "start" | "center";
   children: ReactNode;
 }) {
   const location = useLocation();
@@ -120,6 +122,7 @@ export function AppShell({
           title={title}
           description={description}
           actions={actions}
+          alignment={headerAlignment}
           eyebrow={
             title && eyebrowLabel ? (
               <span className={styles.eyebrow}>{eyebrowLabel}</span>

@@ -24,6 +24,13 @@
       "expires": "2027-02-04"
     },
     {
+      "id": "home-process-supplied-illustrations",
+      "owner": "Test4Test",
+      "scope": "The three supplied decorative PNG illustrations under public/images/how-it-works-*.png and their presentation in src/pages/HomePage.tsx.",
+      "rationale": "The design owner explicitly supplied and requested these exact homepage illustrations, including the custom browser, exchange, cyborg, social-symbol, paper-plane, and sparkle artwork. The exception is limited to decorative imagery; layout, sizing, radius, background, and responsive behavior remain design-system token controlled, and the images are hidden from assistive technology.",
+      "expires": "2027-08-07"
+    },
+    {
       "id": "supabase-transactional-email-functions",
       "owner": "Test4Test Backend",
       "scope": "Existing HTML embedded in Supabase Edge Functions under supabase/functions.",

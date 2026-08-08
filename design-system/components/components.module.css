@@ -946,6 +946,20 @@
   max-width: var(--ds-semantic-size-content-prose);
 }
 
+.pageHeaderCentered,
+.pageHeaderCentered .pageHeaderCopy {
+  justify-items: center;
+  text-align: center;
+}
+
+.pageHeaderCentered .pageHeaderCopy {
+  margin-inline: auto;
+}
+
+.pageHeaderCentered > .cluster {
+  justify-content: center;
+}
+
 .pageTitle {
   font-size: var(--ds-semantic-typography-heading-page-mobile-size);
   line-height: var(--ds-semantic-typography-heading-page-mobile-line-height);
@@ -993,6 +1007,40 @@
 .stepComplete::before {
   border-color: var(--ds-semantic-color-action-primary);
   background: var(--ds-semantic-color-action-tint);
+}
+
+.stepperNumbersOnly {
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: var(--ds-semantic-space-zero);
+}
+
+.stepperNumbersOnly .step {
+  flex: 0 0 auto;
+  gap: var(--ds-semantic-space-zero);
+}
+
+.stepperNumbersOnly .step::before {
+  width: var(--ds-semantic-size-control-compact);
+  height: var(--ds-semantic-size-control-compact);
+  flex: 0 0 var(--ds-semantic-size-control-compact);
+}
+
+.stepperNumbersOnly .step:not(:last-child)::after {
+  width: var(--ds-semantic-space-stack-xl);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-default);
+  content: "";
+}
+
+.stepperNumbersOnly .stepComplete:not(:last-child)::after {
+  border-color: var(--ds-semantic-color-action-primary);
+}
+
+.stepperNumbersOnly .stepCurrent::before,
+.stepperNumbersOnly .stepComplete::before {
+  background: var(--ds-semantic-color-action-primary);
+  color: var(--ds-semantic-color-text-inverse);
 }
 
 .rating {
@@ -1108,6 +1156,10 @@
   .pageHeader {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
+  }
+
+  .pageHeaderCentered {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .testRow {

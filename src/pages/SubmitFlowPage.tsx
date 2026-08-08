@@ -1,32 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, Lightbulb, Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowRight, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AutoResizeTextarea } from "../components/AutoResizeTextarea";
-import { GooglePlayClosedTestOption } from "../components/GooglePlayClosedTestOption";
-import { AppShell, Surface } from "../components/Layout";
-import { VerificationFlowShell } from "../components/VerificationFlowShell";
+import {
+  Alert,
+  Button,
+  FormSummary,
+  IconButton,
+  Select,
+  Surface,
+  Textarea,
+  TextField,
+  type FormSummaryItem,
+} from "@test4test/design-system";
+import { AppShell } from "../components/Layout";
 import { StepIndicator } from "../components/StepIndicator";
+import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
 import { trackEvent, trackEventOncePerSession } from "../lib/analytics";
-import { buildAiQuestionDraftKey, generateAiQuestions } from "../lib/aiQuestionsClient";
 import {
   accessLinkFieldLabel,
   accessLinkPlaceholder,
-  accessLinksSummary,
   getOrderedAccessLinks,
-  normalizeProductTypes,
-  productTypeLabel,
-  productTypesLabel,
-  PRODUCT_TYPE_ORDER,
+  normalizeAccessLinks,
+  productTypesFromAccessLinks,
 } from "../lib/format";
 import {
-  buildStarterGeneralQuestions,
-  buildRandomGeneralQuestions,
-  defaultCustomQuestions,
-  questionModeLabel,
-  syncGeneralQuestionsProductName,
-  validateAccessLink,
-} from "../lib/questions";
+  MAX_INSTRUCTION_STEPS,
+  normalizeInstructionSteps,
+  serializeInstructionSteps,
+} from "../lib/instructions";
 import {
   clearSubmitFlowResume,
   getStoredOtpChallenge,
@@ -34,32 +36,24 @@ import {
   saveSubmitFlowResume,
   SubmitFlowResumePhase,
 } from "../lib/pendingSubmission";
-import styles from "./SubmitFlowPage.module.css";
+import { validateAccessLink } from "../lib/questions";
 import { wait } from "../lib/timing";
-import { ProductType, Question, SubmissionDraft } from "../types";
+import { AccessLinks, SubmissionDraft } from "../types";
+import styles from "./SubmitFlowPage.module.css";
 
-const steps = ["App name", "App types", "App links", "Questions", "Review"];
+const steps = ["App name", "App links", "Instructions"];
+const REVIEW_STEP = steps.length;
+const COMPLETE_STEP = REVIEW_STEP + 1;
+const additionalLinkKinds = ["ios", "android", "figma", "other"] as const;
 
-const productTypeOptions: Array<{
-  value: ProductType;
-  title: string;
-}> = PRODUCT_TYPE_ORDER.map((value) => ({
-  value,
-  title: productTypeLabel(value),
-}));
+type AdditionalLinkKind = (typeof additionalLinkKinds)[number];
 
-type AiQuestionStatus = "idle" | "loading" | "ready" | "error";
-
-function createBlankQuestion(index: number, type: Question["type"], prefix = "custom"): Question {
-  return {
-    id: `${prefix}-${Date.now()}-${index}`,
-    title: "",
-    type,
-    required: true,
-    sortOrder: index + 1,
-    options: type === "multiple" ? ["Option 1", "Option 2"] : undefined,
-  };
-}
+const additionalLinkLabels: Record<AdditionalLinkKind, string> = {
+  ios: "iOS app",
+  android: "Android app",
+  figma: "Figma",
+  other: "Other",
+};
 
 interface InitialSubmitFlowState {
   flowPhase: SubmitFlowResumePhase;
@@ -67,33 +61,81 @@ interface InitialSubmitFlowState {
   submissionId: string | null;
   email: string;
   draft: SubmissionDraft;
-  generalQuestions: Question[];
-  customQuestions: Question[];
-  hasGeneratedGeneralQuestions: boolean;
-  aiQuestions: Question[];
-  aiQuestionStatus: AiQuestionStatus;
-  aiQuestionError: string;
-  aiQuestionNotice: string;
-  aiQuestionSourceKey: string | null;
 }
 
 function createDefaultDraft(productName: string): SubmissionDraft {
   return {
     productName,
-    productTypes: [],
+    productTypes: ["website"],
     description: "",
     targetAudience: "",
     instructions: "",
+    instructionSteps: [""],
     googlePlayClosedTestInstructions: "",
-    accessLinks: {},
-    requiresRecording: false,
+    accessLinks: { website: "" },
+    requiresRecording: true,
     needsGooglePlayClosedTesters: false,
     questionMode: "general",
   };
 }
 
-function clampWizardStep(step: number) {
-  return Math.min(Math.max(step, 0), steps.length - 1);
+function preserveDraftAccessLinks(value: unknown): AccessLinks {
+  const normalized = normalizeAccessLinks(value);
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { website: normalized.website ?? "" };
+  }
+
+  const source = value as Record<string, unknown>;
+  const preserved: AccessLinks = { ...normalized, website: normalized.website ?? "" };
+
+  additionalLinkKinds.forEach((kind) => {
+    if (!(kind in source)) return;
+
+    if (kind === "other") {
+      const other = source.other;
+      if (other && typeof other === "object" && !Array.isArray(other)) {
+        const candidate = other as Record<string, unknown>;
+        preserved.other = {
+          label: typeof candidate.label === "string" ? candidate.label : "",
+          url: typeof candidate.url === "string" ? candidate.url : "",
+        };
+      }
+      return;
+    }
+
+    if (typeof source[kind] === "string") {
+      preserved[kind] = source[kind];
+    }
+  });
+
+  return preserved;
+}
+
+function normalizeResumeDraft(draft: SubmissionDraft): SubmissionDraft {
+  const accessLinks = preserveDraftAccessLinks(draft.accessLinks);
+  const normalizedSteps = normalizeInstructionSteps(draft.instructionSteps, draft.instructions);
+  const instructionSteps = normalizedSteps.length > 0 ? normalizedSteps : [""];
+
+  return {
+    ...createDefaultDraft(draft.productName ?? ""),
+    ...draft,
+    accessLinks,
+    productTypes: productTypesFromAccessLinks(accessLinks),
+    instructions: serializeInstructionSteps(instructionSteps),
+    instructionSteps,
+    requiresRecording: true,
+    needsGooglePlayClosedTesters: false,
+    googlePlayClosedTestInstructions: "",
+    questionMode: "general",
+  };
+}
+
+function getLegacyResumeStep(draft: SubmissionDraft) {
+  if (!draft.productName.trim()) return 0;
+  if (!draft.accessLinks.website?.trim()) return 1;
+  if (!draft.instructionSteps.some((step) => step.trim())) return 2;
+  return REVIEW_STEP;
 }
 
 function getInitialSubmitFlowState(
@@ -105,44 +147,24 @@ function getInitialSubmitFlowState(
   const resumeState = getSubmitFlowResume();
   const challenge = getStoredOtpChallenge();
   const defaultDraft = createDefaultDraft(initialProductName);
-  const defaultGeneralQuestions = buildStarterGeneralQuestions(
-    initialProductName || "Your product",
-  );
-  const defaultCustomQuestionSet = defaultCustomQuestions(initialProductName || "Your product");
 
   if (!resumeState && challenge?.submissionId) {
     return {
       flowPhase: resumeVerifyEmail ? "email" : "verify-code",
-      currentStep: steps.length,
+      currentStep: COMPLETE_STEP,
       submissionId: initialSubmissionId ?? challenge.submissionId,
       email: initialEmail || challenge.email,
       draft: defaultDraft,
-      generalQuestions: defaultGeneralQuestions,
-      customQuestions: defaultCustomQuestionSet,
-      hasGeneratedGeneralQuestions: false,
-      aiQuestions: [],
-      aiQuestionStatus: "idle",
-      aiQuestionError: "",
-      aiQuestionNotice: "",
-      aiQuestionSourceKey: null,
     };
   }
 
   if (!resumeState) {
     return {
       flowPhase: resumeVerifyEmail ? "email" : "wizard",
-      currentStep: resumeVerifyEmail ? steps.length : 0,
+      currentStep: resumeVerifyEmail ? COMPLETE_STEP : 0,
       submissionId: initialSubmissionId,
       email: initialEmail,
       draft: defaultDraft,
-      generalQuestions: defaultGeneralQuestions,
-      customQuestions: defaultCustomQuestionSet,
-      hasGeneratedGeneralQuestions: false,
-      aiQuestions: [],
-      aiQuestionStatus: "idle",
-      aiQuestionError: "",
-      aiQuestionNotice: "",
-      aiQuestionSourceKey: null,
     };
   }
 
@@ -151,21 +173,18 @@ function getInitialSubmitFlowState(
     : resumeState.phase === "verify-code" && !challenge?.submissionId
       ? "email"
       : resumeState.phase;
+  const draft = normalizeResumeDraft(resumeState.draft);
+  const resumedStep =
+    resumeState.version === 1
+      ? getLegacyResumeStep(draft)
+      : Math.min(Math.max(resumeState.currentStep, 0), REVIEW_STEP);
 
   return {
     flowPhase,
-    currentStep: flowPhase === "wizard" ? clampWizardStep(resumeState.currentStep) : steps.length,
+    currentStep: flowPhase === "wizard" ? resumedStep : COMPLETE_STEP,
     submissionId: initialSubmissionId ?? challenge?.submissionId ?? resumeState.submissionId,
     email: initialEmail || challenge?.email || resumeState.email,
-    draft: resumeState.draft,
-    generalQuestions: resumeState.generalQuestions,
-    customQuestions: resumeState.customQuestions,
-    hasGeneratedGeneralQuestions: resumeState.hasGeneratedGeneralQuestions,
-    aiQuestions: resumeState.aiQuestions,
-    aiQuestionStatus: resumeState.aiQuestionStatus,
-    aiQuestionError: resumeState.aiQuestionError,
-    aiQuestionNotice: resumeState.aiQuestionNotice,
-    aiQuestionSourceKey: resumeState.aiQuestionSourceKey,
+    draft,
   };
 }
 
@@ -178,6 +197,8 @@ export function SubmitFlowPage() {
   const navigate = useNavigate();
   const { state, currentUser, createSubmission, requestOtp } = useAppState();
   const initialStateRef = useRef<InitialSubmitFlowState | null>(null);
+  const formSummaryRef = useRef<HTMLDivElement | null>(null);
+  const hasTrackedSubmitProductNameRef = useRef(false);
 
   if (!initialStateRef.current) {
     initialStateRef.current = getInitialSubmitFlowState(
@@ -188,161 +209,30 @@ export function SubmitFlowPage() {
     );
   }
 
-  const initialState = initialStateRef.current!;
+  const initialState = initialStateRef.current;
   const [flowPhase, setFlowPhase] = useState<SubmitFlowResumePhase>(initialState.flowPhase);
   const [currentStep, setCurrentStep] = useState(initialState.currentStep);
   const [submissionId, setSubmissionId] = useState<string | null>(initialState.submissionId);
   const [email, setEmail] = useState(initialState.email);
-  const [error, setError] = useState("");
-  const [pendingScrollQuestionId, setPendingScrollQuestionId] = useState<string | null>(null);
+  const [draft, setDraft] = useState(initialState.draft);
+  const [formErrors, setFormErrors] = useState<FormSummaryItem[]>([]);
+  const [selectedAdditionalKind, setSelectedAdditionalKind] = useState<AdditionalLinkKind>("ios");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [pausedLiveSubmissionName, setPausedLiveSubmissionName] = useState("");
-  const questionCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const [draft, setDraft] = useState<SubmissionDraft>(initialState.draft);
-  const [generalQuestions, setGeneralQuestions] = useState<Question[]>(
-    initialState.generalQuestions,
-  );
-  const [customQuestions, setCustomQuestions] = useState<Question[]>(initialState.customQuestions);
-  const [hasGeneratedGeneralQuestions, setHasGeneratedGeneralQuestions] = useState(
-    initialState.hasGeneratedGeneralQuestions,
-  );
-  const [aiQuestions, setAiQuestions] = useState<Question[]>(initialState.aiQuestions);
-  const [aiQuestionStatus, setAiQuestionStatus] = useState<AiQuestionStatus>(
-    initialState.aiQuestionStatus,
-  );
-  const [aiQuestionError, setAiQuestionError] = useState(initialState.aiQuestionError);
-  const [aiQuestionNotice, setAiQuestionNotice] = useState(initialState.aiQuestionNotice);
-  const [aiQuestionSourceKey, setAiQuestionSourceKey] = useState<string | null>(
-    initialState.aiQuestionSourceKey,
-  );
-  const hasTrackedSubmitProductNameRef = useRef(false);
-  const hasAppliedStepFourDefaultModeRef = useRef(initialState.currentStep >= 3);
-
-  useEffect(() => {
-    setGeneralQuestions((current) =>
-      syncGeneralQuestionsProductName(current, draft.productName || "Your product"),
-    );
-  }, [draft.productName]);
-
-  useEffect(() => {
-    if (currentStep >= steps.length) {
-      return;
-    }
-
-    trackEventOncePerSession(
-      "submit_step_viewed",
-      {
-        stepIndex: currentStep,
-        stepName: steps[currentStep],
-      },
-      `submit_step_viewed:${currentStep}`,
-    );
-  }, [currentStep]);
-
-  useEffect(() => {
-    if (!pendingScrollQuestionId) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const nextQuestionCard = questionCardRefs.current[pendingScrollQuestionId];
-
-      if (!nextQuestionCard) {
-        return;
-      }
-
-      nextQuestionCard.scrollIntoView({ behavior: "smooth", block: "center" });
-      const focusTarget = nextQuestionCard.querySelector<HTMLInputElement>(
-        ".question-card__prompt-input, .option-input-row__input",
-      );
-      focusTarget?.focus({ preventScroll: true });
-      setPendingScrollQuestionId(null);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [pendingScrollQuestionId, customQuestions]);
-
-  const selectedProductTypes = useMemo(
-    () => normalizeProductTypes(draft.productTypes),
-    [draft.productTypes],
-  );
-  const isGooglePlayClosedTestLocked = draft.needsGooglePlayClosedTesters;
-  const showGooglePlayClosedTestOption =
-    selectedProductTypes.includes("android") || draft.needsGooglePlayClosedTesters;
   const orderedAccessLinks = useMemo(
-    () => getOrderedAccessLinks(draft.accessLinks, selectedProductTypes),
-    [draft.accessLinks, selectedProductTypes],
+    () => getOrderedAccessLinks(draft.accessLinks, productTypesFromAccessLinks(draft.accessLinks)),
+    [draft.accessLinks],
   );
-  const accessLinksSummaryText = useMemo(
-    () => accessLinksSummary(draft.accessLinks, selectedProductTypes),
-    [draft.accessLinks, selectedProductTypes],
+  const activeAdditionalKinds = useMemo(
+    () => additionalLinkKinds.filter((kind) => draft.accessLinks[kind] !== undefined),
+    [draft.accessLinks],
   );
-  const aiQuestionDraftKey = useMemo(() => buildAiQuestionDraftKey(draft), [draft]);
-  const hasCurrentAiQuestions =
-    aiQuestionSourceKey === aiQuestionDraftKey && aiQuestions.length > 0;
-  const isRecordingOnlyMode = draft.requiresRecording;
-  const questionSetupLabel = isRecordingOnlyMode
-    ? "Screen + voice recording"
-    : draft.questionMode === "ai"
-      ? "AI-generated questions"
-      : "Custom questions";
-  const editableQuestions = useMemo(() => {
-    if (isRecordingOnlyMode) {
-      return [];
-    }
-
-    if (draft.questionMode === "general") {
-      return generalQuestions;
-    }
-
-    if (draft.questionMode === "custom") {
-      return customQuestions;
-    }
-
-    if (draft.questionMode === "ai" && hasCurrentAiQuestions) {
-      return aiQuestions;
-    }
-
-    return [];
-  }, [
-    aiQuestions,
-    customQuestions,
-    draft.questionMode,
-    generalQuestions,
-    hasCurrentAiQuestions,
-    isRecordingOnlyMode,
-  ]);
-  const isEditableQuestionMode =
-    !isRecordingOnlyMode &&
-    (draft.questionMode === "general" ||
-      draft.questionMode === "custom" ||
-      (draft.questionMode === "ai" && hasCurrentAiQuestions));
-  const hasReachedEditableQuestionLimit = editableQuestions.length >= 10;
-
-  const displayedQuestions = useMemo(() => {
-    if (isRecordingOnlyMode) {
-      return [];
-    }
-
-    if (draft.questionMode === "general") {
-      return generalQuestions;
-    }
-
-    if (draft.questionMode === "custom") {
-      return customQuestions;
-    }
-
-    return hasCurrentAiQuestions ? aiQuestions : [];
-  }, [
-    aiQuestions,
-    customQuestions,
-    draft.questionMode,
-    generalQuestions,
-    hasCurrentAiQuestions,
-    isRecordingOnlyMode,
-  ]);
+  const availableAdditionalKinds = useMemo(
+    () => additionalLinkKinds.filter((kind) => !activeAdditionalKinds.includes(kind)),
+    [activeAdditionalKinds],
+  );
   const currentLiveSubmission = useMemo(
     () =>
       currentUser
@@ -369,26 +259,15 @@ export function SubmitFlowPage() {
       : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
 
   useEffect(() => {
-    if (draft.questionMode !== "ai") {
-      return;
-    }
+    if (currentStep > REVIEW_STEP) return;
 
-    if (aiQuestionStatus === "ready" && !hasCurrentAiQuestions) {
-      setAiQuestionStatus("idle");
-      setAiQuestionNotice("");
-    }
-  }, [aiQuestionStatus, draft.questionMode, hasCurrentAiQuestions]);
-
-  useEffect(() => {
-    if (currentStep !== 3 || hasAppliedStepFourDefaultModeRef.current) {
-      return;
-    }
-
-    hasAppliedStepFourDefaultModeRef.current = true;
-    setDraft((current) =>
-      current.requiresRecording || current.questionMode !== "general"
-        ? current
-        : { ...current, requiresRecording: true },
+    trackEventOncePerSession(
+      "submit_step_viewed",
+      {
+        stepIndex: currentStep,
+        stepName: currentStep === REVIEW_STEP ? "Review" : steps[currentStep],
+      },
+      `submit_step_viewed:v2:${currentStep}`,
     );
   }, [currentStep]);
 
@@ -399,21 +278,12 @@ export function SubmitFlowPage() {
     Boolean(email.trim()) ||
     Boolean(draft.productName.trim()) ||
     Boolean(draft.description.trim()) ||
-    Boolean(draft.targetAudience.trim()) ||
-    Boolean(draft.instructions.trim()) ||
-    Boolean(draft.googlePlayClosedTestInstructions.trim()) ||
-    selectedProductTypes.length > 0 ||
-    orderedAccessLinks.length > 0 ||
-    draft.questionMode !== "general" ||
-    draft.requiresRecording ||
-    draft.needsGooglePlayClosedTesters ||
-    hasGeneratedGeneralQuestions ||
-    aiQuestions.length > 0;
+    Boolean(draft.accessLinks.website?.trim()) ||
+    activeAdditionalKinds.length > 0 ||
+    draft.instructionSteps.some((step) => step.trim());
 
   useEffect(() => {
-    if (resumeVerifyEmail || flowPhase !== "verify-code") {
-      return;
-    }
+    if (resumeVerifyEmail || flowPhase !== "verify-code") return;
 
     const challenge = getStoredOtpChallenge();
     const nextSubmissionId = submissionId ?? challenge?.submissionId ?? null;
@@ -425,16 +295,13 @@ export function SubmitFlowPage() {
     }
 
     navigate(
-      "/verify?email=" +
-        encodeURIComponent(nextEmail) +
-        "&submissionId=" +
-        encodeURIComponent(nextSubmissionId),
+      `/verify?email=${encodeURIComponent(nextEmail)}&submissionId=${encodeURIComponent(nextSubmissionId)}`,
       { replace: true },
     );
   }, [email, flowPhase, navigate, resumeVerifyEmail, submissionId]);
 
   useEffect(() => {
-    if (currentUser && currentStep === steps.length && submissionId) {
+    if (currentUser && currentStep === COMPLETE_STEP && submissionId) {
       clearSubmitFlowResume();
       return;
     }
@@ -445,387 +312,288 @@ export function SubmitFlowPage() {
     }
 
     saveSubmitFlowResume({
-      phase: currentStep < steps.length ? "wizard" : flowPhase,
+      phase: currentStep <= REVIEW_STEP ? "wizard" : flowPhase,
       currentStep,
       draft,
-      generalQuestions,
-      customQuestions,
-      aiQuestions,
-      hasGeneratedGeneralQuestions,
-      aiQuestionStatus: aiQuestionStatus === "loading" ? "idle" : aiQuestionStatus,
-      aiQuestionError,
-      aiQuestionNotice,
-      aiQuestionSourceKey,
+      generalQuestions: [],
+      customQuestions: [],
+      aiQuestions: [],
+      hasGeneratedGeneralQuestions: false,
+      aiQuestionStatus: "idle",
+      aiQuestionError: "",
+      aiQuestionNotice: "",
+      aiQuestionSourceKey: null,
       submissionId,
       email,
       updatedAt: new Date().toISOString(),
     });
-  }, [
-    aiQuestionError,
-    aiQuestionNotice,
-    aiQuestionSourceKey,
-    aiQuestionStatus,
-    aiQuestions,
-    currentStep,
-    currentUser,
-    customQuestions,
-    draft,
-    email,
-    flowPhase,
-    generalQuestions,
-    hasGeneratedGeneralQuestions,
-    hasResumeData,
-    submissionId,
-  ]);
+  }, [currentStep, draft, email, flowPhase, hasResumeData, submissionId, currentUser]);
 
-  const refreshQuestions = () => {
-    setError("");
-    setHasGeneratedGeneralQuestions(true);
-    setGeneralQuestions(buildRandomGeneralQuestions(draft.productName || "Your product"));
+  useEffect(() => {
+    if (
+      availableAdditionalKinds.length > 0 &&
+      !availableAdditionalKinds.includes(selectedAdditionalKind)
+    ) {
+      setSelectedAdditionalKind(availableAdditionalKinds[0]);
+    }
+  }, [availableAdditionalKinds, selectedAdditionalKind]);
+
+  const clearErrors = () => setFormErrors([]);
+
+  const updateDraft = (next: Partial<SubmissionDraft>) => {
+    clearErrors();
+    setDraft((current) => ({ ...current, ...next }));
   };
 
-  const generateQuestionSet = async () => {
-    setError("");
-    setAiQuestionError("");
-    setAiQuestionNotice("");
-    setAiQuestionStatus("loading");
+  const updateAccessLinks = (nextAccessLinks: AccessLinks) => {
+    clearErrors();
+    setDraft((current) => ({
+      ...current,
+      accessLinks: nextAccessLinks,
+      productTypes: productTypesFromAccessLinks(nextAccessLinks),
+    }));
+  };
 
-    try {
-      const requestKey = aiQuestionDraftKey;
-      const generationResult = await generateAiQuestions({
-        ...draft,
-        productName: draft.productName || "Your product",
+  const updateInstructionStep = (index: number, value: string) => {
+    clearErrors();
+    setDraft((current) => {
+      const instructionSteps = current.instructionSteps.map((step, stepIndex) =>
+        stepIndex === index ? value : step,
+      );
+      return {
+        ...current,
+        instructionSteps,
+        instructions: serializeInstructionSteps(instructionSteps),
+      };
+    });
+  };
+
+  const addInstructionStep = () => {
+    if (draft.instructionSteps.length >= MAX_INSTRUCTION_STEPS) return;
+
+    const nextIndex = draft.instructionSteps.length;
+    clearErrors();
+    setDraft((current) => ({
+      ...current,
+      instructionSteps: [...current.instructionSteps, ""],
+    }));
+    window.requestAnimationFrame(() =>
+      document.getElementById(`instruction-step-${nextIndex}`)?.focus(),
+    );
+  };
+
+  const removeInstructionStep = (index: number) => {
+    clearErrors();
+    setDraft((current) => {
+      const instructionSteps = current.instructionSteps.filter(
+        (_, stepIndex) => stepIndex !== index,
+      );
+      return {
+        ...current,
+        instructionSteps,
+        instructions: serializeInstructionSteps(instructionSteps),
+      };
+    });
+  };
+
+  const addAdditionalLink = () => {
+    if (!availableAdditionalKinds.includes(selectedAdditionalKind)) return;
+
+    const nextAccessLinks: AccessLinks = { ...draft.accessLinks };
+    if (selectedAdditionalKind === "other") {
+      nextAccessLinks.other = { label: "", url: "" };
+    } else {
+      nextAccessLinks[selectedAdditionalKind] = "";
+    }
+    updateAccessLinks(nextAccessLinks);
+    window.requestAnimationFrame(() => {
+      const targetId =
+        selectedAdditionalKind === "other" ? "other-link-label" : `${selectedAdditionalKind}-link`;
+      document.getElementById(targetId)?.focus();
+    });
+  };
+
+  const removeAdditionalLink = (kind: AdditionalLinkKind) => {
+    const nextAccessLinks = { ...draft.accessLinks };
+    delete nextAccessLinks[kind];
+    updateAccessLinks(nextAccessLinks);
+  };
+
+  const getFieldError = (fieldId: string) =>
+    formErrors.find((item) => item.fieldId === fieldId)?.message;
+
+  const validateStep = (step: number): FormSummaryItem[] => {
+    if (step === 0) {
+      return draft.productName.trim()
+        ? []
+        : [{ fieldId: "app-name", message: "Add an app name to continue." }];
+    }
+
+    if (step === 1) {
+      const errors: FormSummaryItem[] = [];
+      const website = draft.accessLinks.website ?? "";
+      const websiteValidation = validateAccessLink(website, "website");
+
+      if (!website.trim() || !websiteValidation.valid) {
+        errors.push({
+          fieldId: "website-link",
+          message: website.trim()
+            ? websiteValidation.message
+            : "Add a public website link for testers.",
+        });
+      }
+
+      activeAdditionalKinds.forEach((kind) => {
+        if (kind === "other") {
+          if (!draft.accessLinks.other?.label.trim()) {
+            errors.push({ fieldId: "other-link-label", message: "Add a name for the Other link." });
+          }
+          const url = draft.accessLinks.other?.url ?? "";
+          const validation = validateAccessLink(url, "other");
+          if (!url.trim() || !validation.valid) {
+            errors.push({
+              fieldId: "other-link",
+              message: url.trim() ? validation.message : "Add a public URL for the Other link.",
+            });
+          }
+          return;
+        }
+
+        const url = draft.accessLinks[kind] ?? "";
+        const validation = validateAccessLink(url, kind);
+        if (!url.trim() || !validation.valid) {
+          errors.push({
+            fieldId: `${kind}-link`,
+            message: url.trim()
+              ? validation.message
+              : `Add a public ${additionalLinkLabels[kind]} link or remove this field.`,
+          });
+        }
       });
 
-      setAiQuestions(generationResult.questions);
-      setAiQuestionNotice(generationResult.notice ?? "");
-      setAiQuestionSourceKey(requestKey);
-      setAiQuestionStatus("ready");
-    } catch (generationError) {
-      setAiQuestionStatus("error");
-      setAiQuestionNotice("");
-      setAiQuestionError(
-        generationError instanceof Error
-          ? generationError.message
-          : "AI question generation failed. Please try again.",
+      return errors;
+    }
+
+    if (step === 2) {
+      return draft.instructionSteps.flatMap((instruction, index) =>
+        instruction.trim()
+          ? []
+          : [
+              {
+                fieldId: `instruction-step-${index}`,
+                message: `Add a task for Step ${index + 1} or remove it.`,
+              },
+            ],
       );
     }
+
+    return [];
   };
 
-  const setEditableQuestions = (updater: (current: Question[]) => Question[]) => {
-    if (draft.questionMode === "general") {
-      setGeneralQuestions(updater);
-      return;
-    }
-
-    if (draft.questionMode === "custom") {
-      setCustomQuestions(updater);
-      return;
-    }
-
-    if (draft.questionMode === "ai") {
-      setAiQuestions(updater);
-    }
-  };
-
-  const updateQuestion = (index: number, next: Partial<Question>) => {
-    setEditableQuestions((current) =>
-      current.map((question, questionIndex) =>
-        questionIndex === index ? { ...question, ...next } : question,
-      ),
-    );
-  };
-
-  const addQuestion = (type: Question["type"]) => {
-    if (hasReachedEditableQuestionLimit) {
-      setError("You can add up to 10 questions total.");
-      return;
-    }
-
-    const nextQuestion = createBlankQuestion(
-      editableQuestions.length,
-      type,
-      draft.questionMode === "general" ? "general" : draft.questionMode === "ai" ? "ai" : "custom",
-    );
-
-    setError("");
-    setPendingScrollQuestionId(nextQuestion.id);
-    setEditableQuestions((current) => {
-      if (current.length >= 10) {
-        return current;
-      }
-
-      return [...current, nextQuestion].map((question, index) => ({
-        ...question,
-        sortOrder: index + 1,
-      }));
-    });
-  };
-
-  const removeQuestion = (index: number) => {
-    setError("");
-    setEditableQuestions((current) =>
-      current
-        .filter((_, questionIndex) => questionIndex !== index)
-        .map((question, questionIndex) => ({ ...question, sortOrder: questionIndex + 1 })),
-    );
-  };
-
-  const duplicateQuestion = (index: number) => {
-    if (hasReachedEditableQuestionLimit) {
-      setError("You can add up to 10 questions total.");
-      return;
-    }
-
-    const sourceQuestion = editableQuestions[index];
-
-    if (!sourceQuestion) {
-      return;
-    }
-
-    const duplicate: Question = {
-      ...sourceQuestion,
-      id: `${draft.questionMode}-${Date.now()}-${index}-duplicate`,
-      options: sourceQuestion.options ? [...sourceQuestion.options] : undefined,
-    };
-
-    setError("");
-    setPendingScrollQuestionId(duplicate.id);
-    setEditableQuestions((current) => {
-      if (current.length >= 10) {
-        return current;
-      }
-
-      return [...current.slice(0, index + 1), duplicate, ...current.slice(index + 1)].map(
-        (question, questionIndex) => ({ ...question, sortOrder: questionIndex + 1 }),
-      );
-    });
-  };
-
-  const setMode = (mode: SubmissionDraft["questionMode"]) => {
-    setError("");
-    setPendingScrollQuestionId(null);
-    setAiQuestionError("");
-    setAiQuestionNotice("");
-    setFlowPhase("wizard");
-    setDraft((current) => ({ ...current, questionMode: mode, requiresRecording: false }));
-  };
-
-  const setRecordingMode = () => {
-    setError("");
-    setPendingScrollQuestionId(null);
-    setAiQuestionError("");
-    setAiQuestionNotice("");
-    setFlowPhase("wizard");
-    setDraft((current) => ({ ...current, requiresRecording: true }));
+  const showValidation = (errors: FormSummaryItem[]) => {
+    setFormErrors(errors);
+    window.requestAnimationFrame(() => formSummaryRef.current?.focus());
   };
 
   const jumpToStep = (step: number) => {
-    setError("");
-    setPendingScrollQuestionId(null);
+    clearErrors();
     setFlowPhase("wizard");
     setCurrentStep(step);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
-    setError("");
-    setPendingScrollQuestionId(null);
-    setFlowPhase("wizard");
-    setCurrentStep((step) => Math.max(0, step - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (currentStep === REVIEW_STEP) {
+      jumpToStep(2);
+      return;
+    }
+
+    jumpToStep(Math.max(0, currentStep - 1));
   };
 
-  const toggleProductType = (productType: ProductType) => {
-    setError("");
-    setDraft((current) => {
-      if (current.needsGooglePlayClosedTesters) {
-        return current;
+  const submitDraft = async () => {
+    for (let step = 0; step < steps.length; step += 1) {
+      const errors = validateStep(step);
+      if (errors.length > 0) {
+        setCurrentStep(step);
+        showValidation(errors);
+        return;
       }
+    }
 
-      const isSelected = current.productTypes.includes(productType);
-      const nextProductTypes = normalizeProductTypes(
-        isSelected
-          ? current.productTypes.filter((value) => value !== productType)
-          : [...current.productTypes, productType],
-      );
-      const nextAccessLinks = { ...current.accessLinks };
+    setIsSubmitting(true);
+    clearErrors();
 
-      if (isSelected) {
-        delete nextAccessLinks[productType];
-      }
-
-      return {
-        ...current,
-        productTypes: nextProductTypes,
-        accessLinks: nextAccessLinks,
-        needsGooglePlayClosedTesters:
-          current.needsGooglePlayClosedTesters && nextProductTypes.includes("android"),
-      };
-    });
-  };
-
-  const setGooglePlayClosedTestRequirement = (checked: boolean) => {
-    setError("");
-    setDraft((current) => {
-      if (checked) {
-        return {
-          ...current,
-          productTypes: ["android"],
-          accessLinks: current.accessLinks.android ? { android: current.accessLinks.android } : {},
-          needsGooglePlayClosedTesters: true,
-        };
-      }
-
-      return {
-        ...current,
+    try {
+      const replacedLiveSubmissionName = currentLiveSubmission?.productName ?? "";
+      const instructionSteps = draft.instructionSteps.map((step) => step.trim());
+      const finalDraft: SubmissionDraft = {
+        ...draft,
+        productTypes: productTypesFromAccessLinks(draft.accessLinks),
+        instructions: serializeInstructionSteps(instructionSteps),
+        instructionSteps,
+        requiresRecording: true,
         needsGooglePlayClosedTesters: false,
         googlePlayClosedTestInstructions: "",
+        questionMode: "general",
       };
-    });
+      const createdId = await createSubmission(finalDraft);
+      setDraft(finalDraft);
+      setSubmissionId(createdId);
+      setPausedLiveSubmissionName(replacedLiveSubmissionName);
+      setFlowPhase("email");
+      setCurrentStep(COMPLETE_STEP);
+    } catch (submissionError) {
+      showValidation([
+        {
+          fieldId: "submit-app",
+          message:
+            submissionError instanceof Error
+              ? submissionError.message
+              : "The submission could not be saved.",
+        },
+      ]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const updateAccessLink = (productType: ProductType, value: string) => {
-    setError("");
-    setDraft((current) => ({
-      ...current,
-      accessLinks: {
-        ...current.accessLinks,
-        [productType]: value,
-      },
-    }));
-  };
-  const validateCurrentStep = () => {
-    if (currentStep === 0 && !draft.productName.trim()) {
-      return "Add an app name to continue.";
-    }
-
-    if (currentStep === 1 && draft.productTypes.length === 0) {
-      return "Select at least one app type to continue.";
-    }
-
-    if (
-      currentStep === 1 &&
-      draft.needsGooglePlayClosedTesters &&
-      (selectedProductTypes.length !== 1 || selectedProductTypes[0] !== "android")
-    ) {
-      return "Google Play closed-test matching requires an Android-only submission.";
-    }
-
-    if (currentStep === 2) {
-      for (const productType of selectedProductTypes) {
-        const validation = validateAccessLink(draft.accessLinks[productType] ?? "", productType);
-        const fieldLabel = accessLinkFieldLabel(
-          productType,
-          draft.needsGooglePlayClosedTesters && productType === "android",
-        ).toLowerCase();
-
-        if (!(draft.accessLinks[productType] ?? "").trim()) {
-          return `Add a public ${fieldLabel} for testers.`;
-        }
-
-        if (!validation.valid) {
-          return `${productTypeLabel(productType)}: ${validation.message}`;
-        }
-      }
-
-      if (draft.needsGooglePlayClosedTesters && !draft.googlePlayClosedTestInstructions.trim()) {
-        return "Add Google Play closed-test access instructions for testers.";
-      }
-    }
-
-    if (currentStep === 3 && !isRecordingOnlyMode && draft.questionMode === "ai") {
-      if (aiQuestionStatus === "loading") {
-        return "Wait for AI questions to finish generating.";
-      }
-
-      if (!hasCurrentAiQuestions) {
-        return aiQuestionSourceKey && aiQuestionSourceKey !== aiQuestionDraftKey
-          ? "Your app details changed. Generate Questions again to continue."
-          : "Generate Questions to continue.";
-      }
-    }
-
-    if (currentStep === 3 && !isRecordingOnlyMode && isEditableQuestionMode) {
-      const minimumQuestionCount = draft.questionMode === "ai" ? 5 : 2;
-
-      if (editableQuestions.length < minimumQuestionCount || editableQuestions.length > 10) {
-        return `${questionModeLabel(draft.questionMode)} mode needs between ${minimumQuestionCount} and 10 questions for MVP.`;
-      }
-
-      if (
-        editableQuestions.some(
-          (question) =>
-            !question.title.trim() ||
-            (question.type === "multiple" && (question.options?.filter(Boolean).length ?? 0) < 2),
-        )
-      ) {
-        return "Each question needs a title, and multiple-choice questions need at least two options.";
-      }
-    }
-
-    return "";
-  };
-
-  const isContinueDisabled =
-    isSubmitting ||
-    (currentStep === 3 &&
-      !isRecordingOnlyMode &&
-      draft.questionMode === "ai" &&
-      !hasCurrentAiQuestions);
-
-  const goNext = async () => {
-    const nextError = validateCurrentStep();
-    if (nextError) {
-      setError(nextError);
+  const goNext = () => {
+    if (currentStep === REVIEW_STEP) {
+      void submitDraft();
       return;
     }
 
-    setError("");
-
-    if (currentStep === 4) {
-      setIsSubmitting(true);
-
-      try {
-        const replacedLiveSubmissionName = currentLiveSubmission?.productName ?? "";
-        const createdId = await createSubmission(
-          draft,
-          isRecordingOnlyMode ? [] : displayedQuestions,
-        );
-        setSubmissionId(createdId);
-        setPausedLiveSubmissionName(replacedLiveSubmissionName);
-        setFlowPhase("email");
-        setCurrentStep(steps.length);
-      } catch (submissionError) {
-        setError(
-          submissionError instanceof Error
-            ? submissionError.message
-            : "The submission could not be saved.",
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
+    const errors = validateStep(currentStep);
+    if (errors.length > 0) {
+      showValidation(errors);
       return;
     }
 
-    if (currentStep === 0 && draft.productName.trim() && !hasTrackedSubmitProductNameRef.current) {
+    if (currentStep === 0 && !hasTrackedSubmitProductNameRef.current) {
       hasTrackedSubmitProductNameRef.current = true;
       trackEvent("product_name_entered", { source: "submit_flow" });
     }
 
-    setFlowPhase("wizard");
-    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+    clearErrors();
+    setCurrentStep((step) => Math.min(step + 1, REVIEW_STEP));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const sendOtp = async () => {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail || !submissionId) {
-      setError("Add an email so we can send the one-time code.");
+      showValidation([
+        {
+          fieldId: "verification-email",
+          message: "Add an email so we can send the one-time code.",
+        },
+      ]);
       return;
     }
 
-    setError("");
+    clearErrors();
     setEmail(normalizedEmail);
     setIsSendingCode(true);
 
@@ -833,620 +601,344 @@ export function SubmitFlowPage() {
       await Promise.all([requestOtp(normalizedEmail, submissionId), wait(5000)]);
       setFlowPhase("verify-code");
       navigate(
-        "/verify?email=" +
-          encodeURIComponent(normalizedEmail) +
-          "&submissionId=" +
-          encodeURIComponent(submissionId),
+        `/verify?email=${encodeURIComponent(normalizedEmail)}&submissionId=${encodeURIComponent(submissionId)}`,
       );
     } catch (otpError) {
-      setError(
-        otpError instanceof Error ? otpError.message : "We could not send a verification code.",
-      );
+      showValidation([
+        {
+          fieldId: "verification-email",
+          message:
+            otpError instanceof Error ? otpError.message : "We could not send a verification code.",
+        },
+      ]);
     } finally {
       setIsSendingCode(false);
     }
   };
 
   return (
-    <AppShell
-      title="Submit a test"
-      description="Tell testers what to evaluate, choose a question format, and review everything before publishing."
-      eyebrowLabel={null}
-    >
-      <div className={`${styles.page} page-stack`}>
-        {currentStep < steps.length ? (
-          <div className="wizard-layout">
-            <div className="wizard-stage">
+    <AppShell title="Submit a test" eyebrowLabel={null} headerAlignment="center">
+      <div className={styles.page}>
+        {currentStep <= REVIEW_STEP ? (
+          <div className={styles.wizard}>
+            {currentStep < REVIEW_STEP ? (
               <StepIndicator steps={steps} currentStep={currentStep} />
-              <Surface className="wizard-stage__surface">
-                {currentStep === 0 ? (
-                  <div className="form-stack">
-                    <div className="section-heading">
-                      <h2>What&apos;s the name of your app?</h2>
-                    </div>
-                    <label className="field">
-                      <span>App name</span>
-                      <input
-                        value={draft.productName}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, productName: event.target.value }))
-                        }
-                        placeholder="Palette Pilot"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>(optional) Short app description visible to testers</span>
-                      <textarea
-                        rows={4}
-                        value={draft.description}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, description: event.target.value }))
-                        }
-                        placeholder="Write something interesting to catch tester's attention i.e. Palette Pilot helps teams shape ideas faster."
-                      />
-                    </label>
+            ) : null}
+
+            <Surface className={styles.stage}>
+              {currentStep === 0 ? (
+                <div className={styles.stack}>
+                  <div className={styles.heading}>
+                    <h2>What&apos;s the name of your app?</h2>
                   </div>
-                ) : null}
-
-                {currentStep === 1 ? (
-                  <div className="form-stack">
-                    <div className="section-heading">
-                      <h2>What kind of app is it?</h2>
-                      <p>Choose every platform testers can use right now.</p>
-                    </div>
-                    <div className="choice-grid">
-                      {productTypeOptions.map((option) => {
-                        const isSelected = draft.productTypes.includes(option.value);
-                        const isLocked = isGooglePlayClosedTestLocked;
-                        const isDisabled = isLocked;
-
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            className={`choice-card choice-card--multi${isSelected ? " choice-card--active" : ""}${isDisabled ? " choice-card--disabled" : ""}`}
-                            onClick={() => toggleProductType(option.value)}
-                            aria-pressed={isSelected}
-                            disabled={isDisabled}
-                          >
-                            <span
-                              className={`choice-card__check${isSelected ? " choice-card__check--active" : ""}`}
-                              aria-hidden="true"
-                            >
-                              {isSelected ? <Check size={16} /> : null}
-                            </span>
-                            <span className="choice-card__content">
-                              <strong>{option.title}</strong>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {showGooglePlayClosedTestOption ? (
-                      <GooglePlayClosedTestOption
-                        checked={draft.needsGooglePlayClosedTesters}
-                        onChange={setGooglePlayClosedTestRequirement}
-                      />
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {currentStep === 2 ? (
-                  <div className="form-stack">
-                    <div className="section-heading">
-                      <h2>
-                        {selectedProductTypes.length > 1
-                          ? "What are the links to your app?"
-                          : "What's the link to your app?"}
-                      </h2>
-                      {selectedProductTypes.length > 1 ? (
-                        <p>Add one public link for each selected platform.</p>
-                      ) : null}
-                    </div>
-                    {selectedProductTypes.map((productType) => {
-                      const value = draft.accessLinks[productType] ?? "";
-                      const validation = validateAccessLink(value, productType);
-                      const isGooglePlayClosedTestLink =
-                        draft.needsGooglePlayClosedTesters && productType === "android";
-
-                      return (
-                        <label key={productType} className="field">
-                          <span>
-                            {accessLinkFieldLabel(productType, isGooglePlayClosedTestLink)}
-                          </span>
-                          <input
-                            value={value}
-                            onChange={(event) => updateAccessLink(productType, event.target.value)}
-                            placeholder={accessLinkPlaceholder(
-                              productType,
-                              isGooglePlayClosedTestLink,
-                            )}
-                          />
-                          {value.trim() ? (
-                            <small
-                              className={`helper-text ${validation.valid ? "helper-text--success" : "helper-text--warning"}`}
-                            >
-                              {validation.message}
-                            </small>
-                          ) : null}
-                        </label>
-                      );
-                    })}
-                    {draft.needsGooglePlayClosedTesters ? (
-                      <label className="field field--google-play-instructions">
-                        <span>Google Play closed-test access instructions</span>
-                        <textarea
-                          rows={4}
-                          value={draft.googlePlayClosedTestInstructions}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              googlePlayClosedTestInstructions: event.target.value,
-                            }))
-                          }
-                          placeholder="Example: Open the Google Play testing link, join the test, install the app, and use it once per day for 14 consecutive days."
-                        />
-                        <small className="helper-text">
-                          Include any tester group, opt-in, or install steps needed before users can
-                          access the Android closed test.
-                        </small>
-                      </label>
-                    ) : null}
-                    <label className="field">
-                      <span>(optional) Tester Instructions</span>
-                      <textarea
-                        rows={4}
-                        value={draft.instructions}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, instructions: event.target.value }))
-                        }
-                        placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
-                      />
-                    </label>
-                  </div>
-                ) : null}
-
-                {currentStep === 3 ? (
-                  <div className="form-stack form-stack--question-studio">
-                    <div className="section-heading">
-                      <h2>Set up your questions</h2>
-                    </div>
-                    <div className="question-studio">
-                      <div className="question-studio__header">
-                        <div className="question-mode-strip question-mode-strip--recording">
-                          <button
-                            type="button"
-                            className={`question-mode-button question-mode-button--recording${isRecordingOnlyMode ? " question-mode-button--active" : ""}`}
-                            onClick={setRecordingMode}
-                            aria-pressed={isRecordingOnlyMode}
-                          >
-                            <span>Screen + voice recording</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode === "ai" ? " question-mode-button--active" : ""}`}
-                            onClick={() => setMode("ai")}
-                          >
-                            <span>AI-generated questions</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`question-mode-button${!isRecordingOnlyMode && draft.questionMode !== "ai" ? " question-mode-button--active" : ""}`}
-                            onClick={() => setMode("general")}
-                          >
-                            <span>Custom questions</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {isEditableQuestionMode ? (
-                        <div
-                          className={`question-studio__note${draft.questionMode === "general" ? " question-studio__note--actions-only" : ""}`}
-                        >
-                          {draft.questionMode !== "general" ? (
-                            <div className="question-studio__note-copy">
-                              <span>{questionModeLabel(draft.questionMode)} questions</span>
-                            </div>
-                          ) : null}
-                          {draft.questionMode === "general" ? (
-                            <button
-                              type="button"
-                              className="button button--secondary button--small"
-                              onClick={refreshQuestions}
-                            >
-                              <RefreshCcw size={16} />
-                              {hasGeneratedGeneralQuestions
-                                ? "Refresh questions"
-                                : "Generate questions"}
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      {isRecordingOnlyMode ? (
-                        <>
-                          <div className="recording-setup-copy">
-                            <div className="recording-setup-insight">
-                              <Lightbulb size={16} aria-hidden="true" />
-                              <span>This option usually produces the best insights</span>
-                            </div>
-                            <p>
-                              Testers will record their screen and voice while using your app.
-                              Please ensure tester instructions are simple and easy to follow.
-                            </p>
-                          </div>
-                          <div className="question-list question-list--studio">
-                            <div className="field recording-preview-field">
-                              <div className="recording-preview-field__label">
-                                <span>Tester Instructions</span>
-                              </div>
-                              <textarea
-                                rows={4}
-                                className="recording-preview-field__textarea"
-                                value={draft.instructions}
-                                onChange={(event) =>
-                                  setDraft((current) => ({
-                                    ...current,
-                                    instructions: event.target.value,
-                                  }))
-                                }
-                                placeholder="Example: Test the onboarding flow, try search, create a sample item, and tell us anything confusing or slow."
-                              />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {aiQuestionNotice ? (
-                            <div className="callout callout--soft">{aiQuestionNotice}</div>
-                          ) : null}
-                          {aiQuestionError ? (
-                            <div className="callout callout--warning">{aiQuestionError}</div>
-                          ) : null}
-
-                          {draft.questionMode === "ai" && !hasCurrentAiQuestions ? (
-                            <div className="question-studio__empty">
-                              <h4>Generate 5 tailored questions</h4>
-                              <p>
-                                We&apos;ll use your app name, platforms, links, description, and
-                                tester instructions to draft a focused question set.
-                              </p>
-                              <button
-                                type="button"
-                                className="button button--primary"
-                                onClick={generateQuestionSet}
-                                disabled={aiQuestionStatus === "loading"}
-                              >
-                                {aiQuestionStatus === "loading" ? (
-                                  <span className="button__spinner" aria-hidden="true" />
-                                ) : (
-                                  <Sparkles size={16} />
-                                )}
-                                {aiQuestionStatus === "loading"
-                                  ? "Generating..."
-                                  : "Generate Questions"}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="question-list question-list--studio">
-                              {displayedQuestions.map((question, index) => (
-                                <article
-                                  key={question.id}
-                                  ref={(element) => {
-                                    questionCardRefs.current[question.id] = element;
-                                  }}
-                                  className="question-card question-card--studio"
-                                >
-                                  {isEditableQuestionMode ? (
-                                    <div className="question-card__topbar">
-                                      <div className="question-card__meta question-card__meta--editor">
-                                        <button
-                                          type="button"
-                                          className="icon-button"
-                                          onClick={() => removeQuestion(index)}
-                                          aria-label="Remove question"
-                                        >
-                                          <Trash2 size={16} />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : null}
-                                  <div className="question-card__body">
-                                    {isEditableQuestionMode ? (
-                                      <div className="question-card__prompt-row">
-                                        <AutoResizeTextarea
-                                          className="question-card__prompt-input"
-                                          value={question.title}
-                                          onChange={(event) =>
-                                            updateQuestion(index, { title: event.target.value })
-                                          }
-                                          placeholder="Type your question here"
-                                        />
-                                      </div>
-                                    ) : (
-                                      <h4>{question.title}</h4>
-                                    )}
-                                    {question.type === "multiple" ? (
-                                      isEditableQuestionMode ? (
-                                        <div className="option-list option-list--editor">
-                                          {(question.options ?? []).map((option, optionIndex) => (
-                                            <div
-                                              key={`${question.id}-${optionIndex}`}
-                                              className="option-input-row"
-                                            >
-                                              <span
-                                                className="option-input-row__icon"
-                                                aria-hidden="true"
-                                              />
-                                              <input
-                                                className="option-input-row__input"
-                                                value={option}
-                                                onChange={(event) => {
-                                                  const nextOptions = [...(question.options ?? [])];
-                                                  nextOptions[optionIndex] = event.target.value;
-                                                  updateQuestion(index, { options: nextOptions });
-                                                }}
-                                                placeholder={`Option ${optionIndex + 1}`}
-                                              />
-                                              <button
-                                                type="button"
-                                                className="option-input-row__remove"
-                                                onClick={() => {
-                                                  const nextOptions = (
-                                                    question.options ?? []
-                                                  ).filter(
-                                                    (_, currentIndex) =>
-                                                      currentIndex !== optionIndex,
-                                                  );
-                                                  updateQuestion(index, { options: nextOptions });
-                                                }}
-                                                aria-label={`Remove option ${optionIndex + 1}`}
-                                                disabled={(question.options?.length ?? 0) <= 2}
-                                              >
-                                                <X size={16} aria-hidden />
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div className="option-grid">
-                                          {(question.options ?? []).map((option) => (
-                                            <span
-                                              key={`${question.id}-${option}`}
-                                              className="option-pill"
-                                            >
-                                              {option}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )
-                                    ) : (
-                                      <div className="question-card__response-preview">
-                                        <span>
-                                          {isEditableQuestionMode
-                                            ? "Written answer"
-                                            : "Open response"}
-                                        </span>
-                                        <p>Testers will leave written feedback here.</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                  {isEditableQuestionMode && question.type === "multiple" ? (
-                                    <div className="question-card__custom-actions">
-                                      {(question.options?.length ?? 0) < 6 ? (
-                                        <button
-                                          type="button"
-                                          className="button button--ghost"
-                                          onClick={() =>
-                                            updateQuestion(index, {
-                                              options: [
-                                                ...(question.options ?? []),
-                                                `Option ${(question.options?.length ?? 0) + 1}`,
-                                              ],
-                                            })
-                                          }
-                                        >
-                                          <Plus size={16} />
-                                          Add option
-                                        </button>
-                                      ) : null}
-                                      <button
-                                        type="button"
-                                        className="button button--secondary question-card__duplicate-button"
-                                        onClick={() => duplicateQuestion(index)}
-                                        disabled={hasReachedEditableQuestionLimit}
-                                      >
-                                        Duplicate
-                                      </button>
-                                    </div>
-                                  ) : null}
-                                </article>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {!isRecordingOnlyMode && isEditableQuestionMode ? (
-                        <div className="question-studio__footer">
-                          <div className="inline-actions inline-actions--compact">
-                            <button
-                              type="button"
-                              className="button button--secondary"
-                              onClick={() => addQuestion("multiple")}
-                              disabled={hasReachedEditableQuestionLimit}
-                            >
-                              <Plus size={16} />
-                              Add multiple choice
-                            </button>
-                            <button
-                              type="button"
-                              className="button button--secondary"
-                              onClick={() => addQuestion("paragraph")}
-                              disabled={hasReachedEditableQuestionLimit}
-                            >
-                              <Plus size={16} />
-                              Add paragraph question
-                            </button>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : null}
-
-                {currentStep === 4 ? (
-                  <div className="form-stack">
-                    <div className="section-heading">
-                      <h2>Review before publishing</h2>
-                    </div>
-                    {currentLiveSubmission ? (
-                      <div className="callout callout--soft">
-                        Submitting this app will make it your live Earn test and pause{" "}
-                        {currentLiveSubmission.productName}.
-                      </div>
-                    ) : null}
-                    <div className="review-grid review-grid--single">
-                      <div className="review-card review-card--highlight">
-                        <span className="eyebrow">Submission</span>
-                        <div className="review-edit-list">
-                          <button
-                            type="button"
-                            className="review-edit-row review-edit-row--title"
-                            onClick={() => jumpToStep(0)}
-                          >
-                            <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">App name</span>
-                              <strong>{draft.productName}</strong>
-                            </span>
-                            <ArrowRight size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="review-edit-row"
-                            onClick={() => jumpToStep(1)}
-                          >
-                            <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Platforms</span>
-                              {draft.productTypes.length > 0 ? (
-                                <strong>{productTypesLabel(draft.productTypes)}</strong>
-                              ) : (
-                                <strong>Select at least one platform</strong>
-                              )}
-                            </span>
-                            <ArrowRight size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="review-edit-row"
-                            onClick={() => jumpToStep(2)}
-                          >
-                            <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Links</span>
-                              <strong>
-                                {accessLinksSummaryText ||
-                                  (selectedProductTypes.length > 1
-                                    ? "Add a link for each selected platform"
-                                    : "Add your live app link")}
-                              </strong>
-                            </span>
-                            <ArrowRight size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="review-edit-row"
-                            onClick={() => jumpToStep(3)}
-                          >
-                            <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Question setup</span>
-                              <strong>{questionSetupLabel}</strong>
-                            </span>
-                            <ArrowRight size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="review-edit-row"
-                            onClick={() => jumpToStep(3)}
-                          >
-                            <span className="review-edit-row__copy">
-                              <span className="review-edit-row__label">Recording</span>
-                              <strong>
-                                {isRecordingOnlyMode
-                                  ? "Screen + voice recording"
-                                  : "Questionnaire only"}
-                              </strong>
-                            </span>
-                            <ArrowRight size={16} />
-                          </button>
-                          {draft.needsGooglePlayClosedTesters ? (
-                            <button
-                              type="button"
-                              className="review-edit-row"
-                              onClick={() => jumpToStep(1)}
-                            >
-                              <span className="review-edit-row__copy">
-                                <span className="review-edit-row__label">Google Play testing</span>
-                                <strong>Closed-test testers for 14 days</strong>
-                              </span>
-                              <ArrowRight size={16} />
-                            </button>
-                          ) : null}
-                          {draft.needsGooglePlayClosedTesters &&
-                          draft.googlePlayClosedTestInstructions.trim() ? (
-                            <button
-                              type="button"
-                              className="review-edit-row"
-                              onClick={() => jumpToStep(2)}
-                            >
-                              <span className="review-edit-row__copy">
-                                <span className="review-edit-row__label">Closed-test access</span>
-                                <strong>{draft.googlePlayClosedTestInstructions}</strong>
-                              </span>
-                              <ArrowRight size={16} />
-                            </button>
-                          ) : null}
-                          {draft.instructions.trim() ? (
-                            <button
-                              type="button"
-                              className="review-edit-row"
-                              onClick={() => jumpToStep(2)}
-                            >
-                              <span className="review-edit-row__copy">
-                                <span className="review-edit-row__label">Tester instructions</span>
-                                <strong>{draft.instructions}</strong>
-                              </span>
-                              <ArrowRight size={16} />
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {error ? <div className="callout callout--warning">{error}</div> : null}
-
-                <div className="wizard-actions">
-                  <button
-                    type="button"
-                    className="button button--secondary"
-                    onClick={goBack}
-                    disabled={currentStep === 0 || isSubmitting}
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--primary"
-                    onClick={() => void goNext()}
-                    disabled={isContinueDisabled}
-                  >
-                    {currentStep === 4 ? "Submit my app" : "Continue"}
-                    <ArrowRight size={16} />
-                  </button>
+                  <TextField
+                    id="app-name"
+                    label="App name"
+                    value={draft.productName}
+                    onChange={(event) => updateDraft({ productName: event.target.value })}
+                    placeholder="Palette Pilot"
+                    error={getFieldError("app-name")}
+                    required
+                  />
+                  <Textarea
+                    id="app-description"
+                    label="Short app description visible to testers (optional)"
+                    rows={4}
+                    value={draft.description}
+                    onChange={(event) => updateDraft({ description: event.target.value })}
+                    placeholder="Write something interesting to catch a tester's attention, such as how Palette Pilot helps teams shape ideas faster."
+                  />
                 </div>
-              </Surface>
-            </div>
+              ) : null}
+
+              {currentStep === 1 ? (
+                <div className={styles.stack}>
+                  <div className={styles.heading}>
+                    <h2>Where can testers open your app?</h2>
+                    <p>
+                      Add your website, then include any other links that help testers complete the
+                      task.
+                    </p>
+                  </div>
+                  <TextField
+                    id="website-link"
+                    type="url"
+                    label="Website / Web app link"
+                    value={draft.accessLinks.website ?? ""}
+                    onChange={(event) =>
+                      updateAccessLinks({ ...draft.accessLinks, website: event.target.value })
+                    }
+                    placeholder={accessLinkPlaceholder("website")}
+                    error={getFieldError("website-link")}
+                    required
+                  />
+
+                  {activeAdditionalKinds.map((kind) => {
+                    if (kind === "other") {
+                      return (
+                        <div className={styles.linkRow} key={kind}>
+                          <div className={styles.linkFields}>
+                            <TextField
+                              id="other-link-label"
+                              label="Other link name"
+                              value={draft.accessLinks.other?.label ?? ""}
+                              onChange={(event) =>
+                                updateAccessLinks({
+                                  ...draft.accessLinks,
+                                  other: {
+                                    label: event.target.value,
+                                    url: draft.accessLinks.other?.url ?? "",
+                                  },
+                                })
+                              }
+                              placeholder="Interactive prototype"
+                              error={getFieldError("other-link-label")}
+                              required
+                            />
+                            <TextField
+                              id="other-link"
+                              type="url"
+                              label="Other link URL"
+                              value={draft.accessLinks.other?.url ?? ""}
+                              onChange={(event) =>
+                                updateAccessLinks({
+                                  ...draft.accessLinks,
+                                  other: {
+                                    label: draft.accessLinks.other?.label ?? "",
+                                    url: event.target.value,
+                                  },
+                                })
+                              }
+                              placeholder={accessLinkPlaceholder("other")}
+                              error={getFieldError("other-link")}
+                              required
+                            />
+                          </div>
+                          <IconButton
+                            type="button"
+                            label="Remove Other link"
+                            variant="danger"
+                            onClick={() => removeAdditionalLink(kind)}
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className={styles.linkRow} key={kind}>
+                        <div className={styles.linkFields}>
+                          <TextField
+                            id={`${kind}-link`}
+                            type="url"
+                            label={accessLinkFieldLabel(kind)}
+                            value={draft.accessLinks[kind] ?? ""}
+                            onChange={(event) =>
+                              updateAccessLinks({
+                                ...draft.accessLinks,
+                                [kind]: event.target.value,
+                              })
+                            }
+                            placeholder={accessLinkPlaceholder(kind)}
+                            error={getFieldError(`${kind}-link`)}
+                            required
+                          />
+                        </div>
+                        <IconButton
+                          type="button"
+                          label={`Remove ${additionalLinkLabels[kind]} link`}
+                          variant="danger"
+                          onClick={() => removeAdditionalLink(kind)}
+                        >
+                          <Trash2 size={16} />
+                        </IconButton>
+                      </div>
+                    );
+                  })}
+
+                  {availableAdditionalKinds.length > 0 ? (
+                    <div className={styles.addLink}>
+                      <Select
+                        label="Additional link type"
+                        value={selectedAdditionalKind}
+                        onChange={(event) =>
+                          setSelectedAdditionalKind(event.target.value as AdditionalLinkKind)
+                        }
+                      >
+                        {availableAdditionalKinds.map((kind) => (
+                          <option key={kind} value={kind}>
+                            {additionalLinkLabels[kind]}
+                          </option>
+                        ))}
+                      </Select>
+                      <Button type="button" variant="secondary" onClick={addAdditionalLink}>
+                        <Plus size={16} />
+                        Add another link
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {currentStep === 2 ? (
+                <div className={styles.stack}>
+                  <div className={styles.heading}>
+                    <h2>Add instructions</h2>
+                    <p>
+                      Give testers a set of task(s) while they think out loud. This should take
+                      around 5-10 minutes to complete.
+                    </p>
+                  </div>
+                  <div className={styles.instructionList}>
+                    {draft.instructionSteps.map((instruction, index) => (
+                      <div className={styles.instructionRow} key={`instruction-${index}`}>
+                        <div className={styles.instructionField}>
+                          <Textarea
+                            id={`instruction-step-${index}`}
+                            label={`Step ${index + 1}`}
+                            rows={3}
+                            value={instruction}
+                            onChange={(event) => updateInstructionStep(index, event.target.value)}
+                            placeholder={
+                              index === 0
+                                ? "Browse the home page and tell us what you think the app does."
+                                : "Describe the next task for the tester."
+                            }
+                            error={getFieldError(`instruction-step-${index}`)}
+                            required
+                          />
+                        </div>
+                        {index > 0 ? (
+                          <IconButton
+                            type="button"
+                            label={`Remove Step ${index + 1}`}
+                            variant="danger"
+                            onClick={() => removeInstructionStep(index)}
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  {draft.instructionSteps.length < MAX_INSTRUCTION_STEPS ? (
+                    <Button type="button" variant="secondary" onClick={addInstructionStep}>
+                      <Plus size={16} />
+                      Add another step
+                    </Button>
+                  ) : (
+                    <Alert>Five steps is the maximum for a focused tester task.</Alert>
+                  )}
+                </div>
+              ) : null}
+
+              {currentStep === REVIEW_STEP ? (
+                <div className={styles.stack}>
+                  <div className={styles.heading}>
+                    <h2>Review before publishing</h2>
+                    <p>Check the three sections below, then submit your app.</p>
+                  </div>
+                  {currentLiveSubmission ? (
+                    <Alert>
+                      Submitting this app will make it your live Earn test and pause{" "}
+                      {currentLiveSubmission.productName}.
+                    </Alert>
+                  ) : null}
+                  <div className={styles.reviewList}>
+                    <section className={styles.reviewSection} aria-labelledby="review-app-name">
+                      <div className={styles.reviewHeader}>
+                        <div>
+                          <span>1</span>
+                          <h3 id="review-app-name">App name</h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="quiet"
+                          size="compact"
+                          onClick={() => jumpToStep(0)}
+                        >
+                          <Pencil size={16} />
+                          Edit
+                        </Button>
+                      </div>
+                      <strong>{draft.productName}</strong>
+                      {draft.description.trim() ? <p>{draft.description}</p> : null}
+                    </section>
+                    <section className={styles.reviewSection} aria-labelledby="review-app-links">
+                      <div className={styles.reviewHeader}>
+                        <div>
+                          <span>2</span>
+                          <h3 id="review-app-links">App links</h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="quiet"
+                          size="compact"
+                          onClick={() => jumpToStep(1)}
+                        >
+                          <Pencil size={16} />
+                          Edit
+                        </Button>
+                      </div>
+                      <ul className={styles.resourceList}>
+                        {orderedAccessLinks.map((link) => (
+                          <li key={link.kind}>
+                            <strong>{link.label}</strong>
+                            <span>{link.displayUrl}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                    <section className={styles.reviewSection} aria-labelledby="review-instructions">
+                      <div className={styles.reviewHeader}>
+                        <div>
+                          <span>3</span>
+                          <h3 id="review-instructions">Instructions</h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="quiet"
+                          size="compact"
+                          onClick={() => jumpToStep(2)}
+                        >
+                          <Pencil size={16} />
+                          Edit
+                        </Button>
+                      </div>
+                      <ol className={styles.taskList}>
+                        {draft.instructionSteps.map((instruction, index) => (
+                          <li key={`review-instruction-${index}`}>{instruction}</li>
+                        ))}
+                      </ol>
+                    </section>
+                  </div>
+                </div>
+              ) : null}
+
+              <FormSummary ref={formSummaryRef} items={formErrors} title="Check this step" />
+
+              <div className={styles.actions}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={goBack}
+                  disabled={currentStep === 0 || isSubmitting}
+                >
+                  Back
+                </Button>
+                <Button
+                  id="submit-app"
+                  type="button"
+                  onClick={goNext}
+                  loading={isSubmitting}
+                  loadingLabel="Submitting app..."
+                >
+                  {currentStep === REVIEW_STEP ? "Submit my app" : "Continue"}
+                  {!isSubmitting ? <ArrowRight size={16} /> : null}
+                </Button>
+              </div>
+            </Surface>
           </div>
         ) : (
           <VerificationFlowShell title="Your app has been submitted">
@@ -1457,47 +949,41 @@ export function SubmitFlowPage() {
             </h2>
             <p>{submitSuccessMessage}</p>
             {!currentUser ? (
-              <div className="form-stack form-stack--narrow form-stack--verification">
-                <label className="field">
-                  <span>Email address</span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                  />
-                </label>
-                <button
+              <div className={styles.verificationForm}>
+                <TextField
+                  id="verification-email"
+                  type="email"
+                  label="Email address"
+                  value={email}
+                  onChange={(event) => {
+                    clearErrors();
+                    setEmail(event.target.value);
+                  }}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  error={getFieldError("verification-email")}
+                  required
+                />
+                <FormSummary ref={formSummaryRef} items={formErrors} title="Check your email" />
+                <Button
                   type="button"
-                  className="button button--primary"
-                  onClick={sendOtp}
-                  disabled={isSendingCode || !email.trim() || !submissionId}
+                  onClick={() => void sendOtp()}
+                  loading={isSendingCode}
+                  loadingLabel="Sending..."
+                  disabled={!email.trim() || !submissionId}
                 >
-                  {isSendingCode ? (
-                    <span className="button__spinner" aria-hidden="true" />
-                  ) : (
-                    <Sparkles size={16} />
-                  )}
-                  {isSendingCode ? "Sending..." : "Send one-time code"}
-                </button>
+                  {!isSendingCode ? <Sparkles size={16} /> : null}
+                  Send one-time code
+                </Button>
               </div>
             ) : (
-              <div className="inline-actions">
-                <button
-                  type="button"
-                  className="button button--primary"
-                  onClick={() => navigate("/earn")}
-                >
+              <div className={styles.successActions}>
+                <Button type="button" onClick={() => navigate("/earn")}>
                   Go to Earn
-                </button>
-                <button
-                  type="button"
-                  className="button button--secondary"
-                  onClick={() => navigate("/my-tests")}
-                >
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => navigate("/my-tests")}>
                   View My Tests
-                </button>
+                </Button>
               </div>
             )}
           </VerificationFlowShell>

@@ -4,7 +4,7 @@ import {
   GENERAL_PARAGRAPH_QUESTION_BANK,
   GENERAL_QUESTION_BANK,
 } from "../data/generalQuestionBank";
-import { ProductType, Question, QuestionMode, SubmissionDraft } from "../types";
+import { AccessLinkKind, Question, QuestionMode, SubmissionDraft } from "../types";
 import { hasNativeProductTypes, normalizeAccessUrl } from "./format";
 
 const easeScale = ["Very hard", "A little hard", "Easy enough", "Very easy"];
@@ -368,7 +368,7 @@ export function estimateSubmissionMinutes(questions: Question[], requiresRecordi
   return requiresRecording ? baseMinutes + RECORDING_TEST_MINUTES_OVERHEAD : baseMinutes;
 }
 
-export function validateAccessLink(url: string, productType: ProductType) {
+export function validateAccessLink(url: string, productType: AccessLinkKind) {
   const rawValue = url.trim();
 
   if (!rawValue) {

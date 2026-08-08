@@ -10,11 +10,22 @@ export interface PageHeaderProps {
   description?: ReactNode;
   actions?: ReactNode;
   eyebrow?: ReactNode;
+  alignment?: "start" | "center";
 }
 
-export function PageHeader({ title, description, actions, eyebrow }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+  eyebrow,
+  alignment = "start",
+}: PageHeaderProps) {
   return (
-    <header className={styles.pageHeader}>
+    <header
+      className={`${styles.pageHeader} ${
+        alignment === "center" ? styles.pageHeaderCentered : ""
+      }`.trim()}
+    >
       <div className={styles.pageHeaderCopy}>
         {eyebrow}
         <h1 className={styles.pageTitle}>{title}</h1>
@@ -30,10 +41,21 @@ export interface Step {
   label: string;
 }
 
-export function Stepper({ steps, currentStep }: { steps: Step[]; currentStep: string }) {
+export interface StepperProps {
+  steps: Step[];
+  currentStep: string;
+  variant?: "labeled" | "numbers-only";
+}
+
+export function Stepper({ steps, currentStep, variant = "labeled" }: StepperProps) {
   const currentIndex = steps.findIndex((step) => step.id === currentStep);
+  const numbersOnly = variant === "numbers-only";
+
   return (
-    <ol className={styles.stepper} aria-label="Progress">
+    <ol
+      className={`${styles.stepper} ${numbersOnly ? styles.stepperNumbersOnly : ""}`.trim()}
+      aria-label="Progress"
+    >
       {steps.map((step, index) => (
         <li
           key={step.id}
@@ -42,7 +64,7 @@ export function Stepper({ steps, currentStep }: { steps: Step[]; currentStep: st
           }`.trim()}
           aria-current={index === currentIndex ? "step" : undefined}
         >
-          {step.label}
+          <span className={numbersOnly ? "ds-sr-only" : undefined}>{step.label}</span>
         </li>
       ))}
     </ol>

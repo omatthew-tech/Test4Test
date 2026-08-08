@@ -7,6 +7,7 @@ import {
   Submission,
 } from "../types";
 import { normalizeAccessLinks, normalizeProductTypes, productTypesBadges } from "./format";
+import { normalizeInstructionSteps } from "./instructions";
 import { requireSupabase } from "./supabase";
 
 interface EarnVisibilitySummaryRpcRow {
@@ -31,6 +32,7 @@ interface SubmissionRow {
   description: string | null;
   target_audience: string | null;
   instructions: string | null;
+  instruction_steps?: string[] | null;
   google_play_closed_test_instructions?: string | null;
   access_links?: Submission["accessLinks"] | null;
   access_url?: string | null;
@@ -120,6 +122,7 @@ function mapSubmission(row: SubmissionRow): Submission {
         ? [row.product_type]
         : (Object.keys(accessLinks) as ProductType[]),
   );
+  const instructionSteps = normalizeInstructionSteps(row.instruction_steps, row.instructions ?? "");
 
   return {
     id: row.id,
@@ -129,6 +132,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     description: row.description ?? "",
     targetAudience: row.target_audience ?? "",
     instructions: row.instructions ?? "",
+    instructionSteps,
     googlePlayClosedTestInstructions: row.google_play_closed_test_instructions ?? "",
     accessLinks,
     requiresRecording: row.requires_recording === true,
