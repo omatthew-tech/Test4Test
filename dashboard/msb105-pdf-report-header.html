@@ -12,7 +12,7 @@
    MSB-105 — Downloadable PDF report.
    Sheet 1: cover (header w/ online link, summary, stats).
    Sheet 2+: report body — one block per reviewed screen, each with a
-   screenshot spot and its tester feedback
+   screenshot spot and its tester feedback.
    ========================================================================= */
 :root {
   --color-orange-500: #f58e56; --color-orange-050: #fff4ea;
@@ -48,8 +48,13 @@ svg { display: block; }
   padding: var(--space-100) var(--space-150); border: 1px solid var(--color-line-200); border-radius: 999px;
   background: var(--color-surface-000); color: var(--color-ink-700);
   font-size: 0.8rem; font-weight: 600; text-decoration: none;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-.pdf-online-link svg { color: var(--color-orange-500); }
+.pdf-online-link svg { color: var(--color-orange-500); transition: color 140ms ease; }
+.pdf-online-link:hover {
+  background: var(--color-orange-500); border-color: var(--color-orange-500); color: var(--color-ink-900);
+}
+.pdf-online-link:hover svg { color: var(--color-ink-900); }
 .pdf-header__ctx { color: var(--color-ink-500); font-size: 0.8rem; font-weight: 600; }
 
 .pdf-summary { padding: 40px 40px 0; display: flex; flex-direction: column; }
