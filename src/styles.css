@@ -12315,6 +12315,191 @@ select {
   transition: width 180ms ease;
 }
 
+/* ---- PDF download success modal ---------------------------------------- */
+
+.modal-backdrop.report-pdf-download-success__backdrop {
+  z-index: 90;
+  padding: var(--space-300);
+  background: rgba(28, 23, 20, 0.42);
+  backdrop-filter: blur(3px);
+  animation: report-pdf-download-backdrop-in 160ms ease-out both;
+}
+
+.download-success-modal {
+  position: relative;
+  width: min(520px, 100%);
+  padding: clamp(28px, 6vw, 40px);
+  border: 1px solid rgba(216, 208, 200, 0.9);
+  border-radius: 28px;
+  background: var(--color-surface-000);
+  box-shadow: 0 28px 80px rgba(29, 24, 21, 0.22);
+  animation: report-pdf-download-modal-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.download-success-modal:focus {
+  outline: none;
+}
+
+.download-success-modal__close {
+  position: absolute;
+  top: var(--space-200);
+  right: var(--space-200);
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line-200);
+  border-radius: 12px;
+  background: var(--color-surface-000);
+  color: var(--color-ink-700);
+  cursor: pointer;
+}
+
+.download-success-modal__close:hover {
+  color: var(--color-ink-900);
+  background: var(--color-surface-100);
+}
+
+.download-success-modal__close:focus-visible {
+  outline: 3px solid rgba(245, 142, 86, 0.28);
+  outline-offset: 2px;
+}
+
+.download-success-modal__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.download-success-modal__icon {
+  width: 72px;
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-250);
+  border-radius: 999px;
+  background: rgba(78, 157, 114, 0.12);
+  color: var(--color-success);
+}
+
+.download-success-modal h2 {
+  margin: 0;
+  font-family: "Sora", "Inter", system-ui, sans-serif;
+  font-size: clamp(1.65rem, 5vw, 2rem);
+  letter-spacing: -0.015em;
+}
+
+.download-success-modal__lead {
+  max-width: 38ch;
+  margin: var(--space-100) 0 0;
+  color: var(--color-ink-700);
+  line-height: 1.6;
+}
+
+.download-success-modal__file {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-150);
+  margin-top: var(--space-300);
+  padding: var(--space-200);
+  border: 1px solid var(--color-line-200);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-100);
+  text-align: left;
+}
+
+.download-success-modal__file-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: var(--color-surface-000);
+  color: var(--color-orange-500);
+  box-shadow: inset 0 0 0 1px rgba(216, 208, 200, 0.72);
+}
+
+.download-success-modal__file-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-050);
+}
+
+.download-success-modal__file-copy strong {
+  overflow: hidden;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-success-modal__file-copy span,
+.download-success-modal__file-status {
+  color: var(--color-ink-500);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.download-success-modal__file-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-050);
+  color: var(--color-success);
+}
+
+.download-success-modal__file-status::before {
+  width: 6px;
+  height: 6px;
+  content: "";
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.download-success-modal__hint {
+  margin: var(--space-200) 0 0;
+  color: var(--color-ink-500);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.download-success-modal__actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-150);
+  margin-top: var(--space-300);
+}
+
+.download-success-modal__actions .button {
+  min-width: 132px;
+}
+
+@keyframes report-pdf-download-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes report-pdf-download-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 720px) {
   .report-pdf-preview__backdrop {
     align-items: stretch;
@@ -12357,6 +12542,38 @@ select {
 
   .report-pdf-preview__state {
     padding: var(--space-300) var(--space-200);
+  }
+
+  .modal-backdrop.report-pdf-download-success__backdrop {
+    align-items: flex-end;
+    padding: var(--space-150);
+  }
+
+  .download-success-modal {
+    border-radius: 24px;
+  }
+
+  .download-success-modal__file {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .download-success-modal__file-status {
+    grid-column: 2;
+  }
+
+  .download-success-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .download-success-modal__actions .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop.report-pdf-download-success__backdrop,
+  .download-success-modal {
+    animation: none;
   }
 }
 
