@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CheckSquare2,
   CircleDashed,
+  Eye,
   FileText,
   Square,
   Video,
@@ -28,6 +29,7 @@ import {
   UsabilityReportPreviewFrame,
 } from "../../types";
 import { ProcessingScreen } from "./ProcessingScreen";
+import { ReportPdfPreviewModal } from "./ReportPdfPreviewModal";
 
 const NO_RECORDINGS_MESSAGE =
   "No usability test recordings found for this app yet. Turn on screen recording for the test and wait for testers to complete it before generating a report.";
@@ -86,10 +88,12 @@ function ReportHistoryList({
   reports,
   emptyMessage,
   onOpen,
+  onViewPdf,
 }: {
   reports: UsabilityReport[];
   emptyMessage: string;
   onOpen: (reportId: string) => void;
+  onViewPdf?: (report: UsabilityReport) => void;
 }) {
   if (reports.length === 0) {
     return (
@@ -105,7 +109,10 @@ function ReportHistoryList({
         const isReady = report.status === "completed";
 
         return (
-          <li key={report.id} className="report-history__item">
+          <li
+            key={report.id}
+            className={`report-history__item${isReady ? " report-history__item--ready" : ""}`}
+          >
             <button
               type="button"
               className="report-history__link"
@@ -126,16 +133,34 @@ function ReportHistoryList({
                   </span>
                 </span>
               </span>
-              <span className="report-history__actions">
+            </button>
+            <span className="report-history__actions">
+              {isReady && onViewPdf ? (
+                <button
+                  type="button"
+                  className="report-history__pdf"
+                  onClick={() => onViewPdf(report)}
+                  aria-label={`View PDF for ${report.reportName || `Report ${report.reportNumber}`}`}
+                >
+                  <Eye size={19} strokeWidth={2.2} aria-hidden="true" />
+                  View PDF
+                </button>
+              ) : (
                 <span className={`report-history__status report-history__status--${report.status}`}>
                   {reportStatusIcon(report.status)}
                   {reportStatusLabel(report.status)}
                 </span>
-                <span className="report-history__arrow" aria-hidden="true">
-                  <ArrowRight size={26} strokeWidth={1.9} />
-                </span>
-              </span>
-            </button>
+              )}
+              <button
+                type="button"
+                className="report-history__arrow"
+                onClick={() => onOpen(report.id)}
+                disabled={!isReady}
+                aria-label={`Open ${report.reportName || `Report ${report.reportNumber}`} online`}
+              >
+                <ArrowRight size={26} strokeWidth={1.9} aria-hidden="true" />
+              </button>
+            </span>
           </li>
         );
       })}
@@ -181,6 +206,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
   const [selectedRecordingIds, setSelectedRecordingIds] = useState<string[]>([]);
   const [reportName, setReportName] = useState("");
   const [isReportNameCustomized, setIsReportNameCustomized] = useState(false);
+  const [pdfPreviewReport, setPdfPreviewReport] = useState<UsabilityReport | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -407,13 +433,6 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
               </div>
             )}
 
-            <div className="report-dashboard__recording-hint">
-              <Video size={16} strokeWidth={2.2} />
-              {availableRecordings.length > 0
-                ? `${availableRecordings.length} recording${availableRecordings.length === 1 ? "" : "s"} available to analyze`
-                : "You don't have any recordings for this app yet"}
-            </div>
-
             <button
               type="button"
               className="button button--primary report-dashboard__generate"
@@ -555,6 +574,7 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
             reports={filteredHistory}
             emptyMessage="No reports yet for this app. Generate your first report above."
             onOpen={(reportId) => navigate(`/ai-analysis/${reportId}`)}
+            onViewPdf={setPdfPreviewReport}
           />
         </section>
       ) : null}
@@ -568,6 +588,13 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
             onOpen={(reportId) => navigate(`/ai-analysis/${reportId}`)}
           />
         </section>
+      ) : null}
+
+      {pdfPreviewReport ? (
+        <ReportPdfPreviewModal
+          report={pdfPreviewReport}
+          onClose={() => setPdfPreviewReport(null)}
+        />
       ) : null}
     </div>
   );

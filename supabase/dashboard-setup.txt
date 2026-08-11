@@ -32,7 +32,7 @@
 
 11. For test result notification emails, also run:
     - C:\Projects\LIKE4LIKE\supabase\test-results-email-update.txt
-    - set SUPABASE_SECRET_KEY, SMTP2GO_API_KEY, SMTP2GO_SENDER, APP_BASE_URL secrets
+    - set SUPABASE_SECRET_KEY, SMTP2GO_API_KEY, SMTP2GO_SENDER, APP_BASE_URL, GROUP3_APP_BASE_URL secrets
     - deploy supabase/functions/send-test-results-notification/index.ts
 
 12. Detailed notification setup is in:

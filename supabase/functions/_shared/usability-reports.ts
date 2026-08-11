@@ -3,6 +3,7 @@ import { AwsClient } from "npm:aws4fetch@1.0.20";
 import { analyzeReportQuotes } from "./quote-analysis.ts";
 import {
   getEmailEnvironment,
+  getGroup3AppBaseUrl,
   loadEmailTemplates,
   logEmailDelivery,
   renderEmailTemplate,
@@ -624,7 +625,7 @@ export async function sendReportReadyNotification(
     throw new Error(`Missing email template: ${reportReadyTemplateKey}`);
   }
 
-  const reportUrl = `${env.appBaseUrl}/reports/${context.reportId}`;
+  const reportUrl = `${getGroup3AppBaseUrl()}/ai-analysis/${context.reportId}`;
   const rendered = renderEmailTemplate(template, {
     ownerDisplayName: owner.display_name?.trim() || "there",
     productName,

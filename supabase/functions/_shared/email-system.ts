@@ -21,6 +21,14 @@ export interface RenderedEmail {
   htmlBody: string;
 }
 
+export const defaultGroup3AppBaseUrl = "https://beta.test4test.io";
+
+export function getGroup3AppBaseUrl() {
+  return (
+    Deno.env.get("GROUP3_APP_BASE_URL")?.trim() || defaultGroup3AppBaseUrl
+  ).replace(/\/+$/, "");
+}
+
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-reminder-secret",

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
+  getGroup3AppBaseUrl,
   logEmailDelivery,
   renderEmailTemplate,
   sendEmail,
@@ -152,7 +153,7 @@ export async function processReportShareReminder(
   const senderName = normalizeName(sender?.display_name) || sender?.email?.trim() || "A Test4Test user";
   const reportName = report.report_name?.trim() || `Report ${report.report_number}`;
   const productName = (submissionData as { product_name?: string | null } | null)?.product_name?.trim() || "your app";
-  const reportUrl = `${env.appBaseUrl}/shared-report/${reminder.id}`;
+  const reportUrl = `${getGroup3AppBaseUrl()}/shared-report/${reminder.id}`;
   const rendered = renderEmailTemplate(template, {
     recipientName: reminder.recipient_name,
     recipientEmail: reminder.recipient_email,
