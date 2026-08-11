@@ -216,6 +216,78 @@ async function callFunction<T extends { ok?: boolean; error?: string; message?: 
   return payload;
 }
 
+async function callBinaryFunction(
+  name: string,
+  body: Record<string, unknown>,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<Blob> {
+  assertConfigured();
+
+  const accessToken = await getAccessToken("Sign in to view reports.");
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  let timeoutId: number | undefined;
+
+  if (options.signal?.aborted) {
+    controller.abort();
+  } else {
+    options.signal?.addEventListener("abort", abort, { once: true });
+  }
+
+  if (options.timeoutMs) {
+    timeoutId = window.setTimeout(() => controller.abort(), options.timeoutMs);
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        apikey: supabasePublishableKey,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+        message?: string;
+      } | null;
+
+      throw new FunctionCallError(
+        payload?.error ?? payload?.message ?? response.statusText,
+        response.status,
+      );
+    }
+
+    return await response.blob();
+  } catch (caught) {
+    if (options.signal?.aborted) {
+      throw new DOMException("Request aborted.", "AbortError");
+    }
+
+    if (controller.signal.aborted) {
+      throw new FunctionCallError("The screenshot request timed out.");
+    }
+
+    if (caught instanceof TypeError) {
+      throw new FunctionCallError(
+        "The screenshot service could not be reached. Please try again in a moment.",
+      );
+    }
+
+    throw caught;
+  } finally {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+
+    options.signal?.removeEventListener("abort", abort);
+  }
+}
+
 /** List the current user's previously generated reports (newest first). */
 export async function listMyUsabilityReports(): Promise<UsabilityReport[]> {
   const payload = await callFunction<ListReportsResponse>("list-usability-reports", {});
@@ -496,16 +568,36 @@ export async function getUsabilityReportStatus(
 }
 
 /** Fetch a completed report with all frames (each carrying a signed image URL). */
-export async function getUsabilityReport(reportId: string): Promise<UsabilityReportDetail> {
+export async function getUsabilityReport(
+  reportId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<UsabilityReportDetail> {
   const payload = await callFunction<ReportDetailResponse>("get-usability-report", {
     reportId,
-  });
+  }, options);
 
   if (!payload.report) {
     throw new Error(payload.message ?? "That report could not be loaded.");
   }
 
   return payload.report;
+}
+
+/** Fetch one authorized report screenshot as binary image data for PDF generation. */
+export async function getUsabilityReportFrameBlob(
+  reportId: string,
+  frameId: string,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<Blob> {
+  if (!reportId || !frameId) {
+    throw new Error("Missing report or frame id.");
+  }
+
+  return callBinaryFunction(
+    "get-usability-report-frame",
+    { reportId, frameId },
+    { signal: options.signal, timeoutMs: options.timeoutMs ?? 30000 },
+  );
 }
 
 /** Backfill or refresh the AI-generated quote analysis for a completed report. */
