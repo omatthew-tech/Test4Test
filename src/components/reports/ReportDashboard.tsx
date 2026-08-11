@@ -433,13 +433,6 @@ export function ReportDashboard({ initialSubmissionId }: ReportDashboardProps) {
               </div>
             )}
 
-            <div className="report-dashboard__recording-hint">
-              <Video size={16} strokeWidth={2.2} />
-              {availableRecordings.length > 0
-                ? `${availableRecordings.length} recording${availableRecordings.length === 1 ? "" : "s"} available to analyze`
-                : "You don't have any recordings for this app yet"}
-            </div>
-
             <button
               type="button"
               className="button button--primary report-dashboard__generate"

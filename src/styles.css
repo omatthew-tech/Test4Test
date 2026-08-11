@@ -11810,7 +11810,7 @@ select {
 
 .report-dashboard__controls {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto auto;
+  grid-template-columns: minmax(260px, 1fr) auto;
   align-items: center;
   gap: clamp(var(--space-200), 2.6vw, var(--space-400));
 }
@@ -11866,23 +11866,6 @@ select {
   color: var(--color-ink-900);
   font-size: 0.95rem;
   line-height: 1.1;
-}
-
-.report-dashboard__recording-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-150);
-  min-width: 0;
-  color: var(--color-ink-600);
-  font-size: 0.92rem;
-  line-height: 1.35;
-}
-
-.report-dashboard__recording-hint svg {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  color: var(--color-ink-700);
 }
 
 .report-dashboard__generate {
@@ -14273,11 +14256,6 @@ select {
 
   .report-dashboard__select .field__label {
     top: 14px;
-  }
-
-  .report-dashboard__recording-hint {
-    align-items: flex-start;
-    font-size: 0.95rem;
   }
 
   .report-dashboard__generate {
