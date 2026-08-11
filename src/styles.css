@@ -11810,8 +11810,9 @@ select {
 
 .report-dashboard__controls {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto;
+  grid-template-columns: minmax(260px, 440px) auto;
   align-items: center;
+  justify-content: start;
   gap: clamp(var(--space-200), 2.6vw, var(--space-400));
 }
 
