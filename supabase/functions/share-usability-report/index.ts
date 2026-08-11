@@ -2,6 +2,7 @@ import {
   corsHeaders,
   createAdminClient,
   getEmailEnvironment,
+  getGroup3AppBaseUrl,
   json,
   loadEmailTemplates,
   logEmailDelivery,
@@ -76,6 +77,7 @@ Deno.serve(async (request) => {
   }
 
   let env;
+  const group3AppBaseUrl = getGroup3AppBaseUrl();
 
   try {
     env = getEmailEnvironment();
@@ -182,7 +184,7 @@ Deno.serve(async (request) => {
           openedAt: recipient.opened_at,
           nextReminderAt: recipient.next_reminder_at,
           lastReminderSentAt: recipient.last_reminder_sent_at,
-          shareUrl: `${env.appBaseUrl}/shared-report/${recipient.id}`,
+          shareUrl: `${group3AppBaseUrl}/shared-report/${recipient.id}`,
         })),
       },
     });
@@ -306,7 +308,7 @@ Deno.serve(async (request) => {
         recipientName: linkedShare.recipient_name,
         recipientEmail: linkedShare.recipient_email,
         status: linkedShare.status,
-        shareUrl: `${env.appBaseUrl}/shared-report/${linkedShare.id}`,
+        shareUrl: `${group3AppBaseUrl}/shared-report/${linkedShare.id}`,
       },
     });
   }
@@ -343,7 +345,7 @@ Deno.serve(async (request) => {
     normalizeName(sender?.display_name)
     || sender?.email?.trim()
     || "A Test4Test user";
-  const reportUrl = `${env.appBaseUrl}/shared-report/${shareData.id}`;
+  const reportUrl = `${group3AppBaseUrl}/shared-report/${shareData.id}`;
   let subject = `${senderName} shared a usability report with you`;
 
   try {
