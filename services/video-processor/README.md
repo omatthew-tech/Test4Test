@@ -91,6 +91,7 @@ Analytics thumbnail jobs use these optional settings:
 
 | Variable                           | Default               | Description                                           |
 | ---------------------------------- | --------------------- | ----------------------------------------------------- |
+| `THUMBNAIL_BUCKET_NAME`            | report frames bucket  | Dedicated bucket for private Analytics preview images |
 | `THUMBNAIL_COMPLETION_WEBHOOK_URL` | empty                 | Shared-secret-protected Supabase completion callback  |
 | `THUMBNAIL_GENERATION_VERSION`     | `scene-after-half-v1` | Version embedded in object keys and callback metadata |
 | `THUMBNAIL_JOB_CONCURRENCY`        | `1`                   | Concurrent thumbnail jobs                             |
@@ -99,8 +100,9 @@ Analytics thumbnail jobs use these optional settings:
 
 Use the same value for `WORKER_SHARED_SECRET` here and
 `VIDEO_PROCESSOR_SHARED_SECRET` in Supabase. The source bucket must be
-`test-response-recordings`, and the configured destination bucket is
-`usability-test-screenshots`.
+`test-response-recordings`. Set `THUMBNAIL_BUCKET_NAME` to
+`usability-test-screenshots`; `CLOUDFLARE_BUCKET_NAME` remains the report-frame
+destination.
 
 The Supabase Edge Functions also read `GROQ_TRANSCRIPTION_MODEL` for transcript
 cache lookups. If you override it here, set the same value as an Edge Function

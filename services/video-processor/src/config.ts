@@ -88,6 +88,8 @@ export const config = {
 
   completionWebhookUrl: process.env.COMPLETION_WEBHOOK_URL?.trim() ?? "",
   thumbnails: {
+    /** Dedicated destination bucket so Analytics previews do not affect report frames. */
+    bucketName: optionalEnv("THUMBNAIL_BUCKET_NAME", cloudflareBucketName),
     generationVersion: optionalEnv("THUMBNAIL_GENERATION_VERSION", "scene-after-half-v1"),
     completionWebhookUrl: process.env.THUMBNAIL_COMPLETION_WEBHOOK_URL?.trim() ?? "",
     queueConcurrency: numberEnv("THUMBNAIL_JOB_CONCURRENCY", 1),

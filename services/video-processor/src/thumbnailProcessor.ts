@@ -51,6 +51,7 @@ async function processSource(
   const frame = await extractRecordingThumbnail(localPath);
   const storageKey = buildRecordingThumbnailKey(source);
   await uploadFrame({
+    bucket: config.thumbnails.bucketName,
     key: storageKey,
     body: frame.buffer,
     contentType: "image/webp",
@@ -68,7 +69,7 @@ async function processSource(
     recordingUploadId: source.recordingUploadId,
     ...(source.responseId ? { responseId: source.responseId } : {}),
     recordingObjectKey: source.objectKey,
-    storageBucket: config.r2.bucketName,
+    storageBucket: config.thumbnails.bucketName,
     storageKey,
     contentType: "image/webp",
     sizeBytes: frame.buffer.byteLength,

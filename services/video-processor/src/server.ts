@@ -57,7 +57,11 @@ function normalizeBucketName(bucket: string): string {
 function canSignBucket(bucket: string): boolean {
   const normalized = normalizeBucketName(bucket);
 
-  return normalized === config.r2.bucketName || normalized === config.r2.sourceBucketName;
+  return (
+    normalized === config.r2.bucketName ||
+    normalized === config.r2.sourceBucketName ||
+    normalized === config.thumbnails.bucketName
+  );
 }
 
 function parseFrameSignRequests(
@@ -173,7 +177,7 @@ app.post("/frames/sign", requireSecret, async (req: Request, res: Response) => {
 app.post("/frames/delete", requireSecret, async (req: Request, res: Response) => {
   const frames = parseFrameSignRequests(req.body?.frames).filter(
     (frame) =>
-      frame.bucket === config.r2.bucketName && frame.key.startsWith("recording-thumbnails/"),
+      frame.bucket === config.thumbnails.bucketName && frame.key.startsWith("recording-thumbnails/"),
   );
 
   if (frames.length === 0) {
@@ -184,7 +188,10 @@ app.post("/frames/delete", requireSecret, async (req: Request, res: Response) =>
   }
 
   try {
-    await deleteObjects({ bucket: config.r2.bucketName, keys: frames.map((frame) => frame.key) });
+    await deleteObjects({
+      bucket: config.thumbnails.bucketName,
+      keys: frames.map((frame) => frame.key),
+    });
     res.json({ ok: true, deletedIds: frames.map((frame) => frame.id) });
   } catch (error) {
     logger.warn("Recording thumbnail deletion failed", {
@@ -281,6 +288,10 @@ async function start(): Promise<void> {
   try {
     await assertBucketReachable();
     logger.info("Connected to R2 bucket", { bucket: config.r2.bucketName });
+    if (config.thumbnails.bucketName !== config.r2.bucketName) {
+      await assertBucketReachable(config.thumbnails.bucketName);
+      logger.info("Connected to R2 thumbnail bucket", { bucket: config.thumbnails.bucketName });
+    }
   } catch (error) {
     logger.error("Could not reach R2 bucket; check Cloudflare credentials.", {
       error: error instanceof Error ? error.message : String(error),

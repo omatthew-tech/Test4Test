@@ -61,12 +61,12 @@ function formatR2Error(error: unknown): string {
 }
 
 /** Verify the destination bucket is reachable with the supplied credentials. */
-export async function assertBucketReachable(): Promise<void> {
+export async function assertBucketReachable(bucket = config.r2.bucketName): Promise<void> {
   try {
-    await r2.send(new HeadBucketCommand({ Bucket: config.r2.bucketName }));
+    await r2.send(new HeadBucketCommand({ Bucket: bucket }));
   } catch (error) {
     throw new Error(
-      `R2 HeadBucket failed for "${config.r2.bucketName}" at ${config.r2.endpoint} — ${formatR2Error(error)}`,
+      `R2 HeadBucket failed for "${bucket}" at ${config.r2.endpoint} — ${formatR2Error(error)}`,
     );
   }
 }
@@ -113,17 +113,18 @@ export async function downloadUrlToFile(url: string, destPath: string): Promise<
 
 /** Upload a single screenshot frame buffer to the destination R2 bucket. */
 export async function uploadFrame(params: {
+  bucket?: string;
   key: string;
   body: Buffer;
   contentType: string;
   /** Custom object metadata. Values must be ASCII strings. */
   metadata?: Record<string, string>;
 }): Promise<void> {
-  const { key, body, contentType, metadata } = params;
+  const { bucket = config.r2.bucketName, key, body, contentType, metadata } = params;
 
   await r2.send(
     new PutObjectCommand({
-      Bucket: config.r2.bucketName,
+      Bucket: bucket,
       Key: key,
       Body: body,
       ContentType: contentType,

@@ -34,19 +34,62 @@ export interface RecordingThumbnailFrame {
   height: number;
 }
 
-/** Probe total duration (seconds) of the source video. */
-export function probeDurationSeconds(input: string): Promise<number> {
+function positiveDuration(value: unknown) {
+  const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+export function selectProbedDurationSeconds(
+  formatDuration: unknown,
+  streamDurations: unknown[],
+) {
+  return Math.max(positiveDuration(formatDuration), ...streamDurations.map(positiveDuration));
+}
+
+function scanPacketDurationSeconds(input: string): Promise<number> {
   return new Promise((resolve, reject) => {
+    let durationSeconds = 0;
+
+    ffmpeg(input)
+      .outputOptions(["-map", "0:v:0", "-c", "copy", "-f", "null"])
+      .output(NULL_SINK)
+      .on("stderr", (line: string) => {
+        const match = line.match(/time=\s*([0-9]+):([0-9]+):([0-9]+(?:\.[0-9]+)?)/);
+        if (!match?.[1] || !match[2] || !match[3]) {
+          return;
+        }
+
+        const seconds =
+          Number.parseInt(match[1], 10) * 3600 +
+          Number.parseInt(match[2], 10) * 60 +
+          Number.parseFloat(match[3]);
+        durationSeconds = Math.max(durationSeconds, seconds);
+      })
+      .on("end", () => resolve(durationSeconds))
+      .on("error", reject)
+      .run();
+  });
+}
+
+/** Probe total duration (seconds), falling back to a fast packet scan for MediaRecorder WebM. */
+export async function probeDurationSeconds(input: string): Promise<number> {
+  const probed = await new Promise<number>((resolve, reject) => {
     ffmpeg(input).ffprobe((err, data) => {
       if (err) {
         reject(err);
         return;
       }
 
-      const duration = data.format?.duration;
-      resolve(typeof duration === "number" && Number.isFinite(duration) ? duration : 0);
+      resolve(
+        selectProbedDurationSeconds(
+          data.format?.duration,
+          (data.streams ?? []).map((stream) => stream.duration),
+        ),
+      );
     });
   });
+
+  return probed > 0 ? probed : scanPacketDurationSeconds(input);
 }
 
 /**

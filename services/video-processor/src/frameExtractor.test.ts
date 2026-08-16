@@ -38,6 +38,11 @@ test("rejects recordings without a usable duration", async () => {
   assert.throws(() => selectRecordingThumbnailTimestampSeconds(0, []));
 });
 
+test("uses stream metadata when WebM format duration is unavailable", async () => {
+  const { selectProbedDurationSeconds } = await import("./frameExtractor.js");
+  assert.equal(selectProbedDurationSeconds("N/A", [undefined, "12.75"]), 12.75);
+});
+
 test("extracts a 960px WebP from a short recording and rejects corrupt video", async () => {
   const [{ default: ffmpegPath }, { default: sharp }, { extractRecordingThumbnail }] =
     await Promise.all([import("ffmpeg-static"), import("sharp"), import("./frameExtractor.js")]);
