@@ -42,8 +42,8 @@ const cloudflareBucketName = requireEnv("CLOUDFLARE_BUCKET_NAME");
 export const config = {
   http: {
     port: numberEnv("PORT", 8787),
-    /** When set, job endpoints require a matching `x-worker-secret` header. */
-    sharedSecret: process.env.WORKER_SHARED_SECRET?.trim() ?? "",
+    /** Protected job and asset endpoints require this shared secret. */
+    sharedSecret: requireEnv("WORKER_SHARED_SECRET"),
   },
 
   r2: {
@@ -77,13 +77,23 @@ export const config = {
     model: optionalEnv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo"),
     language: process.env.GROQ_TRANSCRIPTION_LANGUAGE?.trim() ?? "",
     prompt: process.env.GROQ_TRANSCRIPTION_PROMPT?.trim() ?? "",
-    endpoint: optionalEnv("GROQ_TRANSCRIPTION_ENDPOINT", "https://api.groq.com/openai/v1/audio/transcriptions"),
+    endpoint: optionalEnv(
+      "GROQ_TRANSCRIPTION_ENDPOINT",
+      "https://api.groq.com/openai/v1/audio/transcriptions",
+    ),
     /** Keep direct uploads comfortably below Groq's documented attachment limits. */
     maxUploadBytes: numberEnv("GROQ_TRANSCRIPTION_MAX_UPLOAD_BYTES", 20 * 1024 * 1024),
     chunkSeconds: numberEnv("GROQ_TRANSCRIPTION_CHUNK_SECONDS", 600),
   },
 
   completionWebhookUrl: process.env.COMPLETION_WEBHOOK_URL?.trim() ?? "",
+  thumbnails: {
+    generationVersion: optionalEnv("THUMBNAIL_GENERATION_VERSION", "scene-after-half-v1"),
+    completionWebhookUrl: process.env.THUMBNAIL_COMPLETION_WEBHOOK_URL?.trim() ?? "",
+    queueConcurrency: numberEnv("THUMBNAIL_JOB_CONCURRENCY", 1),
+    queueMaxPending: numberEnv("THUMBNAIL_QUEUE_MAX_PENDING", 32),
+    maxBatchSize: numberEnv("THUMBNAIL_MAX_BATCH_SIZE", 16),
+  },
 } as const;
 
 export type AppConfig = typeof config;

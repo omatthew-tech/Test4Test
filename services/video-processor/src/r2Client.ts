@@ -3,6 +3,7 @@ import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
 import {
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
@@ -81,9 +82,7 @@ export async function downloadObjectToFile(params: {
 }): Promise<void> {
   const { bucket, key, destPath } = params;
 
-  const response = await r2.send(
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
-  );
+  const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
 
   if (!response.Body) {
     throw new Error(`Empty body for r2://${bucket}/${key}`);
@@ -158,4 +157,28 @@ export async function createSignedObjectUrl(params: {
   return getSignedUrl(r2 as never, command as never, {
     expiresIn: params.expiresInSeconds ?? 60 * 60,
   });
+}
+
+export async function deleteObjects(params: { bucket: string; keys: string[] }): Promise<string[]> {
+  if (params.keys.length === 0) {
+    return [];
+  }
+
+  const response = await r2.send(
+    new DeleteObjectsCommand({
+      Bucket: params.bucket,
+      Delete: {
+        Quiet: false,
+        Objects: params.keys.slice(0, 1000).map((Key) => ({ Key })),
+      },
+    }),
+  );
+
+  if (response.Errors && response.Errors.length > 0) {
+    throw new Error(`R2 could not delete ${response.Errors.length} recording thumbnail object(s).`);
+  }
+
+  return (response.Deleted ?? [])
+    .map((entry) => entry.Key)
+    .filter((key): key is string => typeof key === "string");
 }

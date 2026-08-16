@@ -91,3 +91,54 @@ export interface Job {
   result?: ProcessReportResult;
   error?: string;
 }
+
+export interface RecordingThumbnailSource {
+  recordingUploadId: string;
+  responseId?: string;
+  objectKey: string;
+  bucket?: string;
+  /** Optional short-lived source URL for legacy R2 recordings without an upload row. */
+  url?: string;
+  generationVersion: string;
+}
+
+export interface RecordingThumbnailResult {
+  recordingUploadId: string;
+  responseId?: string;
+  recordingObjectKey: string;
+  storageBucket: string;
+  storageKey: string;
+  contentType: "image/webp";
+  sizeBytes: number;
+  width: number;
+  height: number;
+  timestampMs: number;
+  durationMs: number;
+  generationVersion: string;
+}
+
+export interface RecordingThumbnailFailure {
+  recordingUploadId: string;
+  recordingObjectKey: string;
+  error: string;
+}
+
+export interface ProcessRecordingThumbnailsInput {
+  sources: RecordingThumbnailSource[];
+}
+
+export interface ProcessRecordingThumbnailsResult {
+  successes: RecordingThumbnailResult[];
+  failures: RecordingThumbnailFailure[];
+}
+
+export interface RecordingThumbnailJob {
+  id: string;
+  status: JobStatus;
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  sourceCount: number;
+  result?: ProcessRecordingThumbnailsResult;
+  error?: string;
+}

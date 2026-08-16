@@ -189,9 +189,10 @@ function normalizeWords(
 
 function normalizeGroqChunk(payload: GroqTranscriptionResponse, offsetMs: number): NormalizedChunk {
   const allWords = Array.isArray(payload.words) ? payload.words : [];
-  const language = typeof payload.language === "string" && payload.language.trim()
-    ? payload.language.trim()
-    : null;
+  const language =
+    typeof payload.language === "string" && payload.language.trim()
+      ? payload.language.trim()
+      : null;
   const segments = (Array.isArray(payload.segments) ? payload.segments : [])
     .map((segment) => {
       const startMs = secondsToMs(segment.start, offsetMs);
@@ -211,9 +212,13 @@ function normalizeGroqChunk(payload: GroqTranscriptionResponse, offsetMs: number
     })
     .filter((segment) => segment.text && segment.endMs >= segment.startMs);
 
-  const text = typeof payload.text === "string" && payload.text.trim()
-    ? payload.text.trim()
-    : segments.map((segment) => segment.text).join(" ").trim();
+  const text =
+    typeof payload.text === "string" && payload.text.trim()
+      ? payload.text.trim()
+      : segments
+          .map((segment) => segment.text)
+          .join(" ")
+          .trim();
 
   return { text, language, segments };
 }
@@ -259,7 +264,11 @@ async function transcribeChunk(
   }
 }
 
-function combineChunks(responseId: string, durationMs: number | null, chunks: NormalizedChunk[]): ResponseTranscript {
+function combineChunks(
+  responseId: string,
+  durationMs: number | null,
+  chunks: NormalizedChunk[],
+): ResponseTranscript {
   const segments = chunks
     .flatMap((chunk) => chunk.segments)
     .sort((first, second) => first.startMs - second.startMs || first.endMs - second.endMs)
@@ -267,8 +276,14 @@ function combineChunks(responseId: string, durationMs: number | null, chunks: No
       ...segment,
       segmentIndex: index,
     }));
-  const text = chunks.map((chunk) => chunk.text).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-  const language = (chunks.find((chunk) => chunk.language)?.language ?? config.transcription.language) || null;
+  const text = chunks
+    .map((chunk) => chunk.text)
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const language =
+    (chunks.find((chunk) => chunk.language)?.language ?? config.transcription.language) || null;
 
   return {
     responseId,
@@ -318,7 +333,9 @@ export async function transcribeRecording(
 
   for (let startSeconds = 0; startSeconds < durationSeconds; startSeconds += chunkSeconds) {
     const currentDuration = Math.min(chunkSeconds, durationSeconds - startSeconds);
-    chunks.push(...await transcribeChunk(input, workDir, responseId, startSeconds, currentDuration));
+    chunks.push(
+      ...(await transcribeChunk(input, workDir, responseId, startSeconds, currentDuration)),
+    );
   }
 
   return combineChunks(responseId, durationMs, chunks);

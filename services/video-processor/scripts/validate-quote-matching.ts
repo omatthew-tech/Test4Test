@@ -108,7 +108,9 @@ async function main() {
   console.log("\nDerived display windows [startMs, endMs):");
   for (const range of ranges) {
     const end =
-      range.endMs === Number.POSITIVE_INFINITY ? "∞" : `${formatMs(range.endMs)} (${range.endMs} ms)`;
+      range.endMs === Number.POSITIVE_INFINITY
+        ? "∞"
+        : `${formatMs(range.endMs)} (${range.endMs} ms)`;
     console.log(
       `  ${range.frame.storageKey.split("/").pop()}  [${formatMs(range.startMs)}, ${end})`,
     );
@@ -119,9 +121,7 @@ async function main() {
     const current = frames[index]!;
     const next = frames[index + 1];
     sampleQuoteTimes.push(
-      next
-        ? Math.floor((current.timestampMs + next.timestampMs) / 2)
-        : current.timestampMs + 5000,
+      next ? Math.floor((current.timestampMs + next.timestampMs) / 2) : current.timestampMs + 5000,
     );
   }
 

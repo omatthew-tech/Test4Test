@@ -26,7 +26,12 @@ function timestampToken(timestampMs: number): string {
   return String(timestampMs).padStart(8, "0");
 }
 
-function buildFrameKey(reportId: string, responseId: string, frameIndex: number, timestampMs: number) {
+function buildFrameKey(
+  reportId: string,
+  responseId: string,
+  frameIndex: number,
+  timestampMs: number,
+) {
   const index = String(frameIndex).padStart(4, "0");
   return `reports/${reportId}/${responseId}/${index}-${timestampToken(timestampMs)}ms.webp`;
 }
@@ -67,7 +72,12 @@ async function processSource(
       continue;
     }
 
-    const storageKey = buildFrameKey(reportId, source.responseId, frameIndex, candidate.timestampMs);
+    const storageKey = buildFrameKey(
+      reportId,
+      source.responseId,
+      frameIndex,
+      candidate.timestampMs,
+    );
 
     await uploadFrame({
       key: storageKey,
@@ -132,7 +142,12 @@ export async function processReport(
   try {
     for (const source of input.sources) {
       logger.info("Processing source", { reportId: input.reportId, responseId: source.responseId });
-      const { frames: sourceFrames, transcript } = await processSource(input.reportId, source, workDir, hooks);
+      const { frames: sourceFrames, transcript } = await processSource(
+        input.reportId,
+        source,
+        workDir,
+        hooks,
+      );
       frames.push(...sourceFrames);
       if (transcript) {
         transcripts.push(transcript);

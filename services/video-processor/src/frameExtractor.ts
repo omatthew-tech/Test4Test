@@ -26,6 +26,14 @@ export interface CandidateFrame {
   perceptualHash: string;
 }
 
+export interface RecordingThumbnailFrame {
+  timestampMs: number;
+  durationMs: number;
+  buffer: Buffer;
+  width: number;
+  height: number;
+}
+
 /** Probe total duration (seconds) of the source video. */
 export function probeDurationSeconds(input: string): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -88,6 +96,64 @@ export function detectSceneTimestamps(input: string): Promise<number[]> {
   });
 }
 
+/**
+ * Detect scene changes after a known offset. Seeking before the input keeps the
+ * analysis bounded to the second half of the recording. FFmpeg builds differ
+ * in whether showinfo reports source-relative or seek-relative timestamps, so
+ * small timestamps are normalized back onto the source timeline.
+ */
+export function detectSceneTimestampsAfter(input: string, startSeconds: number): Promise<number[]> {
+  return new Promise((resolve, reject) => {
+    const timestamps: number[] = [];
+    const filters: string[] = [];
+
+    if (config.frames.analysisFps > 0) {
+      filters.push(`fps=${config.frames.analysisFps}`);
+    }
+    if (config.frames.analysisWidth > 0) {
+      filters.push(`scale=${config.frames.analysisWidth}:-1:flags=fast_bilinear`);
+    }
+    filters.push(`select='gt(scene,${config.frames.sceneThreshold})'`, "showinfo");
+
+    ffmpeg(input)
+      .seekInput(Math.max(0, startSeconds))
+      .outputOptions(["-vf", filters.join(","), "-vsync", "vfr", "-f", "null"])
+      .output(NULL_SINK)
+      .on("stderr", (line: string) => {
+        const match = line.match(/pts_time:([0-9]+(?:\.[0-9]+)?)/);
+        if (!match?.[1]) {
+          return;
+        }
+
+        const parsed = Number.parseFloat(match[1]);
+        const sourceTimestamp = parsed + 0.001 < startSeconds ? parsed + startSeconds : parsed;
+        timestamps.push(sourceTimestamp);
+      })
+      .on("end", () => resolve([...new Set(timestamps)].sort((a, b) => a - b)))
+      .on("error", reject)
+      .run();
+  });
+}
+
+export function selectRecordingThumbnailTimestampSeconds(
+  durationSeconds: number,
+  sceneTimestamps: number[],
+) {
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new Error("Recording duration could not be determined.");
+  }
+
+  const midpoint = durationSeconds * 0.5;
+  const firstLaterScene = sceneTimestamps
+    .filter(
+      (timestamp) =>
+        Number.isFinite(timestamp) && timestamp >= midpoint && timestamp <= durationSeconds,
+    )
+    .sort((first, second) => first - second)[0];
+
+  return firstLaterScene ?? Math.min(durationSeconds, durationSeconds * 0.55);
+}
+
 /** Regular interval samples across the video (e.g. every 30s on a 6-min recording). */
 function buildIntervalTimestamps(durationSeconds: number, intervalSeconds: number): number[] {
   if (intervalSeconds <= 0 || durationSeconds <= 0) {
@@ -105,9 +171,9 @@ function buildIntervalTimestamps(durationSeconds: number, intervalSeconds: numbe
 /** Sort, clamp, and enforce a minimum gap between consecutive timestamps. */
 function normalizeTimestamps(rawSeconds: number[]): number[] {
   const minGap = config.frames.minGapSeconds;
-  const sorted = [...new Set(rawSeconds.filter((value) => Number.isFinite(value) && value >= 0))].sort(
-    (a, b) => a - b,
-  );
+  const sorted = [
+    ...new Set(rawSeconds.filter((value) => Number.isFinite(value) && value >= 0)),
+  ].sort((a, b) => a - b);
 
   const spaced: number[] = [];
   for (const value of sorted) {
@@ -143,6 +209,39 @@ function extractRawFrameAt(input: string, timestampSeconds: number): Promise<Buf
     stream.on("end", () => resolve(Buffer.concat(chunks)));
     stream.on("error", (err: Error) => reject(err));
   });
+}
+
+/** Extract the single Analytics preview frame without running report de-duplication. */
+export async function extractRecordingThumbnail(input: string): Promise<RecordingThumbnailFrame> {
+  const durationSeconds = await probeDurationSeconds(input);
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new Error("Recording duration could not be determined.");
+  }
+
+  const midpoint = durationSeconds * 0.5;
+  const sceneTimestamps = await detectSceneTimestampsAfter(input, midpoint);
+  const timestampSeconds = selectRecordingThumbnailTimestampSeconds(
+    durationSeconds,
+    sceneTimestamps,
+  );
+  const rawFrame = await extractRawFrameAt(input, timestampSeconds);
+
+  if (rawFrame.length === 0) {
+    throw new Error("FFmpeg did not return a thumbnail frame.");
+  }
+
+  const webp = await sharp(rawFrame)
+    .resize({ width: 960, withoutEnlargement: false })
+    .webp({ quality: 72, effort: 4 })
+    .toBuffer({ resolveWithObject: true });
+
+  return {
+    timestampMs: Math.round(timestampSeconds * 1000),
+    durationMs: Math.round(durationSeconds * 1000),
+    buffer: webp.data,
+    width: webp.info.width,
+    height: webp.info.height,
+  };
 }
 
 /**
@@ -236,7 +335,8 @@ export async function extractUniqueFrames(input: string): Promise<CandidateFrame
     const perceptualHash = await computeAverageHash(rawFrame);
 
     const isDuplicate = kept.some(
-      (frame) => hammingDistance(frame.perceptualHash, perceptualHash) <= config.frames.hammingThreshold,
+      (frame) =>
+        hammingDistance(frame.perceptualHash, perceptualHash) <= config.frames.hammingThreshold,
     );
 
     if (isDuplicate) {
