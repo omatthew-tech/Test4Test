@@ -99,6 +99,8 @@ export interface RecordingThumbnailSource {
   bucket?: string;
   /** Optional short-lived source URL for legacy R2 recordings without an upload row. */
   url?: string;
+  /** Trusted source duration avoids scanning large MediaRecorder files. */
+  durationSeconds?: number;
   generationVersion: string;
 }
 

@@ -1,11 +1,7 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import { config } from "./config.js";
 import { extractRecordingThumbnail } from "./frameExtractor.js";
 import { logger } from "./logger.js";
-import { downloadObjectToFile, downloadUrlToFile, uploadFrame } from "./r2Client.js";
+import { createSignedObjectUrl, uploadFrame } from "./r2Client.js";
 import type {
   ProcessRecordingThumbnailsInput,
   ProcessRecordingThumbnailsResult,
@@ -33,22 +29,17 @@ function validateSource(source: RecordingThumbnailSource) {
 
 async function processSource(
   source: RecordingThumbnailSource,
-  workDir: string,
 ): Promise<RecordingThumbnailResult> {
   validateSource(source);
-  const localPath = join(workDir, `${source.recordingUploadId}.video`);
-
-  if (source.url) {
-    await downloadUrlToFile(source.url, localPath);
-  } else {
-    await downloadObjectToFile({
+  const input =
+    source.url ??
+    (await createSignedObjectUrl({
       bucket: normalizeBucket(source.bucket),
       key: source.objectKey,
-      destPath: localPath,
-    });
-  }
+      expiresInSeconds: 60 * 60,
+    }));
 
-  const frame = await extractRecordingThumbnail(localPath);
+  const frame = await extractRecordingThumbnail(input, source.durationSeconds);
   const storageKey = buildRecordingThumbnailKey(source);
   await uploadFrame({
     bucket: config.thumbnails.bucketName,
@@ -120,15 +111,5 @@ export async function processRecordingThumbnails(
     );
   }
 
-  const workDir = await mkdtemp(join(tmpdir(), "recording-thumbnails-"));
-  try {
-    return await processThumbnailSources(input.sources, (source) => processSource(source, workDir));
-  } finally {
-    await rm(workDir, { recursive: true, force: true }).catch((error) => {
-      logger.warn("Failed to clean recording thumbnail temp directory", {
-        workDir,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
-  }
+  return processThumbnailSources(input.sources, processSource);
 }

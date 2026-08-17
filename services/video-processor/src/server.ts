@@ -114,6 +114,12 @@ function parseThumbnailSources(value: unknown): RecordingThumbnailSource[] {
     const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
     const generationVersion =
       typeof candidate.generationVersion === "string" ? candidate.generationVersion.trim() : "";
+    const durationSeconds =
+      typeof candidate.durationSeconds === "number" &&
+      Number.isFinite(candidate.durationSeconds) &&
+      candidate.durationSeconds > 0
+        ? candidate.durationSeconds
+        : undefined;
 
     if (
       !recordingUploadId ||
@@ -131,6 +137,7 @@ function parseThumbnailSources(value: unknown): RecordingThumbnailSource[] {
       objectKey,
       ...(bucket ? { bucket: normalizeBucketName(bucket) } : {}),
       ...(url ? { url } : {}),
+      ...(durationSeconds ? { durationSeconds } : {}),
       generationVersion,
     });
   }

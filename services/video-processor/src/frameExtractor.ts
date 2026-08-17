@@ -255,8 +255,14 @@ function extractRawFrameAt(input: string, timestampSeconds: number): Promise<Buf
 }
 
 /** Extract the single Analytics preview frame without running report de-duplication. */
-export async function extractRecordingThumbnail(input: string): Promise<RecordingThumbnailFrame> {
-  const durationSeconds = await probeDurationSeconds(input);
+export async function extractRecordingThumbnail(
+  input: string,
+  knownDurationSeconds?: number,
+): Promise<RecordingThumbnailFrame> {
+  const durationSeconds =
+    Number.isFinite(knownDurationSeconds) && (knownDurationSeconds ?? 0) > 0
+      ? (knownDurationSeconds as number)
+      : await probeDurationSeconds(input);
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
     throw new Error("Recording duration could not be determined.");
   }
