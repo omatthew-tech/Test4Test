@@ -159,6 +159,9 @@ export function detectSceneTimestampsAfter(input: string, startSeconds: number):
     filters.push(`select='gt(scene,${config.frames.sceneThreshold})'`, "showinfo");
 
     ffmpeg(input)
+      // Thumbnail analysis only needs scene-bearing keyframes. This avoids
+      // decoding every intervening frame on long, high-resolution recordings.
+      .inputOptions(["-skip_frame", "nokey"])
       .seekInput(Math.max(0, startSeconds))
       .outputOptions(["-vf", filters.join(","), "-vsync", "vfr", "-f", "null"])
       .output(NULL_SINK)
