@@ -1,5 +1,6 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 
+import { drainProtectedThumbnailBackfill } from "./backfillController.js";
 import { config } from "./config.js";
 import { jobQueue } from "./jobQueue.js";
 import { logger } from "./logger.js";
@@ -309,6 +310,7 @@ async function start(): Promise<void> {
 
   app.listen(config.http.port, () => {
     logger.info("video-processor listening", { port: config.http.port });
+    setTimeout(() => void drainProtectedThumbnailBackfill(), 15_000);
   });
 }
 
