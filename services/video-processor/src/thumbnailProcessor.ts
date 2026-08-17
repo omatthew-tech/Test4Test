@@ -1,7 +1,11 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { config } from "./config.js";
 import { extractRecordingThumbnail } from "./frameExtractor.js";
 import { logger } from "./logger.js";
-import { createSignedObjectUrl, uploadFrame } from "./r2Client.js";
+import { downloadUrlToFile, uploadFrame, withR2ObjectProxy } from "./r2Client.js";
 import type {
   ProcessRecordingThumbnailsInput,
   ProcessRecordingThumbnailsResult,
@@ -31,15 +35,21 @@ async function processSource(
   source: RecordingThumbnailSource,
 ): Promise<RecordingThumbnailResult> {
   validateSource(source);
-  const input =
-    source.url ??
-    (await createSignedObjectUrl({
-      bucket: normalizeBucket(source.bucket),
-      key: source.objectKey,
-      expiresInSeconds: 60 * 60,
-    }));
-
-  const frame = await extractRecordingThumbnail(input, source.durationSeconds);
+  const frame = source.url
+    ? await (async () => {
+        const workDir = await mkdtemp(join(tmpdir(), "recording-thumbnail-url-"));
+        const localPath = join(workDir, "source.video");
+        try {
+          await downloadUrlToFile(source.url as string, localPath);
+          return await extractRecordingThumbnail(localPath, source.durationSeconds);
+        } finally {
+          await rm(workDir, { recursive: true, force: true }).catch(() => undefined);
+        }
+      })()
+    : await withR2ObjectProxy(
+        { bucket: normalizeBucket(source.bucket), key: source.objectKey },
+        (url) => extractRecordingThumbnail(url, source.durationSeconds),
+      );
   const storageKey = buildRecordingThumbnailKey(source);
   await uploadFrame({
     bucket: config.thumbnails.bucketName,

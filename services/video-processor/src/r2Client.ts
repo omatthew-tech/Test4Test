@@ -1,4 +1,5 @@
 import { createWriteStream } from "node:fs";
+import { createServer } from "node:http";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
@@ -6,6 +7,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -109,6 +111,104 @@ export async function downloadUrlToFile(url: string, destPath: string): Promise<
   await pipeline(body, createWriteStream(destPath));
 
   logger.debug("Downloaded source url", { url, destPath });
+}
+
+/**
+ * Present a private R2 object to FFmpeg through loopback HTTP. FFmpeg can issue
+ * byte-range seeks without handling Cloudflare TLS itself, and the source is
+ * never exposed publicly or downloaded in full.
+ */
+export async function withR2ObjectProxy<T>(
+  params: { bucket: string; key: string },
+  task: (url: string) => Promise<T>,
+): Promise<T> {
+  const server = createServer(async (request, response) => {
+    if ((request.method !== "GET" && request.method !== "HEAD") || request.url !== "/source") {
+      response.statusCode = 404;
+      response.end();
+      return;
+    }
+
+    const range = request.headers.range;
+    if (range && !/^bytes=\d*-\d*$/.test(range)) {
+      response.statusCode = 416;
+      response.end();
+      return;
+    }
+
+    try {
+      if (request.method === "HEAD") {
+        const head = await r2.send(
+          new HeadObjectCommand({ Bucket: params.bucket, Key: params.key }),
+        );
+        response.statusCode = 200;
+        response.setHeader("Accept-Ranges", "bytes");
+        if (head.ContentLength !== undefined) {
+          response.setHeader("Content-Length", String(head.ContentLength));
+        }
+        if (head.ContentType) {
+          response.setHeader("Content-Type", head.ContentType);
+        }
+        response.end();
+        return;
+      }
+
+      const object = await r2.send(
+        new GetObjectCommand({
+          Bucket: params.bucket,
+          Key: params.key,
+          ...(range ? { Range: range } : {}),
+        }),
+      );
+      response.statusCode = range ? 206 : 200;
+      response.setHeader("Accept-Ranges", "bytes");
+      if (object.ContentLength !== undefined) {
+        response.setHeader("Content-Length", String(object.ContentLength));
+      }
+      if (object.ContentRange) {
+        response.setHeader("Content-Range", object.ContentRange);
+      }
+      if (object.ContentType) {
+        response.setHeader("Content-Type", object.ContentType);
+      }
+      if (!object.Body) {
+        response.statusCode = 502;
+        response.end();
+        return;
+      }
+
+      await pipeline(object.Body as Readable, response);
+    } catch (error) {
+      logger.warn("R2 loopback proxy request failed", {
+        bucket: params.bucket,
+        key: params.key,
+        range,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      if (!response.headersSent) {
+        response.statusCode = 502;
+      }
+      response.end();
+    }
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    server.close();
+    throw new Error("Could not start the private recording range proxy.");
+  }
+
+  try {
+    return await task(`http://127.0.0.1:${address.port}/source`);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
 }
 
 /** Upload a single screenshot frame buffer to the destination R2 bucket. */
