@@ -1,21 +1,44 @@
-Cloudflare Pages launch setup for test4test.io
+Test4Test preview, promotion, and production cutover
 
-1. Create a Cloudflare Pages project connected to this repo.
-2. Build command:
-   npm run build
-3. Build output directory:
-   dist
-4. Environment variables:
-   VITE_SUPABASE_URL=https://lteimepkxuiupbcsbcpz.supabase.co
-   VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_RY76rQPiXawpHIqtmOv5zg_RJV_JsIC
-5. Deploy the site.
-6. Add the custom domain:
-   test4test.io
-7. In Supabase Auth URL configuration, set:
-   Site URL = https://test4test.io
+This is a future release runbook. It does not state that the current redesign branch is production and does not authorize a Test4Test.io cutover.
 
-Notes:
-- Do not put the Supabase secret key in Cloudflare Pages browser env vars.
-- Keep OPENAI_API_KEY only in Supabase Edge Function secrets.
-- SPA routing is handled by wrangler.jsonc via assets.not_found_handling = single-page-application.
-- Do not add a public/_redirects rule for /index.html on Cloudflare; it causes a redirect loop with Wrangler SPA handling.
+1. Preview deployment
+
+- Build a Cloudflare preview from the reviewed redesign commit.
+- Build command: npm run build
+- Output directory: dist
+- Provide only browser-safe variables such as VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.
+- Point the preview at an approved preview Supabase environment when validating migrations or destructive workflows.
+- Do not add test4test.io to the preview deployment.
+
+2. Preview validation
+
+- Run repository formatting, design-system validation, tests, and production build checks required by the release.
+- Validate 390 x 844 and 1440 x 900 interface states, accessibility, auth redirects, public test links, recording capture/upload/playback, transcript lifecycle, clip privacy/revocation, credits, managed orders, retention, cleanup, and rollback.
+- Confirm that private recording or thumbnail buckets cannot be browsed and that public clip access returns short-lived media access only after token validation.
+- Review marketing claims, package terms, consent, privacy, and support procedures.
+
+3. Branch promotion
+
+- Obtain explicit product, security, accessibility, commercial, and release approval.
+- Promote the exact validated commit through the repository’s normal review process to the production branch.
+- Do not merge, rebase, or overwrite unrelated uncommitted work as part of deployment preparation.
+
+4. Production deployment
+
+- Build and deploy the promoted production commit, not an unreviewed redesign worktree.
+- Apply approved Supabase migrations and Edge Function changes through the release runbook.
+- Configure the production Test4Test.io custom domain only after the deployment and backend are ready.
+- Set the Supabase Auth Site URL and exact redirect allowlist for https://test4test.io.
+
+5. Cutover and monitoring
+
+- Smoke-test sign-in, create/share, Earn, recording upload/access, transcript processing/retry, clip access/revocation, credits, payment webhooks, managed-order status, account deletion, and 60-day cleanup.
+- Monitor client errors, auth failures, media queues, transcript queues, notification delivery, token abuse, order fulfillment, and cleanup failures.
+- Keep a tested rollback target and pause new paid orders if fulfillment or payment state is inconsistent.
+
+Security notes
+
+- Never put Supabase secret/service keys, R2 secrets, worker secrets, SMTP credentials, model keys, or payment secrets in Cloudflare browser variables.
+- SPA routing is handled by wrangler.jsonc through assets.not_found_handling = single-page-application.
+- Do not add a public/_redirects rule for /index.html; it conflicts with Wrangler SPA handling.

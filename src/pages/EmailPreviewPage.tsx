@@ -33,11 +33,11 @@ export function EmailPreviewPage() {
           <p>
             Someone just tested <strong>{ownerProductName}</strong>.
           </p>
-          <p>Your feedback is ready to view.</p>
+          <p>Your latest activity is ready in Analytics.</p>
           <button type="button" className="button button--primary">
-            View Feedback
+            Open Analytics
           </button>
-          <p>Or open this link directly: https://test4test.io/my-tests/example</p>
+          <p>Or open this link directly: https://test4test.io/analytics</p>
         </Surface>
 
         <Surface className="email-card">
@@ -55,7 +55,7 @@ export function EmailPreviewPage() {
               Test back now
             </button>
             <button type="button" className="button button--secondary">
-              View feedback
+              Open Analytics
             </button>
           </div>
         </Surface>
@@ -68,9 +68,14 @@ export function EmailPreviewPage() {
             One day later, if you still have not tested back, we send a softer follow-up with the
             same direct link into the test flow.
           </p>
-          <button type="button" className="button button--primary">
-            Test back now
-          </button>
+          <div className="button-row">
+            <button type="button" className="button button--primary">
+              Test back now
+            </button>
+            <button type="button" className="button button--secondary">
+              Open Analytics
+            </button>
+          </div>
         </Surface>
 
         <Surface className="email-card">
@@ -82,9 +87,14 @@ export function EmailPreviewPage() {
             and less user feedback for {ownerProductName}.
           </p>
           <p>Don't worry. You can always test back any time.</p>
-          <button type="button" className="button button--primary">
-            View test
-          </button>
+          <div className="button-row">
+            <button type="button" className="button button--primary">
+              Test back now
+            </button>
+            <button type="button" className="button button--secondary">
+              Open Analytics
+            </button>
+          </div>
         </Surface>
       </div>
     </AppShell>

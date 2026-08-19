@@ -10,6 +10,7 @@ export function TestSuccessPage() {
   const { state, currentUser } = useAppState();
   const submission = state.submissions.find((item) => item.id === submissionId);
   const isSharedResponse = searchParams.get("shared") === "1" || !currentUser;
+  const isTester = currentUser?.accountType === "tester";
 
   return (
     <AppShell>
@@ -29,6 +30,12 @@ export function TestSuccessPage() {
                 <strong>{submission?.productName ?? "this app"}</strong>. Your notes were sent to
                 the app owner.
               </p>
+            ) : isTester ? (
+              <p>
+                Thanks for sharing feedback with{" "}
+                <strong>{submission?.productName ?? "this app"}</strong>. Your credit has been added
+                to your paid-test progress.
+              </p>
             ) : (
               <p>
                 Thanks for sharing feedback with{" "}
@@ -37,17 +44,21 @@ export function TestSuccessPage() {
               </p>
             )}
             <div className="test-success-actions">
-              {isSharedResponse ? (
+              {!isTester && isSharedResponse ? (
                 <Link to="/submit" className="button button--secondary">
                   Create your own test
                 </Link>
-              ) : (
-                <Link to="/my-tests" className="button button--secondary">
-                  View My Tests
+              ) : !isTester ? (
+                <Link to="/analytics" className="button button--secondary">
+                  View analytics
                 </Link>
-              )}
+              ) : null}
               <Link to="/earn" className="button button--primary">
-                {isSharedResponse ? "Browse more tests" : "Test another app"}
+                {isTester
+                  ? "Return to Earn"
+                  : isSharedResponse
+                    ? "Browse more tests"
+                    : "Test another app"}
                 <ArrowRight size={16} />
               </Link>
             </div>

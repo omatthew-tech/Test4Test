@@ -85,7 +85,9 @@ export async function loadPendingReminderForPair(
 ) {
   const { data, error } = await admin
     .from("test_back_reminder_sequences")
-    .select("id, owner_user_id, tester_user_id, latest_triggering_response_id, latest_triggering_submission_id, emails_sent, next_send_at, status")
+    .select(
+      "id, owner_user_id, tester_user_id, latest_triggering_response_id, latest_triggering_submission_id, emails_sent, next_send_at, status",
+    )
     .eq("owner_user_id", ownerUserId)
     .eq("tester_user_id", testerUserId)
     .maybeSingle();
@@ -102,7 +104,9 @@ export async function loadDueReminderSequences(admin: SupabaseClient, limit: num
   const now = new Date().toISOString();
   const { data, error } = await admin
     .from("test_back_reminder_sequences")
-    .select("id, owner_user_id, tester_user_id, latest_triggering_response_id, latest_triggering_submission_id, emails_sent, next_send_at, status")
+    .select(
+      "id, owner_user_id, tester_user_id, latest_triggering_response_id, latest_triggering_submission_id, emails_sent, next_send_at, status",
+    )
     .eq("status", "pending")
     .lte("next_send_at", now)
     .order("next_send_at", { ascending: true })
@@ -187,10 +191,12 @@ export async function findTargetSubmission(
     return null;
   }
 
-  const [ownerNeedsGooglePlayClosedTesters, testerNeedsGooglePlayClosedTesters] = await Promise.all([
-    loadGooglePlayClosedTestPoolStatus(admin, ownerUserId),
-    loadGooglePlayClosedTestPoolStatus(admin, testerUserId),
-  ]);
+  const [ownerNeedsGooglePlayClosedTesters, testerNeedsGooglePlayClosedTesters] = await Promise.all(
+    [
+      loadGooglePlayClosedTestPoolStatus(admin, ownerUserId),
+      loadGooglePlayClosedTestPoolStatus(admin, testerUserId),
+    ],
+  );
 
   if (ownerNeedsGooglePlayClosedTesters !== testerNeedsGooglePlayClosedTesters) {
     return null;
@@ -198,7 +204,9 @@ export async function findTargetSubmission(
 
   const { data: candidateRows, error: candidateError } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, is_open_for_more_tests, needs_google_play_closed_testers, promoted, response_count, created_at")
+    .select(
+      "id, user_id, product_name, status, is_open_for_more_tests, needs_google_play_closed_testers, promoted, response_count, created_at",
+    )
     .eq("user_id", testerUserId)
     .eq("status", "live")
     .eq("is_open_for_more_tests", true)
@@ -248,13 +256,17 @@ async function loadProfiles(admin: SupabaseClient, userIds: string[]) {
     throw new Error(error.message);
   }
 
-  return new Map((data ?? []).map((profile) => [(profile as ProfileRow).id, profile as ProfileRow]));
+  return new Map(
+    (data ?? []).map((profile) => [(profile as ProfileRow).id, profile as ProfileRow]),
+  );
 }
 
 async function loadSubmission(admin: SupabaseClient, submissionId: string) {
   const { data, error } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, is_open_for_more_tests, promoted, response_count, created_at")
+    .select(
+      "id, user_id, product_name, status, is_open_for_more_tests, promoted, response_count, created_at",
+    )
     .eq("id", submissionId)
     .maybeSingle();
 
@@ -378,7 +390,11 @@ async function resolveReminderSequence(
   }
 }
 
-async function markResponseOwnerNotified(admin: SupabaseClient, responseId: string, notifiedAt: string) {
+async function markResponseOwnerNotified(
+  admin: SupabaseClient,
+  responseId: string,
+  notifiedAt: string,
+) {
   const { error } = await admin
     .from("test_responses")
     .update({ owner_notified_at: notifiedAt })
@@ -422,16 +438,28 @@ export async function processReminderSequence(
   );
 
   if (sentDelivery) {
-    const replayResult = await advanceReminderSequenceAfterSend(admin, reminder, sentDelivery.created_at);
+    const replayResult = await advanceReminderSequenceAfterSend(
+      admin,
+      reminder,
+      sentDelivery.created_at,
+    );
 
     if (reminder.emails_sent === 0) {
-      await markResponseOwnerNotified(admin, reminder.latest_triggering_response_id, sentDelivery.created_at);
+      await markResponseOwnerNotified(
+        admin,
+        reminder.latest_triggering_response_id,
+        sentDelivery.created_at,
+      );
     }
 
     return replayResult;
   }
 
-  const targetSubmission = await findTargetSubmission(admin, reminder.tester_user_id, reminder.owner_user_id);
+  const targetSubmission = await findTargetSubmission(
+    admin,
+    reminder.tester_user_id,
+    reminder.owner_user_id,
+  );
 
   if (!targetSubmission) {
     await resolveReminderSequence(admin, reminder.id, "cancelled", "missing_target_submission");
@@ -460,7 +488,7 @@ export async function processReminderSequence(
     throw new Error(`Missing email template: ${templateKey}`);
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/my-tests/${triggeringSubmission.id}`;
+  const feedbackUrl = `${env.appBaseUrl}/analytics`;
   const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}`;
   const rendered = renderEmailTemplate(template, {
     ownerDisplayName: owner.display_name,
@@ -530,6 +558,3 @@ export async function processReminderSequence(
 
   return updateResult;
 }
-
-
-

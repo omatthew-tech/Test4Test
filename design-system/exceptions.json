@@ -27,7 +27,7 @@
       "id": "home-process-supplied-illustrations",
       "owner": "Test4Test",
       "scope": "The three supplied decorative PNG illustrations under public/images/how-it-works-*.png and their presentation in src/pages/HomePage.tsx.",
-      "rationale": "The design owner explicitly supplied and requested these exact homepage illustrations, including the custom browser, exchange, cyborg, social-symbol, paper-plane, and sparkle artwork. The exception is limited to decorative imagery; layout, sizing, radius, background, and responsive behavior remain design-system token controlled, and the images are hidden from assistive technology.",
+      "rationale": "The design owner explicitly supplied and requested these exact homepage illustrations, including the custom browser, exchange, cyborg, social-symbol, paper-plane, and sparkle artwork. The exception is limited to decorative imagery; layout, sizing, radius, background, and responsive behavior remain design-system token controlled, and the images are hidden from assistive technology. Under decision 0005, the cyborg concept is v1 evidence and an implementation launch blocker, not a current recruitment claim.",
       "expires": "2027-08-07"
     },
     {

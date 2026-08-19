@@ -38,8 +38,8 @@ interface SubmissionRow {
 function hasPaymentMethod(profile: ProfileRow) {
   return Boolean(
     profile.paypal_handle?.trim() ||
-      profile.venmo_handle?.trim() ||
-      profile.cash_app_handle?.trim(),
+    profile.venmo_handle?.trim() ||
+    profile.cash_app_handle?.trim(),
   );
 }
 
@@ -48,7 +48,10 @@ function getFounderUserId(metadata: Record<string, unknown> | null) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-async function getAuthenticatedUserId(admin: ReturnType<typeof createAdminClient>, request: Request) {
+async function getAuthenticatedUserId(
+  admin: ReturnType<typeof createAdminClient>,
+  request: Request,
+) {
   const authHeader = request.headers.get("Authorization") ?? "";
   const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
@@ -118,7 +121,10 @@ async function hasSentAddedNotification(
   return Boolean(data);
 }
 
-async function loadTipRequestLogs(admin: ReturnType<typeof createAdminClient>, testerUserId: string) {
+async function loadTipRequestLogs(
+  admin: ReturnType<typeof createAdminClient>,
+  testerUserId: string,
+) {
   const { data, error } = await admin
     .from("email_delivery_logs")
     .select("id, related_response_id, related_submission_id, metadata, created_at")
@@ -149,7 +155,10 @@ Deno.serve(async (request) => {
   try {
     env = getEmailEnvironment();
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Tip email setup is incomplete." }, 500);
+    return json(
+      { error: error instanceof Error ? error.message : "Tip email setup is incomplete." },
+      500,
+    );
   }
 
   const admin = createAdminClient(env);
@@ -164,7 +173,10 @@ Deno.serve(async (request) => {
   try {
     tester = await loadProfile(admin, auth.userId);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Tester profile not found." }, 404);
+    return json(
+      { error: error instanceof Error ? error.message : "Tester profile not found." },
+      404,
+    );
   }
 
   if (!hasPaymentMethod(tester)) {
@@ -215,7 +227,7 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      const reviewUrl = `${env.appBaseUrl}/my-tests/${submission.id}?response=${responseId}`;
+      const reviewUrl = `${env.appBaseUrl}/analytics`;
       const rendered = renderEmailTemplate(template, {
         reviewUrl,
       });
@@ -253,7 +265,10 @@ Deno.serve(async (request) => {
           relatedSubmissionId: submission.id,
           subject: rendered.subject,
           status: "failed",
-          errorMessage: error instanceof Error ? error.message : "Failed to send payment method added notification.",
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : "Failed to send payment method added notification.",
           metadata: {
             testerUserId: tester.id,
             requestLogId: requestLog.id,

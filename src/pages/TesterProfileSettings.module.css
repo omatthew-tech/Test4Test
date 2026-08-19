@@ -1,0 +1,92 @@
+.page {
+  display: grid;
+  width: min(100%, var(--ds-semantic-size-content-data));
+  margin-inline: auto;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.panel,
+.dangerPanel,
+.form {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
+}
+
+.emailPreference {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.dangerPanel {
+  border-color: var(--ds-semantic-color-status-danger);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-lg);
+  flex-wrap: wrap;
+}
+
+.sectionHeading > div {
+  display: grid;
+  max-width: var(--ds-semantic-size-content-prose);
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.sectionHeading p {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.twoColumn,
+.threeColumn {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ds-semantic-size-content-choice-min)), 1fr)
+  );
+  gap: var(--ds-semantic-space-stack-md);
+}
+
+.fieldset {
+  display: grid;
+  min-width: var(--ds-semantic-space-zero);
+  margin: var(--ds-semantic-space-zero);
+  padding: var(--ds-semantic-space-inset-control);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
+  border-radius: var(--ds-semantic-radius-control);
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.fieldset legend {
+  padding-inline: var(--ds-semantic-space-inline-xs);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ds-semantic-size-content-choice-min)), 1fr)
+  );
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.actions,
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ds-semantic-space-inline-sm);
+  flex-wrap: wrap;
+}
+
+.inlineForm {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ds-semantic-size-content-choice-min)), 1fr)
+  );
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-md);
+}

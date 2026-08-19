@@ -7,6 +7,7 @@ import { createStaticServer } from "./serve-static.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const suite = process.argv[2];
 const forwardedArguments = process.argv.slice(3);
+const configSuite = ["visual-route", "visual-story"].includes(suite) ? "visual" : suite;
 
 process.env.VITE_DS_FIXTURES = "1";
 process.env.VITE_TEST_ACCOUNT_EMAIL = "avery@demo.test4test.app";
@@ -14,12 +15,29 @@ process.env.VITE_SUPABASE_URL = "";
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY = "";
 process.env.VITE_SUPABASE_ANON_KEY = "";
 
-if (!["a11y", "visual"].includes(suite)) {
-  throw new Error(`Expected Playwright suite "a11y" or "visual", received "${suite ?? ""}".`);
+if (!["a11y", "visual", "visual-route", "visual-story"].includes(suite)) {
+  throw new Error(
+    `Expected Playwright suite "a11y", "visual", "visual-route", or "visual-story", received "${suite ?? ""}".`,
+  );
 }
 
+async function warmAppServer() {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+
+  try {
+    const page = await browser.newPage();
+    await page.goto("http://127.0.0.1:4173/", {
+      waitUntil: "domcontentloaded",
+      timeout: 120_000,
+    });
+    await page.locator("main").waitFor({ state: "visible", timeout: 120_000 });
+  } finally {
+    await browser.close();
+  }
+}
 const closeServers = [];
-if (suite === "a11y") {
+if (suite === "a11y" || suite === "visual-route") {
   const vite = await createViteServer({
     configFile: join(root, "vite.config.ts"),
     server: {
@@ -30,7 +48,8 @@ if (suite === "a11y") {
   });
   await vite.listen();
   closeServers.push(() => vite.close());
-} else {
+  await warmAppServer();
+} else if (suite === "visual") {
   const vite = await createViteServer({
     configFile: join(root, "vite.config.ts"),
     server: {
@@ -45,9 +64,13 @@ if (suite === "a11y") {
   const staticServer = createStaticServer(join(root, "storybook-static"), 6006);
   await staticServer.listen();
   closeServers.push(() => staticServer.close());
+} else {
+  const staticServer = createStaticServer(join(root, "storybook-static"), 6006);
+  await staticServer.listen();
+  closeServers.push(() => staticServer.close());
 }
 
-const config = join(root, `playwright.${suite}.config.ts`);
+const config = join(root, `playwright.${configSuite}.config.ts`);
 const playwrightCli = join(root, "node_modules", "@playwright", "test", "cli.js");
 
 try {

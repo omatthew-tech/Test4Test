@@ -521,9 +521,12 @@ for (const routeState of routeStates) {
     typeof routeState.name !== "string" ||
     typeof routeState.routePattern !== "string" ||
     typeof routeState.path !== "string" ||
-    !routeState.path.startsWith("/")
+    !routeState.path.startsWith("/") ||
+    (routeState.redirectOnly !== undefined && typeof routeState.redirectOnly !== "boolean")
   ) {
-    fail("Each tests/playwright/route-states.json entry requires name, routePattern, and path.");
+    fail(
+      "Each tests/playwright/route-states.json entry requires name, routePattern, path, and an optional boolean redirectOnly flag.",
+    );
     continue;
   }
   if (routeStateNames.has(routeState.name)) {

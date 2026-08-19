@@ -1,0 +1,127 @@
+.content {
+  width: 100%;
+  max-width: var(--ds-semantic-size-content-data);
+  margin-inline: auto;
+}
+
+.prompt {
+  position: relative;
+}
+
+.promptTextarea {
+  padding-inline-end: calc(
+    var(--ds-semantic-size-control-default) + var(--ds-semantic-space-inline-lg)
+  );
+  resize: none;
+}
+
+.promptAction {
+  position: absolute;
+  right: var(--ds-semantic-space-inline-md);
+  bottom: var(--ds-semantic-space-stack-md);
+}
+
+.actions {
+  justify-content: center;
+}
+
+.sectionHeading {
+  margin: 0;
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.sectionHeadingLink {
+  display: inline-flex;
+  min-height: var(--ds-semantic-size-control-default);
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  color: var(--ds-semantic-color-text-primary);
+  text-decoration: none;
+}
+
+.sectionHeadingLink:hover {
+  color: var(--ds-semantic-color-action-primary-strong);
+  text-decoration: underline;
+}
+
+.recordingGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recordingCard {
+  overflow: hidden;
+  padding: var(--ds-semantic-space-zero);
+}
+
+.previewFrame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--ds-semantic-color-surface-inset);
+}
+
+.thumbnail,
+.video,
+.previewSkeleton {
+  position: absolute;
+  inset: var(--ds-semantic-space-zero);
+  width: 100%;
+  height: 100%;
+}
+
+.thumbnail,
+.video {
+  display: block;
+  object-fit: cover;
+}
+
+.previewSkeleton {
+  border-radius: var(--ds-semantic-radius-none);
+}
+
+.playButton {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.recordingDetails {
+  padding: var(--ds-semantic-space-inset-card-mobile);
+}
+
+.recordingLink {
+  display: inline-flex;
+  min-height: var(--ds-semantic-size-control-target);
+  align-items: center;
+  color: var(--ds-semantic-color-text-primary);
+  font-size: var(--ds-semantic-typography-body-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  line-height: var(--ds-semantic-typography-body-line-height);
+  text-decoration: none;
+}
+
+.recordingLink:hover {
+  color: var(--ds-semantic-color-action-primary-strong);
+  text-decoration: underline;
+}
+
+.recordingName {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-body-small-size);
+  line-height: var(--ds-semantic-typography-body-small-line-height);
+}
+
+.previewTime {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+}
+
+.cardAlert {
+  margin-block-start: var(--ds-semantic-space-stack-xs);
+}

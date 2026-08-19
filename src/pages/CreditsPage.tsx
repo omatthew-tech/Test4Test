@@ -53,8 +53,8 @@ export function CreditsPage() {
               page.
             </p>
             <div className="inline-actions credits-hero-actions">
-              <Link to="/my-tests" className="button button--secondary">
-                View my apps
+              <Link to="/analytics" className="button button--secondary">
+                View analytics
               </Link>
               <Link to="/earn" className="button button--primary">
                 Earn credits

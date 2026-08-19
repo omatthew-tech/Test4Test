@@ -1,5 +1,49 @@
 export type ProductType = "website" | "ios" | "android";
 export type AccessLinkKind = ProductType | "figma" | "other";
+export type AccountType = "pending" | "founder" | "tester";
+export type TechnologyProficiency = "not_at_all" | "slightly" | "moderately" | "very" | "extremely";
+export type TesterDevice = "computer" | "ios" | "android";
+export type EmploymentStatus =
+  "full_time" | "part_time" | "self_employed" | "student" | "retired" | "not_employed";
+export type WorkArea =
+  | "sales"
+  | "marketing"
+  | "software_development"
+  | "it"
+  | "design_ux"
+  | "product_management"
+  | "finance_accounting"
+  | "human_resources"
+  | "operations"
+  | "healthcare"
+  | "education"
+  | "customer_support"
+  | "other";
+export type OtpIntent = "sign_in" | "founder_signup" | "tester_signup";
+export type TestRewardType = "credit" | "paid";
+
+export interface TesterProfileDraft {
+  firstName: string;
+  countryCode: string;
+  region: string;
+  technologyProficiency: TechnologyProficiency | "";
+  devices: TesterDevice[];
+  employmentStatus: EmploymentStatus | "";
+  workArea: WorkArea | "";
+  paidTestEmailEnabled: boolean;
+}
+
+export interface TesterProfile extends Omit<
+  TesterProfileDraft,
+  "technologyProficiency" | "employmentStatus" | "workArea"
+> {
+  userId: string;
+  technologyProficiency: TechnologyProficiency;
+  employmentStatus: EmploymentStatus;
+  workArea: WorkArea | "";
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface OtherAccessLink {
   label: string;
@@ -38,6 +82,8 @@ export interface User extends PaymentMethods {
   id: string;
   email: string;
   displayName: string;
+  accountType: AccountType;
+  testerProfile?: TesterProfile | null;
   status: "active" | "warned";
   createdAt: string;
   banStatus: "clear" | "banned";
@@ -82,6 +128,36 @@ export interface ResponseRecording {
   uploadedAt: string;
   expiresAt: string;
   deletedAt?: string | null;
+  thumbnail?: RecordingThumbnailMetadata | null;
+}
+
+export type RecordingThumbnailStatus = "pending" | "queued" | "processing" | "ready" | "failed";
+
+export interface RecordingThumbnailMetadata {
+  bucket: string | null;
+  path: string | null;
+  contentType: string | null;
+  sizeBytes: number | null;
+  width: number | null;
+  height: number | null;
+  status: RecordingThumbnailStatus | null;
+  attemptCount: number | null;
+  lastAttemptAt: string | null;
+  error: string | null;
+  timestampMs: number | null;
+  durationMs: number | null;
+  generationVersion: string | null;
+}
+
+export interface RecordingPreviewSummary {
+  responseId: string;
+  submissionId: string;
+  productName: string;
+  submittedAt: string;
+  durationSeconds: number;
+  thumbnailStatus: "pending" | "ready" | "failed";
+  thumbnailError: string | null;
+  thumbnail: (RecordingThumbnailMetadata & { url: string }) | null;
 }
 
 export interface Submission {
@@ -102,6 +178,7 @@ export interface Submission {
   status: SubmissionStatus;
   questionMode: QuestionMode;
   isOpenForMoreTests: boolean;
+  rewardType: TestRewardType;
   promoted: boolean;
   createdAt: string;
   estimatedMinutes: number;
@@ -123,6 +200,12 @@ export interface EarnSubmissionReputation {
 export interface EarnSubmissionCard {
   submission: Submission;
   reputation: EarnSubmissionReputation | null;
+}
+
+export interface TesterEarnAccessSummary {
+  completedCreditTests: number;
+  fiveStarRatings: number;
+  paidAccessUnlocked: boolean;
 }
 
 export interface EarnVisibilitySummary {
@@ -228,6 +311,7 @@ export interface FeedbackRating {
   testResponseId: string;
   ratedByUserId: string;
   ratingValue: FeedbackRatingValue;
+  starRating: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -282,6 +366,7 @@ export interface OTPChallenge {
   expiresAt: string;
   resendCount: number;
   submissionId?: string;
+  intent: OtpIntent;
 }
 
 export interface ModerationAction {

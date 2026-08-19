@@ -1,5 +1,7 @@
 # Release audit
 
+> Historical design-system 1.0 evidence (2026-07-23). The matrix records the v1 replacement state and does not override the [recording-first product specification](../../usability_platform_product_plan.md).
+
 This matrix maps the replacement plan to enforceable repository evidence. The canonical
 specification remains unchanged in `../specification.md`; this document records implementation
 status without redefining it.

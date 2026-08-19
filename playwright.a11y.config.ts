@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: 4,
+  workers: 1,
   reporter: process.env.CI ? "github" : "list",
   testMatch: /(?:a11y|journeys)\.spec\.ts/,
   projects: [

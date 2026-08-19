@@ -1,11 +1,23 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronDown, Globe2, Info, PencilLine, Share2 } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button, Checkbox, Dialog, Toast } from "@test4test/design-system";
+import { ArrowRight, Check, Globe2, Info, PencilLine, Share2 } from "lucide-react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Alert,
+  Badge,
+  Button,
+  Checkbox,
+  Dialog,
+  IconButton,
+  Link as DesignSystemLink,
+  Progress,
+  Select,
+  Surface,
+  Toast,
+  Tooltip,
+} from "@test4test/design-system";
 import { EditSubmissionModal } from "../components/EditSubmissionModal";
-import { ShareTestModal } from "../components/ShareTestModal";
-import { AppShell, Surface } from "../components/Layout";
+import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import {
   EARN_CREDIT_CELEBRATION_COPY,
@@ -14,32 +26,29 @@ import {
   saveEarnPlacementSnapshot,
 } from "../lib/earnPlacementCelebration";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
-import {
-  loadEarnVisibilityQuestionSet,
-  loadEarnVisibilitySubmission,
-  loadEarnVisibilitySummary,
-} from "../lib/earnVisibility";
+import { loadEarnVisibilitySubmission, loadEarnVisibilitySummary } from "../lib/earnVisibility";
 import {
   formatDate,
   normalizeProductTypes,
   PRODUCT_TYPE_ORDER,
   productTypesBadges,
 } from "../lib/format";
-import { getActiveQuestionSet, getAvailableSubmissions } from "../lib/selectors";
-import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
+import { getAvailableSubmissions } from "../lib/selectors";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { loadMySubmissionReportStatuses } from "../lib/testReports";
 import { loadTestResponseDraftProgress } from "../lib/testResponseDrafts";
+import { devicesToProductTypes, productTypesToDevices } from "../lib/testerSignup";
 import {
   EarnSubmissionCard,
   EarnSubmissionReputation,
   EarnVisibilitySummary,
   ProductType,
-  QuestionSetVersion,
   Submission,
   SubmissionDraft,
   SubmittedFeedbackCard,
+  TesterEarnAccessSummary,
 } from "../types";
+import styles from "./EarnPage.module.css";
 
 const EARN_PLATFORM_FILTER_STORAGE_PREFIX = "test4test:earn-platform-filter:";
 const EARN_PLATFORM_CONFIRMATION_STORAGE_PREFIX = "test4test:earn-platform-filter-confirmed:";
@@ -295,31 +304,6 @@ function formatSelectedPlatformSummary(productTypes: ProductType[]) {
   return normalized.map(earnPlatformLabel).join(", ");
 }
 
-async function copyTextToClipboard(value: string) {
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return true;
-  }
-
-  if (typeof document === "undefined") {
-    return false;
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.setAttribute("readonly", "true");
-  textarea.style.position = "absolute";
-  textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.select();
-
-  try {
-    return document.execCommand("copy");
-  } finally {
-    document.body.removeChild(textarea);
-  }
-}
-
 function userPrefersReducedMotion() {
   return (
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -341,16 +325,26 @@ export function EarnPage() {
     isConfigured,
     listEarnSubmissions,
     updateSubmissionDetails,
-    upsertSubmissionShareLink,
+    updateTesterProfile,
+    getTesterEarnAccessSummary,
   } = useAppState();
+  const isTester = currentUser?.accountType === "tester";
+  const designSystemFixturesEnabled =
+    import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+  const editSubmissionId = searchParams.get("edit")?.trim() ?? "";
   const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const privatePlacementRowRef = useRef<HTMLDivElement | null>(null);
   const [sortMode, setSortMode] = useState("recommended");
   const [selectedProductTypes, setSelectedProductTypes] = useState<ProductType[]>(() => {
     if (!currentUser) {
       return getDefaultSelectedProductTypes(state.submissions, null);
+    }
+    if (currentUser.accountType === "tester" && currentUser.testerProfile) {
+      return devicesToProductTypes(currentUser.testerProfile.devices);
     }
 
     const storedProductTypes = readStoredProductTypes(currentUser.id);
@@ -366,15 +360,17 @@ export function EarnPage() {
   const [serverEarnSubmissions, setServerEarnSubmissions] = useState<Submission[] | null>(null);
   const [isLoadingServerEarnSubmissions, setIsLoadingServerEarnSubmissions] = useState(false);
   const [serverEarnError, setServerEarnError] = useState("");
+  const [testerAccessSummary, setTesterAccessSummary] = useState<TesterEarnAccessSummary | null>(
+    null,
+  );
+  const [isLoadingTesterAccess, setIsLoadingTesterAccess] = useState(false);
+  const [testerAccessError, setTesterAccessError] = useState("");
   const [draftProgressBySubmissionId, setDraftProgressBySubmissionId] = useState<
     Record<string, boolean>
   >({});
   const [hiddenReportedSubmissionIds, setHiddenReportedSubmissionIds] = useState<string[]>([]);
   const [visibilitySummary, setVisibilitySummary] = useState<EarnVisibilitySummary | null>(null);
   const [visibilitySubmission, setVisibilitySubmission] = useState<Submission | null>(null);
-  const [visibilityQuestionSet, setVisibilityQuestionSet] = useState<QuestionSetVersion | null>(
-    null,
-  );
   const [visibilityError, setVisibilityError] = useState("");
   const [revisionTargetResponseId, setRevisionTargetResponseId] = useState<string | null>(null);
   const [revisionTargetError, setRevisionTargetError] = useState("");
@@ -382,10 +378,8 @@ export function EarnPage() {
   const [editingVisibilitySubmissionId, setEditingVisibilitySubmissionId] = useState<string | null>(
     null,
   );
-  const [sharingVisibilitySubmissionId, setSharingVisibilitySubmissionId] = useState<string | null>(
-    null,
-  );
-  const [visibilityShareCopyStatus, setVisibilityShareCopyStatus] = useState("");
+  const [deepLinkSubmission, setDeepLinkSubmission] = useState<Submission | null>(null);
+  const [editLinkError, setEditLinkError] = useState("");
   const [creditCelebration, setCreditCelebration] = useState(() =>
     parseEarnCreditCelebrationState(location.state),
   );
@@ -414,30 +408,12 @@ export function EarnPage() {
           ) ??
           (visibilitySubmission?.id === editingVisibilitySubmissionId
             ? visibilitySubmission
-            : null))
+            : deepLinkSubmission?.id === editingVisibilitySubmissionId
+              ? deepLinkSubmission
+              : null))
         : null,
-    [editingVisibilitySubmissionId, state.submissions, visibilitySubmission],
+    [deepLinkSubmission, editingVisibilitySubmissionId, state.submissions, visibilitySubmission],
   );
-  const sharingVisibilitySubmission = useMemo(
-    () =>
-      sharingVisibilitySubmissionId
-        ? (state.submissions.find(
-            (submission) => submission.id === sharingVisibilitySubmissionId,
-          ) ??
-          (visibilitySubmission?.id === sharingVisibilitySubmissionId
-            ? visibilitySubmission
-            : null))
-        : null,
-    [sharingVisibilitySubmissionId, state.submissions, visibilitySubmission],
-  );
-  const sharingVisibilityQuestionSet = sharingVisibilitySubmission
-    ? visibilityQuestionSet?.submissionId === sharingVisibilitySubmission.id
-      ? visibilityQuestionSet
-      : getActiveQuestionSet(state, sharingVisibilitySubmission.id)
-    : null;
-  const sharingVisibilityUrl = sharingVisibilitySubmission
-    ? buildReadableShareUrl(sharingVisibilitySubmission)
-    : "";
   const stateVisibilitySubmission = useMemo(
     () =>
       visibilitySummary?.submissionId
@@ -447,14 +423,107 @@ export function EarnPage() {
         : null,
     [state.submissions, visibilitySummary?.submissionId],
   );
-  const stateVisibilityQuestionSet = useMemo(
-    () =>
-      visibilitySummary?.submissionId
-        ? getActiveQuestionSet(state, visibilitySummary.submissionId)
-        : null,
-    [state, visibilitySummary?.submissionId],
-  );
+  useEffect(() => {
+    let cancelled = false;
 
+    if (!isTester) {
+      setTesterAccessSummary(null);
+      setTesterAccessError("");
+      setIsLoadingTesterAccess(false);
+      return undefined;
+    }
+
+    setIsLoadingTesterAccess(true);
+    void getTesterEarnAccessSummary()
+      .then((summary) => {
+        if (cancelled) return;
+        setTesterAccessSummary(summary);
+        setTesterAccessError("");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setTesterAccessError(
+          error instanceof Error
+            ? error.message
+            : "We could not load your paid-test progress right now.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingTesterAccess(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getTesterEarnAccessSummary, isTester]);
+
+  useEffect(() => {
+    if (!editSubmissionId) {
+      return undefined;
+    }
+
+    if (!currentUser) {
+      const returnTo = `/earn${searchParamsKey ? `?${searchParamsKey}` : ""}`;
+      navigate(`/sign-in?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
+      return undefined;
+    }
+
+    let cancelled = false;
+    const clearInvalidEditLink = () => {
+      if (cancelled) return;
+
+      setEditLinkError("That app could not be found or you no longer have access to edit it.");
+      setEditingVisibilitySubmissionId(null);
+      setDeepLinkSubmission(null);
+      const nextSearchParams = new URLSearchParams(searchParamsKey);
+      nextSearchParams.delete("edit");
+      setSearchParams(nextSearchParams, { replace: true });
+    };
+    const openOwnedSubmission = (submission: Submission | null) => {
+      if (!submission || submission.userId !== currentUser.id) {
+        clearInvalidEditLink();
+        return;
+      }
+
+      if (cancelled) return;
+      setEditLinkError("");
+      setDeepLinkSubmission(submission);
+      setEditingVisibilitySubmissionId(submission.id);
+    };
+    const loadedSubmission = state.submissions.find(
+      (submission) => submission.id === editSubmissionId,
+    );
+
+    if (loadedSubmission) {
+      openOwnedSubmission(loadedSubmission);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!isConfigured) {
+      clearInvalidEditLink();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void loadEarnVisibilitySubmission(editSubmissionId)
+      .then(openOwnedSubmission)
+      .catch(clearInvalidEditLink);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentUser,
+    editSubmissionId,
+    isConfigured,
+    navigate,
+    searchParamsKey,
+    setSearchParams,
+    state.submissions,
+  ]);
   useEffect(() => {
     const nextCelebration = parseEarnCreditCelebrationState(location.state);
 
@@ -484,7 +553,7 @@ export function EarnPage() {
   useEffect(() => {
     let isCancelled = false;
 
-    if (!currentUser || !isConfigured) {
+    if (!currentUser || !isConfigured || isTester) {
       setVisibilitySummary(null);
       setVisibilityError("");
       return undefined;
@@ -520,52 +589,35 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, isConfigured]);
+  }, [currentUser?.id, isConfigured, isTester]);
 
   useEffect(() => {
     let isCancelled = false;
     const submissionId = visibilitySummary?.submissionId;
 
-    if (!currentUser || !isConfigured || !submissionId) {
+    if (!currentUser || !isConfigured || !submissionId || isTester) {
       setVisibilitySubmission(null);
-      setVisibilityQuestionSet(null);
       return undefined;
     }
 
     if (stateVisibilitySubmission) {
       setVisibilitySubmission(stateVisibilitySubmission);
-    }
-
-    if (stateVisibilityQuestionSet) {
-      setVisibilityQuestionSet(stateVisibilityQuestionSet);
-    }
-
-    if (stateVisibilitySubmission && stateVisibilityQuestionSet) {
       return undefined;
     }
 
     const loadVisibilitySubmissionDetails = async () => {
       try {
-        const [submission, questionSet] = await Promise.all([
-          stateVisibilitySubmission
-            ? Promise.resolve(stateVisibilitySubmission)
-            : loadEarnVisibilitySubmission(submissionId),
-          stateVisibilityQuestionSet
-            ? Promise.resolve(stateVisibilityQuestionSet)
-            : loadEarnVisibilityQuestionSet(submissionId),
-        ]);
+        const submission = await loadEarnVisibilitySubmission(submissionId);
 
         if (isCancelled) {
           return;
         }
 
         setVisibilitySubmission(submission);
-        setVisibilityQuestionSet(questionSet);
       } catch (error) {
         if (!isCancelled) {
           console.error(error);
           setVisibilitySubmission(stateVisibilitySubmission);
-          setVisibilityQuestionSet(stateVisibilityQuestionSet);
         }
       }
     };
@@ -578,7 +630,7 @@ export function EarnPage() {
   }, [
     currentUser?.id,
     isConfigured,
-    stateVisibilityQuestionSet,
+    isTester,
     stateVisibilitySubmission,
     visibilitySummary?.submissionId,
   ]);
@@ -589,6 +641,7 @@ export function EarnPage() {
     if (
       !currentUser ||
       !isConfigured ||
+      isTester ||
       !visibilitySummary ||
       visibilitySummary.satisfactionRatePercent >= 100
     ) {
@@ -637,12 +690,20 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, isConfigured, visibilitySummary?.satisfactionRatePercent]);
+  }, [currentUser?.id, isConfigured, isTester, visibilitySummary?.satisfactionRatePercent]);
 
   useEffect(() => {
     if (!currentUser) {
       setSelectedProductTypes(defaultSelectedProductTypes);
       setPendingProductTypes(defaultSelectedProductTypes);
+      setIsPlatformModalOpen(false);
+      return;
+    }
+
+    if (currentUser.accountType === "tester" && currentUser.testerProfile) {
+      const nextProductTypes = devicesToProductTypes(currentUser.testerProfile.devices);
+      setSelectedProductTypes(nextProductTypes);
+      setPendingProductTypes(nextProductTypes);
       setIsPlatformModalOpen(false);
       return;
     }
@@ -654,7 +715,12 @@ export function EarnPage() {
     setSelectedProductTypes(nextSelectedProductTypes);
     setPendingProductTypes(nextSelectedProductTypes);
     setIsPlatformModalOpen(!isConfirmed);
-  }, [currentUser?.id, defaultSelectedProductTypesKey]);
+  }, [
+    currentUser?.accountType,
+    currentUser?.id,
+    currentUser?.testerProfile?.devices,
+    defaultSelectedProductTypesKey,
+  ]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -747,19 +813,8 @@ export function EarnPage() {
     };
   }, [currentUser?.id, isConfigured]);
 
-  const applyPlatformSelection = (productTypes: ProductType[]) => {
-    const next = normalizeProductTypes(productTypes);
-
-    setSelectedProductTypes(next);
-    setPendingProductTypes(next);
-
-    if (currentUser) {
-      saveStoredProductTypes(currentUser.id, next);
-    }
-  };
-
   const togglePendingProductType = (productType: ProductType) => {
-    applyPlatformSelection(
+    setPendingProductTypes(
       pendingProductTypes.includes(productType)
         ? pendingProductTypes.filter((item) => item !== productType)
         : [...pendingProductTypes, productType],
@@ -772,14 +827,31 @@ export function EarnPage() {
   };
 
   const closePlatformModal = () => {
-    applyPlatformSelection(pendingProductTypes);
+    setPendingProductTypes(selectedProductTypes);
     setIsPlatformModalOpen(false);
   };
 
-  const confirmPlatformSelection = () => {
+  const confirmPlatformSelection = async () => {
     const next = normalizeProductTypes(pendingProductTypes);
 
-    if (currentUser) {
+    if (isTester && currentUser?.testerProfile) {
+      const profile = currentUser.testerProfile;
+      const result = await updateTesterProfile({
+        firstName: profile.firstName,
+        countryCode: profile.countryCode,
+        region: profile.region ?? "",
+        technologyProficiency: profile.technologyProficiency,
+        devices: productTypesToDevices(next),
+        employmentStatus: profile.employmentStatus,
+        workArea: profile.workArea ?? "",
+        paidTestEmailEnabled: profile.paidTestEmailEnabled,
+      });
+
+      if (!result.ok) {
+        setServerEarnError(result.message);
+        return;
+      }
+    } else if (currentUser) {
       saveStoredProductTypes(currentUser.id, next);
       saveStoredPlatformConfirmation(currentUser.id);
     }
@@ -787,6 +859,7 @@ export function EarnPage() {
     setSelectedProductTypes(next);
     setPendingProductTypes(next);
     setIsPlatformModalOpen(false);
+    setServerEarnError("");
   };
 
   const candidateSubmissions = useMemo(() => {
@@ -801,6 +874,8 @@ export function EarnPage() {
     return baseSubmissions.filter(
       (item) =>
         !hiddenReportedSubmissions.has(item.id) &&
+        (!isTester ||
+          item.rewardType === (testerAccessSummary?.paidAccessUnlocked ? "paid" : "credit")) &&
         (serverEarnSubmissions !== null ||
           (item.needsGooglePlayClosedTesters === isGooglePlayClosedTestPool &&
             googlePlayClosedTestPoolUserIds.has(item.userId ?? "") ===
@@ -812,6 +887,8 @@ export function EarnPage() {
     googlePlayClosedTestPoolUserIds,
     hiddenReportedSubmissionIds,
     isGooglePlayClosedTestPool,
+    isTester,
+    testerAccessSummary?.paidAccessUnlocked,
     selectedProductTypes,
     serverEarnSubmissions,
   ]);
@@ -851,7 +928,7 @@ export function EarnPage() {
     let isCancelled = false;
     const submissionIds = candidateSubmissionIdsKey ? candidateSubmissionIdsKey.split("|") : [];
 
-    if (!isConfigured || !currentUser || submissionIds.length === 0) {
+    if (!isConfigured || !currentUser || isTester || submissionIds.length === 0) {
       setReputationBySubmissionId({});
       return undefined;
     }
@@ -884,7 +961,7 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [candidateSubmissionIdsKey, currentUser?.id, isConfigured]);
+  }, [candidateSubmissionIdsKey, currentUser?.id, isConfigured, isTester]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -896,7 +973,9 @@ export function EarnPage() {
     }
 
     const loadDraftProgress = async () => {
-      const progress = await loadTestResponseDraftProgress(currentUser.id, submissionIds);
+      const progress = await loadTestResponseDraftProgress(currentUser.id, submissionIds, {
+        skipServer: designSystemFixturesEnabled,
+      });
 
       if (isCancelled) {
         return;
@@ -910,7 +989,7 @@ export function EarnPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, displayedSubmissionIdsKey]);
+  }, [currentUser?.id, designSystemFixturesEnabled, displayedSubmissionIdsKey]);
 
   const cards = useMemo<EarnSubmissionCard[]>(
     () =>
@@ -931,7 +1010,7 @@ export function EarnPage() {
   const privatePlacementRankedCount =
     visibilitySummary?.wouldRankedSubmissionCount ?? visibilitySummary?.rankedSubmissionCount ?? 0;
   const shouldShowPrivatePlacement = Boolean(
-    currentUser && visibilitySummary?.submissionId && visibilitySummary.productName,
+    !isTester && currentUser && visibilitySummary?.submissionId && visibilitySummary.productName,
   );
   const privatePlacementIndex = privatePlacementRank
     ? Math.min(Math.max(privatePlacementRank - 1, 0), cards.length)
@@ -1013,7 +1092,15 @@ export function EarnPage() {
   };
 
   const saveVisibilitySubmissionDetails = async (submissionId: string, draft: SubmissionDraft) => {
-    await updateSubmissionDetails(submissionId, draft);
+    const currentStatus =
+      editingVisibilitySubmission?.id === submissionId
+        ? editingVisibilitySubmission.status
+        : undefined;
+    await updateSubmissionDetails(submissionId, draft, currentStatus);
+
+    if (!isConfigured) {
+      return;
+    }
 
     try {
       const updatedSubmission = await loadEarnVisibilitySubmission(submissionId);
@@ -1032,57 +1119,19 @@ export function EarnPage() {
   };
 
   const openVisibilityEditModal = (submissionId: string) => {
+    setEditLinkError("");
     setEditingVisibilitySubmissionId(submissionId);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("edit", submissionId);
+    setSearchParams(nextSearchParams, { replace: true });
   };
 
   const closeVisibilityEditModal = () => {
     setEditingVisibilitySubmissionId(null);
-  };
-
-  const openVisibilityShareModal = (submissionId: string) => {
-    setSharingVisibilitySubmissionId(submissionId);
-    setVisibilityShareCopyStatus("");
-  };
-
-  const closeVisibilityShareModal = () => {
-    setSharingVisibilitySubmissionId(null);
-    setVisibilityShareCopyStatus("");
-  };
-
-  const saveVisibilityShareMessage = async (customMessage: string) => {
-    if (!sharingVisibilitySubmission) {
-      return null;
-    }
-
-    try {
-      const { slug } = await upsertSubmissionShareLink(
-        sharingVisibilitySubmission.id,
-        customMessage,
-      );
-      return buildShareUrlFromSlug(slug);
-    } catch {
-      return null;
-    }
-  };
-
-  const copyVisibilityShareUrl = async (customMessage: string) => {
-    setVisibilityShareCopyStatus("Copying...");
-
-    try {
-      const shareUrlToCopy = await saveVisibilityShareMessage(customMessage);
-
-      if (!shareUrlToCopy) {
-        setVisibilityShareCopyStatus("Copy failed");
-        return null;
-      }
-
-      const copied = await copyTextToClipboard(shareUrlToCopy);
-      setVisibilityShareCopyStatus(copied ? "Copied" : "Copy failed");
-      return copied ? shareUrlToCopy : null;
-    } catch {
-      setVisibilityShareCopyStatus("Copy failed");
-      return null;
-    }
+    setDeepLinkSubmission(null);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("edit");
+    setSearchParams(nextSearchParams, { replace: true });
   };
 
   useEffect(() => {
@@ -1121,39 +1170,52 @@ export function EarnPage() {
     selectedProductTypes.length > 0;
 
   return (
-    <AppShell title="Earn" eyebrowLabel={null}>
+    <AppShell>
       <Toast open={showCreditToast} tone="success" title="Credit earned">
         {EARN_CREDIT_CELEBRATION_COPY}
       </Toast>
-      <div className="page-stack earn-page">
-        <EarnVisibilityPanel
-          summary={visibilitySummary}
-          error={visibilityError}
-          isSignedIn={Boolean(currentUser)}
-          hasTestBackTarget={Boolean(firstTestBackCard)}
-          hasAvailableTest={Boolean(firstAvailableTestCard)}
-          revisionTargetResponseId={revisionTargetResponseId}
-          revisionTargetError={revisionTargetError}
-          isLoadingRevisionTarget={isLoadingRevisionTarget}
-          onImproveRate={scrollToFirstTestBackTarget}
-          onCompleteTest={scrollToFirstAvailableTest}
-          onEditLiveTest={openVisibilityEditModal}
-          onShareLiveTest={openVisibilityShareModal}
-        />
+      <div className={styles.page}>
+        <h1 className="ds-sr-only">Earn</h1>
+        {!isTester && editLinkError ? (
+          <Alert title="App could not be opened" tone="warning">
+            {editLinkError}
+          </Alert>
+        ) : null}
+        {isTester ? (
+          <TesterEarnProgress
+            summary={testerAccessSummary}
+            isLoading={isLoadingTesterAccess}
+            error={testerAccessError}
+          />
+        ) : (
+          <EarnVisibilityPanel
+            summary={visibilitySummary}
+            error={visibilityError}
+            isSignedIn={Boolean(currentUser)}
+            hasTestBackTarget={Boolean(firstTestBackCard)}
+            hasAvailableTest={Boolean(firstAvailableTestCard)}
+            revisionTargetResponseId={revisionTargetResponseId}
+            revisionTargetError={revisionTargetError}
+            isLoadingRevisionTarget={isLoadingRevisionTarget}
+            onImproveRate={scrollToFirstTestBackTarget}
+            onCompleteTest={scrollToFirstAvailableTest}
+            onEditLiveTest={openVisibilityEditModal}
+          />
+        )}
 
-        <Surface className="earn-controls">
+        <Surface as="section" padding="compact" className="earn-controls">
           <div className="earn-controls__toolbar">
-            <label className="earn-filter">
-              <span className="earn-filter__label">Sort by</span>
-              <div className="earn-filter__control">
-                <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}>
-                  <option value="recommended">Recommended / best fit</option>
-                  <option value="newest">Newest</option>
-                  <option value="shortest">Shortest estimated time</option>
-                </select>
-                <ChevronDown size={16} className="earn-filter__icon" aria-hidden="true" />
-              </div>
-            </label>
+            <div className="earn-filter">
+              <Select
+                label="Sort by"
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value)}
+              >
+                <option value="recommended">Recommended / best fit</option>
+                <option value="newest">Newest</option>
+                <option value="shortest">Shortest estimated time</option>
+              </Select>
+            </div>
             <div className="earn-platform-summary">
               <Button
                 variant="secondary"
@@ -1169,7 +1231,9 @@ export function EarnPage() {
         </Surface>
 
         {serverEarnError ? (
-          <Surface className="callout callout--warning">{serverEarnError}</Surface>
+          <Surface as="section" tone="subtle" className="callout callout--warning">
+            {serverEarnError}
+          </Surface>
         ) : null}
 
         {cards.length > 0 || shouldShowPrivatePlacement ? (
@@ -1187,6 +1251,7 @@ export function EarnPage() {
                   card={card}
                   hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
                   placementSnapshot={earnStartPlacementSnapshot}
+                  showFounderReputation={!isTester}
                 />
               </div>
             ))}
@@ -1219,20 +1284,34 @@ export function EarnPage() {
                   card={card}
                   hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
                   placementSnapshot={earnStartPlacementSnapshot}
+                  showFounderReputation={!isTester}
                 />
               </div>
             ))}
           </div>
         ) : isShowingInitialEarnLoad ? (
-          <Surface>
+          <Surface as="section">
             <div className="empty-state">
               <h3>Loading tests...</h3>
             </div>
           </Surface>
         ) : (
-          <Surface>
+          <Surface as="section">
             <div className="empty-state">
-              {selectedProductTypes.length === 0 ? (
+              {isTester ? (
+                <>
+                  {testerAccessSummary?.paidAccessUnlocked ? (
+                    <h3>No paid tests are available right now</h3>
+                  ) : (
+                    <h3>No credit tests are available right now</h3>
+                  )}
+                  <p>
+                    {testerAccessSummary?.paidAccessUnlocked
+                      ? "Test4Test will email you when a new matching paid test appears."
+                      : "Check back soon or edit your device preferences to see other credit tests."}
+                  </p>
+                </>
+              ) : selectedProductTypes.length === 0 ? (
                 <>
                   <h3>No platforms selected</h3>
                   <p>Select at least one platform to see matching tests.</p>
@@ -1262,25 +1341,66 @@ export function EarnPage() {
           onConfirm={confirmPlatformSelection}
         />
       ) : null}
-      {editingVisibilitySubmission ? (
+      {!isTester && editingVisibilitySubmission ? (
         <EditSubmissionModal
           submission={editingVisibilitySubmission}
           onClose={closeVisibilityEditModal}
           onSave={saveVisibilitySubmissionDetails}
         />
       ) : null}
-      {sharingVisibilitySubmission ? (
-        <ShareTestModal
-          submission={sharingVisibilitySubmission}
-          questionSet={sharingVisibilityQuestionSet}
-          shareUrl={sharingVisibilityUrl}
-          copyStatus={visibilityShareCopyStatus}
-          onCopy={copyVisibilityShareUrl}
-          onSaveMessage={saveVisibilityShareMessage}
-          onClose={closeVisibilityShareModal}
-        />
-      ) : null}
     </AppShell>
+  );
+}
+function TesterEarnProgress({
+  summary,
+  isLoading,
+  error,
+}: {
+  summary: TesterEarnAccessSummary | null;
+  isLoading: boolean;
+  error: string;
+}) {
+  const completedCreditTests = Math.min(summary?.completedCreditTests ?? 0, 2);
+  const fiveStarRatings = Math.min(summary?.fiveStarRatings ?? 0, 2);
+  const isUnlocked = summary?.paidAccessUnlocked === true;
+
+  return (
+    <Surface as="section" className={styles.testerProgress} aria-labelledby="tester-progress-title">
+      <div className={styles.testerProgressHeader}>
+        <div>
+          <h2 id="tester-progress-title">
+            {isUnlocked ? "Paid tests unlocked" : "Your paid-test progress"}
+          </h2>
+          <p>
+            {isLoading
+              ? "Loading your progress..."
+              : isUnlocked
+                ? "You qualify for paid tests that match your devices."
+                : "Complete two credited tests and receive two 5-star ratings to unlock paid tests."}
+          </p>
+        </div>
+        <Badge tone={isUnlocked ? "success" : "info"}>
+          {isUnlocked ? "Unlocked" : "Credit tests"}
+        </Badge>
+      </div>
+      {error ? (
+        <Alert title="Progress unavailable" tone="warning">
+          {error}
+        </Alert>
+      ) : null}
+      <div className={styles.testerProgressGrid}>
+        <Progress
+          label={`Credited tests: ${completedCreditTests} of 2`}
+          value={completedCreditTests}
+          max={2}
+        />
+        <Progress
+          label={`5-star ratings: ${fiveStarRatings} of 2`}
+          value={fiveStarRatings}
+          max={2}
+        />
+      </div>
+    </Surface>
   );
 }
 
@@ -1296,7 +1416,6 @@ function EarnVisibilityPanel({
   onImproveRate,
   onCompleteTest,
   onEditLiveTest,
-  onShareLiveTest,
 }: {
   summary: EarnVisibilitySummary | null;
   error: string;
@@ -1309,7 +1428,6 @@ function EarnVisibilityPanel({
   onImproveRate: () => void;
   onCompleteTest: () => void;
   onEditLiveTest: (submissionId: string) => void;
-  onShareLiveTest: (submissionId: string) => void;
 }) {
   const hasLiveTest = Boolean(summary?.submissionId);
   const hasCompletedTest = summary?.hasCompletedTest === true;
@@ -1351,7 +1469,7 @@ function EarnVisibilityPanel({
 
   if (!isSignedIn) {
     return (
-      <Surface className="earn-visibility">
+      <Surface as="section" tone="raised" padding="none" className="earn-visibility">
         <div className="earn-visibility__app-bar">
           <div className="earn-visibility__app-name">
             <h2>Sign in to see your Rank</h2>
@@ -1366,29 +1484,26 @@ function EarnVisibilityPanel({
   }
 
   return (
-    <Surface className="earn-visibility">
+    <Surface as="section" tone="raised" padding="none" className="earn-visibility">
       <div className="earn-visibility__app-bar">
         <div className="earn-visibility__app-name">
           <h2>{appName}</h2>
         </div>
         {hasLiveTest && liveSubmissionId ? (
           <div className="earn-visibility__app-actions">
-            <button
+            <Button
               type="button"
-              className="button button--secondary button--small"
+              variant="secondary"
+              size="compact"
               onClick={() => onEditLiveTest(liveSubmissionId)}
             >
-              <PencilLine size={16} />
+              <PencilLine size={16} aria-hidden="true" />
               Edit
-            </button>
-            <button
-              type="button"
-              className="button button--secondary button--small"
-              onClick={() => onShareLiveTest(liveSubmissionId)}
-            >
-              <Share2 size={16} />
+            </Button>
+            <DesignSystemLink to="/share" className="button button--secondary button--small">
+              <Share2 size={16} aria-hidden="true" />
               Share
-            </button>
+            </DesignSystemLink>
           </div>
         ) : !hasLiveTest && summary ? (
           <Link to="/submit" className="button button--primary button--small">
@@ -1404,22 +1519,23 @@ function EarnVisibilityPanel({
         <div
           className={`earn-visibility__rank-panel${isListingLocked ? " earn-visibility__rank-panel--locked" : ""}`}
         >
-          <span className="earn-visibility__rank-label">Rank</span>
           <div
             className={`earn-visibility__rank-value${isListingLocked ? " earn-visibility__rank-value--message" : ""}`}
           >
             <strong>{rankValue}</strong>
           </div>
+          <span className="earn-visibility__rank-label">Rank</span>
           {isListingLocked ? (
-            <button
+            <Button
               type="button"
-              className="button button--primary button--small earn-visibility__rank-action"
+              size="compact"
+              className="earn-visibility__rank-action"
               onClick={onCompleteTest}
               disabled={!hasAvailableTest}
             >
               Complete a test
-              <ArrowRight size={16} />
-            </button>
+              <ArrowRight size={16} aria-hidden="true" />
+            </Button>
           ) : rankDetail ? (
             <small>{rankDetail}</small>
           ) : null}
@@ -1430,14 +1546,16 @@ function EarnVisibilityPanel({
             <strong>{testBackValue}</strong>
             <span className="earn-visibility__metric-label">Test-back rate</span>
             {showImproveRate ? (
-              <button
+              <Button
                 type="button"
-                className="button button--secondary button--small earn-visibility__inline-action"
+                variant="secondary"
+                size="compact"
+                className="earn-visibility__inline-action"
                 onClick={onImproveRate}
                 disabled={!hasTestBackTarget}
               >
                 Improve rate
-              </button>
+              </Button>
             ) : null}
           </div>
           {showImproveRate && !hasTestBackTarget ? (
@@ -1458,13 +1576,15 @@ function EarnVisibilityPanel({
                   Revise
                 </Link>
               ) : (
-                <button
+                <Button
                   type="button"
-                  className="button button--secondary button--small earn-visibility__inline-action"
+                  variant="secondary"
+                  size="compact"
+                  className="earn-visibility__inline-action"
                   disabled
                 >
                   Revise
-                </button>
+                </Button>
               )
             ) : null}
           </div>
@@ -1485,21 +1605,17 @@ function EarnVisibilityPanel({
 
           <div className="earn-visibility__detail-row">
             <strong>{creditValue}</strong>
-            <span className="earn-visibility__metric-label">
+            <span className="earn-visibility__metric-label earn-visibility__metric-label--credits">
               Credits
-              <span className="earn-token-tooltip">
-                <button
-                  type="button"
-                  className="earn-token-tooltip__trigger"
-                  aria-label="What credits do"
-                  aria-describedby="earn-token-tooltip"
+              <Tooltip content="The more credits you have, the more visibility your test gains">
+                <IconButton
+                  label="What credits do"
+                  variant="quiet"
+                  className={styles.creditsInfoTrigger}
                 >
-                  <Info size={16} />
-                </button>
-                <span id="earn-token-tooltip" className="earn-token-tooltip__bubble" role="tooltip">
-                  The more credits you have, the more visibility your test gains
-                </span>
-              </span>
+                  <Info size={16} aria-hidden="true" />
+                </IconButton>
+              </Tooltip>
             </span>
           </div>
         </div>
@@ -1701,25 +1817,23 @@ function EarnPrivatePlacementRow({
 
   // ds-exception: runtime-measurements — measured placement offset for the private row.
   return (
-    <Surface className={placementClasses} style={placementStyle}>
+    <Surface as="section" padding="none" className={placementClasses} style={placementStyle}>
       <div className="earn-row__content">
         <div className="earn-row__main">
           <div className="earn-row__pills">
-            <span className="tag tag--warm earn-row__private-tag">Only visible to you</span>
+            <Badge tone="success">Only visible to you</Badge>
             {submission
               ? productTypesBadges(submission.productTypes).map((badge) => (
-                  <span key={`${submission.id}-${badge}`} className="pill pill--accent">
+                  <Badge key={`${submission.id}-${badge}`} tone="info">
                     {badge}
-                  </span>
+                  </Badge>
                 ))
               : null}
             {submission?.requiresRecording ? (
-              <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
+              <Badge tone="warning">Recording required</Badge>
             ) : null}
             {submission?.needsGooglePlayClosedTesters ? (
-              <span className="tag tag--warm earn-row__closed-test-tag">
-                Google Play closed test
-              </span>
+              <Badge tone="warning">Google Play closed test</Badge>
             ) : null}
           </div>
           <div className="earn-row__head">
@@ -1736,11 +1850,8 @@ function EarnPrivatePlacementRow({
           <strong className="earn-row__placement-rank">
             {formatPrivatePlacementRank(rank, rankedSubmissionCount)}
           </strong>
-          <Link
-            to={submission ? `/my-tests/${submission.id}` : "/my-tests"}
-            className="button button--secondary"
-          >
-            View Results
+          <Link to="/analytics" className="button button--secondary">
+            View analytics
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -1753,14 +1864,16 @@ function EarnRow({
   card,
   hasDraftProgress,
   placementSnapshot,
+  showFounderReputation,
 }: {
   card: EarnSubmissionCard;
   hasDraftProgress: boolean;
   placementSnapshot: EarnPlacementSnapshot | null;
+  showFounderReputation: boolean;
 }) {
   const { submission, reputation } = card;
-  const showReciprocalTag = reputation?.ownerHasTestedYou === true;
-  const showRateReputation = reputation?.ownerHasCompletedTest === true;
+  const showReciprocalTag = showFounderReputation && reputation?.ownerHasTestedYou === true;
+  const showRateReputation = showFounderReputation && reputation?.ownerHasCompletedTest === true;
 
   const savePlacementSnapshot = () => {
     if (!placementSnapshot) {
@@ -1774,27 +1887,20 @@ function EarnRow({
   };
 
   return (
-    <Surface className="earn-row">
+    <Surface as="article" padding="none" className="earn-row">
       <div className="earn-row__content">
         <div className="earn-row__main">
           <div className="earn-row__pills">
-            {showReciprocalTag ? (
-              <span className="tag tag--warm earn-row__reciprocal-tag">
-                <span className="earn-row__reciprocal-tag-label">This user tested your app</span>
-              </span>
-            ) : null}
+            {showReciprocalTag ? <Badge tone="warning">This user tested your app</Badge> : null}
+            {submission.rewardType === "paid" ? <Badge tone="success">Paid test</Badge> : null}
             {productTypesBadges(submission.productTypes).map((badge) => (
-              <span key={`${submission.id}-${badge}`} className="pill pill--accent">
+              <Badge key={`${submission.id}-${badge}`} tone="info">
                 {badge}
-              </span>
+              </Badge>
             ))}
-            {submission.requiresRecording ? (
-              <span className="tag tag--warm earn-row__recording-tag">Recording required</span>
-            ) : null}
+            {submission.requiresRecording ? <Badge tone="warning">Recording required</Badge> : null}
             {submission.needsGooglePlayClosedTesters ? (
-              <span className="tag tag--warm earn-row__closed-test-tag">
-                Google Play closed test
-              </span>
+              <Badge tone="warning">Google Play closed test</Badge>
             ) : null}
           </div>
           <div className="earn-row__head">

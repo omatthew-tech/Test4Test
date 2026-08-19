@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { getPublishedBlogPosts, type BlogPost } from "../data/blogPosts";
-import { formatCalendarDate, minutesLabel } from "../lib/format";
+import { formatCalendarDate } from "../lib/format";
 import { usePageMetadata } from "../lib/pageMetadata";
 import { getBlogIndexPageMetadata } from "../lib/blogSeo";
 import { AppShell } from "../components/Layout";
@@ -31,7 +31,6 @@ function BlogPostCard({ post }: { post: BlogPost }) {
         <div className="blog-card__body">
           <div className="blog-meta">
             <span>{formatCalendarDate(post.publishedAt)}</span>
-            <span>{minutesLabel(post.readTimeMinutes)} read</span>
           </div>
 
           <h2>{post.title}</h2>
@@ -65,9 +64,9 @@ export function BlogPage() {
           <div className="blog-hero__copy">
             <h1 id="blog-hero-title">
               <span className="blog-hero__brand">Test4Test</span>
-              <span className="blog-hero__label"> blog</span>
+              <span className="blog-hero__label">Blog</span>
             </h1>
-            <p>Usability tips &amp; tricks for every day founders</p>
+            <p>User testing tips for anyone with an app</p>
           </div>
         </section>
 

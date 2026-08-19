@@ -1,13 +1,17 @@
 import type { ReactElement } from "react";
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Container, Skeleton, Stack } from "@test4test/design-system";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { trackEventOncePerSession } from "./lib/analytics";
+import { founderWorkspaceRedirect } from "./lib/accountAccess";
 import { HomePage } from "./pages/HomePage";
 import styles from "./Application.module.css";
 
 const AdminPage = lazy(() => import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })));
+const AnalyticsPage = lazy(() =>
+  import("./pages/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })),
+);
 const BannedPage = lazy(() =>
   import("./pages/BannedPage").then((m) => ({ default: m.BannedPage })),
 );
@@ -22,20 +26,18 @@ const EarnPage = lazy(() => import("./pages/EarnPage").then((m) => ({ default: m
 const EmailPreviewPage = lazy(() =>
   import("./pages/EmailPreviewPage").then((m) => ({ default: m.EmailPreviewPage })),
 );
-const MyTestsPage = lazy(() =>
-  import("./pages/MyTestsPage").then((m) => ({ default: m.MyTestsPage })),
-);
 const ProfilePage = lazy(() =>
   import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })),
+);
+const RecordingViewPage = lazy(() =>
+  import("./pages/RecordingViewPage").then((m) => ({ default: m.RecordingViewPage })),
 );
 const ReviseSubmissionPage = lazy(() =>
   import("./pages/ReviseSubmissionPage").then((m) => ({ default: m.ReviseSubmissionPage })),
 );
+const SharePage = lazy(() => import("./pages/SharePage").then((m) => ({ default: m.SharePage })));
 const SignInPage = lazy(() =>
   import("./pages/SignInPage").then((m) => ({ default: m.SignInPage })),
-);
-const SubmissionDetailPage = lazy(() =>
-  import("./pages/SubmissionDetailPage").then((m) => ({ default: m.SubmissionDetailPage })),
 );
 const SubmissionsPage = lazy(() =>
   import("./pages/SubmissionsPage").then((m) => ({ default: m.SubmissionsPage })),
@@ -45,6 +47,9 @@ const SubmitFlowPage = lazy(() =>
 );
 const TesterLandingPage = lazy(() =>
   import("./pages/TesterLandingPage").then((m) => ({ default: m.TesterLandingPage })),
+);
+const TesterSignupPage = lazy(() =>
+  import("./pages/TesterSignupPage").then((m) => ({ default: m.TesterSignupPage })),
 );
 const TestSessionPage = lazy(() =>
   import("./pages/TestSessionPage").then((m) => ({ default: m.TestSessionPage })),
@@ -97,6 +102,25 @@ function BanRedirectRoute({ children }: { children: ReactElement }) {
   return children;
 }
 
+function FounderWorkspaceRoute({ children }: { children: ReactElement }) {
+  const { currentUser, isLoading } = useAppState();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <RouteLoading />;
+  }
+
+  if (currentUser?.banStatus === "banned") {
+    return <Navigate to="/banned" replace />;
+  }
+
+  if (founderWorkspaceRedirect(currentUser?.accountType)) {
+    return <Navigate to={{ pathname: "/earn", search: location.search }} replace />;
+  }
+
+  return children;
+}
+
 function BannedOnlyRoute({ children }: { children: ReactElement }) {
   const { currentUser, isLoading } = useAppState();
 
@@ -113,6 +137,39 @@ function BannedOnlyRoute({ children }: { children: ReactElement }) {
   }
 
   return children;
+}
+
+function AuthenticatedRoute({ children }: { children: ReactElement }) {
+  const location = useLocation();
+  const { currentUser, isLoading } = useAppState();
+
+  if (isLoading) {
+    return <RouteLoading />;
+  }
+
+  if (currentUser?.banStatus === "banned") {
+    return <Navigate to="/banned" replace />;
+  }
+
+  if (!currentUser) {
+    const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/sign-in?returnTo=${returnTo}`} replace />;
+  }
+
+  if (founderWorkspaceRedirect(currentUser.accountType)) {
+    return <Navigate to={{ pathname: "/earn", search: location.search }} replace />;
+  }
+
+  return children;
+}
+
+function LegacyResultsRedirect() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const destination = searchParams.get("response")?.trim() ? "/recordings" : "/analytics";
+  const search = searchParams.toString();
+
+  return <Navigate to={`${destination}${search ? `?${search}` : ""}`} replace />;
 }
 
 export default function App() {
@@ -140,9 +197,9 @@ export default function App() {
               <Route
                 path="/submit"
                 element={
-                  <BanRedirectRoute>
+                  <FounderWorkspaceRoute>
                     <SubmitFlowPage />
-                  </BanRedirectRoute>
+                  </FounderWorkspaceRoute>
                 }
               />
               <Route
@@ -161,6 +218,14 @@ export default function App() {
                   </BanRedirectRoute>
                 }
               />
+              <Route
+                path="/get-paid-to-test/signup"
+                element={
+                  <BanRedirectRoute>
+                    <TesterSignupPage />
+                  </BanRedirectRoute>
+                }
+              />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route
@@ -172,11 +237,35 @@ export default function App() {
                 }
               />
               <Route
+                path="/share"
+                element={
+                  <AuthenticatedRoute>
+                    <SharePage />
+                  </AuthenticatedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <AuthenticatedRoute>
+                    <AnalyticsPage />
+                  </AuthenticatedRoute>
+                }
+              />
+              <Route
+                path="/recordings"
+                element={
+                  <AuthenticatedRoute>
+                    <RecordingViewPage />
+                  </AuthenticatedRoute>
+                }
+              />
+              <Route
                 path="/email-preview"
                 element={
-                  <BanRedirectRoute>
+                  <FounderWorkspaceRoute>
                     <EmailPreviewPage />
-                  </BanRedirectRoute>
+                  </FounderWorkspaceRoute>
                 }
               />
               <Route
@@ -195,44 +284,30 @@ export default function App() {
                   </BanRedirectRoute>
                 }
               />
-              <Route
-                path="/my-tests"
-                element={
-                  <BanRedirectRoute>
-                    <MyTestsPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/my-tests/:submissionId"
-                element={
-                  <BanRedirectRoute>
-                    <SubmissionDetailPage />
-                  </BanRedirectRoute>
-                }
-              />
+              <Route path="/my-tests" element={<LegacyResultsRedirect />} />
+              <Route path="/my-tests/:submissionId" element={<LegacyResultsRedirect />} />
               <Route
                 path="/submissions"
                 element={
-                  <BanRedirectRoute>
+                  <AuthenticatedRoute>
                     <SubmissionsPage />
-                  </BanRedirectRoute>
+                  </AuthenticatedRoute>
                 }
               />
               <Route
                 path="/submissions/:responseId/revise"
                 element={
-                  <BanRedirectRoute>
+                  <AuthenticatedRoute>
                     <ReviseSubmissionPage />
-                  </BanRedirectRoute>
+                  </AuthenticatedRoute>
                 }
               />
               <Route
                 path="/credits"
                 element={
-                  <BanRedirectRoute>
+                  <AuthenticatedRoute>
                     <CreditsPage />
-                  </BanRedirectRoute>
+                  </AuthenticatedRoute>
                 }
               />
               <Route
@@ -246,9 +321,9 @@ export default function App() {
               <Route
                 path="/admin"
                 element={
-                  <BanRedirectRoute>
+                  <AuthenticatedRoute>
                     <AdminPage />
-                  </BanRedirectRoute>
+                  </AuthenticatedRoute>
                 }
               />
               <Route

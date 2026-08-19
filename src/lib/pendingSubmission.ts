@@ -1,4 +1,4 @@
-import { Question, SubmissionDraft } from "../types";
+import { OtpIntent, Question, SubmissionDraft } from "../types";
 import { normalizeInstructionSteps, serializeInstructionSteps } from "./instructions";
 
 const PENDING_SUBMISSION_PREFIX = "test4test-pending-submission:";
@@ -25,6 +25,7 @@ export interface StoredOtpChallenge {
   expiresAt: string;
   resendCount: number;
   submissionId?: string;
+  intent?: OtpIntent;
 }
 
 export interface SubmitFlowResumePayload {
@@ -201,7 +202,10 @@ export function getStoredOtpChallenge() {
       return null;
     }
 
-    return challenge;
+    return {
+      ...challenge,
+      intent: challenge.intent ?? (challenge.submissionId ? "founder_signup" : "sign_in"),
+    };
   } catch {
     removeStoredValue(OTP_CHALLENGE_KEY);
     return null;

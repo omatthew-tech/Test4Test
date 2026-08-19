@@ -17,6 +17,24 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("selected Get paid to test navigation returns to the home page", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/get-paid-to-test");
+
+  const selectedLink = page
+    .getByRole("navigation", { name: "Primary" })
+    .getByRole("link", { name: "Get paid to test" });
+  await expect(selectedLink).toHaveAttribute("aria-current", "page");
+  await selectedLink.click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Primary" })
+      .getByRole("link", { name: "Get paid to test" }),
+  ).not.toHaveAttribute("aria-current", "page");
+});
+
 test("home starts a named submission without losing the draft", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("textbox", { name: "App name" }).fill("Checkout audit");
@@ -340,9 +358,29 @@ test("public audience selection reaches the tester landing route", async ({ page
 
 test("test-account sign-in exposes the passcode state and recovery path", async ({ page }) => {
   await page.goto("/sign-in");
+  await expect(page.getByRole("banner")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(0);
+
+  const brand = page.getByRole("link", { name: "Test4Test home" });
+  const card = page.locator(".sign-in-panel");
+  await expect(brand).toBeVisible();
+  await expect(card).toBeVisible();
+
+  const brandPosition = await brand.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { center: bounds.left + bounds.width / 2, top: bounds.top };
+  });
+  const cardPosition = await card.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { center: bounds.left + bounds.width / 2, top: bounds.top };
+  });
+  expect(Math.abs(brandPosition.center - cardPosition.center)).toBeLessThan(0.5);
+  expect(brandPosition.top).toBeLessThan(cardPosition.top);
+
   const email = page.getByRole("textbox", { name: "Email address" });
   await email.fill("avery@demo.test4test.app");
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(brand).toBeVisible();
   await expect(page.getByRole("heading", { name: "Enter test passcode" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Test account passcode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Verify and continue" })).toBeDisabled();
@@ -558,28 +596,290 @@ test("legacy submission drafts migrate to the first missing three-step stage", a
   });
 });
 
-test("My Tests share and edit dialogs close with Escape and restore focus", async ({ page }) => {
-  await page.goto("/my-tests?ds-user=user-mateo");
+test("Earn edit deep links open owned paused apps and clean the URL after close or save", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.addInitScript(() => {
+    window.localStorage.setItem("test4test:earn-platform-filter-confirmed:user-mateo", "true");
+  });
+  await page.goto("/earn?edit=submission-palette&ds-user=user-mateo&ds-no-live=1");
 
-  const edit = page.getByRole("button", { name: "Edit app" }).first();
-  await edit.click();
-  await expect(page.getByRole("dialog", { name: "Edit app" })).toBeVisible();
+  const editDialog = page.getByRole("dialog", { name: "Edit app" });
+  await expect(editDialog).toBeVisible({ timeout: 30_000 });
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Edit app" })).not.toBeVisible();
-  await expect(edit).toBeFocused();
+  await expect(editDialog).not.toBeVisible();
+  expect(new URL(page.url()).searchParams.has("edit")).toBe(false);
 
-  const share = page.getByRole("button", { name: "Share test" }).first();
-  await expect(share).toBeEnabled();
-  await share.click();
-  const dialog = page.getByRole("dialog", { name: "Share test" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("textbox", { name: "Share test link" })).toBeVisible();
+  await page.goto("/earn?edit=submission-palette&ds-user=user-mateo&ds-no-live=1");
+  await expect(editDialog).toBeVisible();
+  await editDialog.getByRole("button", { name: "Save changes" }).click();
+  await expect(editDialog).not.toBeVisible();
+  expect(new URL(page.url()).searchParams.has("edit")).toBe(false);
+});
+
+test("Earn edit deep links reject missing or unauthorized apps and require sign in", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("test4test:earn-platform-filter-confirmed:user-mateo", "true");
+  });
+
+  for (const submissionId of ["missing-submission", "submission-pantry"]) {
+    await page.goto(`/earn?edit=${submissionId}&ds-user=user-mateo`);
+    await expect(page.getByText("App could not be opened", { exact: true })).toBeVisible();
+    expect(new URL(page.url()).searchParams.has("edit")).toBe(false);
+  }
+
+  await page.goto("/earn?edit=submission-palette");
+  await expect(page).toHaveURL(/\/sign-in\?/);
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/earn?edit=submission-palette");
+});
+
+test("Share page saves, resets, copies, and previews the current live test", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          (window as Window & { __copiedShareText?: string }).__copiedShareText = value;
+        },
+      },
+    });
+  });
+  await page.goto("/share?ds-user=user-mateo");
+
+  await expect(page.getByRole("heading", { level: 1, name: "Share" })).toBeVisible();
   await expect(
-    dialog.getByRole("textbox", { name: "Add a custom message (optional)" }),
+    page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Share" }),
+  ).toHaveAttribute("aria-current", "page");
+
+  const shareLink = page.getByRole("textbox", { name: "Share test link" });
+  await expect(shareLink).toHaveValue(/\/test\/palette-pilot$/);
+  await shareLink.focus();
+  await expect
+    .poll(() =>
+      shareLink.evaluate(
+        (element) =>
+          element instanceof HTMLInputElement &&
+          element.selectionStart === 0 &&
+          element.selectionEnd === element.value.length,
+      ),
+    )
+    .toBe(true);
+
+  const preview = page.getByRole("region", { name: "Shared test preview" });
+  await expect(preview.getByText("palettepilot.app", { exact: true })).toBeVisible();
+  await expect(
+    preview.getByText("Create a board and inspect how easy it is to add references."),
   ).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await expect(share).toBeFocused();
+  await expect(preview.getByRole("heading", { name: /How easy was it/ }).first()).toBeVisible();
+
+  const message = page.getByRole("textbox", { name: "Add a custom message (optional)" });
+  await message.fill("Please review the board-building flow");
+  await expect(page.getByText("Message saved.")).toBeVisible();
+  await expect(
+    preview.getByRole("heading", { level: 3, name: "Please review the board-building flow" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect(page.getByText("The public test link is ready to paste.")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __copiedShareText?: string }).__copiedShareText ?? "",
+      ),
+    )
+    .toMatch(/\/test\/palette-pilot$/);
+
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(preview.getByRole("heading", { level: 3, name: /Congrats!/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reset" })).toHaveCount(0);
+});
+
+test("Share page explains clipboard failure without hiding the manual link", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error("Clipboard unavailable");
+        },
+      },
+    });
+    document.execCommand = () => false;
+  });
+  await page.goto("/share?ds-user=user-mateo");
+
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByRole("button", { name: "Copy failed" })).toBeVisible();
+  await expect(
+    page.getByText("We couldn't copy the link. Select the link above and copy it manually."),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Share test link" })).toBeVisible();
+});
+
+test("Share page redirects guests and guides members without a live test", async ({ page }) => {
+  await page.goto("/share");
+  await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fshare$/);
+
+  await page.goto("/share?ds-user=user-mateo&ds-no-live=1");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "No live test to share" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Submit an app" })).toHaveAttribute(
+    "href",
+    "/submit",
+  );
+});
+
+test("Analytics is authenticated, follows Share in navigation, and exposes static controls", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
+
+  const navigation = page.getByRole("navigation", { name: "Primary" });
+  await expect(navigation.getByRole("link")).toHaveText([
+    "Earn",
+    "Share",
+    "Analytics",
+    "New app",
+    "My reviews",
+  ]);
+  await expect(navigation.getByRole("link", { name: "Analytics" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.getByRole("heading", { level: 1, name: "Analytics" })).toBeVisible();
+  await expect(page.getByText("You have 2 recordings available", { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Ask about your recordings" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Submit analytics prompt" })).toBeDisabled();
+
+  for (const action of ["Get more recordings", "Share", "Purchase"]) {
+    await expect(page.getByRole("button", { name: action })).toBeDisabled();
+  }
+
+  await expect(page.getByRole("link", { name: "View recordings" })).toHaveAttribute(
+    "href",
+    "/recordings?ds-user=user-mateo&ds-recordings=2",
+  );
+
+  const firstRecording = page.getByRole("link", { name: "Recording 1" });
+  await expect(firstRecording).toHaveAttribute(
+    "href",
+    "/recordings?ds-user=user-mateo&ds-recordings=2&response=response-palette-2",
+  );
+  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(2);
+  await expect(page.getByRole("img", { name: /recording preview$/ })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(2);
+  await expect(page.locator("video")).toHaveCount(0);
+
+  const firstPlay = page.getByRole("button", { name: "Play Recording 1: Palette Pilot" });
+  await firstPlay.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator('video[aria-label="Recording 1: Palette Pilot"]')).toBeVisible();
+  await expect(page.locator("video")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Play Recording 2: Palette Pilot" }).click();
+  await expect(page.locator('video[aria-label="Recording 2: Palette Pilot"]')).toBeVisible();
+  await expect(page.locator('video[aria-label="Recording 1: Palette Pilot"]')).toHaveCount(0);
+  await expect(page.locator("video")).toHaveCount(1);
+
+  await firstRecording.click();
+  await expect(page).toHaveURL(/\/recordings\?/);
+  expect(new URL(page.url()).searchParams.get("response")).toBe("response-palette-2");
+  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+});
+
+test("Analytics pluralizes recording counts and renders no extra zero-state content", async ({
+  page,
+}) => {
+  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
+  await expect(page.getByText("You have 1 recording available", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Recording 1" })).toBeVisible();
+
+  await page.goto("/analytics?ds-user=user-mateo");
+  await expect(page.getByText("You have 0 recordings available", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "View recordings" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
+});
+
+test("Recording view opens the latest video and browses available recordings", async ({ page }) => {
+  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
+  await page.getByRole("link", { name: "View recordings" }).click();
+
+  await expect(page).toHaveURL(/\/recordings\?ds-user=user-mateo&ds-recordings=2$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Palette Pilot" })).toBeVisible();
+  await expect(page.getByText("Recording view", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("Review your latest recording and move through earlier sessions.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Recording 1 of 2: Palette Pilot")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Transcript" })).toBeVisible();
+  await expect(page.getByText("Transcript unavailable", { exact: true })).toBeVisible();
+
+  const previous = page.getByRole("button", { name: "Previous recording" });
+  const next = page.getByRole("button", { name: "Next recording" });
+  await expect(previous).toBeDisabled();
+  await expect(next).toBeEnabled();
+
+  await next.click();
+  await expect(page).toHaveURL(/response=response-palette-1/);
+  await expect(page.getByText("Recording 2 of 2", { exact: true })).toBeVisible();
+  await expect(previous).toBeEnabled();
+  await expect(next).toBeDisabled();
+
+  await previous.click();
+  await expect(page).toHaveURL(/response=response-palette-2/);
+  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+});
+
+test("Recording view normalizes invalid selections and exposes empty and error states", async ({
+  page,
+}) => {
+  await page.goto("/recordings?ds-user=user-mateo&ds-recordings=2&response=missing-recording");
+  await expect(page).not.toHaveURL(/response=missing-recording/);
+  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+
+  await page.goto("/recordings?ds-user=user-mateo");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "No recordings available" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to analytics" })).toHaveAttribute(
+    "href",
+    "/analytics",
+  );
+
+  await page.goto("/recordings?ds-user=user-mateo&ds-recordings=1&ds-recording-error=1");
+  await expect(page.getByRole("alert")).toContainText("Recording unavailable");
+  await expect(page.getByRole("button", { name: "Reload video" })).toBeVisible();
+});
+
+test("Recording view redirects guests with the complete return URL", async ({ page }) => {
+  await page.goto("/recordings?response=response-palette-1");
+  await expect(page).toHaveURL(
+    /\/sign-in\?returnTo=%2Frecordings%3Fresponse%3Dresponse-palette-1$/,
+  );
+});
+
+test("Analytics redirects guests to sign in and stays out of guest navigation", async ({
+  page,
+}) => {
+  await page.goto("/analytics");
+  await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fanalytics$/);
+  await expect(
+    page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Analytics" }),
+  ).toHaveCount(0);
+
+  await page.goto("/");
+  await expect(
+    page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Analytics" }),
+  ).toHaveCount(0);
 });
 
 test("Earn platform preferences expose named checkbox choices and save accessibly", async ({
@@ -603,15 +903,26 @@ test("Earn platform preferences expose named checkbox choices and save accessibl
   await expect(page.getByRole("button", { name: /Choose platforms you can test/ })).toBeVisible();
 });
 
-test("response viewer navigation exposes each response without changing data", async ({ page }) => {
-  await page.goto("/my-tests/submission-palette?ds-user=user-mateo&ds-responses=2");
-  await page.getByRole("button", { name: "Individual Responses" }).click();
-  await expect(page.getByRole("heading", { name: "Response 1" })).toBeVisible();
-  const next = page.getByRole("button", { name: "Next response" });
-  await expect(next).toBeEnabled();
-  await next.click();
-  await expect(page.getByRole("heading", { name: "Response 2" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Previous response" })).toBeEnabled();
+test("legacy My Feedback URLs redirect to supported destinations and preserve queries", async ({
+  page,
+}) => {
+  await page.goto("/my-tests?ds-user=user-mateo&source=legacy");
+  await expect(page).toHaveURL(/\/analytics\?/);
+  expect(new URL(page.url()).searchParams.get("source")).toBe("legacy");
+
+  await page.goto(
+    "/my-tests/submission-palette?response=response-palette-2&ds-user=user-mateo&ds-recordings=2",
+  );
+  await expect(page).toHaveURL(/\/recordings\?/);
+  const redirectedUrl = new URL(page.url());
+  expect(redirectedUrl.searchParams.get("response")).toBe("response-palette-2");
+  expect(redirectedUrl.searchParams.get("ds-recordings")).toBe("2");
+
+  await page.goto("/my-tests/submission-palette?response=response-palette-2");
+  await expect(page).toHaveURL(/\/sign-in\?/);
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
+    "/recordings?response=response-palette-2",
+  );
 });
 
 test("recording permission denial provides recovery guidance and keeps start disabled", async ({
@@ -677,4 +988,97 @@ test("email previews expose every required transactional state", async ({ page }
   await expect(page.getByText("Reminder stage 1")).toBeVisible();
   await expect(page.getByText("Reminder stage 2")).toBeVisible();
   await expect(page.getByText("Final reminder")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Analytics" })).toHaveCount(4);
+});
+test("tester signup validates each step and exposes technology help to keyboard users", async ({
+  page,
+}) => {
+  await page.goto("/get-paid-to-test/signup");
+
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("link", { name: "Enter your first name." })).toBeVisible();
+  await page.getByRole("textbox", { name: "First name" }).fill("Taylor");
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  const stateSelect = page.getByRole("combobox", { name: "State (optional)" });
+  await expect(stateSelect).toBeDisabled();
+  await page.getByRole("combobox", { name: "Country" }).selectOption("US");
+  await expect(stateSelect).toBeEnabled();
+  await stateSelect.selectOption("New York");
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  const technologyHelp = page.getByRole("button", {
+    name: "About technology proficiency",
+  });
+  await technologyHelp.focus();
+  await expect(page.getByRole("tooltip")).toContainText(
+    "Founders need feedback from both technical and non-technical people",
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("tooltip")).toBeHidden();
+
+  await page.getByRole("radio", { name: "Moderately proficient" }).check();
+  await page.getByRole("checkbox", { name: "Computer" }).check();
+  await page.getByRole("checkbox", { name: "iOS" }).check();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  await page.getByRole("radio", { name: "Full time" }).check();
+  const workArea = page.getByRole("combobox", {
+    name: "Which area best describes your work?",
+  });
+  await expect(workArea).toBeVisible();
+  await workArea.selectOption("software_development");
+  await page.getByRole("radio", { name: "Student" }).check();
+  await expect(workArea).toBeHidden();
+  await page.getByRole("radio", { name: "Full time" }).check();
+  await expect(
+    page.getByRole("combobox", { name: "Which area best describes your work?" }),
+  ).toHaveValue("");
+
+  await page
+    .getByRole("combobox", { name: "Which area best describes your work?" })
+    .selectOption("software_development");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(
+    page.getByRole("heading", { name: "What email should you use to sign in?" }),
+  ).toBeFocused();
+});
+
+test("tester role routing exposes only Earn, Profile, and test routes", async ({ page }) => {
+  await page.goto("/analytics?ds-tester=locked");
+  await expect(page).toHaveURL(/\/earn\?ds-tester=locked/);
+  await expect(page.getByRole("heading", { name: "Your paid-test progress" })).toBeVisible();
+
+  const primaryNavigation = page.getByRole("navigation", { name: "Primary" });
+  await expect(primaryNavigation.getByRole("link", { name: "Earn" })).toBeVisible();
+  await expect(primaryNavigation.getByRole("link", { name: "Share" })).toHaveCount(0);
+  await expect(primaryNavigation.getByRole("link", { name: "Analytics" })).toHaveCount(0);
+
+  await page.goto("/profile?ds-tester=locked");
+  await expect(page.getByRole("heading", { name: "Your tester profile" })).toBeVisible();
+  await expect(page.getByText(/Submit your app/i)).toHaveCount(0);
+
+  await page.goto("/test/submission-trail/success?ds-tester=locked");
+  await expect(page.getByRole("link", { name: "Return to Earn" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View analytics" })).toHaveCount(0);
+});
+
+test("tester Earn separates locked progress from unlocked paid availability", async ({ page }) => {
+  await page.goto("/earn?ds-tester=locked");
+  await expect(page.getByText("Credited tests: 1 of 2")).toBeVisible();
+  await expect(page.getByText("5-star ratings: 1 of 2")).toBeVisible();
+  await expect(page.getByText("Paid test", { exact: true })).toHaveCount(0);
+
+  await page.goto("/earn?ds-tester=unlocked&ds-paid=1");
+  await expect(page.getByRole("heading", { name: "Paid tests unlocked" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Paid Research Preview" })).toBeVisible();
+  await expect(page.getByText("Paid test", { exact: true })).toBeVisible();
+
+  await page.goto("/earn?ds-tester=unlocked");
+  await expect(
+    page.getByRole("heading", { name: "No paid tests are available right now" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Test4Test will email you when a new matching paid test appears."),
+  ).toBeVisible();
 });

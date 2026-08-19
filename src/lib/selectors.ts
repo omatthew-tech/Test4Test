@@ -1,58 +1,12 @@
 ﻿import {
   AppState,
-  FeedbackRatingValue,
-  Question,
   QuestionSetVersion,
+  ResponseRecording,
+  Submission,
   SubmissionVersion,
   TestResponse,
   User,
 } from "../types";
-import { clamp } from "./format";
-
-const stopWords = new Set([
-  "about",
-  "after",
-  "again",
-  "almost",
-  "also",
-  "because",
-  "could",
-  "didn't",
-  "does",
-  "felt",
-  "from",
-  "have",
-  "just",
-  "made",
-  "more",
-  "most",
-  "really",
-  "still",
-  "that",
-  "their",
-  "there",
-  "these",
-  "thing",
-  "this",
-  "very",
-  "with",
-  "would",
-]);
-
-type QuestionAnalytics =
-  | {
-      question: Question;
-      type: "paragraph";
-      responses: string[];
-    }
-  | {
-      question: Question;
-      type: "multiple";
-      counts: Array<{ option: string; count: number }>;
-      total: number;
-      topChoice: string;
-      averageScore: number;
-    };
 
 function sortResponsesDescending(first: TestResponse, second: TestResponse) {
   return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
@@ -132,34 +86,59 @@ export function getSubmissionResponses(state: AppState, submissionId: string) {
     .sort(sortResponsesDescending);
 }
 
-export function getSubmissionResponsesForSubmissionVersion(
-  state: AppState,
-  submissionId: string,
-  submissionVersionId: string,
-) {
-  return state.responses
-    .filter(
-      (response) =>
-        response.submissionId === submissionId &&
-        response.submissionVersionId === submissionVersionId,
-    )
-    .sort(sortResponsesDescending);
-}
-
-export function getResponseRating(state: AppState, responseId: string, userId: string | null) {
-  return (
-    state.feedbackRatings.find(
-      (rating) => rating.testResponseId === responseId && rating.ratedByUserId === userId,
-    ) ?? null
-  );
-}
-
 export function getMySubmissions(state: AppState) {
   return state.submissions
     .filter((submission) => submission.userId === state.currentUserId)
     .sort(
       (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
     );
+}
+
+export interface AvailableRecording {
+  recording: ResponseRecording;
+  response: TestResponse;
+  submission: Submission;
+}
+
+export function getAvailableRecordingsForCurrentUser(
+  state: AppState,
+  now = Date.now(),
+): AvailableRecording[] {
+  if (!state.currentUserId) {
+    return [];
+  }
+
+  const ownedSubmissions = new Map(
+    state.submissions
+      .filter((submission) => submission.userId === state.currentUserId)
+      .map((submission) => [submission.id, submission]),
+  );
+
+  return state.responses
+    .reduce<AvailableRecording[]>((availableRecordings, response) => {
+      const submission = ownedSubmissions.get(response.submissionId);
+      const recording = response.recording;
+      const expiresAt = recording ? Date.parse(recording.expiresAt) : Number.NaN;
+
+      if (
+        !submission ||
+        !recording ||
+        recording.deletedAt ||
+        !Number.isFinite(expiresAt) ||
+        expiresAt <= now
+      ) {
+        return availableRecordings;
+      }
+
+      availableRecordings.push({ recording, response, submission });
+      return availableRecordings;
+    }, [])
+    .sort((first, second) => {
+      const submittedAtDifference =
+        Date.parse(second.response.submittedAt) - Date.parse(first.response.submittedAt);
+
+      return submittedAtDifference || first.response.id.localeCompare(second.response.id);
+    });
 }
 
 export function getAvailableSubmissions(state: AppState) {
@@ -191,127 +170,6 @@ export function getAvailableSubmissions(state: AppState) {
 
       return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
     });
-}
-
-export function buildQuestionAnalytics(
-  questionSet: QuestionSetVersion | null,
-  responses: TestResponse[],
-): QuestionAnalytics[] {
-  if (!questionSet) {
-    return [];
-  }
-
-  return [...questionSet.questions]
-    .sort((first, second) => {
-      if (first.sortOrder !== second.sortOrder) {
-        return first.sortOrder - second.sortOrder;
-      }
-
-      return first.title.localeCompare(second.title);
-    })
-    .map((question) => {
-      const matchingAnswers = responses
-        .map((response) => response.answers.find((answer) => answer.questionId === question.id))
-        .filter((answer): answer is TestResponse["answers"][number] => Boolean(answer))
-        .filter((answer) => answer.type === question.type);
-
-      if (question.type === "paragraph") {
-        const paragraphResponses = matchingAnswers
-          .map((answer) => answer.textAnswer?.trim())
-          .filter((value): value is string => Boolean(value));
-
-        return {
-          question: {
-            ...question,
-            options: question.options ? [...question.options] : undefined,
-          },
-          type: "paragraph" as const,
-          responses: paragraphResponses,
-        };
-      }
-
-      const options = [...(question.options ?? [])];
-      const counts = options.map((option) => ({
-        option,
-        count: matchingAnswers.filter((answer) => answer.selectedOption?.trim() === option).length,
-      }));
-      const total = counts.reduce((sum, count) => sum + count.count, 0);
-      const sorted = [...counts].sort((first, second) => second.count - first.count);
-      const optionIndexSum = counts.reduce((sum, count, index) => sum + index * count.count, 0);
-
-      return {
-        question: {
-          ...question,
-          options,
-        },
-        type: "multiple" as const,
-        counts,
-        total,
-        topChoice: sorted[0]?.option ?? "No responses yet",
-        averageScore: clamp(total > 0 ? optionIndexSum / total + 1 : 1, 1, counts.length || 1),
-      };
-    });
-}
-
-function extractThemes(texts: string[]) {
-  const counts = new Map<string, number>();
-
-  texts.forEach((text) => {
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((word) => word.length > 3 && !stopWords.has(word))
-      .forEach((word) => {
-        counts.set(word, (counts.get(word) ?? 0) + 1);
-      });
-  });
-
-  return [...counts.entries()]
-    .sort((first, second) => second[1] - first[1])
-    .slice(0, 3)
-    .map(([word]) => word);
-}
-
-export function buildSubmissionSummary(
-  state: AppState,
-  questionSet: QuestionSetVersion | null,
-  responses: TestResponse[],
-) {
-  if (!questionSet) {
-    return null;
-  }
-
-  const analytics = buildQuestionAnalytics(questionSet, responses);
-  const paragraphGroups = analytics.filter(
-    (item): item is Extract<QuestionAnalytics, { type: "paragraph" }> => item.type === "paragraph",
-  );
-  const positiveTexts = paragraphGroups
-    .filter((group) => /effective|clear|polished|stand/i.test(group.question.title))
-    .flatMap((group) => group.responses);
-  const frictionTexts = paragraphGroups
-    .filter((group) => /confusing|improve|hesitate|friction|slow/i.test(group.question.title))
-    .flatMap((group) => group.responses);
-  const allParagraphs = paragraphGroups.flatMap((group) => group.responses);
-
-  const ratings = responses
-    .map((response) =>
-      state.feedbackRatings.find((rating) => rating.testResponseId === response.id),
-    )
-    .filter(Boolean)
-    .map((rating) => rating?.ratingValue as FeedbackRatingValue);
-
-  return {
-    analytics,
-    topPositiveThemes: extractThemes(positiveTexts.length ? positiveTexts : allParagraphs),
-    topFrictionThemes: extractThemes(frictionTexts.length ? frictionTexts : allParagraphs),
-    priorityImprovement: extractThemes(frictionTexts)[0] ?? "clarity",
-    ratings: {
-      smiley: ratings.filter((value) => value === "smiley").length,
-      neutral: ratings.filter((value) => value === "neutral").length,
-      frowny: ratings.filter((value) => value === "frowny").length,
-    },
-  };
 }
 
 export function getModerationQueue(state: AppState) {

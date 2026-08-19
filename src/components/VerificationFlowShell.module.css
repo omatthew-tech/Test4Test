@@ -19,4 +19,8 @@
   .flow {
     padding-block-start: var(--ds-semantic-space-stack-lg);
   }
+
+  .flowWithLeadingContent .content {
+    gap: var(--ds-semantic-space-stack-xl);
+  }
 }

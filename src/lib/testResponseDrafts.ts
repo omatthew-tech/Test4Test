@@ -300,11 +300,15 @@ export async function loadTestResponseDraft(
   }
 }
 
-export async function loadTestResponseDraftProgress(userId: string, submissionIds: string[]) {
+export async function loadTestResponseDraftProgress(
+  userId: string,
+  submissionIds: string[],
+  options?: { skipServer?: boolean },
+) {
   const uniqueSubmissionIds = [...new Set(submissionIds)].filter(Boolean);
   const progress = loadLocalTestResponseDraftProgress(userId, uniqueSubmissionIds);
 
-  if (uniqueSubmissionIds.length === 0 || !hasSupabaseConfig) {
+  if (uniqueSubmissionIds.length === 0 || !hasSupabaseConfig || options?.skipServer) {
     return progress;
   }
 

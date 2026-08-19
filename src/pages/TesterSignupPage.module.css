@@ -1,0 +1,95 @@
+.layout {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+  min-block-size: 100%;
+  padding-block-start: var(--ds-semantic-space-stack-2xl);
+  padding-block-end: var(--ds-semantic-space-stack-2xl);
+  padding-inline: var(--ds-semantic-space-gutter-small);
+}
+
+.page {
+  width: 100%;
+  max-width: var(--ds-semantic-size-content-form);
+  margin-inline: auto;
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
+}
+
+.wizard,
+.stack {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.stage {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xl);
+}
+
+.heading {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.heading h1 {
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+}
+
+.heading p {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fieldset > legend {
+  margin-block-end: var(--ds-semantic-space-stack-md);
+  color: var(--ds-semantic-color-text-primary);
+  font-weight: var(--ds-semantic-typography-weight-medium);
+}
+
+.legendWithHelp {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-xs);
+}
+
+.choiceGroup {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  padding-block-start: var(--ds-semantic-space-stack-lg);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+}
+
+.actions > :first-child {
+  justify-self: start;
+}
+
+.actions > :last-child {
+  justify-self: end;
+}
+
+@media (forced-colors: active) {
+  .fieldset[aria-invalid="true"] {
+    outline: var(--ds-semantic-border-width-strong) solid CanvasText;
+    outline-offset: var(--ds-semantic-space-inline-xs);
+  }
+}

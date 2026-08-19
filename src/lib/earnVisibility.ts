@@ -40,6 +40,7 @@ interface SubmissionRow {
   requires_recording?: boolean | null;
   needs_google_play_closed_testers?: boolean | null;
   public_share_slug?: string | null;
+  reward_type?: Submission["rewardType"] | null;
   public_share_message?: string | null;
   status: Submission["status"];
   question_mode: QuestionMode;
@@ -142,6 +143,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
+    rewardType: row.reward_type === "paid" ? "paid" : "credit",
     promoted: row.promoted === true,
     createdAt: row.created_at,
     estimatedMinutes: row.estimated_minutes,

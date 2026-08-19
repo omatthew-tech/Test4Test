@@ -25,6 +25,11 @@
     "path": "/get-paid-to-test"
   },
   {
+    "name": "tester-signup",
+    "routePattern": "/get-paid-to-test/signup",
+    "path": "/get-paid-to-test/signup"
+  },
+  {
     "name": "blog",
     "routePattern": "/blog",
     "path": "/blog"
@@ -38,6 +43,36 @@
     "name": "earn",
     "routePattern": "/earn",
     "path": "/earn?ds-user=user-avery"
+  },
+  {
+    "name": "earn-tester-locked",
+    "routePattern": "/earn",
+    "path": "/earn?ds-tester=locked"
+  },
+  {
+    "name": "earn-tester-unlocked-paid",
+    "routePattern": "/earn",
+    "path": "/earn?ds-tester=unlocked&ds-paid=1"
+  },
+  {
+    "name": "earn-tester-unlocked-empty",
+    "routePattern": "/earn",
+    "path": "/earn?ds-tester=unlocked"
+  },
+  {
+    "name": "share",
+    "routePattern": "/share",
+    "path": "/share?ds-user=user-mateo"
+  },
+  {
+    "name": "analytics",
+    "routePattern": "/analytics",
+    "path": "/analytics?ds-user=user-mateo&ds-recordings=2"
+  },
+  {
+    "name": "recording-view",
+    "routePattern": "/recordings",
+    "path": "/recordings?ds-user=user-mateo&ds-recordings=2"
   },
   {
     "name": "email-preview",
@@ -60,14 +95,21 @@
     "path": "/test/submission-palette/success?ds-user=user-avery"
   },
   {
-    "name": "my-tests",
-    "routePattern": "/my-tests",
-    "path": "/my-tests?ds-user=user-mateo"
+    "name": "test-success-tester",
+    "routePattern": "/test/:submissionId/success",
+    "path": "/test/submission-trail/success?ds-tester=locked"
   },
   {
-    "name": "submission-detail",
+    "name": "legacy-my-tests",
+    "routePattern": "/my-tests",
+    "path": "/my-tests?ds-user=user-mateo",
+    "redirectOnly": true
+  },
+  {
+    "name": "legacy-my-tests-detail",
     "routePattern": "/my-tests/:submissionId",
-    "path": "/my-tests/submission-palette?ds-user=user-mateo"
+    "path": "/my-tests/submission-palette?response=response-palette-2&ds-user=user-mateo",
+    "redirectOnly": true
   },
   {
     "name": "submissions",
@@ -88,6 +130,11 @@
     "name": "profile",
     "routePattern": "/profile",
     "path": "/profile?ds-user=user-avery"
+  },
+  {
+    "name": "profile-tester",
+    "routePattern": "/profile",
+    "path": "/profile?ds-tester=locked"
   },
   {
     "name": "admin",

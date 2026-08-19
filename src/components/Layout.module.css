@@ -5,6 +5,10 @@
   background: var(--ds-semantic-color-background-canvas);
 }
 
+.shell[data-route="/earn"] {
+  background: var(--ds-semantic-color-background-subtle);
+}
+
 .marketing {
   background: var(--ds-semantic-color-background-canvas);
 }
@@ -102,6 +106,10 @@
 @media (min-width: 768px) {
   .main {
     padding-block-start: var(--ds-semantic-space-stack-2xl);
+  }
+
+  .shell[data-route="/analytics"] .main {
+    padding-block-start: var(--ds-semantic-space-stack-macro);
   }
 
   .footerGrid {

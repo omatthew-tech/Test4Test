@@ -1,5 +1,7 @@
 # Accessibility release evidence
 
+> Historical design-system 1.0 evidence (2026-07-23). This file preserves the accepted v1 release record; it is not evidence that future recording-first interfaces have been implemented or validated.
+
 ## Automated evidence
 
 Run date: 2026-07-23

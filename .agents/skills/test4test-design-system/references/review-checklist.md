@@ -2,7 +2,6 @@
 
 ## Structure
 
-- One visible `h1` names each route.
 - Landmarks and headings form a coherent outline.
 - Navigation order and business behavior remain intact.
 - Components come from `@test4test/design-system`.
@@ -13,7 +12,7 @@
 - Geist is used for UI and Geist Mono only for technical values.
 - Controls use 40, 44, or 48 px sizing and targets are at least 44 × 44 px.
 - Cards, radii, shadows, and badges are used only when they communicate structure.
-- The interface contains no glossy mascot, decorative gradient, glow, scale-hover, or generic AI imagery.
+- The interface contains no decorative gradient, glow, scale-hover, or generic AI imagery.
 
 ## States and access
 

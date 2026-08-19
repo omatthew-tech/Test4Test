@@ -1,0 +1,110 @@
+.content {
+  width: 100%;
+  max-width: var(--ds-semantic-size-content-data);
+  margin-inline: auto;
+}
+
+.recordingHeader {
+  text-align: center;
+}
+
+.recordingHeader h1 {
+  margin-block: var(--ds-semantic-space-stack-xs);
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.position {
+  color: var(--ds-semantic-color-action-primary-strong);
+  font-size: var(--ds-semantic-typography-interface-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.submittedAt {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.playerNavigation {
+  display: grid;
+  align-items: center;
+  grid-template-areas:
+    "previous next"
+    "player player";
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ds-semantic-space-stack-md) var(--ds-semantic-space-inline-md);
+}
+
+.previousButton {
+  grid-area: previous;
+  justify-self: start;
+}
+
+.nextButton {
+  grid-area: next;
+  justify-self: end;
+}
+
+.playerSurface {
+  grid-area: player;
+  min-width: 0;
+  overflow: hidden;
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-panel);
+  background: var(--ds-semantic-color-surface-scrim);
+}
+
+.playerStatus,
+.video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.playerStatus {
+  display: grid;
+  align-items: center;
+  padding: var(--ds-semantic-space-inset-card-mobile);
+  background: var(--ds-semantic-color-background-subtle);
+}
+
+.playerSkeleton {
+  min-height: 100%;
+}
+
+.video {
+  display: block;
+  background: var(--ds-semantic-color-surface-scrim);
+  object-fit: contain;
+}
+
+.transcript {
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
+}
+
+.transcript h2 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.transcript p {
+  max-width: var(--ds-semantic-size-content-prose);
+}
+
+.transcriptState {
+  color: var(--ds-semantic-color-text-primary);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .playerNavigation {
+    grid-template-areas: "previous player next";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--ds-semantic-space-inline-xl);
+  }
+
+  .playerStatus {
+    padding: var(--ds-semantic-space-inset-card-desktop);
+  }
+}

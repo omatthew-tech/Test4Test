@@ -99,6 +99,18 @@ interface NavigatorWithUserAgentData extends Navigator {
 }
 
 const multipartUploadCache = new Map<string, MultipartUploadCacheEntry>();
+const recordingAccessCache = new Map<
+  string,
+  {
+    value: { url: string; fileName: string; expiresInSeconds: number };
+    expiresAt: number;
+  }
+>();
+
+export function invalidateResponseRecordingUrl(responseId: string) {
+  recordingAccessCache.delete(`${responseId}:play`);
+  recordingAccessCache.delete(`${responseId}:download`);
+}
 
 function buildRecordingSessionStorageKey(submissionId: string) {
   return `test4test:recording-session:${submissionId}`;
@@ -830,6 +842,25 @@ export function downloadRecordingBackup(blob: Blob, fileName: string) {
 }
 
 export async function requestResponseRecordingUrl(responseId: string, download = false) {
+  const cacheKey = `${responseId}:${download ? "download" : "play"}`;
+  const cached = recordingAccessCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now() + 30 * 1000) {
+    return cached.value;
+  }
+
+  if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
+    const fixtureValue = {
+      url: "data:video/webm;base64,GkXfo0AgQoaBAULygQFC8oEEQvKBAkKBgQI=",
+      fileName: "fixture-recording.webm",
+      expiresInSeconds: 300,
+    };
+    recordingAccessCache.set(cacheKey, {
+      value: fixtureValue,
+      expiresAt: Date.now() + fixtureValue.expiresInSeconds * 1000,
+    });
+    return fixtureValue;
+  }
+
   if (!responseId || !supabaseUrl || !supabasePublishableKey) {
     throw new Error("Recording playback is not available in the current environment.");
   }
@@ -862,9 +893,14 @@ export async function requestResponseRecordingUrl(responseId: string, download =
     throw new Error(payload?.error ?? payload?.message ?? "Recording is not available right now.");
   }
 
-  return {
+  const value = {
     url: payload.url,
     fileName: payload.fileName ?? "screen-recording.mp4",
     expiresInSeconds: payload.expiresInSeconds ?? 300,
   };
+  recordingAccessCache.set(cacheKey, {
+    value,
+    expiresAt: Date.now() + value.expiresInSeconds * 1000,
+  });
+  return value;
 }

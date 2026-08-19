@@ -96,7 +96,11 @@ async function loadSentNewFeedbackDelivery(admin: SupabaseClient, responseId: st
   return (data as SentNewFeedbackDeliveryRow | null) ?? null;
 }
 
-async function markResponseOwnerNotified(admin: SupabaseClient, responseId: string, notifiedAt: string) {
+async function markResponseOwnerNotified(
+  admin: SupabaseClient,
+  responseId: string,
+  notifiedAt: string,
+) {
   const { error } = await admin
     .from("test_responses")
     .update({ owner_notified_at: notifiedAt })
@@ -144,10 +148,14 @@ export async function loadUnnotifiedNewFeedbackResponses(
   lookbackHours = 24 * 7,
 ) {
   const safeLimit = Math.max(1, Math.min(100, limit));
-  const submittedAfter = new Date(Date.now() - Math.max(1, lookbackHours) * 60 * 60 * 1000).toISOString();
+  const submittedAfter = new Date(
+    Date.now() - Math.max(1, lookbackHours) * 60 * 60 * 1000,
+  ).toISOString();
   const { data, error } = await admin
     .from("test_responses")
-    .select("id, submission_id, tester_user_id, public_tester_key, owner_notified_at, status, credit_awarded")
+    .select(
+      "id, submission_id, tester_user_id, public_tester_key, owner_notified_at, status, credit_awarded",
+    )
     .eq("status", "approved")
     .or("credit_awarded.eq.true,public_tester_key.not.is.null")
     .is("owner_notified_at", null)
@@ -212,7 +220,8 @@ export async function sendNewFeedbackNotification(
       relatedSubmissionId: context.submissionId,
       subject: rendered.subject,
       status: "failed",
-      errorMessage: error instanceof Error ? error.message : "Failed to send feedback notification.",
+      errorMessage:
+        error instanceof Error ? error.message : "Failed to send feedback notification.",
       metadata: {
         testerUserId: context.testerUserId,
         publicTesterKey: context.publicTesterKey,
@@ -250,12 +259,17 @@ export async function processNewFeedbackNotificationForResponse(
   if (sentDelivery) {
     await markResponseOwnerNotified(admin, response.id, sentDelivery.created_at);
     if (response.tester_user_id) {
-      await advanceReminderAfterNewFeedback(admin, owner.id, response.tester_user_id, sentDelivery.created_at);
+      await advanceReminderAfterNewFeedback(
+        admin,
+        owner.id,
+        response.tester_user_id,
+        sentDelivery.created_at,
+      );
     }
     return { outcome: "skipped" as const, reason: "already_sent" as const };
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/my-tests/${submission.id}`;
+  const feedbackUrl = `${env.appBaseUrl}/analytics`;
 
   await sendNewFeedbackNotification(
     admin,

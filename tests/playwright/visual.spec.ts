@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import routeStates from "./route-states.json" with { type: "json" };
 
+const renderableRouteStates = routeStates.filter(
+  (route) => !("redirectOnly" in route && route.redirectOnly),
+);
+
 const representativeStories = [
   "components-actions--variants",
   "components-inputs--states",
@@ -8,7 +12,7 @@ const representativeStories = [
   "components-feedback--states",
   "components-data-display--data-states",
   "patterns-product--workflow-states",
-  "patterns-product--my-tests-data-presentation",
+  "patterns-product--analytics-data-presentation",
   "patterns-product--recording-flow",
 ];
 
@@ -159,7 +163,7 @@ for (const story of stories) {
   }
 }
 
-for (const route of routeStates) {
+for (const route of renderableRouteStates) {
   for (const viewport of viewports) {
     test(`${route.name} route at ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });

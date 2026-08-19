@@ -60,7 +60,10 @@ export function VerifyPage() {
     setIsSendingCode(true);
 
     try {
-      await requestOtp(email, submissionId);
+      await requestOtp(email, {
+        intent: storedChallenge?.intent ?? (submissionId ? "founder_signup" : "sign_in"),
+        submissionId,
+      });
       setMessage(
         isTestAccountChallenge
           ? "Enter the configured test account passcode."

@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ApplicationShell as DesignSystemApplicationShell,
   Cluster,
@@ -11,7 +11,6 @@ import {
   TopNavigation,
 } from "@test4test/design-system";
 import { useAppState } from "../context/AppStateContext";
-import { getMySubmissions } from "../lib/selectors";
 import styles from "./Layout.module.css";
 
 const supportEmail = "support@test4test.io";
@@ -78,34 +77,44 @@ export function AppShell({
   children: ReactNode;
 }) {
   const location = useLocation();
-  const { currentUser, state } = useAppState();
-  const myFeedbackSubmission = getMySubmissions(state)[0] ?? null;
-  const myFeedbackHref = myFeedbackSubmission
-    ? `/my-tests/${myFeedbackSubmission.id}`
-    : "/my-tests";
+  const navigate = useNavigate();
+  const { currentUser } = useAppState();
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
   const profileHref = currentUser ? "/profile" : "/sign-in";
 
-  const memberItems = [
-    { to: "/earn", label: "Earn" },
-    { to: myFeedbackHref, label: "My feedback" },
-    { to: "/submit", label: "New app" },
-    { to: "/submissions", label: "My reviews" },
-  ];
+  const memberItems =
+    currentUser?.accountType === "tester"
+      ? [{ to: "/earn", label: "Earn" }]
+      : [
+          { to: "/earn", label: "Earn" },
+          { to: "/share", label: "Share" },
+          { to: "/analytics", label: "Analytics" },
+          { to: "/submit", label: "New app" },
+          { to: "/submissions", label: "My reviews" },
+        ];
   const guestItems = [
     { to: "/blog", label: "Blog" },
     { to: "/get-paid-to-test", label: "Get paid to test" },
   ];
+  const handleSelectedTesterLandingClick: MouseEventHandler<HTMLDivElement> = (event) => {
+    if (location.pathname !== "/get-paid-to-test" || !(event.target instanceof Element)) return;
+
+    const testerLandingLink = event.target.closest('a[href="/get-paid-to-test"]');
+    if (!testerLandingLink) return;
+
+    event.preventDefault();
+    navigate("/");
+  };
 
   const navigationActions = !hideMemberChrome ? (
     <Cluster gap="sm">
       <NavLink
         to={profileHref}
         className={({ isActive }) =>
-          `${styles.profileLink} ${isActive ? styles.profileLinkActive : ""}`.trim()
+          `${styles.profileLink} ${currentUser && isActive ? styles.profileLinkActive : ""}`.trim()
         }
       >
-        {currentUser ? "Profile" : "Log in"}
+        {currentUser ? "Profile" : "Sign in"}
       </NavLink>
       {!currentUser && (
         <NavLink className={styles.startLink} to="/submit">
@@ -140,10 +149,12 @@ export function AppShell({
       data-route={location.pathname}
       header={
         !hideSiteHeader ? (
-          <TopNavigation
-            items={showMemberNav ? memberItems : guestItems}
-            actions={navigationActions}
-          />
+          <div onClickCapture={handleSelectedTesterLandingClick}>
+            <TopNavigation
+              items={showMemberNav ? memberItems : guestItems}
+              actions={navigationActions}
+            />
+          </div>
         ) : undefined
       }
       mainClassName={styles.main}

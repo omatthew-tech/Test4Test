@@ -27,12 +27,14 @@ import {
   storeOtpChallenge,
 } from "../lib/pendingSubmission";
 import { trackAuthenticatedVisit, trackEvent } from "../lib/analytics";
+import { calculateTesterEarnAccess } from "../lib/testerEligibility";
 import { estimateSubmissionMinutes } from "../lib/questions";
 import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/instructions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
+import { slugifyShareName } from "../lib/shareLinks";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
 import { hasSupabaseConfig, isTestAccountEmail, requireSupabase } from "../lib/supabase";
 import {
@@ -53,6 +55,10 @@ import {
   TestAnswer,
   TestResponse,
   ResponseRecording,
+  OtpIntent,
+  TesterEarnAccessSummary,
+  TesterProfile,
+  TesterProfileDraft,
   User,
 } from "../types";
 
@@ -60,12 +66,26 @@ interface ProfileRow {
   id: string;
   email: string;
   display_name: string;
+  account_type?: User["accountType"];
   ban_status: User["banStatus"];
   banned_at: string | null;
   paypal_handle?: string | null;
   venmo_handle?: string | null;
   cash_app_handle?: string | null;
   created_at: string;
+}
+interface TesterProfileRow {
+  id: string;
+  first_name: string;
+  country_code: string;
+  region: string | null;
+  technology_proficiency: TesterProfile["technologyProficiency"];
+  devices: TesterProfile["devices"];
+  employment_status: TesterProfile["employmentStatus"];
+  work_area: TesterProfile["workArea"] | null;
+  paid_test_email_enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface SubmissionRow {
@@ -89,6 +109,7 @@ interface SubmissionRow {
   status: Submission["status"];
   question_mode: Submission["questionMode"];
   is_open_for_more_tests: boolean;
+  reward_type?: Submission["rewardType"] | null;
   estimated_minutes: number;
   response_count: number;
   last_response_at: string | null;
@@ -138,6 +159,19 @@ interface TestResponseRow {
   recording_uploaded_at?: string | null;
   recording_expires_at?: string | null;
   recording_deleted_at?: string | null;
+  recording_thumbnail_bucket?: string | null;
+  recording_thumbnail_path?: string | null;
+  recording_thumbnail_content_type?: string | null;
+  recording_thumbnail_size_bytes?: number | null;
+  recording_thumbnail_width?: number | null;
+  recording_thumbnail_height?: number | null;
+  recording_thumbnail_status?: "pending" | "queued" | "processing" | "ready" | "failed" | null;
+  recording_thumbnail_attempt_count?: number | null;
+  recording_thumbnail_last_attempt_at?: string | null;
+  recording_thumbnail_error?: string | null;
+  recording_thumbnail_timestamp_ms?: number | null;
+  recording_thumbnail_duration_ms?: number | null;
+  recording_thumbnail_generation_version?: string | null;
   internal_flags: string[];
 }
 
@@ -146,6 +180,7 @@ interface FeedbackRatingRow {
   test_response_id: string;
   rated_by_user_id: string;
   rating_value: FeedbackRatingValue;
+  star_rating?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -214,18 +249,25 @@ interface AppStateContextValue {
   currentUser: User | null;
   isLoading: boolean;
   isConfigured: boolean;
-  requestOtp: (email: string, submissionId?: string) => Promise<OTPChallenge>;
-  verifyOtp: (
-    code: string,
-  ) => Promise<{ ok: boolean; message: string; submissionId?: string | null }>;
+  requestOtp: (
+    email: string,
+    options: { intent: OtpIntent; submissionId?: string },
+  ) => Promise<OTPChallenge>;
+  verifyOtp: (code: string) => Promise<{
+    ok: boolean;
+    message: string;
+    submissionId?: string | null;
+    accountType?: User["accountType"];
+  }>;
+  completeTesterSignup: (draft: TesterProfileDraft) => Promise<{ ok: boolean; message: string }>;
+  updateTesterProfile: (draft: TesterProfileDraft) => Promise<{ ok: boolean; message: string }>;
+  getTesterEarnAccessSummary: () => Promise<TesterEarnAccessSummary>;
   createSubmission: (draft: SubmissionDraft) => Promise<string>;
-  updateSubmissionDetails: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
-  createSubmissionVersion: (
+  updateSubmissionDetails: (
     submissionId: string,
-    title: string,
-    description: string,
-  ) => Promise<string>;
-  deleteSubmissionVersion: (submissionId: string, versionId: string) => Promise<string>;
+    draft: SubmissionDraft,
+    currentStatus?: Submission["status"],
+  ) => Promise<void>;
   upsertSubmissionShareLink: (
     submissionId: string,
     customMessage: string,
@@ -243,13 +285,6 @@ interface AppStateContextValue {
     answers: TestAnswer[],
     durationSeconds: number,
   ) => Promise<{ ok: boolean; message: string }>;
-  rateFeedback: (responseId: string, ratingValue: FeedbackRatingValue) => Promise<void>;
-  updateQuestionSet: (
-    submissionId: string,
-    questionSetVersionId: string,
-    mode: QuestionMode,
-    questions: Question[],
-  ) => Promise<void>;
   addModerationAction: (
     responseId: string,
     userId: string,
@@ -299,7 +334,7 @@ function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function createOtpChallenge(email: string, submissionId?: string): OTPChallenge {
+function createOtpChallenge(email: string, intent: OtpIntent, submissionId?: string): OTPChallenge {
   return {
     id: createId("otp"),
     email,
@@ -307,6 +342,7 @@ function createOtpChallenge(email: string, submissionId?: string): OTPChallenge 
     expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString(),
     resendCount: 0,
     submissionId,
+    intent,
   };
 }
 
@@ -328,11 +364,29 @@ function resolveDisplayName(email: string, authUser?: SupabaseAuthUser | null) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function mapProfile(row: ProfileRow): User {
+function mapTesterProfile(row: TesterProfileRow): TesterProfile {
+  return {
+    userId: row.id,
+    firstName: row.first_name,
+    countryCode: row.country_code,
+    region: row.region ?? "",
+    technologyProficiency: row.technology_proficiency,
+    devices: Array.isArray(row.devices) ? row.devices : [],
+    employmentStatus: row.employment_status,
+    workArea: row.work_area ?? "",
+    paidTestEmailEnabled: row.paid_test_email_enabled !== false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapProfile(row: ProfileRow, testerProfile: TesterProfile | null = null): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    accountType: row.account_type ?? "founder",
+    testerProfile,
     status: "active",
     createdAt: row.created_at,
     banStatus: row.ban_status === "banned" ? "banned" : "clear",
@@ -387,6 +441,21 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
     uploadedAt: row.recording_uploaded_at,
     expiresAt: row.recording_expires_at,
     deletedAt: row.recording_deleted_at,
+    thumbnail: {
+      bucket: row.recording_thumbnail_bucket ?? null,
+      path: row.recording_thumbnail_path ?? null,
+      contentType: row.recording_thumbnail_content_type ?? null,
+      sizeBytes: row.recording_thumbnail_size_bytes ?? null,
+      width: row.recording_thumbnail_width ?? null,
+      height: row.recording_thumbnail_height ?? null,
+      status: row.recording_thumbnail_status ?? null,
+      attemptCount: row.recording_thumbnail_attempt_count ?? null,
+      lastAttemptAt: row.recording_thumbnail_last_attempt_at ?? null,
+      error: row.recording_thumbnail_error ?? null,
+      timestampMs: row.recording_thumbnail_timestamp_ms ?? null,
+      durationMs: row.recording_thumbnail_duration_ms ?? null,
+      generationVersion: row.recording_thumbnail_generation_version ?? null,
+    },
   };
 }
 
@@ -425,6 +494,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     status: row.status,
     questionMode: row.question_mode,
     isOpenForMoreTests: row.is_open_for_more_tests,
+    rewardType: row.reward_type === "paid" ? "paid" : "credit",
     promoted: row.promoted === true,
     createdAt: row.created_at,
     estimatedMinutes: row.estimated_minutes,
@@ -485,6 +555,7 @@ function mapFeedbackRating(row: FeedbackRatingRow) {
     testResponseId: row.test_response_id,
     ratedByUserId: row.rated_by_user_id,
     ratingValue: row.rating_value,
+    starRating: row.star_rating ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -555,6 +626,7 @@ function shouldLoadFullStateForPath(pathname: string, currentUserId: string | nu
   return !(
     normalizedPathname === "/" ||
     normalizedPathname === "/earn" ||
+    normalizedPathname === "/analytics" ||
     normalizedPathname === "/sign-in" ||
     normalizedPathname === "/verify" ||
     normalizedPathname === "/get-paid-to-test" ||
@@ -672,7 +744,8 @@ const latestSubmissionSchemaMessage =
 const latestProfilePaymentSchemaMessage =
   "Your Supabase database is missing the latest payment methods schema. Run the 20260405 profile payment methods migration before saving payout details.";
 const PAYMENT_METHOD_MAX_LENGTH = 120;
-const profileBaseSelectClause = "id, email, display_name, ban_status, banned_at, created_at";
+const profileBaseSelectClause =
+  "id, email, display_name, account_type, ban_status, banned_at, created_at";
 const profilePaymentSelectClause = `${profileBaseSelectClause}, paypal_handle, venmo_handle, cash_app_handle`;
 
 function normalizeOptionalProfileText(value: string | null | undefined) {
@@ -776,9 +849,6 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes("submission_versions") ||
     normalized.includes("create_submission_with_questions") ||
     normalized.includes("create_recording_submission") ||
-    normalized.includes("create_submission_version") ||
-    normalized.includes("delete_submission_version") ||
-    normalized.includes("update_question_set") ||
     normalized.includes("submit_test_response") ||
     normalized.includes("submit_public_test_response") ||
     normalized.includes("upsert_submission_share_link") ||
@@ -805,6 +875,25 @@ function isProfileAuthRace(error: { code?: string; message: string; details?: st
   );
 }
 
+async function hydrateProfile(supabase: ReturnType<typeof requireSupabase>, row: ProfileRow) {
+  if (row.account_type !== "tester") {
+    return mapProfile(row);
+  }
+
+  const { data, error } = await supabase
+    .from("tester_profiles")
+    .select("*")
+    .eq("id", row.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const testerProfile = data ? mapTesterProfile(data as TesterProfileRow) : null;
+  return mapProfile(row, testerProfile);
+}
+
 async function ensureProfile(authUser: SupabaseAuthUser) {
   const supabase = requireSupabase();
   const email = authUser.email ?? "";
@@ -829,7 +918,7 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
       .single();
 
     if (!error) {
-      return mapProfile(data as ProfileRow);
+      return hydrateProfile(supabase, data as ProfileRow);
     }
 
     if (isMissingProfilePaymentSchemaError(error.message)) {
@@ -840,7 +929,7 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
         .single();
 
       if (!fallbackError) {
-        return mapProfile(fallbackData as ProfileRow);
+        return hydrateProfile(supabase, fallbackData as ProfileRow);
       }
 
       if (isProfileAuthRace(fallbackError)) {
@@ -1240,59 +1329,6 @@ async function persistSubmissionDetails(
   }
 }
 
-async function persistCreateSubmissionVersion(
-  submissionId: string,
-  title: string,
-  description: string,
-) {
-  const { supabase } = await ensureAuthenticatedSession(
-    "Please sign in again before creating a version.",
-  );
-  const { data, error } = await supabase.rpc("create_submission_version", {
-    p_submission_id: submissionId,
-    p_title: title,
-    p_description: description,
-  });
-
-  if (error) {
-    if (isMissingSubmissionSchemaError(error.message)) {
-      throw new Error(latestSubmissionSchemaMessage);
-    }
-
-    throw new Error(error.message);
-  }
-
-  if (typeof data !== "string") {
-    throw new Error("The version could not be created.");
-  }
-
-  return data;
-}
-
-async function persistDeleteSubmissionVersion(submissionId: string, versionId: string) {
-  const { supabase } = await ensureAuthenticatedSession(
-    "Please sign in again before deleting a version.",
-  );
-  const { data, error } = await supabase.rpc("delete_submission_version", {
-    p_submission_id: submissionId,
-    p_submission_version_id: versionId,
-  });
-
-  if (error) {
-    if (isMissingSubmissionSchemaError(error.message)) {
-      throw new Error(latestSubmissionSchemaMessage);
-    }
-
-    throw new Error(error.message);
-  }
-
-  if (typeof data !== "string") {
-    throw new Error("The version could not be deleted.");
-  }
-
-  return data;
-}
-
 async function persistSubmissionShareLink(submissionId: string, customMessage: string) {
   const { supabase } = await ensureAuthenticatedSession(
     "Please sign in again before sharing your test.",
@@ -1533,14 +1569,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       currentUser,
       isLoading: effectiveIsLoading,
       isConfigured: designSystemFixturesEnabled ? false : hasSupabaseConfig,
-      async requestOtp(email, submissionId) {
+      async requestOtp(email, options) {
+        const { intent, submissionId } = options;
         const normalizedEmail = email.trim().toLowerCase();
 
         if (!normalizedEmail) {
           throw new Error("Add an email so we can send the one-time code.");
         }
 
-        const requestKey = `${normalizedEmail}::${submissionId ?? ""}`;
+        const requestKey = `${intent}::${normalizedEmail}::${submissionId ?? ""}`;
         const now = Date.now();
 
         for (const [key, entry] of recentOtpRequestsRef.current.entries()) {
@@ -1572,7 +1609,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             const { error } = await supabase.auth.signInWithOtp({
               email: normalizedEmail,
               options: {
-                shouldCreateUser: true,
+                shouldCreateUser: intent !== "sign_in",
               },
             });
 
@@ -1581,7 +1618,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          const challenge = createOtpChallenge(normalizedEmail, submissionId);
+          const challenge = createOtpChallenge(normalizedEmail, intent, submissionId);
           recentOtpRequestsRef.current.set(requestKey, {
             challenge,
             sentAt: Date.now(),
@@ -1692,7 +1729,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        const verifiedProfile = await ensureProfile(authUser);
+        let verifiedProfile = await ensureProfile(authUser);
+        if (challenge.intent === "founder_signup" && verifiedProfile.accountType === "pending") {
+          const supabase = requireSupabase();
+          const { error } = await supabase.rpc("complete_founder_signup");
+
+          if (error) {
+            return { ok: false, message: error.message };
+          }
+
+          verifiedProfile = await ensureProfile(authUser);
+        }
+
         trackEvent("email_verified");
         trackAuthenticatedVisit(verifiedProfile.id);
 
@@ -1707,6 +1755,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return {
             ok: true,
             message: "Email verified. You're ready to go.",
+            accountType: verifiedProfile.accountType,
           };
         }
 
@@ -1733,7 +1782,149 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return {
           ok: true,
           message: "Email verified. You're ready to go.",
+          accountType: verifiedProfile.accountType,
           submissionId: createdSubmissionId,
+        };
+      },
+      async completeTesterSignup(draft) {
+        if (
+          !draft.technologyProficiency ||
+          !draft.employmentStatus ||
+          (draft.employmentStatus !== "student" &&
+            draft.employmentStatus !== "retired" &&
+            draft.employmentStatus !== "not_employed" &&
+            !draft.workArea)
+        ) {
+          return { ok: false, message: "Complete each tester profile question before signing up." };
+        }
+
+        if (designSystemFixturesEnabled) {
+          if (!currentUser) {
+            return { ok: false, message: "Verify your email before completing tester signup." };
+          }
+
+          const now = new Date().toISOString();
+          const testerProfile: TesterProfile = {
+            ...draft,
+            userId: currentUser.id,
+            technologyProficiency: draft.technologyProficiency,
+            employmentStatus: draft.employmentStatus,
+            workArea: draft.workArea,
+            createdAt: currentUser.testerProfile?.createdAt ?? now,
+            updatedAt: now,
+          };
+          setState((current) => ({
+            ...current,
+            users: current.users.map((user) =>
+              user.id === currentUser.id
+                ? {
+                    ...user,
+                    displayName: draft.firstName.trim(),
+                    accountType: "tester",
+                    testerProfile,
+                  }
+                : user,
+            ),
+          }));
+          return { ok: true, message: "Tester account created." };
+        }
+
+        const supabase = requireSupabase();
+        const { error } = await supabase.rpc("complete_tester_signup", {
+          p_first_name: draft.firstName,
+          p_country_code: draft.countryCode,
+          p_region: draft.region || null,
+          p_technology_proficiency: draft.technologyProficiency,
+          p_devices: draft.devices,
+          p_employment_status: draft.employmentStatus,
+          p_work_area: draft.workArea || null,
+        });
+
+        if (error) {
+          return { ok: false, message: error.message };
+        }
+
+        await refreshState();
+        return { ok: true, message: "Tester account created." };
+      },
+      async updateTesterProfile(draft) {
+        if (
+          !draft.technologyProficiency ||
+          !draft.employmentStatus ||
+          (draft.employmentStatus !== "student" &&
+            draft.employmentStatus !== "retired" &&
+            draft.employmentStatus !== "not_employed" &&
+            !draft.workArea)
+        ) {
+          return { ok: false, message: "Complete each tester profile question before saving." };
+        }
+
+        if (designSystemFixturesEnabled) {
+          if (!currentUser?.testerProfile) {
+            return { ok: false, message: "A tester profile could not be loaded." };
+          }
+
+          const testerProfile: TesterProfile = {
+            ...currentUser.testerProfile,
+            ...draft,
+            technologyProficiency: draft.technologyProficiency,
+            employmentStatus: draft.employmentStatus,
+            workArea: draft.workArea,
+            updatedAt: new Date().toISOString(),
+          };
+          setState((current) => ({
+            ...current,
+            users: current.users.map((user) =>
+              user.id === currentUser.id
+                ? { ...user, displayName: draft.firstName.trim(), testerProfile }
+                : user,
+            ),
+          }));
+          return { ok: true, message: "Tester profile saved." };
+        }
+
+        const supabase = requireSupabase();
+        const { error } = await supabase.rpc("update_tester_profile", {
+          p_first_name: draft.firstName,
+          p_country_code: draft.countryCode,
+          p_region: draft.region || null,
+          p_technology_proficiency: draft.technologyProficiency,
+          p_devices: draft.devices,
+          p_employment_status: draft.employmentStatus,
+          p_work_area: draft.workArea || null,
+          p_paid_test_email_enabled: draft.paidTestEmailEnabled,
+        });
+
+        if (error) {
+          return { ok: false, message: error.message };
+        }
+
+        await refreshState();
+        return { ok: true, message: "Tester profile saved." };
+      },
+      async getTesterEarnAccessSummary() {
+        if (!currentUser || currentUser.accountType !== "tester") {
+          return {
+            completedCreditTests: 0,
+            fiveStarRatings: 0,
+            paidAccessUnlocked: false,
+          };
+        }
+
+        if (designSystemFixturesEnabled) {
+          return calculateTesterEarnAccess(currentUser.id, state.responses, state.feedbackRatings);
+        }
+
+        const supabase = requireSupabase();
+        const { data, error } = await supabase.rpc("get_tester_earn_access_summary");
+
+        if (error) throw new Error(error.message);
+
+        const summary = (data ?? {}) as Partial<TesterEarnAccessSummary>;
+        return {
+          completedCreditTests: Math.max(Number(summary.completedCreditTests) || 0, 0),
+          fiveStarRatings: Math.max(Number(summary.fiveStarRatings) || 0, 0),
+          paidAccessUnlocked: summary.paidAccessUnlocked === true,
         };
       },
       async createSubmission(draft) {
@@ -1753,29 +1944,99 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return createdId;
       },
-      async updateSubmissionDetails(submissionId, draft) {
+      async updateSubmissionDetails(submissionId, draft, currentStatus) {
         const submission = state.submissions.find((item) => item.id === submissionId);
         const activeQuestionSet = getActiveQuestionSet(state, submissionId);
         const estimatedMinutes = estimateSubmissionMinutes(
           activeQuestionSet?.questions ?? [],
           draft.requiresRecording,
         );
-        const nextStatus = submission?.status === "paused" ? "pending_verification" : undefined;
+        const nextStatus =
+          (submission?.status ?? currentStatus) === "paused" ? "pending_verification" : undefined;
+
+        if (designSystemFixturesEnabled) {
+          if (!submission) {
+            throw new Error("That app could not be found.");
+          }
+
+          if (submission.userId !== currentUser?.id) {
+            throw new Error("You can only edit your own apps.");
+          }
+
+          const productTypes = normalizeProductTypes(draft.productTypes);
+          const accessLinks = normalizeAccessLinks(draft.accessLinks);
+
+          if (productTypes.length === 0) {
+            throw new Error("Select at least one app type before saving.");
+          }
+
+          if (!getPrimaryAccessLink(accessLinks, productTypes)) {
+            throw new Error("Add at least one public link before saving.");
+          }
+
+          setState((current) => ({
+            ...current,
+            submissions: current.submissions.map((item) =>
+              item.id === submissionId
+                ? {
+                    ...item,
+                    productName: draft.productName.trim(),
+                    productTypes,
+                    description: draft.description,
+                    targetAudience: draft.targetAudience,
+                    instructions: serializeInstructionSteps(draft.instructionSteps),
+                    instructionSteps: normalizeInstructionSteps(
+                      draft.instructionSteps,
+                      draft.instructions,
+                    ),
+                    googlePlayClosedTestInstructions: draft.needsGooglePlayClosedTesters
+                      ? draft.googlePlayClosedTestInstructions
+                      : "",
+                    accessLinks,
+                    requiresRecording: draft.requiresRecording,
+                    needsGooglePlayClosedTesters: draft.needsGooglePlayClosedTesters,
+                    estimatedMinutes,
+                    status: nextStatus ?? item.status,
+                  }
+                : item,
+            ),
+          }));
+          return;
+        }
 
         await persistSubmissionDetails(submissionId, draft, estimatedMinutes, nextStatus);
         await refreshState();
       },
-      async createSubmissionVersion(submissionId, title, description) {
-        const versionId = await persistCreateSubmissionVersion(submissionId, title, description);
-        await refreshState();
-        return versionId;
-      },
-      async deleteSubmissionVersion(submissionId, versionId) {
-        const nextVersionId = await persistDeleteSubmissionVersion(submissionId, versionId);
-        await refreshState();
-        return nextVersionId;
-      },
       async upsertSubmissionShareLink(submissionId, customMessage) {
+        if (designSystemFixturesEnabled) {
+          const submission = state.submissions.find((item) => item.id === submissionId);
+
+          if (!submission) {
+            throw new Error("That test could not be found.");
+          }
+
+          if (submission.userId !== currentUser?.id) {
+            throw new Error("You can only share your own tests.");
+          }
+
+          if (submission.status !== "live") {
+            throw new Error("Only live tests can be shared.");
+          }
+
+          const slug =
+            submission.publicShareSlug?.trim() || slugifyShareName(submission.productName);
+          const message = customMessage.trim() || null;
+          setState((current) => ({
+            ...current,
+            submissions: current.submissions.map((item) =>
+              item.id === submissionId
+                ? { ...item, publicShareSlug: slug, publicShareMessage: message }
+                : item,
+            ),
+          }));
+          return { slug, message };
+        }
+
         const shareLink = await persistSubmissionShareLink(submissionId, customMessage);
         await refreshState();
         return shareLink;
@@ -1941,80 +2202,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ok: Boolean(result.ok),
           message: result.message ?? "Feedback revised.",
         };
-      },
-      async rateFeedback(responseId, ratingValue) {
-        if (!currentUser) {
-          return;
-        }
-
-        const updatedAt = new Date().toISOString();
-        const supabase = requireSupabase();
-        const { error } = await supabase.from("feedback_ratings").upsert(
-          {
-            test_response_id: responseId,
-            rated_by_user_id: currentUser.id,
-            rating_value: ratingValue,
-            updated_at: updatedAt,
-          },
-          {
-            onConflict: "test_response_id,rated_by_user_id",
-          },
-        );
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        setState((currentState) => {
-          const existingRating = currentState.feedbackRatings.find(
-            (rating) =>
-              rating.testResponseId === responseId && rating.ratedByUserId === currentUser.id,
-          );
-
-          const nextRating = existingRating
-            ? {
-                ...existingRating,
-                ratingValue,
-                updatedAt,
-              }
-            : {
-                id: createId("rating"),
-                testResponseId: responseId,
-                ratedByUserId: currentUser.id,
-                ratingValue,
-                createdAt: updatedAt,
-                updatedAt,
-              };
-
-          return {
-            ...currentState,
-            feedbackRatings: existingRating
-              ? currentState.feedbackRatings.map((rating) =>
-                  rating.id === existingRating.id ? nextRating : rating,
-                )
-              : [...currentState.feedbackRatings, nextRating],
-          };
-        });
-      },
-      async updateQuestionSet(submissionId, questionSetVersionId, mode, questions) {
-        const supabase = requireSupabase();
-        const submission = state.submissions.find((item) => item.id === submissionId);
-        const { error } = await supabase.rpc("update_question_set", {
-          p_submission_id: submissionId,
-          p_question_set_version_id: questionSetVersionId,
-          p_mode: mode,
-          p_questions: questions,
-          p_estimated_minutes: estimateSubmissionMinutes(
-            questions,
-            submission?.requiresRecording === true,
-          ),
-        });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        await refreshState();
       },
       async addModerationAction() {
         return;

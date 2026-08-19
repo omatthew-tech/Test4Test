@@ -32,15 +32,15 @@ export const NavigationPatterns: Story = {
         <TopNavigation
           items={[
             { label: "Earn", to: "/earn" },
-            { label: "My tests", to: "/my-tests" },
+            { label: "Analytics", to: "/analytics" },
           ]}
           actions={<Button size="compact">Submit a test</Button>}
         />
         <Stack gap="lg">
           <Breadcrumb
             items={[
-              { label: "My tests", to: "/my-tests" },
-              { label: "Checkout study", to: "/my-tests/1" },
+              { label: "Analytics", to: "/analytics" },
+              { label: "Checkout recording", to: "/recordings?response=response-checkout" },
             ]}
           />
           <Tabs
@@ -90,13 +90,13 @@ export const NavigationPatterns: Story = {
 export const TopNavigationContract: Story = {
   parameters: {
     layout: "fullscreen",
-    test4test: { initialEntries: ["/my-tests"] },
+    test4test: { initialEntries: ["/analytics"] },
   },
   render: () => (
     <TopNavigation
       items={[
         { label: "Earn", to: "/earn" },
-        { label: "My tests", to: "/my-tests" },
+        { label: "Analytics", to: "/analytics" },
       ]}
       actions={<Button size="compact">Submit a test</Button>}
     />
@@ -105,7 +105,7 @@ export const TopNavigationContract: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Test4Test home" })).toHaveAttribute("href", "/");
-    await expect(canvas.getByRole("link", { name: "My tests" })).toHaveAttribute(
+    await expect(canvas.getByRole("link", { name: "Analytics" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -142,7 +142,7 @@ export const MobileNavigationDrawerContract: Story = {
           title="Contract navigation"
           items={[
             { label: "Earn", to: "/earn" },
-            { label: "My tests", to: "/my-tests" },
+            { label: "Analytics", to: "/analytics" },
           ]}
         />
       </>
@@ -192,8 +192,11 @@ export const BreadcrumbContract: Story = {
     <Breadcrumb
       items={[
         { label: "Founder workspace", to: "/workspace" },
-        { label: "My tests", to: "/my-tests" },
-        { label: "A deliberately long checkout usability test name", to: "/my-tests/checkout" },
+        { label: "Analytics", to: "/analytics" },
+        {
+          label: "A deliberately long checkout usability recording",
+          to: "/recordings?response=response-checkout",
+        },
       ]}
     />
   ),
@@ -273,7 +276,7 @@ export const MobileNavigationDrawerOpenState: Story = {
       title="Navigation"
       items={[
         { label: "Earn", to: "/earn" },
-        { label: "My tests", to: "/my-tests" },
+        { label: "Analytics", to: "/analytics" },
         { label: "Submit a test", to: "/submit" },
       ]}
     />

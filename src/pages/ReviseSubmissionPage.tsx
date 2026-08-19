@@ -543,7 +543,7 @@ export function ReviseSubmissionPage() {
                 className="button button--secondary"
                 onClick={() => navigate("/submissions")}
               >
-                Back to My Feedback
+                Back to My reviews
               </button>
               <button
                 type="button"
@@ -590,7 +590,7 @@ export function ReviseSubmissionPage() {
                 </span>
                 <h2 id="submission-report-title">Report Sent!</h2>
                 <p id="submission-report-description">
-                  We&apos;re on it. Taking you back to My Feedback now.
+                  We&apos;re on it. Taking you back to My reviews now.
                 </p>
               </div>
             ) : (

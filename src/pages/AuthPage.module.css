@@ -1,8 +1,17 @@
+.signInFlow.signInFlow {
+  padding-block-start: var(--ds-semantic-space-stack-2xl);
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
+}
+
 .copy {
   max-width: var(--ds-semantic-size-content-prose);
 }
 
-.copy h2 {
+.copy :is(h1, h2) {
   font-size: var(--ds-semantic-typography-heading-small-size);
   line-height: var(--ds-semantic-typography-heading-small-line-height);
 }
@@ -52,5 +61,13 @@
   .actions > *,
   .footer > * {
     width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .signInFlow.signInFlow {
+    padding-block-start: calc(
+      var(--ds-semantic-space-stack-section-large) + var(--ds-semantic-space-stack-section)
+    );
   }
 }

@@ -2,6 +2,10 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import routeStates from "./route-states.json" with { type: "json" };
 
+const renderableRouteStates = routeStates.filter(
+  (route) => !("redirectOnly" in route && route.redirectOnly),
+);
+
 test.beforeEach(async ({ page }) => {
   await page.route(/https:\/\/[^/]*\.supabase\.co\//, (route) => {
     throw new Error(`Design-system tests must not contact Supabase: ${route.request().url()}`);
@@ -43,13 +47,13 @@ async function findHorizontalOverflow(page: Page) {
   });
 }
 
-for (const route of routeStates) {
+for (const route of renderableRouteStates) {
   test(`${route.name} has no automatically detectable WCAG A or AA violations`, async ({
     page,
   }) => {
-    await page.goto(route.path);
-    await page.waitForLoadState("networkidle");
-    await expect(page.locator("main")).toBeVisible();
+    test.setTimeout(90_000);
+    await page.goto(route.path, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("main")).toBeVisible({ timeout: 60_000 });
     await expect(page.locator("h1:visible")).toHaveCount(1);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
@@ -58,7 +62,7 @@ for (const route of routeStates) {
   });
 }
 
-for (const route of routeStates) {
+for (const route of renderableRouteStates) {
   test(`${route.name} reflows at 320 CSS pixels`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto(route.path);

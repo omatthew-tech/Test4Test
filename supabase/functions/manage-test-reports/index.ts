@@ -163,14 +163,18 @@ async function loadSubmissions(admin: SupabaseClient, submissionIds: string[]) {
 
   const { data, error } = await admin
     .from("submissions")
-    .select("id, user_id, product_name, status, description, access_url, access_links, product_type, product_types, needs_google_play_closed_testers, google_play_closed_test_instructions")
+    .select(
+      "id, user_id, product_name, status, description, access_url, access_links, product_type, product_types, needs_google_play_closed_testers, google_play_closed_test_instructions",
+    )
     .in("id", uniqueSubmissionIds);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return new Map(((data ?? []) as SubmissionRow[]).map((submission) => [submission.id, submission]));
+  return new Map(
+    ((data ?? []) as SubmissionRow[]).map((submission) => [submission.id, submission]),
+  );
 }
 
 async function loadReport(admin: SupabaseClient, reportId: string) {
@@ -188,7 +192,10 @@ async function loadReport(admin: SupabaseClient, reportId: string) {
 }
 
 async function buildReportPayload(admin: SupabaseClient, rows: ReportRow[]) {
-  const submissionsById = await loadSubmissions(admin, rows.map((report) => report.submission_id));
+  const submissionsById = await loadSubmissions(
+    admin,
+    rows.map((report) => report.submission_id),
+  );
   const profileIds = rows.flatMap((report) => {
     const submission = submissionsById.get(report.submission_id);
     return submission ? [report.reporter_user_id, submission.user_id] : [report.reporter_user_id];
@@ -204,38 +211,45 @@ async function buildReportPayload(admin: SupabaseClient, rows: ReportRow[]) {
       return [];
     }
 
-    return [{
-      id: report.id,
-      submissionId: report.submission_id,
-      reporterUserId: report.reporter_user_id,
-      reporterEmail: reporter.email,
-      reporterDisplayName: reporter.display_name,
-      founderUserId: founder.id,
-      founderEmail: founder.email,
-      founderDisplayName: founder.display_name,
-      appName: submission.product_name,
-      appDescription: submission.description ?? "",
-      appStatus: submission.status,
-      needsGooglePlayClosedTesters: submission.needs_google_play_closed_testers === true,
-      googlePlayClosedTestInstructions: submission.google_play_closed_test_instructions ?? "",
-      reason: report.reason,
-      reasonLabel: reasonLabels[report.reason],
-      message: report.message,
-      status: report.status,
-      supportNotifiedAt: report.support_notified_at,
-      decisionNote: report.decision_note,
-      decidedByEmail: report.decided_by_email,
-      decidedAt: report.decided_at,
-      creditedTransactionId: report.credited_transaction_id,
-      createdAt: report.created_at,
-      updatedAt: report.updated_at,
-      accessLinks: normalizeAccessLinks(submission),
-    }];
+    return [
+      {
+        id: report.id,
+        submissionId: report.submission_id,
+        reporterUserId: report.reporter_user_id,
+        reporterEmail: reporter.email,
+        reporterDisplayName: reporter.display_name,
+        founderUserId: founder.id,
+        founderEmail: founder.email,
+        founderDisplayName: founder.display_name,
+        appName: submission.product_name,
+        appDescription: submission.description ?? "",
+        appStatus: submission.status,
+        needsGooglePlayClosedTesters: submission.needs_google_play_closed_testers === true,
+        googlePlayClosedTestInstructions: submission.google_play_closed_test_instructions ?? "",
+        reason: report.reason,
+        reasonLabel: reasonLabels[report.reason],
+        message: report.message,
+        status: report.status,
+        supportNotifiedAt: report.support_notified_at,
+        decisionNote: report.decision_note,
+        decidedByEmail: report.decided_by_email,
+        decidedAt: report.decided_at,
+        creditedTransactionId: report.credited_transaction_id,
+        createdAt: report.created_at,
+        updatedAt: report.updated_at,
+        accessLinks: normalizeAccessLinks(submission),
+      },
+    ];
   });
 
   const reviewSubmissions = reports
-    .filter((report) => report.status === "confirmed" && report.appStatus === "pending_verification")
-    .filter((report, index, all) => all.findIndex((item) => item.submissionId === report.submissionId) === index)
+    .filter(
+      (report) => report.status === "confirmed" && report.appStatus === "pending_verification",
+    )
+    .filter(
+      (report, index, all) =>
+        all.findIndex((item) => item.submissionId === report.submissionId) === index,
+    )
     .map((report) => ({
       submissionId: report.submissionId,
       appName: report.appName,
@@ -255,7 +269,10 @@ function normalizeAccessLinks(submission: SubmissionRow) {
       ? submission.access_links
       : {};
   const entries = Object.entries(accessLinks)
-    .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+    .filter(
+      (entry): entry is [string, string] =>
+        typeof entry[1] === "string" && entry[1].trim().length > 0,
+    )
     .map(([productType, url]) => ({ productType, url: url.trim() }));
 
   if (entries.length > 0) {
@@ -429,7 +446,7 @@ async function sendFounderNotOkEmail(
   founder: ProfileRow,
 ) {
   const supportEmail = getSupportEmail();
-  const myTestsUrl = `${env.appBaseUrl}/my-tests`;
+  const editAppUrl = `${env.appBaseUrl}/earn?edit=${encodeURIComponent(submission.id)}`;
   const reasonLabel = reasonLabels[report.reason];
   const customMessage = report.message.trim() || "No custom message was provided.";
   const subject = `${submission.product_name} has been paused`;
@@ -439,8 +456,8 @@ async function sendFounderNotOkEmail(
     `Reason: ${reasonLabel}`,
     `Message: ${customMessage}`,
     "",
-    "Go to My Apps and click \"Edit app\" to make changes. After you save edits, the app will move to pending verification for support review.",
-    myTestsUrl,
+    "Open Earn to edit your app. After you save edits, the app will move to pending verification for support review.",
+    editAppUrl,
     "",
     `If you disagree, reply to this email or send an email to ${supportEmail}.`,
   ].join("\n");
@@ -451,10 +468,10 @@ async function sendFounderNotOkEmail(
         <p style="margin: 0 0 6px;"><strong>Reason:</strong> ${escapeHtml(reasonLabel)}</p>
         <p style="margin: 0;"><strong>Message:</strong> ${escapeHtmlWithBreaks(customMessage)}</p>
       </div>
-      <p>Go to My Apps and click <strong>Edit app</strong> to make changes. After you save edits, the app will move to pending verification for support review.</p>
+      <p>Open Earn to edit your app. After you save edits, the app will move to pending verification for support review.</p>
       <p>
-        <a href="${escapeHtml(myTestsUrl)}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #f58e56; color: #1d1815; text-decoration: none; font-weight: 700;">
-          Open My Apps
+        <a href="${escapeHtml(editAppUrl)}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #f58e56; color: #1d1815; text-decoration: none; font-weight: 700;">
+          Edit app on Earn
         </a>
       </p>
       <p style="color: #6f655d;">If you disagree, reply to this email or send an email to <a href="mailto:${escapeHtml(supportEmail)}" style="color: #a34f25;">${escapeHtml(supportEmail)}</a>.</p>
@@ -614,7 +631,10 @@ Deno.serve(async (request) => {
   try {
     env = getEmailEnvironment();
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Admin setup is incomplete." }, 500);
+    return json(
+      { error: error instanceof Error ? error.message : "Admin setup is incomplete." },
+      500,
+    );
   }
 
   const admin = createAdminClient(env);

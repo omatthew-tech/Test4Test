@@ -599,7 +599,10 @@ export function SubmitFlowPage() {
     setIsSendingCode(true);
 
     try {
-      await Promise.all([requestOtp(normalizedEmail, submissionId), wait(5000)]);
+      await Promise.all([
+        requestOtp(normalizedEmail, { intent: "founder_signup", submissionId }),
+        wait(5000),
+      ]);
       setFlowPhase("verify-code");
       navigate(
         `/verify?email=${encodeURIComponent(normalizedEmail)}&submissionId=${encodeURIComponent(submissionId)}`,
@@ -990,8 +993,8 @@ export function SubmitFlowPage() {
                   <Button type="button" onClick={() => navigate("/earn")}>
                     Go to Earn
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate("/my-tests")}>
-                    View My Tests
+                  <Button type="button" variant="secondary" onClick={() => navigate("/analytics")}>
+                    View analytics
                   </Button>
                 </div>
               )}

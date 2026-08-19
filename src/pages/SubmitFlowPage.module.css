@@ -1,6 +1,7 @@
 .layout {
   display: grid;
   gap: var(--ds-semantic-space-stack-lg);
+  padding-block-start: var(--ds-semantic-space-stack-2xl);
   padding-inline: var(--ds-semantic-space-gutter-small);
 }
 
@@ -148,6 +149,9 @@
 
 @media (min-width: 768px) {
   .layout {
+    padding-block-start: calc(
+      var(--ds-semantic-space-stack-section-large) + var(--ds-semantic-space-stack-section)
+    );
     padding-inline: var(--ds-semantic-space-gutter-medium);
   }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Alert, Button, Stack, TextField } from "@test4test/design-system";
+import { Alert, Button, Stack, Test4TestBrand, TextField } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
@@ -57,7 +57,7 @@ export function SignInPage() {
     setIsSendingCode(true);
     try {
       const waitForSendUi = isTestAccountEmail(nextEmail) ? Promise.resolve() : wait(5000);
-      await Promise.all([requestOtp(nextEmail), waitForSendUi]);
+      await Promise.all([requestOtp(nextEmail, { intent: "sign_in" }), waitForSendUi]);
       setEmail(nextEmail);
       setHasRequestedCode(true);
       setCode("");
@@ -94,8 +94,18 @@ export function SignInPage() {
   };
 
   return (
-    <AppShell eyebrowLabel={null}>
-      <VerificationFlowShell title="Sign in" cardClassName="sign-in-panel">
+    <AppShell eyebrowLabel={null} hideSiteHeader contentWidth="viewport">
+      <VerificationFlowShell
+        title="Sign in"
+        cardClassName="sign-in-panel"
+        className={styles.signInFlow}
+        hideTitle
+        leadingContent={
+          <div className={styles.brand}>
+            <Test4TestBrand />
+          </div>
+        }
+      >
         {hasRequestedCode ? (
           <>
             <Button
@@ -109,7 +119,7 @@ export function SignInPage() {
               Change email
             </Button>
             <Stack className={styles.copy} gap="sm">
-              <h2>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h2>
+              <h1>{isCurrentEmailTestAccount ? "Enter test passcode" : "Check your email"}</h1>
               {isCurrentEmailTestAccount ? (
                 <p>
                   Enter the configured test account passcode for{" "}
@@ -158,7 +168,7 @@ export function SignInPage() {
         ) : (
           <>
             <Stack className={styles.copy} gap="sm">
-              <h2>Sign in with email</h2>
+              <h1>Sign in with email</h1>
               <p>
                 {isCurrentEmailTestAccount
                   ? "Enter the test account email to continue."
@@ -189,7 +199,14 @@ export function SignInPage() {
             <div className={styles.footer}>
               <p>New to Test4Test?</p>
               <Button type="button" variant="secondary" onClick={() => navigate("/submit")}>
-                Sign up
+                Get your app tested
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate("/get-paid-to-test/signup")}
+              >
+                Get paid to test
               </Button>
             </div>
           </>

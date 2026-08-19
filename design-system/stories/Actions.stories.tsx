@@ -124,20 +124,20 @@ export const IconButtonContract: Story = {
 export const LinkContract: Story = {
   render: () => (
     <Stack>
-      <Link to="/my-tests">Review test responses</Link>
+      <Link to="/analytics">Open Analytics</Link>
       <Link external rel="noreferrer" target="_blank" to="https://example.com">
         Open testing website
       </Link>
-      <Link to="/my-tests/checkout-usability">
-        Review a deliberately long checkout usability test link that wraps safely without obscuring
-        its destination
+      <Link to="/recordings?response=response-checkout">
+        Open a deliberately long checkout usability recording link that wraps safely without
+        obscuring its destination
       </Link>
     </Stack>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const internalLink = canvas.getByRole("link", { name: "Review test responses" });
-    await expect(internalLink).toHaveAttribute("href", "/my-tests");
+    const internalLink = canvas.getByRole("link", { name: "Open Analytics" });
+    await expect(internalLink).toHaveAttribute("href", "/analytics");
     await userEvent.hover(internalLink);
     internalLink.focus();
     await expect(internalLink).toHaveFocus();

@@ -29,8 +29,8 @@ const testerSteps = [
   },
   {
     number: "3",
-    title: "Receive 2 satisfactory ratings to unlock paid tests",
-    body: "Once you receive 2 satisfactory ratings, you'll unlock paid tests and start earning.",
+    title: "Unlock paid tests",
+    body: "Complete two credited tests and receive two 5-star ratings to unlock paid tests.",
     icon: ShieldCheck,
   },
 ];
@@ -44,7 +44,7 @@ export function TesterLandingPage() {
         <section className={styles.hero} aria-labelledby="tester-hero-title">
           <div className={styles.heroCopy}>
             <h1 id="tester-hero-title">Make over $22/hour testing websites and apps</h1>
-            <Button className={styles.heroCta} onClick={() => navigate("/sign-in")}>
+            <Button className={styles.heroCta} onClick={() => navigate("/get-paid-to-test/signup")}>
               Get started
               <ArrowRight size={20} aria-hidden="true" />
             </Button>

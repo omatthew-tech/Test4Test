@@ -34,8 +34,8 @@ export const WorkflowStates: Story = {
     return (
       <Stack gap="xl">
         <PageHeader
-          title="My tests"
-          description="Review active tests and the feedback testers submitted."
+          title="Founder workspace"
+          description="Review app activity and the feedback testers submitted."
           actions={<Button>Submit a test</Button>}
         />
         <Stepper
@@ -69,7 +69,7 @@ export const WorkflowStates: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "My tests" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Founder workspace" })).toBeVisible();
     const highestRating = canvas.getByRole("radio", { name: "5" });
     await userEvent.click(highestRating);
     await expect(highestRating).toBeChecked();
@@ -79,14 +79,14 @@ export const WorkflowStates: Story = {
   },
 };
 
-export const MyTestsDataPresentation: Story = {
+export const AnalyticsDataPresentation: Story = {
   render: () => (
     <Stack gap="xl">
       <PageHeader
         eyebrow={<StatusIndicator tone="info">Founder workspace</StatusIndicator>}
-        title="My tests"
-        description="Manage active tests, share tester links, and review incoming responses."
-        actions={<Button>Submit a test</Button>}
+        title="Analytics"
+        description="Compare feedback activity and open available recordings."
+        actions={<Button>Open recordings</Button>}
       />
       <Stack gap="md">
         <TestRow
@@ -96,8 +96,8 @@ export const MyTestsDataPresentation: Story = {
           statusTone="success"
           actions={
             <Cluster>
-              <Button variant="secondary">Share</Button>
-              <Button variant="secondary">View responses</Button>
+              <Button variant="secondary">Open Analytics</Button>
+              <Button variant="secondary">Open recordings</Button>
             </Cluster>
           }
         />
@@ -105,7 +105,7 @@ export const MyTestsDataPresentation: Story = {
           title="Checkout usability"
           metadata="Android · 12 responses · Updated July 21"
           status="Closed"
-          actions={<Button variant="secondary">View responses</Button>}
+          actions={<Button variant="secondary">Open recordings</Button>}
         />
       </Stack>
     </Stack>

@@ -2,7 +2,12 @@
 
 ## Unreleased
 
+- Documented the recording-first product decision and future transcript, annotation, clip, priority, AI-context, star-rating, and managed-order interface needs.
 - Added a semantic 288 px compact-form width for focused lead-capture compositions.
+- Replaced the Test4Test mark with the two-tone exchange loop: a single vector outline drawn twice, the second copy rotated a half turn, shared by `Test4TestMark`, the favicon, the standalone mark, and the social card.
+- Reworked brand rasterisation to letterbox the wider-than-tall mark instead of cropping it, downsample from a high-resolution render, flatten the icons platforms composite against black, and emit palette PNGs; the icon set and social card together drop from 54 KB to 26 KB.
+- Kept one mark at every size rather than adding a pixel-fitted 16 px glyph: Chrome, Firefox, and Edge resolve `favicon.svg` ahead of the sized PNGs, so a second outline would reach almost nobody while splitting the brand in two. Tabs on 2× displays already rasterise at 32 px, where the arrowheads resolve.
+- Refreshed the visual baselines for the new mark. The 1 % `maxDiffPixelRatio` tolerance absorbs a header logo swap, so the baselines were rewritten in full; 115 of 356 changed, and the rest are component stories that never render the mark.
 
 ## 1.0.0
 

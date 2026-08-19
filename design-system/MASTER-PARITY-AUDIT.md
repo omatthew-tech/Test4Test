@@ -1,5 +1,7 @@
 # Master parity audit and aesthetic backlog
 
+> Historical v1 evidence (2026-07-23). This audit records visual and interaction parity work; it is not a current product requirement. The [recording-first product specification](../usability_platform_product_plan.md) governs behavior.
+
 ## Scope
 
 This audit compares the `master` application at commit `c4c58a1` with the

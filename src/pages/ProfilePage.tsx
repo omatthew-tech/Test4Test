@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useModalFocus } from "@test4test/design-system";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
+import { TesterProfileSettings } from "./TesterProfileSettings";
 
 type PaymentField = "paypalHandle" | "venmoHandle" | "cashAppHandle";
 type PaymentDraft = Record<PaymentField, string>;
@@ -94,6 +95,10 @@ export function ProfilePage() {
         </div>
       </AppShell>
     );
+  }
+
+  if (currentUser.accountType === "tester") {
+    return <TesterProfileSettings />;
   }
 
   const startEmailEdit = () => {

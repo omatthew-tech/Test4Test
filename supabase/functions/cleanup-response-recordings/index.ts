@@ -4,10 +4,8 @@ import {
   recordingCorsHeaders,
   recordingJson,
 } from "../_shared/response-recordings.ts";
-import {
-  getR2RecordingEnvironment,
-  r2Fetch,
-} from "../_shared/r2-recordings.ts";
+import { getR2RecordingEnvironment, r2Fetch } from "../_shared/r2-recordings.ts";
+import { deleteGeneratedRecordingThumbnails } from "../_shared/recording-thumbnails.ts";
 
 interface CleanupRequest {
   limit?: number;
@@ -17,6 +15,8 @@ interface ExpiredRecordingRow {
   id: string;
   recording_bucket: string | null;
   recording_path: string | null;
+  recording_thumbnail_bucket: string | null;
+  recording_thumbnail_path: string | null;
 }
 
 interface StaleDraftRow {
@@ -27,6 +27,7 @@ interface StaleDraftRow {
 interface R2UploadRow {
   id: string;
   object_key: string;
+  thumbnail_path: string | null;
   upload_id: string | null;
   status: string;
 }
@@ -51,7 +52,10 @@ Deno.serve(async (request) => {
   try {
     env = getRecordingEnvironment();
   } catch (error) {
-    return recordingJson({ error: error instanceof Error ? error.message : "Recording cleanup setup is incomplete." }, 500);
+    return recordingJson(
+      { error: error instanceof Error ? error.message : "Recording cleanup setup is incomplete." },
+      500,
+    );
   }
 
   const providedSecret = request.headers.get("x-recording-cleanup-secret")?.trim() ?? "";
@@ -67,7 +71,9 @@ Deno.serve(async (request) => {
 
   const { data: expiredRows, error: expiredError } = await admin
     .from("test_responses")
-    .select("id, recording_bucket, recording_path")
+    .select(
+      "id, recording_bucket, recording_path, recording_thumbnail_bucket, recording_thumbnail_path",
+    )
     .not("recording_bucket", "is", null)
     .not("recording_path", "is", null)
     .is("recording_deleted_at", null)
@@ -83,6 +89,7 @@ Deno.serve(async (request) => {
     (row) => row.recording_bucket && row.recording_path,
   );
   const deletedExpiredIds: string[] = [];
+  const generatedThumbnailsToDelete: Array<{ id: string; bucket: string; key: string }> = [];
   let r2Env: ReturnType<typeof getR2RecordingEnvironment> | null = null;
 
   const getR2Env = () => {
@@ -99,10 +106,35 @@ Deno.serve(async (request) => {
     if (row.recording_bucket!.startsWith("r2:")) {
       const removeResult = await r2Fetch(getR2Env(), row.recording_path!, { method: "DELETE" });
       removed = removeResult.ok || removeResult.status === 404;
+      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket?.startsWith("r2:")) {
+        await r2Fetch(getR2Env(), row.recording_thumbnail_path, { method: "DELETE" }).catch(
+          () => null,
+        );
+      }
     } else {
-      const removeResult = await admin.storage.from(row.recording_bucket!).remove([row.recording_path!]);
-      const missingObject = removeResult.error?.message?.toLowerCase().includes("not found") === true;
+      const removeResult = await admin.storage
+        .from(row.recording_bucket!)
+        .remove([row.recording_path!]);
+      const missingObject =
+        removeResult.error?.message?.toLowerCase().includes("not found") === true;
       removed = !removeResult.error || missingObject;
+      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket === row.recording_bucket) {
+        await admin.storage
+          .from(row.recording_bucket!)
+          .remove([row.recording_thumbnail_path])
+          .catch(() => null);
+      }
+    }
+
+    if (
+      row.recording_thumbnail_bucket &&
+      row.recording_thumbnail_path?.startsWith("recording-thumbnails/")
+    ) {
+      generatedThumbnailsToDelete.push({
+        id: row.id,
+        bucket: row.recording_thumbnail_bucket,
+        key: row.recording_thumbnail_path,
+      });
     }
 
     if (removed) {
@@ -115,6 +147,14 @@ Deno.serve(async (request) => {
         deletedExpiredIds.push(row.id);
       }
     }
+  }
+
+  if (generatedThumbnailsToDelete.length > 0) {
+    await deleteGeneratedRecordingThumbnails(generatedThumbnailsToDelete).catch((error) => {
+      console.error("Generated recording thumbnail cleanup failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
   }
 
   const { data: staleDraftRows, error: staleDraftError } = await admin.rpc(
@@ -153,7 +193,7 @@ Deno.serve(async (request) => {
   const staleCutoffIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: staleR2Rows, error: staleR2Error } = await admin
     .from("test_response_recording_uploads")
-    .select("id, object_key, upload_id, status")
+    .select("id, object_key, thumbnail_path, upload_id, status")
     .eq("storage_provider", "r2")
     .is("attached_response_id", null)
     .in("status", ["pending", "uploading", "completed"])
@@ -187,7 +227,12 @@ Deno.serve(async (request) => {
       continue;
     }
 
-    const removeResult = await r2Fetch(getR2Env(), row.object_key, { method: "DELETE" }).catch(() => null);
+    const removeResult = await r2Fetch(getR2Env(), row.object_key, { method: "DELETE" }).catch(
+      () => null,
+    );
+    if (row.thumbnail_path?.startsWith("draft/")) {
+      await r2Fetch(getR2Env(), row.thumbnail_path, { method: "DELETE" }).catch(() => null);
+    }
 
     if (!removeResult || removeResult.ok || removeResult.status === 404) {
       const { error: updateError } = await admin
