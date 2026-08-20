@@ -21,7 +21,7 @@ export interface RenderedEmail {
   htmlBody: string;
 }
 
-export const defaultGroup3AppBaseUrl = "https://beta.test4test.io";
+export const defaultGroup3AppBaseUrl = "https://test4test.io";
 
 export function getGroup3AppBaseUrl() {
   return (

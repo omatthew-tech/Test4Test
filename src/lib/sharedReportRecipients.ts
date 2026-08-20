@@ -34,7 +34,7 @@ export async function saveSharedReportRecipient({
 }
 
 export function buildSharedReportUrl(shareToken: string, baseUrl?: string) {
-  const origin = (baseUrl ?? "https://beta.test4test.io").replace(/\/+$/, "");
+  const origin = (baseUrl ?? "https://test4test.io").replace(/\/+$/, "");
 
   return `${origin}/shared-report/${shareToken}`;
 }

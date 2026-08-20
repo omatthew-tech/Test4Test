@@ -58,7 +58,7 @@ export function TesterLandingPage() {
             <button
               type="button"
               className="button button--primary tester-hero__cta"
-              onClick={() => navigate("/sign-in")}
+              onClick={() => navigate("/get-paid-to-test/coming-soon")}
             >
               Get started
               <ArrowRight size={20} aria-hidden="true" />
@@ -179,5 +179,13 @@ export function TesterLandingPage() {
         </section>
       </div>
     </AppShell>
+  );
+}
+
+export function TesterComingSoonPage() {
+  return (
+    <main className="tester-coming-soon">
+      <h1>Coming Soon!</h1>
+    </main>
   );
 }
