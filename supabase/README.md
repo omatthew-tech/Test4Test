@@ -15,7 +15,7 @@
    - `SMTP2GO_API_KEY`
    - `SMTP2GO_SENDER`
    - `APP_BASE_URL` (for example `https://test4test.io`)
-   - `GROUP3_APP_BASE_URL` (defaults to `https://beta.test4test.io`; used only by AI Analysis and shared-report links)
+   - `GROUP3_APP_BASE_URL` (defaults to `https://test4test.io`; retained for compatibility with AI Analysis and shared-report links)
    - `TEST_REPORT_SUPPORT_EMAIL` (optional, defaults to `support@test4test.io`)
    - `TEST_BACK_REMINDER_CRON_SECRET`
    - `TEST_ACCOUNT_ENABLED=true`
