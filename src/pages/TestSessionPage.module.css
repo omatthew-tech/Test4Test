@@ -1,8 +1,8 @@
 .page {
   display: grid;
   gap: var(--ds-semantic-space-stack-xl);
-  width: 100%;
-  max-width: var(--ds-semantic-size-content-data);
+  width: min(100%, var(--ds-semantic-size-content-data));
+  margin-inline: auto;
 }
 
 .page :global(.test-session__header) {
@@ -27,18 +27,9 @@
   gap: var(--ds-semantic-space-stack-xl);
 }
 
-.page :global(.test-session__intro-card) {
+.introCard {
   display: grid;
   gap: var(--ds-semantic-space-stack-lg);
-  padding-inline: 0;
-  padding-block-start: 0;
-  padding-block-end: var(--ds-semantic-space-stack-lg);
-  border-inline: 0;
-  border-block-start: 0;
-  border-block-end: var(--ds-semantic-border-width-default) solid
-    var(--ds-semantic-color-border-subtle);
-  border-radius: 0;
-  background: transparent;
 }
 
 .page :global(.test-session__intro-card-header) {
@@ -55,8 +46,7 @@
 .page :global(.recording-quickstart),
 .page :global(.recording-upload-card),
 .page :global(.recording-phase-card),
-.page :global(.question-list),
-.page :global(.recording-recovery-upload__body) {
+.page :global(.question-list) {
   display: grid;
   gap: var(--ds-semantic-space-stack-md);
 }
@@ -66,10 +56,89 @@
   gap: var(--ds-semantic-space-stack-md);
 }
 
-.page :global(.recording-quickstart__step) :global(.recording-microphone-setup) {
-  padding: 0;
-  border: 0;
-  background: transparent;
+.setupSteps {
+  display: grid;
+  margin: var(--ds-semantic-space-zero);
+  padding: var(--ds-semantic-space-zero);
+  list-style: none;
+  counter-reset: recording-setup;
+}
+
+.setupStep {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ds-semantic-space-inline-md);
+  padding-block: var(--ds-semantic-space-stack-md);
+  counter-increment: recording-setup;
+}
+
+.setupStep:first-child {
+  padding-block-start: var(--ds-semantic-space-zero);
+}
+
+.setupStep:last-child {
+  padding-block-end: var(--ds-semantic-space-zero);
+}
+
+.setupStep::before {
+  min-width: var(--ds-semantic-space-inline-lg);
+  color: var(--ds-semantic-color-action-primary-strong);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  content: counter(recording-setup) ".";
+}
+
+.setupStepBody {
+  display: grid;
+  min-width: 0;
+  gap: var(--ds-semantic-space-stack-sm);
+  justify-items: start;
+}
+
+.setupStepPending::before,
+.setupStepPending > .setupStepBody > strong,
+.setupStepPending :global(.helper-text) {
+  color: var(--ds-semantic-color-text-disabled);
+}
+
+.microphoneSetup {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.setupCard .microphoneSetup :global(.recording-microphone-actions) {
+  align-items: flex-start;
+}
+
+.recoveryUpload[open] {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.recoverySummary {
+  display: inline-flex;
+  width: fit-content;
+  min-height: var(--ds-semantic-size-control-target);
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  border-radius: var(--ds-semantic-radius-control);
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recoverySummary::-webkit-details-marker {
+  display: none;
+}
+
+.recoveryBody {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
+  padding: var(--ds-semantic-space-stack-md);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-background-subtle);
 }
 
 .attestation,
@@ -154,7 +223,6 @@
 .page :global(.google-play-session-panel),
 .page :global(.callout),
 .page :global(.recording-test-callout),
-.page :global(.recording-recovery-upload),
 .page :global(.recording-questionless-note) {
   padding: var(--ds-semantic-space-stack-md);
   border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
@@ -179,36 +247,6 @@
   gap: var(--ds-semantic-space-stack-sm);
 }
 
-.page :global(.recording-quickstart__step) {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--ds-semantic-space-inline-md);
-  padding: var(--ds-semantic-space-stack-md);
-  border-block-start: var(--ds-semantic-border-width-default) solid
-    var(--ds-semantic-color-border-default);
-}
-
-.page :global(.recording-quickstart__content),
-.page :global(.recording-quickstart__copy) {
-  min-width: 0;
-}
-
-.page :global(.recording-quickstart__copy) {
-  display: grid;
-  gap: var(--ds-semantic-space-stack-xs);
-}
-
-.page :global(.recording-quickstart__number) {
-  display: grid;
-  width: var(--ds-semantic-space-inline-2xl);
-  height: var(--ds-semantic-space-inline-2xl);
-  place-items: center;
-  border-radius: var(--ds-semantic-radius-control);
-  background: var(--ds-semantic-color-action-tint);
-  color: var(--ds-semantic-color-action-primary-strong);
-  font-weight: var(--ds-semantic-typography-weight-semibold);
-}
-
 .page :global(.recording-microphone-setup),
 .page :global(.recording-microphone-actions),
 .page :global(.recording-microphone-input-row),
@@ -220,6 +258,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ds-semantic-space-inline-sm);
+}
+
+.page :global(.recording-phase-stack) :global(.wizard-actions) {
+  padding-block-start: var(--ds-semantic-space-zero);
+  border-block-start: none;
 }
 
 .page :global(.recording-mic-indicator) {

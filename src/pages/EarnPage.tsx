@@ -1,6 +1,15 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, Globe2, Info, PencilLine, Share2 } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Globe2,
+  Info,
+  PencilLine,
+  Share2,
+} from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -9,9 +18,7 @@ import {
   Checkbox,
   Dialog,
   IconButton,
-  Link as DesignSystemLink,
   Progress,
-  Select,
   Surface,
   Toast,
   Tooltip,
@@ -27,12 +34,7 @@ import {
 } from "../lib/earnPlacementCelebration";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
 import { loadEarnVisibilitySubmission, loadEarnVisibilitySummary } from "../lib/earnVisibility";
-import {
-  formatDate,
-  normalizeProductTypes,
-  PRODUCT_TYPE_ORDER,
-  productTypesBadges,
-} from "../lib/format";
+import { normalizeProductTypes, PRODUCT_TYPE_ORDER, productTypesBadges } from "../lib/format";
 import { getAvailableSubmissions } from "../lib/selectors";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
 import { loadMySubmissionReportStatuses } from "../lib/testReports";
@@ -55,6 +57,16 @@ const EARN_PLATFORM_CONFIRMATION_STORAGE_PREFIX = "test4test:earn-platform-filte
 const EARN_PRIVATE_PLACEMENT_ROW_OFFSET_PX = 112;
 const EARN_PRIVATE_PLACEMENT_MAX_OFFSET_PX = 448;
 const productTypeSet = new Set<ProductType>(PRODUCT_TYPE_ORDER);
+
+type EarnBadgeTone = "info" | "success" | "warning";
+
+function EarnBadge({ children, tone }: { children: ReactNode; tone: EarnBadgeTone }) {
+  return (
+    <span className={`earn-row__badge-surface earn-row__badge-surface--${tone}`}>
+      <Badge tone={tone}>{children}</Badge>
+    </span>
+  );
+}
 
 function compareEarnSubmissionsByMode(first: Submission, second: Submission, sortMode: string) {
   if (sortMode === "newest") {
@@ -290,20 +302,6 @@ function getDefaultSelectedProductTypes(submissions: Submission[], userId: strin
     : [...PRODUCT_TYPE_ORDER];
 }
 
-function formatSelectedPlatformSummary(productTypes: ProductType[]) {
-  const normalized = normalizeProductTypes(productTypes);
-
-  if (normalized.length === 0) {
-    return "None selected";
-  }
-
-  if (normalized.length === PRODUCT_TYPE_ORDER.length) {
-    return "All platforms";
-  }
-
-  return normalized.map(earnPlatformLabel).join(", ");
-}
-
 function userPrefersReducedMotion() {
   return (
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -338,7 +336,6 @@ export function EarnPage() {
   const editSubmissionId = searchParams.get("edit")?.trim() ?? "";
   const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const privatePlacementRowRef = useRef<HTMLDivElement | null>(null);
-  const [sortMode, setSortMode] = useState("recommended");
   const [selectedProductTypes, setSelectedProductTypes] = useState<ProductType[]>(() => {
     if (!currentUser) {
       return getDefaultSelectedProductTypes(state.submissions, null);
@@ -354,6 +351,9 @@ export function EarnPage() {
   const [pendingProductTypes, setPendingProductTypes] =
     useState<ProductType[]>(selectedProductTypes);
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
+  const [suppressedPlatformHoverType, setSuppressedPlatformHoverType] =
+    useState<ProductType | null>(null);
   const [reputationBySubmissionId, setReputationBySubmissionId] = useState<
     Record<string, EarnSubmissionReputation>
   >({});
@@ -821,18 +821,13 @@ export function EarnPage() {
     );
   };
 
-  const openPlatformModal = () => {
-    setPendingProductTypes(selectedProductTypes);
-    setIsPlatformModalOpen(true);
-  };
-
   const closePlatformModal = () => {
     setPendingProductTypes(selectedProductTypes);
     setIsPlatformModalOpen(false);
   };
 
-  const confirmPlatformSelection = async () => {
-    const next = normalizeProductTypes(pendingProductTypes);
+  const savePlatformSelection = async (productTypes: ProductType[], closeModal = false) => {
+    const next = normalizeProductTypes(productTypes);
 
     if (isTester && currentUser?.testerProfile) {
       const profile = currentUser.testerProfile;
@@ -858,8 +853,22 @@ export function EarnPage() {
 
     setSelectedProductTypes(next);
     setPendingProductTypes(next);
-    setIsPlatformModalOpen(false);
+    if (closeModal) {
+      setIsPlatformModalOpen(false);
+    }
     setServerEarnError("");
+  };
+
+  const toggleSelectedProductType = (productType: ProductType) => {
+    const next = selectedProductTypes.includes(productType)
+      ? selectedProductTypes.filter((item) => item !== productType)
+      : [...selectedProductTypes, productType];
+
+    void savePlatformSelection(next);
+  };
+
+  const confirmPlatformSelection = () => {
+    void savePlatformSelection(pendingProductTypes, true);
   };
 
   const candidateSubmissions = useMemo(() => {
@@ -910,14 +919,14 @@ export function EarnPage() {
       compareEarnSubmissions(
         first,
         second,
-        sortMode,
+        "recommended",
         reputationBySubmissionId[first.id],
         reputationBySubmissionId[second.id],
       ),
     );
 
     return next;
-  }, [candidateSubmissions, reputationBySubmissionId, sortMode]);
+  }, [candidateSubmissions, reputationBySubmissionId]);
 
   const displayedSubmissionIdsKey = useMemo(
     () => [...new Set(displayedSubmissions.map((item) => item.id))].sort().join("|"),
@@ -1007,8 +1016,6 @@ export function EarnPage() {
     [stateVisibilitySubmission, visibilitySubmission, visibilitySummary?.submissionId],
   );
   const privatePlacementRank = visibilitySummary?.wouldRank ?? visibilitySummary?.rank ?? null;
-  const privatePlacementRankedCount =
-    visibilitySummary?.wouldRankedSubmissionCount ?? visibilitySummary?.rankedSubmissionCount ?? 0;
   const shouldShowPrivatePlacement = Boolean(
     !isTester && currentUser && visibilitySummary?.submissionId && visibilitySummary.productName,
   );
@@ -1200,35 +1207,69 @@ export function EarnPage() {
             onImproveRate={scrollToFirstTestBackTarget}
             onCompleteTest={scrollToFirstAvailableTest}
             onEditLiveTest={openVisibilityEditModal}
+            onShare={() => navigate("/share")}
           />
         )}
 
-        <Surface as="section" padding="compact" className="earn-controls">
-          <div className="earn-controls__toolbar">
-            <div className="earn-filter">
-              <Select
-                label="Sort by"
-                value={sortMode}
-                onChange={(event) => setSortMode(event.target.value)}
-              >
-                <option value="recommended">Recommended / best fit</option>
-                <option value="newest">Newest</option>
-                <option value="shortest">Shortest estimated time</option>
-              </Select>
-            </div>
-            <div className="earn-platform-summary">
-              <Button
-                variant="secondary"
-                size="compact"
-                className="earn-platform-summary-button"
-                onClick={openPlatformModal}
-                aria-label={`Choose platforms you can test. Current selection: ${formatSelectedPlatformSummary(selectedProductTypes)}.`}
-              >
-                Edit preferences
-              </Button>
-            </div>
-          </div>
-        </Surface>
+        <div className="earn-filters">
+          <span className="earn-filters__rule" aria-hidden="true" />
+          <Button
+            type="button"
+            variant="quiet"
+            className="earn-filters__toggle"
+            aria-expanded={areFiltersOpen}
+            aria-controls="earn-platform-filters"
+            onClick={() => {
+              setAreFiltersOpen((isOpen) => !isOpen);
+              setSuppressedPlatformHoverType(null);
+            }}
+          >
+            <span>Filters</span>
+            {areFiltersOpen ? (
+              <ChevronUp size={16} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={16} aria-hidden="true" />
+            )}
+          </Button>
+          {areFiltersOpen ? (
+            <fieldset id="earn-platform-filters" className="earn-platform-filter-list">
+              <legend className="ds-sr-only">Choose platforms you can test</legend>
+              {PRODUCT_TYPE_ORDER.map((productType) => (
+                <Checkbox
+                  key={productType}
+                  className={`earn-platform-filter-choice${
+                    suppressedPlatformHoverType === productType
+                      ? ` ${styles.platformFilterHoverSuppressed}`
+                      : ""
+                  }`}
+                  checked={selectedProductTypes.includes(productType)}
+                  onClick={(event) => {
+                    if (event.detail > 0) {
+                      if (selectedProductTypes.includes(productType)) {
+                        setSuppressedPlatformHoverType(productType);
+                      }
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  onPointerLeave={() =>
+                    setSuppressedPlatformHoverType((currentType) =>
+                      currentType === productType ? null : currentType,
+                    )
+                  }
+                  label={
+                    <span className="earn-platform-filter-choice__content">
+                      <PlatformMark productType={productType} />
+                      <span>
+                        {productType === "website" ? "Web" : earnPlatformLabel(productType)}
+                      </span>
+                    </span>
+                  }
+                  onChange={() => toggleSelectedProductType(productType)}
+                />
+              ))}
+            </fieldset>
+          ) : null}
+        </div>
 
         {serverEarnError ? (
           <Surface as="section" tone="subtle" className="callout callout--warning">
@@ -1264,8 +1305,6 @@ export function EarnPage() {
                 <EarnPrivatePlacementRow
                   summary={visibilitySummary}
                   submission={privatePlacementSubmission}
-                  rank={privatePlacementRank}
-                  rankedSubmissionCount={privatePlacementRankedCount}
                   animationMode={privatePlacementAnimationMode}
                   animationOffsetPx={privatePlacementOffsetPx}
                 />
@@ -1404,6 +1443,44 @@ function TesterEarnProgress({
   );
 }
 
+function EarnRankPanelBackground() {
+  return (
+    // ds-exception: earn-rank-panel-gradient
+    <svg
+      className={styles.rankPanelBackground}
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="earn-rank-panel-right-fade" x1="0" y1="0" x2="1" y2="0">
+          <stop
+            offset="0.48"
+            stopColor="var(--ds-semantic-color-surface-default)"
+            stopOpacity="0"
+          />
+          <stop offset="1" stopColor="var(--ds-semantic-color-surface-default)" stopOpacity="1" />
+        </linearGradient>
+        <linearGradient id="earn-rank-panel-top-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--ds-semantic-color-surface-default)" stopOpacity="1" />
+          <stop
+            offset="0.42"
+            stopColor="var(--ds-semantic-color-surface-default)"
+            stopOpacity="0"
+          />
+        </linearGradient>
+      </defs>
+      <rect
+        width="1"
+        height="1"
+        fill="color-mix(in srgb, var(--ds-semantic-color-action-tint) 70%, var(--ds-semantic-color-surface-default))"
+      />
+      <rect width="1" height="1" fill="url(#earn-rank-panel-right-fade)" />
+      <rect width="1" height="1" fill="url(#earn-rank-panel-top-fade)" />
+    </svg>
+  );
+}
+
 function EarnVisibilityPanel({
   summary,
   error,
@@ -1416,6 +1493,7 @@ function EarnVisibilityPanel({
   onImproveRate,
   onCompleteTest,
   onEditLiveTest,
+  onShare,
 }: {
   summary: EarnVisibilitySummary | null;
   error: string;
@@ -1428,6 +1506,7 @@ function EarnVisibilityPanel({
   onImproveRate: () => void;
   onCompleteTest: () => void;
   onEditLiveTest: (submissionId: string) => void;
+  onShare: () => void;
 }) {
   const hasLiveTest = Boolean(summary?.submissionId);
   const hasCompletedTest = summary?.hasCompletedTest === true;
@@ -1500,10 +1579,10 @@ function EarnVisibilityPanel({
               <PencilLine size={16} aria-hidden="true" />
               Edit
             </Button>
-            <DesignSystemLink to="/share" className="button button--secondary button--small">
+            <Button type="button" variant="secondary" size="compact" onClick={onShare}>
               <Share2 size={16} aria-hidden="true" />
               Share
-            </DesignSystemLink>
+            </Button>
           </div>
         ) : !hasLiveTest && summary ? (
           <Link to="/submit" className="button button--primary button--small">
@@ -1519,12 +1598,26 @@ function EarnVisibilityPanel({
         <div
           className={`earn-visibility__rank-panel${isListingLocked ? " earn-visibility__rank-panel--locked" : ""}`}
         >
+          <EarnRankPanelBackground />
           <div
             className={`earn-visibility__rank-value${isListingLocked ? " earn-visibility__rank-value--message" : ""}`}
           >
-            <strong>{rankValue}</strong>
+            <strong>
+              <span className="ds-sr-only">Rank </span>
+              {rankValue}
+            </strong>
           </div>
-          <span className="earn-visibility__rank-label">Rank</span>
+          <span className={styles.rankInfoPlacement}>
+            <Tooltip content="Rank is based on your test-back rate, satisfaction rate, and available credits.">
+              <IconButton
+                label="How Earn ranking works"
+                variant="quiet"
+                className={styles.rankInfoTrigger}
+              >
+                <Info size={16} aria-hidden="true" />
+              </IconButton>
+            </Tooltip>
+          </span>
           {isListingLocked ? (
             <Button
               type="button"
@@ -1605,18 +1698,7 @@ function EarnVisibilityPanel({
 
           <div className="earn-visibility__detail-row">
             <strong>{creditValue}</strong>
-            <span className="earn-visibility__metric-label earn-visibility__metric-label--credits">
-              Credits
-              <Tooltip content="The more credits you have, the more visibility your test gains">
-                <IconButton
-                  label="What credits do"
-                  variant="quiet"
-                  className={styles.creditsInfoTrigger}
-                >
-                  <Info size={16} aria-hidden="true" />
-                </IconButton>
-              </Tooltip>
-            </span>
+            <span className="earn-visibility__metric-label">Credits</span>
           </div>
         </div>
       </div>
@@ -1775,28 +1857,14 @@ function EarnPlatformModal({
   );
 }
 
-function formatPrivatePlacementRank(rank: number | null, rankedSubmissionCount: number) {
-  if (!rank) {
-    return "Not ranked right now";
-  }
-
-  return rankedSubmissionCount > 0
-    ? `Ranks #${rank} of ${rankedSubmissionCount}`
-    : `Ranks #${rank}`;
-}
-
 function EarnPrivatePlacementRow({
   summary,
   submission,
-  rank,
-  rankedSubmissionCount,
   animationMode,
   animationOffsetPx,
 }: {
   summary: EarnVisibilitySummary;
   submission: Submission | null;
-  rank: number | null;
-  rankedSubmissionCount: number;
   animationMode: "rise" | "pulse" | null;
   animationOffsetPx: number;
 }) {
@@ -1821,19 +1889,16 @@ function EarnPrivatePlacementRow({
       <div className="earn-row__content">
         <div className="earn-row__main">
           <div className="earn-row__pills">
-            <Badge tone="success">Only visible to you</Badge>
+            <EarnBadge tone="success">Only visible to you</EarnBadge>
             {submission
               ? productTypesBadges(submission.productTypes).map((badge) => (
-                  <Badge key={`${submission.id}-${badge}`} tone="info">
+                  <EarnBadge key={`${submission.id}-${badge}`} tone="info">
                     {badge}
-                  </Badge>
+                  </EarnBadge>
                 ))
               : null}
-            {submission?.requiresRecording ? (
-              <Badge tone="warning">Recording required</Badge>
-            ) : null}
             {submission?.needsGooglePlayClosedTesters ? (
-              <Badge tone="warning">Google Play closed test</Badge>
+              <EarnBadge tone="warning">Google Play closed test</EarnBadge>
             ) : null}
           </div>
           <div className="earn-row__head">
@@ -1847,9 +1912,6 @@ function EarnPrivatePlacementRow({
           </div>
         </div>
         <div className="earn-row__aside earn-row__aside--private-placement">
-          <strong className="earn-row__placement-rank">
-            {formatPrivatePlacementRank(rank, rankedSubmissionCount)}
-          </strong>
           <Link to="/analytics" className="button button--secondary">
             View analytics
             <ArrowRight size={16} />
@@ -1891,16 +1953,19 @@ function EarnRow({
       <div className="earn-row__content">
         <div className="earn-row__main">
           <div className="earn-row__pills">
-            {showReciprocalTag ? <Badge tone="warning">This user tested your app</Badge> : null}
-            {submission.rewardType === "paid" ? <Badge tone="success">Paid test</Badge> : null}
+            {showReciprocalTag ? (
+              <EarnBadge tone="warning">This user tested your app</EarnBadge>
+            ) : null}
+            {submission.rewardType === "paid" ? (
+              <EarnBadge tone="success">Paid test</EarnBadge>
+            ) : null}
             {productTypesBadges(submission.productTypes).map((badge) => (
-              <Badge key={`${submission.id}-${badge}`} tone="info">
+              <EarnBadge key={`${submission.id}-${badge}`} tone="info">
                 {badge}
-              </Badge>
+              </EarnBadge>
             ))}
-            {submission.requiresRecording ? <Badge tone="warning">Recording required</Badge> : null}
             {submission.needsGooglePlayClosedTesters ? (
-              <Badge tone="warning">Google Play closed test</Badge>
+              <EarnBadge tone="warning">Google Play closed test</EarnBadge>
             ) : null}
           </div>
           <div className="earn-row__head">
@@ -1918,13 +1983,12 @@ function EarnRow({
           </div>
         </div>
         <div className="earn-row__aside">
-          <small className="earn-row__date">Submitted {formatDate(submission.createdAt)}</small>
           <Link
             to={`/test/${submission.id}`}
             className="button button--primary"
             onClick={savePlacementSnapshot}
           >
-            {hasDraftProgress ? "Resume test" : "Start test"}
+            {hasDraftProgress ? "Resume test" : "View test"}
             <ArrowRight size={16} />
           </Link>
         </div>

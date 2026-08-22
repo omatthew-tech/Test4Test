@@ -24,6 +24,13 @@
       "expires": "2027-02-04"
     },
     {
+      "id": "earn-rank-panel-gradient",
+      "owner": "Test4Test",
+      "scope": "The token-colored decorative SVG background gradient on the Earn visibility rank panel in src/pages/EarnPage.tsx and src/pages/EarnPage.module.css.",
+      "rationale": "The design owner explicitly requested the supplied rank-panel gradient treatment. The exception is limited to the gradient composition; both gradient colors remain semantic design-system tokens.",
+      "expires": "2027-08-21"
+    },
+    {
       "id": "home-process-supplied-illustrations",
       "owner": "Test4Test",
       "scope": "The three supplied decorative PNG illustrations under public/images/how-it-works-*.png and their presentation in src/pages/HomePage.tsx.",

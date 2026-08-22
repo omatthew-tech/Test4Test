@@ -1,5 +1,13 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ExternalLink, Flag, Mic, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Flag,
+  Mic,
+  Trash2,
+} from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -678,6 +686,7 @@ export function TestSessionPage() {
   const [manualRecordingGuideStep, setManualRecordingGuideStep] = useState(
     initialRecordingSessionRef.current?.confirmedRecording ? 2 : 0,
   );
+  const [isRecoveryUploadOpen, setIsRecoveryUploadOpen] = useState(false);
   const [uploadedRecording, setUploadedRecording] = useState<ResponseRecording | null>(
     initialRecordingSessionRef.current?.recording ?? null,
   );
@@ -2663,12 +2672,6 @@ export function TestSessionPage() {
         "Start recording your screen and microphone.",
       ]
     : recordingInstructions.steps;
-  const nativeRecordingSetupStep =
-    microphoneStatus !== "ready"
-      ? "microphone"
-      : screenShareStatus !== "active"
-        ? "screen"
-        : "ready";
   const manualRecordingGuideSteps = [
     { id: "prepare", label: "Prepare" },
     { id: "task", label: "Review task" },
@@ -2688,31 +2691,32 @@ export function TestSessionPage() {
     nativeRecoveryUploadEnabled &&
     !uploadedRecording &&
     !nativeRecordingBlob;
-  const testSessionHeaderCopy = isSharedPublicVisit
-    ? ""
-    : isRecordingTest
-      ? isNativeDesktopRecording
-        ? "This is a voice + screen recording test where you'll talk out loud and share your honest thoughts. We recommend using Chrome or Edge."
-        : ""
-      : isPublicTester
-        ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
-        : "";
+  const testSessionHeaderCopy =
+    !isSharedPublicVisit && !isRecordingTest && isPublicTester
+      ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
+      : "";
   const testSessionTitle = isSharedPublicVisit
     ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
-    : `Test ${submission.productName}`;
-  const backToTestsLabel = currentUser ? "Back to Earn" : "Browse tests";
+    : "";
+  const backToTestsLabel = currentUser ? "Go back" : "Browse tests";
   const shouldShowBackToTests = !isSharedPublicVisit;
 
   return (
     <AppShell eyebrowLabel={null} hideSiteHeader={isSharedPublicVisit}>
       <div className={`${styles.page} test-layout test-layout--single`}>
-        <div className="test-session__header">
-          <h1>{testSessionTitle}</h1>
-          {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
-        </div>
+        {testSessionTitle || testSessionHeaderCopy ? (
+          <div className="test-session__header">
+            <h1 className={testSessionTitle ? undefined : "ds-sr-only"}>
+              {testSessionTitle || "Test session"}
+            </h1>
+            {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
+          </div>
+        ) : (
+          <h1 className="ds-sr-only">Test session</h1>
+        )}
 
         <Surface className="test-questions test-questions--full">
-          <div className="test-session__intro-card">
+          <Card className={styles.introCard}>
             <div className="test-session__intro-card-header">
               <div className="test-session__resource">
                 <span className="test-session__label">
@@ -2797,7 +2801,7 @@ export function TestSessionPage() {
                 </div>
               </div>
             ) : null}
-          </div>
+          </Card>
 
           {isRecordingTest ? (
             <>
@@ -2817,204 +2821,160 @@ export function TestSessionPage() {
               {recordingPhase === "preflight" ? (
                 <div className="recording-phase-stack">
                   {isNativeDesktopRecording ? (
-                    <Stack gap="lg">
-                      <Stepper
-                        steps={[
-                          { id: "microphone", label: "Microphone" },
-                          { id: "screen", label: "Screen" },
-                          { id: "ready", label: "Ready" },
-                        ]}
-                        currentStep={nativeRecordingSetupStep}
-                      />
-                      <Card as="section" className={styles.setupCard}>
-                        {nativeRecordingSetupStep === "microphone" ? (
-                          <div className="recording-quickstart__step">
-                            <span className="recording-quickstart__number">1.</span>
-                            <div className="recording-quickstart__content">
-                              <div className="recording-quickstart__copy">
-                                <strong>Enable microphone access</strong>
-                                <div className="recording-microphone-setup">
-                                  <div className="recording-microphone-input-row">
-                                    {availableMicrophones.length > 0 ? (
-                                      <Select
-                                        label="Microphone device"
-                                        value={selectedMicrophoneId}
-                                        onChange={(event) => {
-                                          const nextMicrophoneId = event.target.value;
-                                          setSelectedMicrophoneId(nextMicrophoneId);
-                                          void prepareMicrophonePreview(nextMicrophoneId);
-                                        }}
-                                        disabled={microphoneStatus === "requesting"}
-                                      >
-                                        {availableMicrophones.map((microphone) => (
-                                          <option
-                                            key={microphone.deviceId}
-                                            value={microphone.deviceId}
-                                          >
-                                            {microphone.label}
-                                          </option>
-                                        ))}
-                                      </Select>
-                                    ) : null}
-                                    {microphoneStatus === "ready" ? (
-                                      <div
-                                        className="recording-mic-indicator recording-mic-indicator--active"
-                                        role="img"
-                                        aria-label="Voice activity level for the selected microphone"
-                                      >
-                                        {microphoneBarHeights.map((height, index) => (
-                                          /* ds-exception: runtime-measurements — measured waveform height. */
-                                          <span
-                                            key={`mic-bar-${index}`}
-                                            style={{ height: `${height}px` }}
-                                          />
-                                        ))}
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                  {microphoneStatus !== "ready" || microphoneError ? (
-                                    <div className="recording-microphone-actions">
-                                      {microphoneStatus !== "ready" ? (
-                                        <Button
-                                          type="button"
-                                          variant="secondary"
-                                          size="compact"
-                                          loading={microphoneStatus === "requesting"}
-                                          loadingLabel="Checking microphone..."
-                                          onClick={() => {
-                                            void prepareMicrophonePreview(
-                                              selectedMicrophoneId || undefined,
-                                            );
-                                          }}
+                    <Card as="section" className={styles.setupCard}>
+                      <ol className={styles.setupSteps} aria-label="Recording setup">
+                        <li className={styles.setupStep}>
+                          <div className={styles.setupStepBody}>
+                            <div className={styles.microphoneSetup}>
+                              {availableMicrophones.length > 0 || microphoneStatus === "ready" ? (
+                                <div className="recording-microphone-input-row">
+                                  {availableMicrophones.length > 0 ? (
+                                    <Select
+                                      label="Microphone device"
+                                      value={selectedMicrophoneId}
+                                      onChange={(event) => {
+                                        const nextMicrophoneId = event.target.value;
+                                        setSelectedMicrophoneId(nextMicrophoneId);
+                                        void prepareMicrophonePreview(nextMicrophoneId);
+                                      }}
+                                      disabled={microphoneStatus === "requesting"}
+                                    >
+                                      {availableMicrophones.map((microphone) => (
+                                        <option
+                                          key={microphone.deviceId}
+                                          value={microphone.deviceId}
                                         >
-                                          Enable microphone
-                                        </Button>
-                                      ) : null}
-                                      {microphoneStatus !== "ready" ? (
-                                        <div
-                                          className="recording-mic-indicator recording-mic-indicator--inactive"
-                                          role="img"
-                                          aria-label="Microphone activity is inactive until microphone access is enabled"
-                                        >
-                                          {microphoneBarHeights.map((height, index) => (
-                                            /* ds-exception: runtime-measurements — measured waveform height. */
-                                            <span
-                                              key={`inactive-mic-bar-${index}`}
-                                              style={{ height: `${height}px` }}
-                                            />
-                                          ))}
-                                        </div>
-                                      ) : null}
-                                      {microphoneError ? (
-                                        <Alert tone="danger">{microphoneError}</Alert>
-                                      ) : null}
+                                          {microphone.label}
+                                        </option>
+                                      ))}
+                                    </Select>
+                                  ) : null}
+                                  {microphoneStatus === "ready" ? (
+                                    <div
+                                      className="recording-mic-indicator recording-mic-indicator--active"
+                                      role="img"
+                                      aria-label="Voice activity level for the selected microphone"
+                                    >
+                                      {microphoneBarHeights.map((height, index) => (
+                                        /* ds-exception: runtime-measurements — measured waveform height. */
+                                        <span
+                                          key={`mic-bar-${index}`}
+                                          style={{ height: `${height}px` }}
+                                        />
+                                      ))}
                                     </div>
                                   ) : null}
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        ) : null}
-                        {nativeRecordingSetupStep === "screen" ? (
-                          <div className="recording-quickstart__step">
-                            <span className="recording-quickstart__number">2.</span>
-                            <div className="recording-quickstart__content">
-                              <div className="recording-quickstart__copy">
-                                <strong className="recording-quickstart__title">
-                                  Enable screen sharing
-                                </strong>
-                                <RecordingStatus
-                                  status="Microphone connected"
-                                  description="Speak normally and confirm the activity bars move."
-                                  tone="success"
-                                />
-                                {availableMicrophones.length > 0 ? (
-                                  <Select
-                                    label="Microphone device"
-                                    value={selectedMicrophoneId}
-                                    onChange={(event) => {
-                                      const nextMicrophoneId = event.target.value;
-                                      setSelectedMicrophoneId(nextMicrophoneId);
-                                      void prepareMicrophonePreview(nextMicrophoneId);
-                                    }}
-                                    disabled={microphoneStatus === "requesting"}
-                                  >
-                                    {availableMicrophones.map((microphone) => (
-                                      <option key={microphone.deviceId} value={microphone.deviceId}>
-                                        {microphone.label}
-                                      </option>
-                                    ))}
-                                  </Select>
-                                ) : null}
+                              ) : null}
+                              {microphoneStatus !== "ready" || microphoneError ? (
                                 <div className="recording-microphone-actions">
-                                  <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="compact"
-                                    loading={screenShareStatus === "requesting"}
-                                    loadingLabel="Waiting for screen share..."
-                                    onClick={() => {
-                                      void prepareScreenSharePreview();
-                                    }}
-                                    disabled={microphoneStatus !== "ready"}
-                                  >
-                                    Enable screen sharing
-                                  </Button>
+                                  {microphoneStatus !== "ready" ? (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      size="compact"
+                                      loading={microphoneStatus === "requesting"}
+                                      loadingLabel="Checking microphone..."
+                                      onClick={() => {
+                                        void prepareMicrophonePreview(
+                                          selectedMicrophoneId || undefined,
+                                        );
+                                      }}
+                                    >
+                                      Enable microphone
+                                    </Button>
+                                  ) : null}
+                                  {microphoneStatus !== "ready" ? (
+                                    <div
+                                      className="recording-mic-indicator recording-mic-indicator--inactive"
+                                      role="img"
+                                      aria-label="Microphone activity is inactive until microphone access is enabled"
+                                    >
+                                      {microphoneBarHeights.map((height, index) => (
+                                        /* ds-exception: runtime-measurements — measured waveform height. */
+                                        <span
+                                          key={`inactive-mic-bar-${index}`}
+                                          style={{ height: `${height}px` }}
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                  {microphoneError ? (
+                                    <Alert tone="danger">{microphoneError}</Alert>
+                                  ) : null}
                                 </div>
-                                {screenShareStatus === "active" ? null : (
-                                  <Alert
-                                    tone={
-                                      screenShareStatus === "error" || screenShareStatus === "ended"
-                                        ? "danger"
-                                        : "info"
-                                    }
-                                  >
-                                    {screenShareStatus === "requesting"
-                                      ? 'Select "Entire screen" and then click "Share"'
-                                      : screenShareStatus === "error"
-                                        ? "Screen sharing did not start. Try again."
-                                        : screenShareStatus === "ended"
-                                          ? "Screen sharing stopped. Enable it again before starting."
-                                          : 'Select "Entire screen" and then click "Share"'}
-                                  </Alert>
-                                )}
-                              </div>
+                              ) : null}
                             </div>
                           </div>
-                        ) : null}
-                        {nativeRecordingSetupStep === "ready" ? (
-                          <div className="recording-quickstart__step">
-                            <span className="recording-quickstart__number">3.</span>
-                            <div className="recording-quickstart__content">
-                              <div className="recording-quickstart__copy">
-                                <strong className="recording-quickstart__title">
-                                  Prepare to think out loud
-                                </strong>
-                                <small className="helper-text">
-                                  Find a quiet place. Close out any unwanted tabs. And share your
-                                  honest thoughts. There are no right or wrong answers.
-                                </small>
-                              </div>
-                            </div>
+                        </li>
+                        <li
+                          className={`${styles.setupStep} ${
+                            microphoneStatus !== "ready" ? styles.setupStepPending : ""
+                          }`}
+                        >
+                          <div className={styles.setupStepBody}>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="compact"
+                              loading={screenShareStatus === "requesting"}
+                              loadingLabel="Waiting for screen share..."
+                              onClick={() => {
+                                void prepareScreenSharePreview();
+                              }}
+                              disabled={microphoneStatus !== "ready"}
+                            >
+                              Share screen
+                            </Button>
+                            {screenShareStatus === "active" ? (
+                              <RecordingStatus
+                                status="Screen sharing active"
+                                description="Your entire screen is ready to record."
+                                tone="success"
+                              />
+                            ) : screenShareStatus === "error" || screenShareStatus === "ended" ? (
+                              <Alert tone="danger">
+                                {screenShareStatus === "ended"
+                                  ? "Screen sharing stopped. Enable it again before starting."
+                                  : "Screen sharing did not start. Try again."}
+                              </Alert>
+                            ) : (
+                              <small className="helper-text">
+                                Select "Entire screen" and then click "Share"
+                              </small>
+                            )}
                           </div>
-                        ) : null}
-                      </Card>
-                    </Stack>
+                        </li>
+                        <li
+                          className={`${styles.setupStep} ${
+                            screenShareStatus !== "active" ? styles.setupStepPending : ""
+                          }`}
+                        >
+                          <div className={styles.setupStepBody}>
+                            <strong>Prepare to think out loud</strong>
+                            <small className="helper-text">
+                              Find a quiet place. Close out any unwanted tabs. And share your honest
+                              thoughts. There are no right or wrong answers.
+                            </small>
+                          </div>
+                        </li>
+                      </ol>
+                    </Card>
                   ) : (
                     <>
                       {shouldShowManualRecordingGuidance ? (
-                        <Stack gap="lg">
-                          <div className="recording-guidance__intro">
-                            <h2>{manualRecordingTitle}</h2>
-                            {manualRecordingIntro ? <p>{manualRecordingIntro}</p> : null}
-                          </div>
-                          <Stepper
-                            steps={manualRecordingGuideSteps}
-                            currentStep={
-                              manualRecordingGuideSteps[manualRecordingGuideStep]?.id ?? "prepare"
-                            }
-                          />
-                          <Card as="section" className={styles.setupCard}>
+                        <Card as="section" className={styles.setupCard}>
+                          <Stack gap="lg">
+                            <div className="recording-guidance__intro">
+                              <h2>{manualRecordingTitle}</h2>
+                              {manualRecordingIntro ? <p>{manualRecordingIntro}</p> : null}
+                            </div>
+                            <Stepper
+                              steps={manualRecordingGuideSteps}
+                              currentStep={
+                                manualRecordingGuideSteps[manualRecordingGuideStep]?.id ?? "prepare"
+                              }
+                            />
                             <Stack gap="md">
                               <div>
                                 <span className="test-session__label">
@@ -3088,8 +3048,8 @@ export function TestSessionPage() {
                                 ) : null}
                               </div>
                             </Stack>
-                          </Card>
-                        </Stack>
+                          </Stack>
+                        </Card>
                       ) : null}
 
                       {!shouldShowManualRecordingGuidance ? (
@@ -3104,11 +3064,19 @@ export function TestSessionPage() {
                   )}
 
                   {isNativeDesktopRecording ? (
-                    <details className="recording-recovery-upload">
-                      <summary className="recording-recovery-upload__summary">
-                        Already recorded?
+                    <details
+                      className={styles.recoveryUpload}
+                      onToggle={(event) => setIsRecoveryUploadOpen(event.currentTarget.open)}
+                    >
+                      <summary className={styles.recoverySummary}>
+                        <span>Already recorded?</span>
+                        {isRecoveryUploadOpen ? (
+                          <ChevronUp size={16} aria-hidden="true" />
+                        ) : (
+                          <ChevronDown size={16} aria-hidden="true" />
+                        )}
                       </summary>
-                      <div className="recording-recovery-upload__body">
+                      <div className={styles.recoveryBody}>
                         <div className="recording-recovery-upload__copy">
                           <strong>Already have a saved recording?</strong>
                           <small className="helper-text">
@@ -3130,6 +3098,11 @@ export function TestSessionPage() {
                   ) : null}
 
                   <div className="wizard-actions">
+                    {shouldShowBackToTests ? (
+                      <Button type="button" variant="secondary" onClick={handleBackToEarn}>
+                        {backToTestsLabel}
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       onClick={() => {
@@ -3147,11 +3120,6 @@ export function TestSessionPage() {
                     >
                       {isNativeDesktopRecording ? "Start test" : "I'm recording and ready to test"}
                     </Button>
-                    {shouldShowBackToTests ? (
-                      <Button type="button" variant="secondary" onClick={handleBackToEarn}>
-                        {backToTestsLabel}
-                      </Button>
-                    ) : null}
                   </div>
                 </div>
               ) : null}

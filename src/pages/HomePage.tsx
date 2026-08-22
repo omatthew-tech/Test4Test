@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type TransitionEvent as ReactTransitionEvent,
   useCallback,
   useEffect,
@@ -43,38 +44,35 @@ const homeOrganizationJsonLd = {
   },
 };
 
-const processSteps = [
-  {
-    illustration: "/images/how-it-works-bring-testers.png",
-    title: "Bring your own testers",
-    body: "Create a usability test in seconds. Add your app, your instructions and share it as much as you want. It's 100% free - no credit cards required.",
-  },
-  {
-    illustration: "/images/how-it-works-test-credits.png",
-    title: "Earn free test credits",
-    body: "Are you looking for quick and fast user testing? Earn credits 1:1 by testing out other users apps. The more you test and the higher feedback quality you give, the more you'll receive.",
-  },
-  {
-    illustration: "/images/how-it-works-ai-testers.png",
-    title: "Use AI to find testers",
-    body: "Use Test4Test's cyborgs (half human/half AI) to find real users from social media, forums and online communities. This is perfect if you're looking for the highest quality feedback.",
-  },
-] as const;
+interface HomeProcessStepProps {
+  children: ReactNode;
+  illustration: string;
+}
 
-const homeBenefitCards = [
-  {
-    title: "More Users",
-    body: "Users love trying new things and sometimes, they'll stick around. Your first users are your most important users.",
-  },
-  {
-    title: "More Feedback",
-    body: "Have you ever gotten stuck and you're not sure what do next? User feedback helps you think of things you've never thought of before.",
-  },
-  {
-    title: "More Usage",
-    body: "Google and other search engines love how much time users spend on your app. Your engagement will soar and you'll start ranking higher.",
-  },
-];
+function HomeProcessStep({ children, illustration }: HomeProcessStepProps) {
+  return (
+    <Card as="article" className={styles.step}>
+      <img
+        className={styles.processIllustration}
+        src={illustration}
+        alt=""
+        aria-hidden="true"
+        decoding="async"
+        width={960}
+        height={540}
+      />
+      <div className={styles.stepCopy}>{children}</div>
+    </Card>
+  );
+}
+
+function HomeBenefitCard({ children }: { children: ReactNode }) {
+  return (
+    <Card as="article" className={styles.benefit}>
+      {children}
+    </Card>
+  );
+}
 
 const exampleRanks = [
   { rank: 1, name: "Your app", detail: "8 credits", current: true },
@@ -488,23 +486,18 @@ export function HomePage() {
                   <p>One shared dashboard to keep track of every insight</p>
                 </Stack>
                 <Grid className={styles.processGrid}>
-                  {processSteps.map(({ illustration, title, body }) => (
-                    <Card as="article" className={styles.step} key={title}>
-                      <img
-                        className={styles.processIllustration}
-                        src={illustration}
-                        alt=""
-                        aria-hidden="true"
-                        decoding="async"
-                        width={960}
-                        height={540}
-                      />
-                      <div className={styles.stepCopy}>
-                        <h3>{title}</h3>
-                        <p>{body}</p>
-                      </div>
-                    </Card>
-                  ))}
+                  <HomeProcessStep illustration="/images/how-it-works-bring-testers.png">
+                    <h3>Bring your own testers</h3>
+                    <p>Create a usability test in seconds. Add an app, instructions and share it. It's 100% free - no credit cards required.</p>
+                  </HomeProcessStep>
+                  <HomeProcessStep illustration="/images/how-it-works-test-credits.png">
+                    <h3>Earn free test credits</h3>
+                    <p>Are you looking for quick user feedback? Earn credits 1:1 by testing out other users apps. The more you test, the more feedback you'll receive.</p>
+                  </HomeProcessStep>
+                  <HomeProcessStep illustration="/images/how-it-works-ai-testers.png">
+                    <h3>Use AI to find testers</h3>
+                    <p>Use Test4Test's recruitment agents to find real users. They'll search social media, forums and online communities, introducing you and your app. This is perfect if you're looking for the purest form of user feedback.</p>
+                  </HomeProcessStep>
                 </Grid>
               </Stack>
             </Section>
@@ -542,12 +535,27 @@ export function HomePage() {
                   <h2 id="home-benefits-title">Why Test4Test?</h2>
                 </Stack>
                 <Grid>
-                  {homeBenefitCards.map(({ title, body }) => (
-                    <Card as="article" className={styles.benefit} key={title}>
-                      <h3>{title}</h3>
-                      <p>{body}</p>
-                    </Card>
-                  ))}
+                  <HomeBenefitCard>
+                    <h3>More Users</h3>
+                    <p>
+                      Users love trying new things and sometimes, they&apos;ll stick around. Your
+                      first users are your most important users.
+                    </p>
+                  </HomeBenefitCard>
+                  <HomeBenefitCard>
+                    <h3>More Feedback</h3>
+                    <p>
+                      Have you ever gotten stuck and you&apos;re not sure what do next? User
+                      feedback helps you think of things you&apos;ve never thought of before.
+                    </p>
+                  </HomeBenefitCard>
+                  <HomeBenefitCard>
+                    <h3>More Usage</h3>
+                    <p>
+                      Google and other search engines love how much time users spend on your app.
+                      Your engagement will soar and you&apos;ll start ranking higher.
+                    </p>
+                  </HomeBenefitCard>
                 </Grid>
               </Stack>
             </Section>

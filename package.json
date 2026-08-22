@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:rewrite": "node --disable-warning=DEP0060 ./node_modules/react-rewrite-cli/bin/react-rewrite.js --verbose",
+    "dev:rewrite": "node scripts/run-react-rewrite.mjs",
+    "test:react-rewrite": "node scripts/test-react-rewrite-compat.mjs",
     "dev:tina": "tinacms dev -c \"vite\"",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",

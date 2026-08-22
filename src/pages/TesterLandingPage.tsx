@@ -7,6 +7,8 @@ import {
   Star,
   UserPlus,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Test4TestMark } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
@@ -14,26 +16,27 @@ import styles from "./TesterLandingPage.module.css";
 
 const paypalSymbolPath = "/Assets/PayPal%20P.svg";
 
-const testerSteps = [
-  {
-    number: "1",
-    title: "Sign up for a free account",
-    body: "Create your account in seconds. It's free and only takes a minute.",
-    icon: UserPlus,
-  },
-  {
-    number: "2",
-    title: "Complete your profile",
-    body: "Tell us a bit about yourself so we can match you with the right tests.",
-    icon: ClipboardCheck,
-  },
-  {
-    number: "3",
-    title: "Unlock paid tests",
-    body: "Complete two credited tests and receive two 5-star ratings to unlock paid tests.",
-    icon: ShieldCheck,
-  },
-];
+interface TesterStepProps {
+  children: ReactNode;
+  icon: LucideIcon;
+  number: "1" | "2" | "3";
+}
+
+function TesterStep({ children, icon: Icon, number }: TesterStepProps) {
+  return (
+    <article className={styles.stepCard}>
+      <span className={styles.stepNumber}>{number}</span>
+      <div className={styles.stepIcon} aria-hidden="true">
+        <Icon size={24} />
+        {number === "1" ? <CheckCircle className={styles.stepAccent} size={24} /> : null}
+        {number === "3" ? (
+          <Star className={styles.stepAccent} size={24} fill="currentColor" />
+        ) : null}
+      </div>
+      <div className={styles.stepCopy}>{children}</div>
+    </article>
+  );
+}
 
 export function TesterLandingPage() {
   const navigate = useNavigate();
@@ -126,22 +129,20 @@ export function TesterLandingPage() {
           <h2 id="tester-start-title">How to get started</h2>
 
           <div className={styles.steps}>
-            {testerSteps.map(({ number, title, body, icon: Icon }) => (
-              <article className={styles.stepCard} key={number}>
-                <span className={styles.stepNumber}>{number}</span>
-                <div className={styles.stepIcon} aria-hidden="true">
-                  <Icon size={24} />
-                  {number === "1" ? <CheckCircle className={styles.stepAccent} size={24} /> : null}
-                  {number === "3" ? (
-                    <Star className={styles.stepAccent} size={24} fill="currentColor" />
-                  ) : null}
-                </div>
-                <div className={styles.stepCopy}>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </div>
-              </article>
-            ))}
+            <TesterStep icon={UserPlus} number="1">
+              <h3>Sign up for a free account</h3>
+              <p>Create your account in seconds. It&apos;s free and only takes a minute.</p>
+            </TesterStep>
+            <TesterStep icon={ClipboardCheck} number="2">
+              <h3>Complete your profile</h3>
+              <p>Tell us a bit about yourself so we can match you with the right tests.</p>
+            </TesterStep>
+            <TesterStep icon={ShieldCheck} number="3">
+              <h3>Unlock paid tests</h3>
+              <p>
+                Complete two credited tests and receive two 5-star ratings to unlock paid tests.
+              </p>
+            </TesterStep>
           </div>
 
           <p className={styles.legal}>

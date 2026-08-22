@@ -241,10 +241,7 @@ export function ProfilePage() {
               <h2>Payment methods</h2>
             </div>
             <div className="profile-payments-stack">
-              <p className="profile-payments-copy">
-                Add your preferred payment method(s). Users can tip you when they review your
-                feedback.
-              </p>
+              <p className="profile-payments-copy">Add your preferred payment method(s). Users can tip you for your feedback.</p>
 
               <form
                 className={`profile-payments-form${isSavingPayments ? " profile-payments-form--saving" : ""}`}
@@ -307,10 +304,7 @@ export function ProfilePage() {
               <h2>Delete account</h2>
             </div>
             <div className="profile-danger-stack">
-              <p className="profile-danger-copy">
-                Deleting your account permanently removes your apps, responses, ratings, and
-                credits.
-              </p>
+              <p className="profile-danger-copy">Deleting your account permanently removes your apps, ratings, and credits.</p>
               <button
                 type="button"
                 className="button button--secondary profile-delete-button"

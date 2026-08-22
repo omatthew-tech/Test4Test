@@ -900,7 +900,8 @@ test("Earn platform preferences expose named checkbox choices and save accessibl
 
   await dialog.getByRole("button", { name: "Save preferences" }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("button", { name: /Choose platforms you can test/ })).toBeVisible();
+  await expect(page.getByText("Sort by", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Choose platforms you can test" })).toBeVisible();
 });
 
 test("legacy My Feedback URLs redirect to supported destinations and preserve queries", async ({
@@ -954,8 +955,8 @@ test("recording permission denial provides recovery guidance and keeps start dis
       .first(),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Start test" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Enable screen sharing" })).toHaveCount(0);
-  await expect(page.getByText("Screen", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Share screen" })).toBeDisabled();
+  await expect(page.getByText("Prepare to think out loud", { exact: true })).toBeVisible();
 });
 
 test("test report dialog is keyboard-dismissible and restores focus", async ({ page }) => {

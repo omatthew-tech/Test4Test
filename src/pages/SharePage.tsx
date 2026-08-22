@@ -285,7 +285,7 @@ export function SharePage() {
         <section aria-labelledby="share-preview-title" className={styles.previewSection}>
           <div className={styles.previewHeading}>
             <h2 id="share-preview-title">Preview</h2>
-            <p>This is what testers will see when they open your link.</p>
+            <p>This is what testers will see.</p>
           </div>
 
           <div className={styles.previewFrame} role="region" aria-label="Shared test preview">
