@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a deterministic, native-Figma DTCG variable export generated from the canonical tokens, with documented conversions for font families, font weights, and durations.
 - Documented the recording-first product decision and future transcript, annotation, clip, priority, AI-context, star-rating, and managed-order interface needs.
 - Added a semantic 288 px compact-form width for focused lead-capture compositions.
 - Replaced the Test4Test mark with the two-tone exchange loop: a single vector outline drawn twice, the second copy rotated a half turn, shared by `Test4TestMark`, the favicon, the standalone mark, and the social card.

@@ -8,6 +8,7 @@ export function VerificationFlowShell({
   className = "",
   hideTitle = false,
   leadingContent,
+  trailingContent,
   children,
 }: {
   title: string;
@@ -15,6 +16,7 @@ export function VerificationFlowShell({
   className?: string;
   hideTitle?: boolean;
   leadingContent?: ReactNode;
+  trailingContent?: ReactNode;
   children: ReactNode;
 }) {
   const cardClasses = [styles.card, "success-panel", "verification-flow__card", cardClassName]
@@ -38,6 +40,7 @@ export function VerificationFlowShell({
           <Card as="section" className={cardClasses}>
             {children}
           </Card>
+          {trailingContent}
         </Stack>
       </Container>
     </div>

@@ -77,6 +77,7 @@ const reportReasons: Array<{ value: TestReportReason; label: string }> = [
 ];
 
 const REPORT_MESSAGE_LIMIT = 1000;
+const MICROPHONE_TEST_THRESHOLD = 0.5;
 
 interface MicrophoneOption {
   deviceId: string;
@@ -719,6 +720,7 @@ export function TestSessionPage() {
   >("idle");
   const [microphoneError, setMicrophoneError] = useState("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
+  const [microphoneTestPassed, setMicrophoneTestPassed] = useState(false);
   const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState<TestReportReason>("app_unavailable");
@@ -833,11 +835,8 @@ export function TestSessionPage() {
   const microphoneBarHeights = useMemo(() => {
     const baseHeights = [10, 14, 18, 14, 10];
 
-    if (microphoneStatus !== "ready") {
-      return baseHeights;
-    }
-
-    const weightedLevel = Math.max(0, Math.min(1, microphoneLevel));
+    const weightedLevel =
+      microphoneStatus === "ready" ? Math.max(0, Math.min(1, microphoneLevel)) : 0;
     const responsiveLevel = Math.pow(weightedLevel, 0.58);
     const weights = [0.6, 0.82, 1, 0.82, 0.6];
 
@@ -848,6 +847,16 @@ export function TestSessionPage() {
       ),
     );
   }, [microphoneLevel, microphoneStatus]);
+
+  useEffect(() => {
+    if (
+      !microphoneTestPassed &&
+      microphoneStatus === "ready" &&
+      microphoneLevel >= MICROPHONE_TEST_THRESHOLD
+    ) {
+      setMicrophoneTestPassed(true);
+    }
+  }, [microphoneLevel, microphoneStatus, microphoneTestPassed]);
 
   useEffect(() => {
     if (!submission) {
@@ -1561,6 +1570,7 @@ export function TestSessionPage() {
       return false;
     }
 
+    setMicrophoneTestPassed(false);
     setMicrophoneStatus("requesting");
     setMicrophoneError("");
     setMessage("");
@@ -1625,6 +1635,11 @@ export function TestSessionPage() {
 
     if (microphoneStatus !== "ready" || !microphoneStreamRef.current) {
       setMessage("Enable your microphone before you share your screen.");
+      return false;
+    }
+
+    if (!microphoneTestPassed) {
+      setMessage("Test your microphone by speaking out loud before you share your screen.");
       return false;
     }
 
@@ -1877,6 +1892,7 @@ export function TestSessionPage() {
     setSelectedMicrophoneId("");
     setMicrophoneStatus("idle");
     setMicrophoneError("");
+    setMicrophoneTestPassed(false);
     setMessage("");
     setRecordingPipDeleteConfirm(false);
   };
@@ -2171,6 +2187,7 @@ export function TestSessionPage() {
     setSelectedMicrophoneId("");
     setMicrophoneStatus("idle");
     setMicrophoneError("");
+    setMicrophoneTestPassed(false);
     setScreenShareStatus("idle");
   }, [isNativeDesktopRecording]);
 
@@ -2422,6 +2439,11 @@ export function TestSessionPage() {
       return;
     }
 
+    if (!microphoneTestPassed) {
+      setMessage("Test your microphone by speaking out loud before starting the test.");
+      return;
+    }
+
     if (screenShareStatus !== "active" || !displayStreamRef.current) {
       setMessage("Enable screen sharing before starting the test.");
       return;
@@ -2558,6 +2580,7 @@ export function TestSessionPage() {
           setMicrophoneStatus("ready");
         } else {
           setMicrophoneStatus("idle");
+          setMicrophoneTestPassed(false);
         }
       }
 
@@ -2625,6 +2648,7 @@ export function TestSessionPage() {
       setSelectedMicrophoneId("");
       setMicrophoneStatus("idle");
       setMicrophoneError("");
+      setMicrophoneTestPassed(false);
       setMessage("Recording deleted. Start a new recording when you're ready.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "The recording could not be deleted.");
@@ -2830,8 +2854,10 @@ export function TestSessionPage() {
                                 <div className="recording-microphone-input-row">
                                   {availableMicrophones.length > 0 ? (
                                     <Select
+                                      id="recording-microphone-device"
                                       label="Microphone device"
                                       value={selectedMicrophoneId}
+                                      aria-describedby="recording-microphone-test-instructions"
                                       onChange={(event) => {
                                         const nextMicrophoneId = event.target.value;
                                         setSelectedMicrophoneId(nextMicrophoneId);
@@ -2851,9 +2877,17 @@ export function TestSessionPage() {
                                   ) : null}
                                   {microphoneStatus === "ready" ? (
                                     <div
-                                      className="recording-mic-indicator recording-mic-indicator--active"
+                                      className={`recording-mic-indicator recording-mic-indicator--active${
+                                        microphoneTestPassed
+                                          ? " recording-mic-indicator--verified"
+                                          : ""
+                                      }`}
                                       role="img"
-                                      aria-label="Voice activity level for the selected microphone"
+                                      aria-label={
+                                        microphoneTestPassed
+                                          ? "Microphone test passed"
+                                          : "Voice activity level for the selected microphone"
+                                      }
                                     >
                                       {microphoneBarHeights.map((height, index) => (
                                         /* ds-exception: runtime-measurements — measured waveform height. */
@@ -2862,10 +2896,30 @@ export function TestSessionPage() {
                                           style={{ height: `${height}px` }}
                                         />
                                       ))}
+                                      {microphoneTestPassed ? (
+                                        <CheckCircle2
+                                          className="recording-mic-indicator__check"
+                                          size={24}
+                                          aria-hidden="true"
+                                        />
+                                      ) : null}
                                     </div>
                                   ) : null}
                                 </div>
                               ) : null}
+                              {availableMicrophones.length > 0 || microphoneStatus === "ready" ? (
+                                <small
+                                  id="recording-microphone-test-instructions"
+                                  className="helper-text"
+                                >
+                                  Test your microphone by speaking out loud
+                                </small>
+                              ) : null}
+                              <span className="ds-sr-only" role="status">
+                                {microphoneTestPassed
+                                  ? "Microphone test passed. Step 2 is now available."
+                                  : ""}
+                              </span>
                               {microphoneStatus !== "ready" || microphoneError ? (
                                 <div className="recording-microphone-actions">
                                   {microphoneStatus !== "ready" ? (
@@ -2909,7 +2963,7 @@ export function TestSessionPage() {
                         </li>
                         <li
                           className={`${styles.setupStep} ${
-                            microphoneStatus !== "ready" ? styles.setupStepPending : ""
+                            !microphoneTestPassed ? styles.setupStepPending : ""
                           }`}
                         >
                           <div className={styles.setupStepBody}>
@@ -2922,17 +2976,12 @@ export function TestSessionPage() {
                               onClick={() => {
                                 void prepareScreenSharePreview();
                               }}
-                              disabled={microphoneStatus !== "ready"}
+                              disabled={!microphoneTestPassed}
                             >
                               Share screen
                             </Button>
-                            {screenShareStatus === "active" ? (
-                              <RecordingStatus
-                                status="Screen sharing active"
-                                description="Your entire screen is ready to record."
-                                tone="success"
-                              />
-                            ) : screenShareStatus === "error" || screenShareStatus === "ended" ? (
+                            {screenShareStatus === "active" ? null : screenShareStatus ===
+                                "error" || screenShareStatus === "ended" ? (
                               <Alert tone="danger">
                                 {screenShareStatus === "ended"
                                   ? "Screen sharing stopped. Enable it again before starting."
@@ -3114,7 +3163,7 @@ export function TestSessionPage() {
                       }}
                       disabled={
                         isNativeDesktopRecording
-                          ? microphoneStatus !== "ready" || screenShareStatus !== "active"
+                          ? !microphoneTestPassed || screenShareStatus !== "active"
                           : !confirmedRecording
                       }
                     >

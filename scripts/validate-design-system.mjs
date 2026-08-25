@@ -55,6 +55,7 @@ function sameOrderedValues(actual, expected) {
 
 const designSystemRoot = join(root, "design-system");
 const tokensPath = join(designSystemRoot, "tokens", "source", "tokens.json");
+const figmaTokensPath = join(designSystemRoot, "tokens", "generated", "figma", "default.json");
 const catalogPath = join(designSystemRoot, "components", "catalog.json");
 const exceptionsPath = join(designSystemRoot, "exceptions.json");
 const provenancePath = join(designSystemRoot, "provenance.json");
@@ -267,6 +268,112 @@ for (const [id, token] of leaves) {
     fail(`Token ${id} (${token.$type}) aliases ${alias[1]} (${target.$type}).`);
   }
   resolveToken(id);
+}
+
+if (!existsSync(figmaTokensPath)) {
+  fail(`Missing generated Figma token export: ${relativePath(figmaTokensPath)}.`);
+} else {
+  const figmaTokens = readJson(figmaTokensPath);
+  const figmaLeaves = new Map();
+  const supportedFigmaTypes = new Set([
+    "color",
+    "dimension",
+    "duration",
+    "fontFamily",
+    "number",
+    "string",
+  ]);
+  const excludedFigmaSourceTypes = new Set(["cubicBezier", "shadow"]);
+
+  function collectFigmaTokens(node, path = []) {
+    if (node && typeof node === "object" && "$value" in node) {
+      figmaLeaves.set(path.join("."), node);
+      return;
+    }
+    for (const [key, value] of Object.entries(node ?? {})) {
+      if (!key.startsWith("$")) collectFigmaTokens(value, [...path, key]);
+    }
+  }
+  collectFigmaTokens(figmaTokens);
+
+  for (const [id, sourceToken] of leaves) {
+    const figmaToken = figmaLeaves.get(id);
+    if (excludedFigmaSourceTypes.has(sourceToken.$type)) {
+      if (figmaToken) fail(`Figma export includes unsupported source token ${id}.`);
+      continue;
+    }
+    if (!figmaToken) {
+      fail(`Figma export is missing supported token ${id}.`);
+      continue;
+    }
+
+    const expectedType = sourceToken.$type === "fontWeight" ? "number" : sourceToken.$type;
+    if (figmaToken.$type !== expectedType) {
+      fail(`Figma token ${id} must use ${expectedType}, found ${figmaToken.$type}.`);
+    }
+
+    const sourceAlias = isAlias(sourceToken.$value);
+    if (sourceAlias && figmaToken.$value !== sourceToken.$value) {
+      fail(`Figma token ${id} does not preserve its canonical alias.`);
+    } else if (!sourceAlias && sourceToken.$type === "fontFamily") {
+      const expectedFamily = Array.isArray(sourceToken.$value)
+        ? sourceToken.$value[0]
+        : sourceToken.$value;
+      if (figmaToken.$value !== expectedFamily) {
+        fail(`Figma token ${id} does not use the primary canonical font family.`);
+      }
+    } else if (!sourceAlias && sourceToken.$type === "duration") {
+      const expectedDuration = {
+        value:
+          sourceToken.$value.unit === "ms"
+            ? sourceToken.$value.value / 1000
+            : sourceToken.$value.value,
+        unit: "s",
+      };
+      if (JSON.stringify(figmaToken.$value) !== JSON.stringify(expectedDuration)) {
+        fail(`Figma token ${id} does not use the canonical duration in seconds.`);
+      }
+    } else if (!sourceAlias && sourceToken.$type === "fontWeight") {
+      if (figmaToken.$value !== sourceToken.$value) {
+        fail(`Figma token ${id} does not preserve its canonical numeric weight.`);
+      }
+    }
+  }
+
+  for (const [id, figmaToken] of figmaLeaves) {
+    if (!leaves.has(id)) fail(`Figma export contains unknown token ${id}.`);
+    if (!supportedFigmaTypes.has(figmaToken.$type)) {
+      fail(`Figma token ${id} uses unsupported type ${figmaToken.$type}.`);
+    }
+
+    const alias = isAlias(figmaToken.$value)
+      ? figmaToken.$value.match(/^\{([^}]+)\}$/)?.[1]
+      : undefined;
+    if (alias) {
+      const target = figmaLeaves.get(alias);
+      if (!target) {
+        fail(`Figma token ${id} references missing alias ${alias}.`);
+      } else if (target.$type !== figmaToken.$type) {
+        fail(`Figma token ${id} aliases ${alias} with a different type.`);
+      }
+      continue;
+    }
+
+    if (figmaToken.$type === "dimension" && !isUnitValue(figmaToken.$value, ["px"])) {
+      fail(`Figma token ${id} is not a px dimension.`);
+    }
+    if (figmaToken.$type === "duration" && !isUnitValue(figmaToken.$value, ["s"])) {
+      fail(`Figma token ${id} is not a second-based duration.`);
+    }
+    if (figmaToken.$type === "fontFamily" && typeof figmaToken.$value !== "string") {
+      fail(`Figma token ${id} does not contain one font family name.`);
+    }
+  }
+
+  const expectedSourceHash = createHash("sha256").update(JSON.stringify(tokens)).digest("hex");
+  if (figmaTokens.$extensions?.["com.test4test.figma"]?.sourceSha256 !== expectedSourceHash) {
+    fail("Figma token export does not match the canonical token source SHA-256.");
+  }
 }
 
 const allowedFamilies = new Set([

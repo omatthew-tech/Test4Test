@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Image as ImageIcon } from "lucide-react";
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -71,6 +71,120 @@ function HomeBenefitCard({ children }: { children: ReactNode }) {
     <Card as="article" className={styles.benefit}>
       {children}
     </Card>
+  );
+}
+
+const freeFeedbackMethods = [
+  {
+    title: "Test other founders",
+    description: "Earn credits 1:1 (we don't take a cut)",
+  },
+  {
+    title: "Bring your own testers",
+    description: "There are no limits - bring as many as you want",
+  },
+] as const;
+
+function FreeFeedbackShowcase() {
+  const [activeMethodIndex, setActiveMethodIndex] = useState(0);
+  const [feedbackCycleKey, setFeedbackCycleKey] = useState(0);
+  const [hasFirstMethodCompleted, setHasFirstMethodCompleted] = useState(false);
+  const [isFeedbackRotationPaused, setIsFeedbackRotationPaused] = useState(false);
+  const activeMethod = freeFeedbackMethods[activeMethodIndex];
+
+  const selectMethod = (methodIndex: number) => {
+    if (methodIndex === 0) setHasFirstMethodCompleted(false);
+    setActiveMethodIndex(methodIndex);
+    setFeedbackCycleKey((currentKey) => currentKey + 1);
+    setIsFeedbackRotationPaused(true);
+  };
+
+  const handleFeedbackProgressIteration = () => {
+    const nextMethodIndex = (activeMethodIndex + 1) % freeFeedbackMethods.length;
+
+    setHasFirstMethodCompleted(activeMethodIndex === 0);
+    setActiveMethodIndex(nextMethodIndex);
+    setFeedbackCycleKey((currentKey) => currentKey + 1);
+  };
+
+  return (
+    <Stack className={styles.freeFeedbackContent} gap="xl">
+      <div className={styles.freeFeedbackHeading}>
+        <h2 id="home-free-feedback-title">
+          <span aria-hidden="true">
+            2 <span className={styles.paidLabel}>paid</span>{" "}
+            <span className={styles.freeLabel}>FREE</span> ways to get feedback
+          </span>
+          <span className="ds-sr-only">2 free ways to get feedback</span>
+        </h2>
+      </div>
+
+      <Card as="article" className={styles.feedbackShowcaseCard} raised>
+        <svg
+          aria-hidden="true"
+          className={`${styles.feedbackProgress}${
+            isFeedbackRotationPaused ? ` ${styles.feedbackProgressPaused}` : ""
+          }`}
+          data-testid="free-feedback-progress"
+          focusable="false"
+          key={`${activeMethodIndex}-${feedbackCycleKey}`}
+        >
+          <rect
+            height="100%"
+            onAnimationIteration={handleFeedbackProgressIteration}
+            pathLength="1"
+            width="100%"
+          />
+        </svg>
+
+        <div className={styles.feedbackControls}>
+          <div
+            aria-label="Choose a free feedback method"
+            className={styles.feedbackIndicators}
+            role="group"
+          >
+            {freeFeedbackMethods.map((method, methodIndex) => (
+              <button
+                aria-label={`Show ${method.title} and pause rotation`}
+                aria-pressed={methodIndex === activeMethodIndex}
+                className={styles.feedbackIndicator}
+                data-filled={
+                  methodIndex === activeMethodIndex ||
+                  (methodIndex === 0 && hasFirstMethodCompleted)
+                }
+                key={method.title}
+                onClick={() => selectMethod(methodIndex)}
+                type="button"
+              >
+                <span className={styles.feedbackIndicatorDot} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activeMethodIndex === 0 ? (
+          <img
+            alt="Earn page showing ‘Nice work. You earned 1 credit’ as your test moves up the list."
+            className={styles.feedbackPreview}
+            decoding="async"
+            height={941}
+            loading="lazy"
+            src="/images/home-test-other-founders-earn.png"
+            width={1672}
+          />
+        ) : (
+          <div className={styles.feedbackPlaceholder} aria-hidden="true">
+            <ImageIcon size={24} />
+            <span>Preview coming soon</span>
+          </div>
+        )}
+
+        <Stack className={styles.feedbackMethodCopy} gap="sm">
+          <h3>{activeMethod.title}</h3>
+          <p>{activeMethod.description}</p>
+        </Stack>
+      </Card>
+    </Stack>
   );
 }
 
@@ -483,23 +597,37 @@ export function HomePage() {
               <Stack gap="xl">
                 <Stack className={styles.sectionHeading} gap="sm">
                   <h2 id="home-process-title">How it works</h2>
-                  <p>One shared dashboard to keep track of every insight</p>
+                  <p>One dashboard tracks every insight</p>
                 </Stack>
                 <Grid className={styles.processGrid}>
                   <HomeProcessStep illustration="/images/how-it-works-bring-testers.png">
                     <h3>Bring your own testers</h3>
-                    <p>Create a usability test in seconds. Add an app, instructions and share it. It's 100% free - no credit cards required.</p>
+                    <p>
+                      Create a usability test in seconds. Add an app, instructions and share it.
+                      It's 100% free - no credit cards required.
+                    </p>
                   </HomeProcessStep>
                   <HomeProcessStep illustration="/images/how-it-works-test-credits.png">
                     <h3>Earn free test credits</h3>
-                    <p>Are you looking for quick user feedback? Earn credits 1:1 by testing out other users apps. The more you test, the more feedback you'll receive.</p>
+                    <p>
+                      Are you looking for quick user feedback? Earn credits 1:1 by testing out other
+                      users apps. The more you test, the more feedback you'll receive.
+                    </p>
                   </HomeProcessStep>
                   <HomeProcessStep illustration="/images/how-it-works-ai-testers.png">
                     <h3>Use AI to find testers</h3>
-                    <p>Use Test4Test's recruitment agents to find real users. They'll search social media, forums and online communities, introducing you and your app. This is perfect if you're looking for the purest form of user feedback.</p>
+                    <p>
+                      Use Test4Test's recruitment agents to find real users. They'll search social
+                      media, forums and online communities, introducing you and your app. This is
+                      perfect if you're looking for the purest form of user feedback.
+                    </p>
                   </HomeProcessStep>
                 </Grid>
               </Stack>
+            </Section>
+
+            <Section aria-labelledby="home-free-feedback-title" data-testid="free-feedback-section">
+              <FreeFeedbackShowcase />
             </Section>
 
             <Section className={styles.quality} tone="subtle" aria-labelledby="home-quality-title">

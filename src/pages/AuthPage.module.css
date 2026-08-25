@@ -38,28 +38,17 @@
 }
 
 .footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ds-semantic-space-inline-lg);
-  padding-block-start: var(--ds-semantic-space-stack-lg);
-  border-block-start: var(--ds-semantic-border-width-default) solid
-    var(--ds-semantic-color-border-subtle);
-}
-
-.footer p {
   color: var(--ds-semantic-color-text-secondary);
+  text-align: center;
 }
 
 @media (max-width: 767px) {
-  .actions,
-  .footer {
+  .actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .actions > *,
-  .footer > * {
+  .actions > * {
     width: 100%;
   }
 }

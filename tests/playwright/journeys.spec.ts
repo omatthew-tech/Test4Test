@@ -46,6 +46,147 @@ test("home starts a named submission without losing the draft", async ({ page })
   await expect(page.getByRole("textbox", { name: "App name" })).toHaveValue("Checkout audit");
 });
 
+test("home free-feedback showcase advances around the card and supports manual control", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const section = page.getByTestId("free-feedback-section");
+  const progress = page.getByTestId("free-feedback-progress");
+  const firstMethodButton = section.getByRole("button", {
+    name: "Show Test other founders and pause rotation",
+  });
+  const secondMethodButton = section.getByRole("button", {
+    name: "Show Bring your own testers and pause rotation",
+  });
+
+  await expect(
+    section.getByRole("heading", { level: 2, name: "2 free ways to get feedback" }),
+  ).toBeVisible();
+  await expect(
+    section.getByRole("heading", { level: 3, name: "Test other founders" }),
+  ).toBeVisible();
+  await expect(firstMethodButton).toHaveAttribute("aria-pressed", "true");
+  await expect(secondMethodButton).toHaveAttribute("aria-pressed", "false");
+  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
+  await expect(secondMethodButton).toHaveAttribute("data-filled", "false");
+  await expect(
+    section.getByRole("img", {
+      name: "Earn page showing ‘Nice work. You earned 1 credit’ as your test moves up the list.",
+    }),
+  ).toHaveAttribute("src", "/images/home-test-other-founders-earn.png");
+  await expect(section.getByText("Preview coming soon")).toHaveCount(0);
+
+  const copyCenters = await section.locator("article").evaluate((card) => {
+    const headingBounds = card.querySelector("h3")?.getBoundingClientRect();
+    const descriptionBounds = card.querySelector("p")?.getBoundingClientRect();
+
+    return {
+      description: descriptionBounds ? descriptionBounds.left + descriptionBounds.width / 2 : null,
+      heading: headingBounds ? headingBounds.left + headingBounds.width / 2 : null,
+    };
+  });
+  expect(copyCenters.description).not.toBeNull();
+  expect(copyCenters.heading).not.toBeNull();
+  expect(Math.abs((copyCenters.description ?? 0) - (copyCenters.heading ?? 0))).toBeLessThan(1);
+
+  for (const methodButton of [firstMethodButton, secondMethodButton]) {
+    const bounds = await methodButton.boundingBox();
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  }
+
+  const progressTreatment = await progress.locator("rect").evaluate((element) => {
+    const tokenStrokeProbe = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    tokenStrokeProbe.style.stroke = window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue("--ds-semantic-color-action-primary")
+      .trim();
+    document.body.append(tokenStrokeProbe);
+    const tokenStroke = window.getComputedStyle(tokenStrokeProbe).stroke;
+    tokenStrokeProbe.remove();
+
+    return {
+      animationName: window.getComputedStyle(element).animationName,
+      stroke: window.getComputedStyle(element).stroke,
+      tokenStroke,
+    };
+  });
+  expect(progressTreatment.animationName).not.toBe("none");
+  expect(progressTreatment.stroke).toBe(progressTreatment.tokenStroke);
+
+  const progressAlignment = await section.locator("article").evaluate((card) => {
+    const cardBounds = card.getBoundingClientRect();
+    const progressBounds = card.querySelector("svg")?.getBoundingClientRect();
+    const cardBorderWidth = Number.parseFloat(window.getComputedStyle(card).borderLeftWidth);
+
+    return progressBounds
+      ? {
+          bottom: cardBounds.bottom - progressBounds.bottom,
+          expectedInset: cardBorderWidth / 2,
+          left: progressBounds.left - cardBounds.left,
+          right: cardBounds.right - progressBounds.right,
+          top: progressBounds.top - cardBounds.top,
+        }
+      : null;
+  });
+  expect(progressAlignment).not.toBeNull();
+  expect(progressAlignment?.left).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
+  expect(progressAlignment?.right).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
+  expect(progressAlignment?.top).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
+  expect(progressAlignment?.bottom).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
+
+  await progress.locator("rect").evaluate((element) => {
+    element.dispatchEvent(
+      new AnimationEvent("animationiteration", {
+        animationName: "home-feedback-showcase-progress",
+        bubbles: true,
+      }),
+    );
+  });
+  await expect(
+    section.getByRole("heading", { level: 3, name: "Bring your own testers" }),
+  ).toBeVisible();
+  await expect(firstMethodButton).toHaveAttribute("aria-pressed", "false");
+  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
+  await expect(secondMethodButton).toHaveAttribute("aria-pressed", "true");
+  await expect(secondMethodButton).toHaveAttribute("data-filled", "true");
+  await expect(section.getByText("Preview coming soon")).toBeVisible();
+
+  await firstMethodButton.click();
+  await expect(
+    section.getByRole("heading", { level: 3, name: "Test other founders" }),
+  ).toBeVisible();
+  await expect(
+    section.getByRole("img", {
+      name: "Earn page showing ‘Nice work. You earned 1 credit’ as your test moves up the list.",
+    }),
+  ).toBeVisible();
+  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
+  await expect(secondMethodButton).toHaveAttribute("data-filled", "false");
+  await expect(progress.locator("rect")).toHaveCSS("animation-play-state", "paused");
+  await expect(section.getByRole("button", { name: "Pause rotation", exact: true })).toHaveCount(0);
+});
+
+test("home free-feedback showcase removes automatic motion when reduced motion is requested", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const section = page.getByTestId("free-feedback-section");
+  await expect(page.getByTestId("free-feedback-progress")).toBeHidden();
+  await expect(section.getByRole("button", { name: "Pause rotation", exact: true })).toHaveCount(0);
+
+  await section
+    .getByRole("button", { name: "Show Bring your own testers and pause rotation" })
+    .click();
+  await expect(
+    section.getByRole("heading", { level: 3, name: "Bring your own testers" }),
+  ).toBeVisible();
+});
+
 test("home hover feedback pauses before continuing without repeating while hovered", async ({
   page,
 }) => {

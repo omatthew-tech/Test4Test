@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Alert, Button, Stack, Test4TestBrand, TextField } from "@test4test/design-system";
+import { Alert, Button, Link, Stack, Test4TestBrand, TextField } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { VerificationFlowShell } from "../components/VerificationFlowShell";
 import { useAppState } from "../context/AppStateContext";
@@ -105,6 +105,13 @@ export function SignInPage() {
             <Test4TestBrand />
           </div>
         }
+        trailingContent={
+          hasRequestedCode ? null : (
+            <p className={styles.footer}>
+              New to Test4Test? <Link to="/submit">Sign up</Link>
+            </p>
+          )
+        }
       >
         {hasRequestedCode ? (
           <>
@@ -194,19 +201,6 @@ export function SignInPage() {
               >
                 <Mail aria-hidden="true" size={16} />
                 {isCurrentEmailTestAccount ? "Continue" : "Send one-time code"}
-              </Button>
-            </div>
-            <div className={styles.footer}>
-              <p>New to Test4Test?</p>
-              <Button type="button" variant="secondary" onClick={() => navigate("/submit")}>
-                Get your app tested
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate("/get-paid-to-test/signup")}
-              >
-                Get paid to test
               </Button>
             </div>
           </>

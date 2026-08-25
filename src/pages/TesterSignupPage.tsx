@@ -311,7 +311,7 @@ export function TesterSignupPage() {
                 <div className={styles.stack}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      What&apos;s your first name?
+                      Hey there!👋 What&apos;s your name?
                     </h1>
                   </div>
                   <TextField
@@ -332,7 +332,7 @@ export function TesterSignupPage() {
                 <div className={styles.stack}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      Where do you live?
+                      Where do you live? 🌎
                     </h1>
                     <p>Choose your country and add your state or region if it applies.</p>
                   </div>
@@ -485,7 +485,7 @@ export function TesterSignupPage() {
                 <div className={styles.stack}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      What&apos;s your employment status?
+                      What&apos;s your employment status? 💼
                     </h1>
                   </div>
                   <fieldset

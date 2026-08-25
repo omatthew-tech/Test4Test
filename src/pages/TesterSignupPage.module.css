@@ -1,9 +1,7 @@
 .layout {
   display: grid;
   gap: var(--ds-semantic-space-stack-lg);
-  min-block-size: 100%;
   padding-block-start: var(--ds-semantic-space-stack-2xl);
-  padding-block-end: var(--ds-semantic-space-stack-2xl);
   padding-inline: var(--ds-semantic-space-gutter-small);
 }
 
@@ -91,5 +89,25 @@
   .fieldset[aria-invalid="true"] {
     outline: var(--ds-semantic-border-width-strong) solid CanvasText;
     outline-offset: var(--ds-semantic-space-inline-xs);
+  }
+}
+
+@media (min-width: 768px) {
+  .layout {
+    padding-block-start: calc(
+      var(--ds-semantic-space-stack-section-large) + var(--ds-semantic-space-stack-section)
+    );
+    padding-inline: var(--ds-semantic-space-gutter-medium);
+  }
+
+  .layout,
+  .wizard {
+    gap: var(--ds-semantic-space-stack-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    padding-inline: var(--ds-semantic-space-gutter-large);
   }
 }

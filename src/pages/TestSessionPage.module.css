@@ -260,15 +260,23 @@
   gap: var(--ds-semantic-space-inline-sm);
 }
 
+.page :global(.recording-microphone-input-row) {
+  align-items: flex-end;
+}
+
 .page :global(.recording-phase-stack) :global(.wizard-actions) {
   padding-block-start: var(--ds-semantic-space-zero);
   border-block-start: none;
 }
 
 .page :global(.recording-mic-indicator) {
+  position: relative;
   display: flex;
+  height: var(--ds-semantic-size-control-default);
   min-height: var(--ds-semantic-size-control-default);
+  box-sizing: border-box;
   align-items: center;
+  justify-content: center;
   gap: var(--ds-semantic-border-width-default);
   padding-inline: var(--ds-semantic-space-inline-sm);
   border-radius: var(--ds-semantic-radius-control);
@@ -276,11 +284,32 @@
   color: var(--ds-semantic-color-action-primary-strong);
 }
 
+.page :global(.recording-mic-indicator--inactive) {
+  height: var(--ds-semantic-size-control-compact);
+  min-height: var(--ds-semantic-size-control-compact);
+}
+
 .page :global(.recording-mic-indicator span) {
   width: var(--ds-semantic-space-inline-xs);
   max-height: var(--ds-semantic-space-stack-lg);
   border-radius: var(--ds-semantic-radius-pill);
   background: currentColor;
+}
+
+.page :global(.recording-mic-indicator--active.recording-mic-indicator--verified) {
+  background: var(--ds-semantic-color-status-success-tint);
+  color: var(--ds-semantic-color-status-success);
+}
+
+.page :global(.recording-mic-indicator--active.recording-mic-indicator--verified span) {
+  background: var(--ds-semantic-color-surface-default);
+}
+
+.page :global(.recording-mic-indicator__check) {
+  position: absolute;
+  inset: var(--ds-semantic-space-zero);
+  margin: auto;
+  color: var(--ds-semantic-color-status-success);
 }
 
 .page :global(.recording-phase-card),

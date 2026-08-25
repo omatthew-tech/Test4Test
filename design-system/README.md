@@ -14,6 +14,18 @@ Historical parity documents describe the v1 replacement and do not override the 
 
 Generated files live in `tokens/generated/` and generated component folders. Never edit them manually; run `npm run ds:generate`.
 
+## Figma variables
+
+Import [`tokens/generated/figma/default.json`](tokens/generated/figma/default.json) with Figma's native DTCG importer:
+
+1. Open the Variables view in Figma Design.
+2. Create or select a collection named `Test4Test Design System`.
+3. Drag `default.json` into the Variables view, or right-click an existing mode and choose **Import mode**.
+
+Figma will turn the nested token paths into slash-separated variable groups. The generated export includes colors, px dimensions, numbers, font families, font weights, and durations. Font fallback stacks use their first family, font weights become number variables, and millisecond durations are converted to seconds. Figma's native importer does not support DTCG shadows or cubic Bézier curves, so those stay in the canonical source but are omitted from this export. Typography properties are imported as variables, not assembled Figma text styles.
+
+The repository source of truth remains [`tokens/source/tokens.json`](tokens/source/tokens.json). Regenerate the Figma file together with CSS and TypeScript after token changes by running `npm run ds:generate`.
+
 The `@test4test/design-system` barrel is the only supported consumer import. Importing it also installs the generated tokens, self-hosted fonts, reset, base typography, focus behavior, and accessibility utilities. Application and Storybook consumers must not import `components/`, `tokens/`, or `styles/` internals directly.
 
 ## Validation lanes

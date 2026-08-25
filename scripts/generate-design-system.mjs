@@ -137,6 +137,96 @@ const flatTokens = [...leaves.entries()]
 
 const tokenHash = createHash("sha256").update(JSON.stringify(tokens)).digest("hex");
 
+const figmaSupportedTypes = new Set([
+  "color",
+  "dimension",
+  "duration",
+  "fontFamily",
+  "fontWeight",
+  "number",
+  "string",
+]);
+
+function convertTokenForFigma(token, path) {
+  if (!figmaSupportedTypes.has(token.$type)) return undefined;
+
+  const alias = typeof token.$value === "string" && /^\{[^}]+\}$/.test(token.$value);
+  const converted = { ...token };
+
+  if (token.$type === "fontWeight") {
+    if (!alias && typeof token.$value !== "number") {
+      throw new Error(`Figma requires numeric font weights: ${path}`);
+    }
+    converted.$type = "number";
+    return converted;
+  }
+
+  if (token.$type === "fontFamily" && !alias) {
+    const family = Array.isArray(token.$value) ? token.$value[0] : token.$value;
+    if (typeof family !== "string" || family.length === 0) {
+      throw new Error(`Figma requires one font family name: ${path}`);
+    }
+    converted.$value = family;
+    return converted;
+  }
+
+  if (token.$type === "dimension") {
+    const definition = resolveDefinition(path);
+    if (definition.value.unit !== "px") {
+      throw new Error(`Figma only imports px dimensions: ${path}`);
+    }
+    return converted;
+  }
+
+  if (token.$type === "duration" && !alias) {
+    if (token.$value.unit === "ms") {
+      converted.$value = { value: token.$value.value / 1000, unit: "s" };
+    } else if (token.$value.unit !== "s") {
+      throw new Error(`Figma only imports second-based durations: ${path}`);
+    }
+  }
+
+  return converted;
+}
+
+function createFigmaTokenDocument(node, path = []) {
+  if (node && typeof node === "object" && "$value" in node) {
+    return convertTokenForFigma(node, path.join("."));
+  }
+
+  const converted = {};
+  for (const [key, value] of Object.entries(node ?? {})) {
+    if (key.startsWith("$")) {
+      converted[key] = value;
+      continue;
+    }
+
+    const child = createFigmaTokenDocument(value, [...path, key]);
+    if (child !== undefined && Object.keys(child).length > 0) converted[key] = child;
+  }
+  return converted;
+}
+
+const figmaTokens = createFigmaTokenDocument(tokens);
+figmaTokens.$description =
+  "Generated Test4Test tokens for Figma's native DTCG variable importer. Do not edit manually.";
+figmaTokens.$extensions = {
+  ...figmaTokens.$extensions,
+  "com.test4test.figma": {
+    collection: "Test4Test Design System",
+    mode: "Default",
+    source: "design-system/tokens/source/tokens.json",
+    sourceSha256: tokenHash,
+    conversions: {
+      fontFamily: "First family in the canonical fallback stack",
+      fontWeight: "DTCG fontWeight converted to a Figma number variable",
+      duration: "Milliseconds converted to seconds",
+    },
+    excludedSourceTypes: ["cubicBezier", "shadow"],
+  },
+};
+const figmaJson = `${JSON.stringify(figmaTokens, null, 2)}\n`;
+
 const generatedHeader = `/* Generated from design-system/tokens/source/tokens.json.\n * Source SHA-256: ${tokenHash}\n * Do not edit manually.\n */`;
 
 const css = `${generatedHeader}\n:root {\n${flatTokens
@@ -161,6 +251,7 @@ const manifest = `${JSON.stringify(
     outputs: [
       "design-system/tokens/generated/tokens.css",
       "design-system/tokens/generated/tokens.ts",
+      "design-system/tokens/generated/figma/default.json",
     ],
   },
   null,
@@ -170,6 +261,7 @@ const manifest = `${JSON.stringify(
 const outputs = new Map([
   [join(root, "design-system", "tokens", "generated", "tokens.css"), css],
   [join(root, "design-system", "tokens", "generated", "tokens.ts"), ts],
+  [join(root, "design-system", "tokens", "generated", "figma", "default.json"), figmaJson],
   [join(root, "design-system", "tokens", "generated", "manifest.json"), manifest],
 ]);
 
