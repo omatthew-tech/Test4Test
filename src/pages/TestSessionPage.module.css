@@ -233,6 +233,7 @@
 .page :global(.recording-guidance__intro),
 .page :global(.recording-upload-card__copy),
 .page :global(.recording-phase-card__copy),
+.page :global(.recording-phase-card__instruction),
 .page :global(.recording-recovery-upload__copy) {
   display: grid;
   gap: var(--ds-semantic-space-stack-sm);

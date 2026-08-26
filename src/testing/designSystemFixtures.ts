@@ -118,6 +118,12 @@ export function createDesignSystemFixtureState(search: string): AppState {
   const includePaidTest = testerMode === "unlocked" && parameters.get("ds-paid") === "1";
   const banned = parameters.get("ds-banned") === "1";
   const recording = parameters.get("ds-recording") === "1";
+  const useMultipleInstructions = parameters.get("ds-instructions") === "multiple";
+  const multipleInstructionSteps = [
+    "Create a new moodboard.",
+    "Add two visual references to the board.",
+    "Invite a collaborator and review <strong>sharing controls</strong>.",
+  ];
   const noLiveSubmission = parameters.get("ds-no-live") === "1";
   const requestedRecordingCount = parameters.get("ds-recordings");
   const availableRecordingCount =
@@ -174,6 +180,12 @@ export function createDesignSystemFixtureState(search: string): AppState {
                 ...structuredClone(submission),
                 requiresRecording:
                   recording || availableRecordingCount > 0 || submission.requiresRecording,
+                ...(useMultipleInstructions
+                  ? {
+                      instructions: multipleInstructionSteps.join("\n"),
+                      instructionSteps: multipleInstructionSteps,
+                    }
+                  : {}),
                 responseCount: includeSecondResponse ? 2 : submission.responseCount,
                 lastResponseAt: includeSecondResponse
                   ? "2026-03-26T14:40:00.000Z"

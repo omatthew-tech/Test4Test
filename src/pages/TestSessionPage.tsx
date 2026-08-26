@@ -649,9 +649,13 @@ export function TestSessionPage() {
   const microphoneStreamRef = useRef<MediaStream | null>(null);
   const combinedStreamRef = useRef<MediaStream | null>(null);
   const recordingPipWindowRef = useRef<Window | null>(null);
-  const recordingPipFocusTargetRef = useRef<"recording-pip-pause" | "recording-pip-resume" | null>(
-    null,
-  );
+  const recordingPipFocusTargetRef = useRef<
+    | "recording-pip-pause"
+    | "recording-pip-resume"
+    | "recording-pip-next"
+    | "recording-pip-finish"
+    | null
+  >(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingPausedAtRef = useRef<number | null>(null);
   const nativeStopReasonRef = useRef<NativeStopReason>("user-finished");
@@ -716,9 +720,10 @@ export function TestSessionPage() {
   const [screenShareStatus, setScreenShareStatus] = useState<
     "idle" | "requesting" | "active" | "error" | "ended"
   >("idle");
-  const [nativeCaptureConfirmed, setNativeCaptureConfirmed] = useState(false);
+  const [, setNativeCaptureConfirmed] = useState(false);
   const [isNativeRecordingReadyToStart, setIsNativeRecordingReadyToStart] = useState(false);
   const [isNativeRecordingPaused, setIsNativeRecordingPaused] = useState(false);
+  const [currentTesterInstructionIndex, setCurrentTesterInstructionIndex] = useState(0);
   const [availableMicrophones, setAvailableMicrophones] = useState<MicrophoneOption[]>([]);
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
   const [microphoneStatus, setMicrophoneStatus] = useState<
@@ -773,6 +778,13 @@ export function TestSessionPage() {
       : [
           "Explore the main flow, note anything confusing, and share specific feedback that would help improve the experience.",
         ];
+  const activeTesterInstructionIndex = Math.min(
+    currentTesterInstructionIndex,
+    testerInstructionSteps.length - 1,
+  );
+  const activeTesterInstruction = testerInstructionSteps[activeTesterInstructionIndex];
+  const testerInstructionProgress = `Instruction ${activeTesterInstructionIndex + 1} of ${testerInstructionSteps.length}`;
+  const hasNextTesterInstruction = activeTesterInstructionIndex < testerInstructionSteps.length - 1;
   const todayUtcDate = new Date().toISOString().slice(0, 10);
   const googlePlayClosedTestParticipation = useMemo(() => {
     if (!currentUser || !submission?.needsGooglePlayClosedTesters) {
@@ -1092,6 +1104,9 @@ export function TestSessionPage() {
           --pip-focus-width: ${tokens["primitive.border.width.focus"].value};
           --pip-radius-control: ${tokens["semantic.radius.control"].value};
           --pip-icon-medium: ${tokens["semantic.size.icon.medium"].value};
+          --pip-interface-size: ${tokens["semantic.typography.interface.size"].value};
+          --pip-interface-line-height: ${tokens["semantic.typography.interface.line-height"].value};
+          --pip-weight-semibold: ${tokens["semantic.typography.weight.semibold"].value};
           --pip-paused-title-size: ${tokens["semantic.typography.heading.section-mobile-size"].value};
           --pip-paused-title-line-height: ${tokens["semantic.typography.heading.section-mobile-line-height"].value};
           --pip-timer-height: calc(var(--space-300) + var(--space-050));
@@ -1128,7 +1143,7 @@ export function TestSessionPage() {
 
         .recording-pip {
           display: flex;
-          min-height: calc(100vh - 24px);
+          height: calc(100vh - var(--space-300));
           flex-direction: column;
           justify-content: space-between;
           gap: var(--space-150);
@@ -1243,6 +1258,13 @@ export function TestSessionPage() {
           font-size: 1rem;
           font-weight: 700;
           letter-spacing: 0;
+        }
+
+        .recording-pip__instruction-position {
+          color: var(--pip-text-secondary);
+          font-size: var(--pip-interface-size);
+          font-weight: var(--pip-weight-semibold);
+          line-height: var(--pip-interface-line-height);
         }
 
         .recording-pip__paused-title {
@@ -1376,6 +1398,12 @@ export function TestSessionPage() {
           border: none;
           background: none;
           text-align: center;
+        }
+
+        .recording-pip__main--instruction {
+          min-height: var(--space-000);
+          flex: 1 1 auto;
+          overflow-y: auto;
         }
 
         .recording-pip__main--danger {
@@ -1580,12 +1608,24 @@ export function TestSessionPage() {
             <strong class="recording-pip__timer">${readyToStartOverride ? "00:00" : formatElapsedDuration(liveElapsedSeconds)}</strong>
           </div>
         </div>
-        <div class="recording-pip__main${isPipRecordingPaused ? " recording-pip__main--paused" : ""}">
-          <p class="recording-pip__text${isPipRecordingPaused ? " recording-pip__paused-title" : ""}"${isPipRecordingPaused ? ' role="status" aria-live="polite"' : ""}>${readyToStartOverride ? 'Click "Start test" when you\'re ready to begin. Note, you will have 10 minutes total and you can move this window anytime.' : isPipRecordingPaused ? "Recording paused" : "You can move this window while you test. Click finish when you are done."}</p>
+        <div class="recording-pip__main${isPipRecordingPaused ? " recording-pip__main--paused" : readyToStartOverride ? "" : " recording-pip__main--instruction"}">
+          ${
+            readyToStartOverride
+              ? '<p class="recording-pip__text">Click "Start test" when you\'re ready to begin. Note, you will have 10 minutes total and you can move this window anytime.</p>'
+              : isPipRecordingPaused
+                ? '<p class="recording-pip__text recording-pip__paused-title" role="status" aria-live="polite">Recording paused</p>'
+                : `<span class="recording-pip__instruction-position">${testerInstructionProgress}</span>
+                   <p id="recording-pip-instruction" class="recording-pip__text recording-pip__text--strong" role="status" aria-live="polite"></p>`
+          }
         </div>
-        <button id="${readyToStartOverride ? "recording-pip-start" : isPipRecordingPaused ? "recording-pip-resume" : "recording-pip-finish"}" class="recording-pip__button" type="button">${readyToStartOverride ? "Start test" : isPipRecordingPaused ? "Resume recording" : "Finish recording"}</button>
+        <button id="${readyToStartOverride ? "recording-pip-start" : isPipRecordingPaused ? "recording-pip-resume" : hasNextTesterInstruction ? "recording-pip-next" : "recording-pip-finish"}" class="recording-pip__button" type="button">${readyToStartOverride ? "Start test" : isPipRecordingPaused ? "Resume recording" : hasNextTesterInstruction ? "Next instruction" : "Finish recording"}</button>
       </section>
     `;
+
+    const pipInstruction = pipDocument.getElementById("recording-pip-instruction");
+    if (pipInstruction) {
+      pipInstruction.textContent = activeTesterInstruction;
+    }
 
     if (readyToStartOverride) {
       pipDocument
@@ -1601,9 +1641,17 @@ export function TestSessionPage() {
       pipDocument
         .getElementById("recording-pip-pause")
         ?.addEventListener("click", () => handleNativeRecordingPause(), { once: true });
-      pipDocument
-        .getElementById("recording-pip-finish")
-        ?.addEventListener("click", () => stopNativeRecording(), { once: true });
+      if (hasNextTesterInstruction) {
+        pipDocument
+          .getElementById("recording-pip-next")
+          ?.addEventListener("click", () => handleNextTesterInstruction({ focusPip: true }), {
+            once: true,
+          });
+      } else {
+        pipDocument
+          .getElementById("recording-pip-finish")
+          ?.addEventListener("click", () => stopNativeRecording(), { once: true });
+      }
     }
 
     const focusTarget = recordingPipFocusTargetRef.current;
@@ -1994,6 +2042,7 @@ export function TestSessionPage() {
     setRecordingPhase("preflight");
     setIsNativeRecordingReadyToStart(false);
     setIsNativeRecordingPaused(false);
+    setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
     setLiveRecordingStartedAt(null);
     setLiveElapsedSeconds(0);
@@ -2012,6 +2061,25 @@ export function TestSessionPage() {
     setMicrophoneTestPassed(false);
     setMessage("");
     setRecordingPipDeleteConfirm(false);
+  };
+
+  const handleNextTesterInstruction = (options?: { focusPip?: boolean }) => {
+    if (
+      recordingPhase !== "recording_live" ||
+      isNativeRecordingPaused ||
+      !hasNextTesterInstruction
+    ) {
+      return;
+    }
+
+    const nextInstructionIndex = activeTesterInstructionIndex + 1;
+    const nextActionId =
+      nextInstructionIndex < testerInstructionSteps.length - 1
+        ? "recording-pip-next"
+        : "recording-pip-finish";
+
+    recordingPipFocusTargetRef.current = options?.focusPip ? nextActionId : null;
+    setCurrentTesterInstructionIndex(nextInstructionIndex);
   };
 
   const handleNativeRecordingPause = () => {
@@ -2073,6 +2141,7 @@ export function TestSessionPage() {
     const recorder = mediaRecorderRef.current;
     setRecordingPipDeleteConfirm(false);
     setIsNativeRecordingPaused(false);
+    setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
 
     if (!recorder || recorder.state === "inactive") {
@@ -2363,6 +2432,7 @@ export function TestSessionPage() {
     setMicrophoneTestPassed(false);
     setScreenShareStatus("idle");
     setIsNativeRecordingPaused(false);
+    setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
   }, [isNativeDesktopRecording]);
 
@@ -2405,16 +2475,33 @@ export function TestSessionPage() {
     isNativeRecordingReadyToStart,
     isSubmitting,
     isUploadingRecording,
-    liveElapsedSeconds,
     microphoneStatus,
-    nativeCaptureConfirmed,
     recordingPipDeleteConfirm,
     recordingPhase,
     recordingUploadProgress,
     screenShareStatus,
     submitDisabled,
     uploadedRecording,
+    currentTesterInstructionIndex,
   ]);
+
+  useEffect(() => {
+    if (!isNativeDesktopRecording) {
+      return;
+    }
+
+    const pipWindow = recordingPipWindowRef.current;
+    if (!pipWindow || pipWindow.closed) {
+      return;
+    }
+
+    const timer = pipWindow.document.querySelector(".recording-pip__timer");
+    if (timer) {
+      timer.textContent = isNativeRecordingReadyToStart
+        ? "00:00"
+        : formatElapsedDuration(liveElapsedSeconds);
+    }
+  }, [isNativeDesktopRecording, isNativeRecordingReadyToStart, liveElapsedSeconds]);
 
   useEffect(() => {
     if (
@@ -2436,6 +2523,7 @@ export function TestSessionPage() {
       setRecordingPhase("preflight");
       setIsNativeRecordingReadyToStart(false);
       setIsNativeRecordingPaused(false);
+      setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
       setNativeRecoveryUploadEnabled(false);
       setScreenShareStatus("idle");
@@ -2649,6 +2737,7 @@ export function TestSessionPage() {
     setNativeCaptureConfirmed(false);
     setIsNativeRecordingReadyToStart(true);
     setIsNativeRecordingPaused(false);
+    setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
     setMessage("");
 
@@ -2728,6 +2817,7 @@ export function TestSessionPage() {
     setNativeRecordingBlob(null);
     setNativeCaptureConfirmed(false);
     setIsNativeRecordingPaused(false);
+    setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
     setMessage("");
 
@@ -2778,6 +2868,7 @@ export function TestSessionPage() {
         }
 
         setIsNativeRecordingPaused(false);
+        setCurrentTesterInstructionIndex(0);
         const chunkMimeType = recorder.mimeType || preferredMimeType || "video/webm";
         const finalBlob = new Blob(recordingChunksRef.current, { type: chunkMimeType });
         recordingChunksRef.current = [];
@@ -2810,6 +2901,7 @@ export function TestSessionPage() {
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
           setIsNativeRecordingPaused(false);
+          setCurrentTesterInstructionIndex(0);
           recordingPausedAtRef.current = null;
           mediaRecorderRef.current.stop();
           return;
@@ -2824,8 +2916,11 @@ export function TestSessionPage() {
       };
 
       recorder.start(1000);
+      recordingPipFocusTargetRef.current =
+        testerInstructionSteps.length > 1 ? "recording-pip-next" : "recording-pip-finish";
       setIsNativeRecordingReadyToStart(false);
       setIsNativeRecordingPaused(false);
+      setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
       setRecordingPhase("recording_live");
       setScreenShareStatus("active");
@@ -2848,6 +2943,7 @@ export function TestSessionPage() {
       setNativeCaptureConfirmed(false);
       setIsNativeRecordingReadyToStart(false);
       setIsNativeRecordingPaused(false);
+      setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
       combinedStreamRef.current = null;
       mediaRecorderRef.current = null;
@@ -3464,22 +3560,26 @@ export function TestSessionPage() {
                           : "Recording live"
                         : "Testing in progress"}
                     </span>
-                    <h2>
-                      {isNativeDesktopRecording
-                        ? isNativeRecordingPaused
-                          ? "Recording paused"
-                          : "Your test is recording"
-                        : recordingInstructions.launchTitle}
-                    </h2>
-                    <p>
-                      {isNativeDesktopRecording
-                        ? isNativeRecordingPaused
-                          ? "Your recording is paused. Resume when you are ready to continue testing."
-                          : nativeCaptureConfirmed
-                            ? "We confirmed that screen sharing is active and your selected microphone is connected. Test in the other tab, then use the floating recorder to finish."
-                            : "Test in the other tab, then come back here when you are ready to finish."
-                        : recordingInstructions.launchBody}
-                    </p>
+                    <div
+                      className="recording-phase-card__instruction"
+                      aria-live={isNativeDesktopRecording ? "polite" : undefined}
+                      aria-atomic={isNativeDesktopRecording ? "true" : undefined}
+                    >
+                      <h2>
+                        {isNativeDesktopRecording
+                          ? isNativeRecordingPaused
+                            ? "Recording paused"
+                            : testerInstructionProgress
+                          : recordingInstructions.launchTitle}
+                      </h2>
+                      <p>
+                        {isNativeDesktopRecording
+                          ? isNativeRecordingPaused
+                            ? "Your recording is paused. Resume when you are ready to continue testing."
+                            : activeTesterInstruction
+                          : recordingInstructions.launchBody}
+                      </p>
+                    </div>
                     {isNativeDesktopRecording ? (
                       <div className="recording-phase-card__timer">
                         <strong>{formatElapsedDuration(liveElapsedSeconds)}</strong>
@@ -3525,6 +3625,8 @@ export function TestSessionPage() {
                         if (isNativeDesktopRecording) {
                           if (isNativeRecordingPaused) {
                             handleNativeRecordingResume();
+                          } else if (hasNextTesterInstruction) {
+                            handleNextTesterInstruction();
                           } else {
                             stopNativeRecording();
                           }
@@ -3536,8 +3638,12 @@ export function TestSessionPage() {
                         }
                       }}
                     >
-                      {isNativeDesktopRecording && isNativeRecordingPaused
-                        ? "Resume recording"
+                      {isNativeDesktopRecording
+                        ? isNativeRecordingPaused
+                          ? "Resume recording"
+                          : hasNextTesterInstruction
+                            ? "Next instruction"
+                            : "Finish recording"
                         : "I'm finished testing"}
                     </Button>
                   </div>
