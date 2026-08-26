@@ -1099,7 +1099,7 @@ test("recording permission denial provides recovery guidance and keeps start dis
       )
       .first(),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Start test" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Get started" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Share screen" })).toBeDisabled();
   await expect(page.getByText("Prepare to think out loud", { exact: true })).toBeVisible();
 });

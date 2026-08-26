@@ -510,6 +510,7 @@
   border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
   border-radius: var(--ds-semantic-radius-surface);
   background: var(--ds-semantic-color-surface-default);
+  box-shadow: var(--ds-semantic-shadow-raised);
   object-fit: cover;
 }
 
