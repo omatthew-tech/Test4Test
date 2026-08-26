@@ -1,4 +1,4 @@
-import { ArrowRight, Image as ImageIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -173,10 +173,15 @@ function FreeFeedbackShowcase() {
             width={1672}
           />
         ) : (
-          <div className={styles.feedbackPlaceholder} aria-hidden="true">
-            <ImageIcon size={24} />
-            <span>Preview coming soon</span>
-          </div>
+          <img
+            alt="Share test link flowing into a Responses dashboard with 128 responses and recent feedback."
+            className={styles.feedbackPreview}
+            decoding="async"
+            height={941}
+            loading="lazy"
+            src="/images/home-bring-your-own-testers.png"
+            width={1672}
+          />
         )}
 
         <Stack className={styles.feedbackMethodCopy} gap="sm">

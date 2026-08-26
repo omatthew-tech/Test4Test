@@ -152,7 +152,11 @@ test("home free-feedback showcase advances around the card and supports manual c
   await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
   await expect(secondMethodButton).toHaveAttribute("aria-pressed", "true");
   await expect(secondMethodButton).toHaveAttribute("data-filled", "true");
-  await expect(section.getByText("Preview coming soon")).toBeVisible();
+  await expect(
+    section.getByRole("img", {
+      name: "Share test link flowing into a Responses dashboard with 128 responses and recent feedback.",
+    }),
+  ).toHaveAttribute("src", "/images/home-bring-your-own-testers.png");
 
   await firstMethodButton.click();
   await expect(
