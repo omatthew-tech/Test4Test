@@ -167,6 +167,21 @@
   text-decoration: none;
 }
 
+button.taskFinishButton {
+  border-color: var(--ds-semantic-color-border-strong);
+  background: var(--ds-semantic-color-surface-track);
+  color: var(--ds-semantic-color-text-primary);
+  box-shadow: none;
+}
+
+button.taskFinishButton:hover:not(:disabled),
+button.taskFinishButton:active:not(:disabled) {
+  border-color: var(--ds-semantic-color-border-strong);
+  background: var(--ds-semantic-color-background-subtle);
+  color: var(--ds-semantic-color-text-primary);
+  box-shadow: none;
+}
+
 .choiceFieldset {
   display: grid;
   gap: var(--ds-semantic-space-stack-md);

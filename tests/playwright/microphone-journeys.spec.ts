@@ -150,6 +150,17 @@ async function installMicrophoneFixture(page: Page) {
             closed: false,
             document: pipDocument,
             focus: () => undefined,
+            innerHeight: 300,
+            outerHeight: 300,
+            outerWidth: 360,
+            requestAnimationFrame: (callback: FrameRequestCallback) => {
+              callback(0);
+              return 1;
+            },
+            resizeTo: (width: number, height: number) => {
+              pipFrame.style.width = `${width}px`;
+              pipFrame.style.height = `${height}px`;
+            },
           };
         },
       },
@@ -195,6 +206,7 @@ test("floating recorder starts, pauses, resumes, and finalizes capture", async (
   await page.getByRole("button", { name: "Share screen" }).click();
   await expect(getStarted).toBeEnabled();
 
+  const recordingCard = page.locator(".recording-phase-card");
   await getStarted.click();
   await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(0);
   await expect(page.getByRole("heading", { name: "Your test is recording" })).toHaveCount(0);
@@ -207,23 +219,79 @@ test("floating recorder starts, pauses, resumes, and finalizes capture", async (
         startButton: window.__testRecordingPipDocument
           ?.getElementById("recording-pip-start")
           ?.textContent?.trim(),
+        startButtonArrow: Boolean(
+          window.__testRecordingPipDocument
+            ?.getElementById("recording-pip-start")
+            ?.querySelector('svg[aria-hidden="true"]'),
+        ),
         title: window.__testRecordingPipDocument?.title,
       })),
     )
-    .toEqual({ finishButton: null, startButton: "Start test", title: "Ready to record" });
+    .toEqual({
+      finishButton: null,
+      startButton: "Click here to start",
+      startButtonArrow: false,
+      title: "Ready to record",
+    });
 
   await page.evaluate(() => {
     window.__testRecordingPipDocument?.getElementById("recording-pip-start")?.click();
   });
 
-  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(1);
-  const recordingCard = page.locator(".recording-phase-card");
-  await expect(recordingCard.getByRole("heading", { name: "Instruction 1 of 1" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(0);
+  await expect(recordingCard.getByRole("heading", { name: "Task 1 of 1" })).toBeVisible();
   await expect(
     recordingCard.getByText("Create a board and inspect how easy it is to add references.", {
       exact: true,
     }),
   ).toBeVisible();
+  await expect(recordingCard.getByRole("button", { name: "Start task" })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        finishButton: Boolean(
+          window.__testRecordingPipDocument?.getElementById("recording-pip-finish"),
+        ),
+        focusedAction: window.__testRecordingPipDocument?.activeElement?.id,
+        pauseButton: Boolean(
+          window.__testRecordingPipDocument?.getElementById("recording-pip-pause"),
+        ),
+        progress: window.__testRecordingPipDocument
+          ?.querySelector(".recording-pip__instruction-position")
+          ?.textContent?.trim(),
+        startTask: window.__testRecordingPipDocument
+          ?.getElementById("recording-pip-start-task")
+          ?.textContent?.trim(),
+        timer: window.__testRecordingPipDocument
+          ?.querySelector(".recording-pip__timer")
+          ?.textContent?.trim(),
+      })),
+    )
+    .toEqual({
+      finishButton: false,
+      focusedAction: "recording-pip-start-task",
+      pauseButton: false,
+      progress: "Task 1 of 1",
+      startTask: "Start task",
+      timer: "00:00",
+    });
+  await page.waitForTimeout(1100);
+  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          window.__testRecordingPipDocument?.querySelector(".recording-pip__timer")?.textContent,
+      ),
+    )
+    .toBe("00:00");
+
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument?.getElementById("recording-pip-start-task")?.click();
+  });
+
+  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(1);
+  await expect(recordingCard.getByRole("heading", { name: "Task 1 of 1" })).toBeVisible();
   await expect(recordingCard.getByRole("button", { name: "Finish recording" })).toBeVisible();
   await expect
     .poll(() =>
@@ -269,7 +337,7 @@ test("floating recorder starts, pauses, resumes, and finalizes capture", async (
       finishButton: "Finish recording",
       focusedAction: "recording-pip-finish",
       instruction: "Create a board and inspect how easy it is to add references.",
-      instructionProgress: "Instruction 1 of 1",
+      instructionProgress: "Task 1 of 1",
       pauseButtonLabel: "Pause recording",
       startButton: false,
       title: "Recording live",
@@ -346,7 +414,7 @@ test("floating recorder starts, pauses, resumes, and finalizes capture", async (
   });
 
   await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(1);
-  await expect(page.getByRole("heading", { name: "Instruction 1 of 1" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Task 1 of 1" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Finish recording" })).toBeVisible();
   await expect
     .poll(() =>
@@ -386,7 +454,7 @@ for (const viewport of [
   { name: "mobile", width: 390, height: 844 },
   { name: "desktop", width: 1440, height: 900 },
 ]) {
-  test(`tester instructions advance in sync without interrupting recording at ${viewport.name}`, async ({
+  test(`tester tasks advance in sync with a ready state before each recording segment at ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -407,6 +475,40 @@ for (const viewport of [
     });
 
     const recordingCard = page.locator(".recording-phase-card");
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(0);
+    await expect(recordingCard.getByRole("heading", { name: "Task 1 of 3" })).toBeVisible();
+    await expect(recordingCard.getByText("Create a new moodboard.", { exact: true })).toBeVisible();
+    await expect(recordingCard.getByRole("button", { name: "Start task" })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          focusedAction: window.__testRecordingPipDocument?.activeElement?.id,
+          pauseButton: Boolean(
+            window.__testRecordingPipDocument?.getElementById("recording-pip-pause"),
+          ),
+          progress: window.__testRecordingPipDocument
+            ?.querySelector(".recording-pip__instruction-position")
+            ?.textContent?.trim(),
+          startTask: window.__testRecordingPipDocument
+            ?.getElementById("recording-pip-start-task")
+            ?.textContent?.trim(),
+          timer: window.__testRecordingPipDocument
+            ?.querySelector(".recording-pip__timer")
+            ?.textContent?.trim(),
+        })),
+      )
+      .toEqual({
+        focusedAction: "recording-pip-start-task",
+        pauseButton: false,
+        progress: "Task 1 of 3",
+        startTask: "Start task",
+        timer: "00:00",
+      });
+
+    await page.evaluate(() => {
+      window.__testRecordingPipDocument?.getElementById("recording-pip-start-task")?.click();
+    });
+
     const readPipInstruction = () =>
       page.evaluate(() => ({
         finishButton: Boolean(
@@ -422,62 +524,144 @@ for (const viewport of [
         nextButton: window.__testRecordingPipDocument
           ?.getElementById("recording-pip-next")
           ?.textContent?.trim(),
+        nextButtonSlate: Boolean(
+          window.__testRecordingPipDocument
+            ?.getElementById("recording-pip-next")
+            ?.classList.contains("recording-pip__button--task-finish"),
+        ),
+        pauseButton: Boolean(
+          window.__testRecordingPipDocument?.getElementById("recording-pip-pause"),
+        ),
         progress: window.__testRecordingPipDocument
           ?.querySelector(".recording-pip__instruction-position")
+          ?.textContent?.trim(),
+        startTask: window.__testRecordingPipDocument
+          ?.getElementById("recording-pip-start-task")
+          ?.textContent?.trim(),
+        timer: window.__testRecordingPipDocument
+          ?.querySelector(".recording-pip__timer")
           ?.textContent?.trim(),
       }));
 
     await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(1);
-    await expect(recordingCard.getByRole("heading", { name: "Instruction 1 of 3" })).toBeVisible();
+    await expect(recordingCard.getByRole("heading", { name: "Task 1 of 3" })).toBeVisible();
     await expect(recordingCard.getByText("Create a new moodboard.", { exact: true })).toBeVisible();
-    await expect(recordingCard.getByRole("button", { name: "Next instruction" })).toBeVisible();
-    await expect.poll(readPipInstruction).toEqual({
+    await expect(
+      recordingCard.getByRole("button", { name: "Complete task", exact: true }),
+    ).toBeVisible();
+    await expect.poll(readPipInstruction).toMatchObject({
       finishButton: false,
       focusedAction: "recording-pip-next",
       instruction: "Create a new moodboard.",
       instructionChildCount: 0,
-      nextButton: "Next instruction",
-      progress: "Instruction 1 of 3",
+      nextButton: "Complete task",
+      nextButtonSlate: true,
+      pauseButton: true,
+      progress: "Task 1 of 3",
+      startTask: undefined,
     });
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const instruction = window.__testRecordingPipDocument?.getElementById(
+            "recording-pip-instruction",
+          );
+          const instructionMain = window.__testRecordingPipDocument?.querySelector(
+            ".recording-pip__main--instruction",
+          );
+          const pipWindow = window.__testRecordingPipDocument?.defaultView;
+
+          if (!instruction || !instructionMain || !pipWindow) {
+            return null;
+          }
+
+          const instructionStyles = pipWindow.getComputedStyle(instruction);
+          const instructionMainStyles = pipWindow.getComputedStyle(instructionMain);
+          return {
+            contentFits: instructionMain.scrollHeight <= instructionMain.clientHeight,
+            fontSize: instructionStyles.fontSize,
+            fontWeight: instructionStyles.fontWeight,
+            overflowY: instructionMainStyles.overflowY,
+          };
+        }),
+      )
+      .toEqual({ contentFits: true, fontSize: "14.4px", fontWeight: "400", overflowY: "visible" });
 
     await page.evaluate(() => {
       window.__testRecordingPipDocument?.getElementById("recording-pip-next")?.click();
     });
 
-    await expect(recordingCard.getByRole("heading", { name: "Instruction 2 of 3" })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderPauseCount)).toBe(1);
+    await expect(recordingCard.getByRole("heading", { name: "Task 2 of 3" })).toBeVisible();
     await expect(
       recordingCard.getByText("Add two visual references to the board.", { exact: true }),
     ).toBeVisible();
-    await expect.poll(readPipInstruction).toEqual({
+    await expect(recordingCard.getByRole("button", { name: "Start task" })).toBeVisible();
+    await expect.poll(readPipInstruction).toMatchObject({
       finishButton: false,
-      focusedAction: "recording-pip-next",
+      focusedAction: "recording-pip-start-task",
       instruction: "Add two visual references to the board.",
       instructionChildCount: 0,
-      nextButton: "Next instruction",
-      progress: "Instruction 2 of 3",
+      nextButton: undefined,
+      nextButtonSlate: false,
+      pauseButton: false,
+      progress: "Task 2 of 3",
+      startTask: "Start task",
     });
     await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(0);
     await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStopCount)).toBe(0);
+
+    const taskTwoReadyTimer = await page.evaluate(
+      () => window.__testRecordingPipDocument?.querySelector(".recording-pip__timer")?.textContent,
+    );
+    await page.waitForTimeout(1100);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            window.__testRecordingPipDocument?.querySelector(".recording-pip__timer")?.textContent,
+        ),
+      )
+      .toBe(taskTwoReadyTimer);
+
+    await page.evaluate(() => {
+      window.__testRecordingPipDocument?.getElementById("recording-pip-start-task")?.click();
+    });
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(1);
+    await expect(
+      recordingCard.getByRole("button", { name: "Complete task", exact: true }),
+    ).toBeVisible();
+    await expect.poll(readPipInstruction).toMatchObject({
+      focusedAction: "recording-pip-next",
+      nextButton: "Complete task",
+      nextButtonSlate: true,
+      pauseButton: true,
+      progress: "Task 2 of 3",
+      startTask: undefined,
+    });
 
     await page.evaluate(() => {
       window.__testRecordingPipDocument?.getElementById("recording-pip-pause")?.click();
     });
-    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderPauseCount)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderPauseCount)).toBe(2);
     await page.evaluate(() => {
       window.__testRecordingPipDocument?.getElementById("recording-pip-resume")?.click();
     });
-    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(1);
-    await expect(recordingCard.getByRole("heading", { name: "Instruction 2 of 3" })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(2);
+    await expect(recordingCard.getByRole("heading", { name: "Task 2 of 3" })).toBeVisible();
     await expect.poll(readPipInstruction).toMatchObject({
       instruction: "Add two visual references to the board.",
       instructionChildCount: 0,
-      nextButton: "Next instruction",
-      progress: "Instruction 2 of 3",
+      nextButton: "Complete task",
+      nextButtonSlate: true,
+      progress: "Task 2 of 3",
     });
 
-    await recordingCard.getByRole("button", { name: "Next instruction" }).click();
+    await recordingCard.getByRole("button", { name: "Complete task", exact: true }).click();
 
-    await expect(recordingCard.getByRole("heading", { name: "Instruction 3 of 3" })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderPauseCount)).toBe(3);
+    await expect(recordingCard.getByRole("heading", { name: "Task 3 of 3" })).toBeVisible();
     await expect(
       recordingCard.getByText(
         "Invite a collaborator and review <strong>sharing controls</strong>.",
@@ -486,16 +670,33 @@ for (const viewport of [
         },
       ),
     ).toBeVisible();
-    await expect(recordingCard.getByRole("button", { name: "Finish recording" })).toBeFocused();
-    await expect.poll(readPipInstruction).toEqual({
-      finishButton: true,
+    await expect(recordingCard.getByRole("button", { name: "Start task" })).toBeFocused();
+    await expect.poll(readPipInstruction).toMatchObject({
+      finishButton: false,
       focusedAction: "",
       instruction: "Invite a collaborator and review <strong>sharing controls</strong>.",
       instructionChildCount: 0,
       nextButton: undefined,
-      progress: "Instruction 3 of 3",
+      nextButtonSlate: false,
+      pauseButton: false,
+      progress: "Task 3 of 3",
+      startTask: "Start task",
     });
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(2);
     await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStopCount)).toBe(0);
+
+    await recordingCard.getByRole("button", { name: "Start task" }).click();
+    await expect.poll(() => page.evaluate(() => window.__testMediaRecorderResumeCount)).toBe(3);
+    await expect(recordingCard.getByRole("button", { name: "Finish recording" })).toBeFocused();
+    await expect.poll(readPipInstruction).toMatchObject({
+      finishButton: true,
+      instruction: "Invite a collaborator and review <strong>sharing controls</strong>.",
+      nextButton: undefined,
+      nextButtonSlate: false,
+      pauseButton: true,
+      progress: "Task 3 of 3",
+      startTask: undefined,
+    });
 
     await page.evaluate(() => {
       window.__testRecordingPipDocument?.getElementById("recording-pip-finish")?.click();

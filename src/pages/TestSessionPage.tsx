@@ -652,6 +652,7 @@ export function TestSessionPage() {
   const recordingPipFocusTargetRef = useRef<
     | "recording-pip-pause"
     | "recording-pip-resume"
+    | "recording-pip-start-task"
     | "recording-pip-next"
     | "recording-pip-finish"
     | null
@@ -722,6 +723,7 @@ export function TestSessionPage() {
   >("idle");
   const [, setNativeCaptureConfirmed] = useState(false);
   const [isNativeRecordingReadyToStart, setIsNativeRecordingReadyToStart] = useState(false);
+  const [isNativeTaskReadyToStart, setIsNativeTaskReadyToStart] = useState(false);
   const [isNativeRecordingPaused, setIsNativeRecordingPaused] = useState(false);
   const [currentTesterInstructionIndex, setCurrentTesterInstructionIndex] = useState(0);
   const [availableMicrophones, setAvailableMicrophones] = useState<MicrophoneOption[]>([]);
@@ -783,7 +785,7 @@ export function TestSessionPage() {
     testerInstructionSteps.length - 1,
   );
   const activeTesterInstruction = testerInstructionSteps[activeTesterInstructionIndex];
-  const testerInstructionProgress = `Instruction ${activeTesterInstructionIndex + 1} of ${testerInstructionSteps.length}`;
+  const testerTaskProgress = `Task ${activeTesterInstructionIndex + 1} of ${testerInstructionSteps.length}`;
   const hasNextTesterInstruction = activeTesterInstructionIndex < testerInstructionSteps.length - 1;
   const todayUtcDate = new Date().toISOString().slice(0, 10);
   const googlePlayClosedTestParticipation = useMemo(() => {
@@ -1046,6 +1048,7 @@ export function TestSessionPage() {
     const isUploaded = uploadedRecording !== null && recordingPhase === "return_and_submit";
     const isUploading =
       !isUploaded && (recordingPhase === "uploading_recording" || isUploadingRecording);
+    const isPipTaskReady = !readyToStartOverride && isNativeTaskReadyToStart;
     const isPipRecordingPaused =
       !readyToStartOverride && recordingPhase === "recording_live" && isNativeRecordingPaused;
     const uploadProgressPercentage = Math.min(
@@ -1067,7 +1070,6 @@ export function TestSessionPage() {
         <path d="M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     `;
-
     pipDocument.title = isDeleteConfirm
       ? "Delete recording"
       : isUploaded
@@ -1076,9 +1078,11 @@ export function TestSessionPage() {
           ? "Uploading recording"
           : readyToStartOverride
             ? "Ready to record"
-            : isPipRecordingPaused
-              ? "Recording paused"
-              : "Recording live";
+            : isPipTaskReady
+              ? "Task ready"
+              : isPipRecordingPaused
+                ? "Recording paused"
+                : "Recording live";
 
     if (!pipDocument.getElementById("recording-pip-styles")) {
       const style = pipDocument.createElement("style");
@@ -1091,8 +1095,10 @@ export function TestSessionPage() {
           --pip-text: ${tokens["semantic.color.text.primary"].value};
           --pip-text-secondary: ${tokens["semantic.color.text.secondary"].value};
           --pip-border: ${tokens["semantic.color.border.default"].value};
+          --pip-border-strong: ${tokens["semantic.color.border.strong"].value};
           --pip-background: ${tokens["semantic.color.background.subtle"].value};
           --pip-surface: ${tokens["semantic.color.surface.default"].value};
+          --pip-surface-track: ${tokens["semantic.color.surface.track"].value};
           --pip-success: ${tokens["semantic.color.status.success"].value};
           --pip-success-tint: ${tokens["semantic.color.status.success-tint"].value};
           --pip-danger: ${tokens["semantic.color.status.danger"].value};
@@ -1143,7 +1149,7 @@ export function TestSessionPage() {
 
         .recording-pip {
           display: flex;
-          height: calc(100vh - var(--space-300));
+          min-height: calc(100vh - var(--space-300));
           flex-direction: column;
           justify-content: space-between;
           gap: var(--space-150);
@@ -1401,9 +1407,7 @@ export function TestSessionPage() {
         }
 
         .recording-pip__main--instruction {
-          min-height: var(--space-000);
-          flex: 1 1 auto;
-          overflow-y: auto;
+          overflow-wrap: anywhere;
         }
 
         .recording-pip__main--danger {
@@ -1460,6 +1464,20 @@ export function TestSessionPage() {
         .recording-pip__button--secondary:hover {
           background: var(--pip-background);
           border-color: var(--pip-border);
+          box-shadow: none;
+        }
+
+        .recording-pip__button--task-finish {
+          border: 1px solid var(--pip-border-strong);
+          background: var(--pip-surface-track);
+          color: var(--pip-text);
+          box-shadow: none;
+        }
+
+        .recording-pip__button--task-finish:hover {
+          border-color: var(--pip-border-strong);
+          background: var(--pip-background);
+          color: var(--pip-text);
           box-shadow: none;
         }
 
@@ -1592,12 +1610,12 @@ export function TestSessionPage() {
       <section class="recording-pip" aria-label="Test4Test recording control">
         <div class="recording-pip__top">
           <div class="recording-pip__badge">
-            ${readyToStartOverride || isPipRecordingPaused ? "" : '<span class="recording-pip__dot" aria-hidden="true"></span>'}
-            <span>${readyToStartOverride ? "Ready to record" : isPipRecordingPaused ? "Paused" : "Recording live"}</span>
+            ${readyToStartOverride || isPipTaskReady || isPipRecordingPaused ? "" : '<span class="recording-pip__dot" aria-hidden="true"></span>'}
+            <span>${readyToStartOverride ? "Ready to record" : isPipTaskReady ? "Task ready" : isPipRecordingPaused ? "Paused" : "Recording live"}</span>
           </div>
           <div class="recording-pip__timer-controls">
             ${
-              !readyToStartOverride && !isPipRecordingPaused
+              recordingPhase === "recording_live" && !isPipTaskReady && !isPipRecordingPaused
                 ? `<button id="recording-pip-pause" class="recording-pip__pause-button" type="button" aria-label="Pause recording">
                     <svg class="recording-pip__pause-icon" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
@@ -1605,20 +1623,20 @@ export function TestSessionPage() {
                   </button>`
                 : ""
             }
-            <strong class="recording-pip__timer">${readyToStartOverride ? "00:00" : formatElapsedDuration(liveElapsedSeconds)}</strong>
+            <strong class="recording-pip__timer">${readyToStartOverride || (isPipTaskReady && recordingPhase !== "recording_live") ? "00:00" : formatElapsedDuration(liveElapsedSeconds)}</strong>
           </div>
         </div>
         <div class="recording-pip__main${isPipRecordingPaused ? " recording-pip__main--paused" : readyToStartOverride ? "" : " recording-pip__main--instruction"}">
           ${
             readyToStartOverride
-              ? '<p class="recording-pip__text">Click "Start test" when you\'re ready to begin. Note, you will have 10 minutes total and you can move this window anytime.</p>'
+              ? '<p class="recording-pip__text">Please speak out loud and share your honest thoughts while completing each task. This test should take 5-10 minutes to complete. Also, you can move this window if needed.</p>'
               : isPipRecordingPaused
                 ? '<p class="recording-pip__text recording-pip__paused-title" role="status" aria-live="polite">Recording paused</p>'
-                : `<span class="recording-pip__instruction-position">${testerInstructionProgress}</span>
-                   <p id="recording-pip-instruction" class="recording-pip__text recording-pip__text--strong" role="status" aria-live="polite"></p>`
+                : `<span class="recording-pip__instruction-position">${testerTaskProgress}</span>
+                   <p id="recording-pip-instruction" class="recording-pip__text" role="status" aria-live="polite"></p>`
           }
         </div>
-        <button id="${readyToStartOverride ? "recording-pip-start" : isPipRecordingPaused ? "recording-pip-resume" : hasNextTesterInstruction ? "recording-pip-next" : "recording-pip-finish"}" class="recording-pip__button" type="button">${readyToStartOverride ? "Start test" : isPipRecordingPaused ? "Resume recording" : hasNextTesterInstruction ? "Next instruction" : "Finish recording"}</button>
+        <button id="${readyToStartOverride ? "recording-pip-start" : isPipTaskReady ? "recording-pip-start-task" : isPipRecordingPaused ? "recording-pip-resume" : hasNextTesterInstruction ? "recording-pip-next" : "recording-pip-finish"}" class="recording-pip__button${!readyToStartOverride && !isPipTaskReady && !isPipRecordingPaused && hasNextTesterInstruction ? " recording-pip__button--task-finish" : ""}" type="button">${readyToStartOverride ? "Click here to start" : isPipTaskReady ? "Start task" : isPipRecordingPaused ? "Resume recording" : hasNextTesterInstruction ? "Complete task" : "Finish recording"}</button>
       </section>
     `;
 
@@ -1630,7 +1648,13 @@ export function TestSessionPage() {
     if (readyToStartOverride) {
       pipDocument
         .getElementById("recording-pip-start")
-        ?.addEventListener("click", () => void handleNativeRecordingStart(), { once: true });
+        ?.addEventListener("click", () => handleNativeTaskPreview(), { once: true });
+    } else if (isPipTaskReady) {
+      pipDocument
+        .getElementById("recording-pip-start-task")
+        ?.addEventListener("click", () => handleNativeTaskStart({ focusPip: true }), {
+          once: true,
+        });
     } else if (isPipRecordingPaused) {
       pipDocument
         .getElementById("recording-pip-resume")
@@ -1644,7 +1668,7 @@ export function TestSessionPage() {
       if (hasNextTesterInstruction) {
         pipDocument
           .getElementById("recording-pip-next")
-          ?.addEventListener("click", () => handleNextTesterInstruction({ focusPip: true }), {
+          ?.addEventListener("click", () => handleNextTesterTask({ focusPip: true }), {
             once: true,
           });
       } else {
@@ -1659,6 +1683,15 @@ export function TestSessionPage() {
       pipDocument.getElementById(focusTarget)?.focus();
       recordingPipFocusTargetRef.current = null;
     }
+
+    pipWindow.requestAnimationFrame(() => {
+      const contentHeight = Math.ceil(pipDocument.documentElement.scrollHeight);
+      const browserFrameHeight = Math.max(0, pipWindow.outerHeight - pipWindow.innerHeight);
+
+      if (contentHeight > pipWindow.innerHeight) {
+        pipWindow.resizeTo(pipWindow.outerWidth, contentHeight + browserFrameHeight);
+      }
+    });
   };
 
   const openRecordingPipWindow = async (
@@ -1836,6 +1869,7 @@ export function TestSessionPage() {
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
           setIsNativeRecordingPaused(false);
+          setIsNativeTaskReadyToStart(false);
           recordingPausedAtRef.current = null;
           mediaRecorderRef.current.stop();
           return;
@@ -1848,6 +1882,7 @@ export function TestSessionPage() {
         setScreenShareStatus("ended");
         setNativeCaptureConfirmed(false);
         setIsNativeRecordingReadyToStart(false);
+        setIsNativeTaskReadyToStart(false);
         setMessage("Screen sharing stopped. Enable it again before you start the test.");
       };
 
@@ -2041,6 +2076,7 @@ export function TestSessionPage() {
     cleanupActiveCaptureStreams();
     setRecordingPhase("preflight");
     setIsNativeRecordingReadyToStart(false);
+    setIsNativeTaskReadyToStart(false);
     setIsNativeRecordingPaused(false);
     setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
@@ -2063,23 +2099,50 @@ export function TestSessionPage() {
     setRecordingPipDeleteConfirm(false);
   };
 
-  const handleNextTesterInstruction = (options?: { focusPip?: boolean }) => {
+  const handleNativeTaskPreview = () => {
+    recordingPipFocusTargetRef.current = "recording-pip-start-task";
+    setIsNativeRecordingReadyToStart(false);
+    setIsNativeTaskReadyToStart(true);
+    setCurrentTesterInstructionIndex(0);
+    setLiveRecordingStartedAt(null);
+    setLiveElapsedSeconds(0);
+    setMessage("Task 1 is ready. Click Start task when you're ready to begin recording.");
+  };
+
+  const handleNextTesterTask = (options?: { focusPip?: boolean }) => {
     if (
       recordingPhase !== "recording_live" ||
       isNativeRecordingPaused ||
+      isNativeTaskReadyToStart ||
       !hasNextTesterInstruction
     ) {
       return;
     }
 
-    const nextInstructionIndex = activeTesterInstructionIndex + 1;
-    const nextActionId =
-      nextInstructionIndex < testerInstructionSteps.length - 1
-        ? "recording-pip-next"
-        : "recording-pip-finish";
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== "recording") {
+      setMessage("The next task could not be prepared. Return to the test page and try again.");
+      return;
+    }
 
-    recordingPipFocusTargetRef.current = options?.focusPip ? nextActionId : null;
-    setCurrentTesterInstructionIndex(nextInstructionIndex);
+    const nextInstructionIndex = activeTesterInstructionIndex + 1;
+    const pausedAt = Date.now();
+
+    try {
+      recorder.pause();
+      recordingPausedAtRef.current = pausedAt;
+      recordingPipFocusTargetRef.current = options?.focusPip ? "recording-pip-start-task" : null;
+      if (liveRecordingStartedAt !== null) {
+        setLiveElapsedSeconds(Math.max(0, Math.round((pausedAt - liveRecordingStartedAt) / 1000)));
+      }
+      setCurrentTesterInstructionIndex(nextInstructionIndex);
+      setIsNativeTaskReadyToStart(true);
+      setMessage(
+        `Task ${nextInstructionIndex + 1} is ready. Click Start task when you're ready to continue recording.`,
+      );
+    } catch {
+      setMessage("The next task could not be prepared. Return to the test page and try again.");
+    }
   };
 
   const handleNativeRecordingPause = () => {
@@ -2106,7 +2169,10 @@ export function TestSessionPage() {
     }
   };
 
-  const handleNativeRecordingResume = (options?: { focusPip?: boolean }) => {
+  const handleNativeRecordingResume = (options?: {
+    focusPip?: boolean;
+    fromTaskReady?: boolean;
+  }) => {
     const recorder = mediaRecorderRef.current;
 
     if (!recorder || recorder.state !== "paused") {
@@ -2125,12 +2191,33 @@ export function TestSessionPage() {
         );
       }
       recordingPausedAtRef.current = null;
-      recordingPipFocusTargetRef.current = options?.focusPip ? "recording-pip-pause" : null;
+      recordingPipFocusTargetRef.current = options?.focusPip
+        ? options.fromTaskReady
+          ? hasNextTesterInstruction
+            ? "recording-pip-next"
+            : "recording-pip-finish"
+          : "recording-pip-pause"
+        : null;
+      if (options?.fromTaskReady) {
+        setIsNativeTaskReadyToStart(false);
+      }
       setIsNativeRecordingPaused(false);
       setMessage("Recording live. Use the floating recorder to finish when you are done.");
     } catch {
       setMessage("The recording could not resume. Return to the test page and try again.");
     }
+  };
+
+  const handleNativeTaskStart = (options?: { focusPip?: boolean }) => {
+    if (recordingPhase === "recording_live" && isNativeTaskReadyToStart) {
+      handleNativeRecordingResume({
+        focusPip: options?.focusPip,
+        fromTaskReady: true,
+      });
+      return;
+    }
+
+    void handleNativeRecordingStart(options);
   };
 
   const stopNativeRecording = (options?: { focusTestPage?: boolean }) => {
@@ -2141,6 +2228,7 @@ export function TestSessionPage() {
     const recorder = mediaRecorderRef.current;
     setRecordingPipDeleteConfirm(false);
     setIsNativeRecordingPaused(false);
+    setIsNativeTaskReadyToStart(false);
     setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
 
@@ -2431,6 +2519,7 @@ export function TestSessionPage() {
     setMicrophoneError("");
     setMicrophoneTestPassed(false);
     setScreenShareStatus("idle");
+    setIsNativeTaskReadyToStart(false);
     setIsNativeRecordingPaused(false);
     setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
@@ -2442,7 +2531,7 @@ export function TestSessionPage() {
       return;
     }
 
-    if (isNativeRecordingPaused) {
+    if (isNativeRecordingPaused || isNativeTaskReadyToStart) {
       return;
     }
 
@@ -2452,12 +2541,18 @@ export function TestSessionPage() {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [isNativeDesktopRecording, isNativeRecordingPaused, liveRecordingStartedAt]);
+  }, [
+    isNativeDesktopRecording,
+    isNativeRecordingPaused,
+    isNativeTaskReadyToStart,
+    liveRecordingStartedAt,
+  ]);
 
   useEffect(() => {
     const shouldKeepRecordingPipOpen =
       isNativeDesktopRecording &&
       (isNativeRecordingReadyToStart ||
+        isNativeTaskReadyToStart ||
         recordingPhase === "recording_live" ||
         recordingPhase === "uploading_recording" ||
         (recordingPhase === "return_and_submit" && uploadedRecording !== null));
@@ -2473,6 +2568,7 @@ export function TestSessionPage() {
     isNativeDesktopRecording,
     isNativeRecordingPaused,
     isNativeRecordingReadyToStart,
+    isNativeTaskReadyToStart,
     isSubmitting,
     isUploadingRecording,
     microphoneStatus,
@@ -2497,11 +2593,19 @@ export function TestSessionPage() {
 
     const timer = pipWindow.document.querySelector(".recording-pip__timer");
     if (timer) {
-      timer.textContent = isNativeRecordingReadyToStart
-        ? "00:00"
-        : formatElapsedDuration(liveElapsedSeconds);
+      timer.textContent =
+        isNativeRecordingReadyToStart ||
+        (isNativeTaskReadyToStart && recordingPhase !== "recording_live")
+          ? "00:00"
+          : formatElapsedDuration(liveElapsedSeconds);
     }
-  }, [isNativeDesktopRecording, isNativeRecordingReadyToStart, liveElapsedSeconds]);
+  }, [
+    isNativeDesktopRecording,
+    isNativeRecordingReadyToStart,
+    isNativeTaskReadyToStart,
+    liveElapsedSeconds,
+    recordingPhase,
+  ]);
 
   useEffect(() => {
     if (
@@ -2522,6 +2626,7 @@ export function TestSessionPage() {
       hasHandledRecordingRecoveryRef.current = true;
       setRecordingPhase("preflight");
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       setIsNativeRecordingPaused(false);
       setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
@@ -2736,6 +2841,7 @@ export function TestSessionPage() {
     setNativeRecordingBlob(null);
     setNativeCaptureConfirmed(false);
     setIsNativeRecordingReadyToStart(true);
+    setIsNativeTaskReadyToStart(false);
     setIsNativeRecordingPaused(false);
     setCurrentTesterInstructionIndex(0);
     recordingPausedAtRef.current = null;
@@ -2747,10 +2853,12 @@ export function TestSessionPage() {
     if (launched) {
       window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 150);
       window.setTimeout(() => focusOpenedWebsiteWindow(openedWindow), 500);
-      setMessage("Ready to record. Click Start test in the floating recorder to begin.");
+      setMessage(
+        'Ready to begin. Select "Click here to start" in the floating recorder to view the first task.',
+      );
     } else {
       setMessage(
-        "Ready to record. Click Start test in the floating recorder to begin. The website did not open automatically; use the app link above to open it.",
+        'Ready to begin. Select "Click here to start" in the floating recorder to view the first task. The website did not open automatically; use the app link above to open it.',
       );
     }
 
@@ -2770,9 +2878,10 @@ export function TestSessionPage() {
     });
   };
 
-  const handleNativeRecordingStart = async () => {
+  const handleNativeRecordingStart = async (options?: { focusPip?: boolean }) => {
     if (!selectedLink || selectedLink.productType !== "website") {
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       closeRecordingPipWindow();
       returnToTestSessionWindow();
       setMessage("Choose the website you're about to test before continuing.");
@@ -2781,6 +2890,7 @@ export function TestSessionPage() {
 
     if (!recordingUploadIdentity) {
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       closeRecordingPipWindow();
       returnToTestSessionWindow();
       setMessage("Verify your email before starting a recording test.");
@@ -2789,6 +2899,7 @@ export function TestSessionPage() {
 
     if (microphoneStatus !== "ready" || !microphoneStreamRef.current) {
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       closeRecordingPipWindow();
       returnToTestSessionWindow();
       setMessage("Enable your microphone before starting the test.");
@@ -2797,6 +2908,7 @@ export function TestSessionPage() {
 
     if (!microphoneTestPassed) {
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       closeRecordingPipWindow();
       returnToTestSessionWindow();
       setMessage("Test your microphone by speaking out loud before starting the test.");
@@ -2805,6 +2917,7 @@ export function TestSessionPage() {
 
     if (screenShareStatus !== "active" || !displayStreamRef.current) {
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       closeRecordingPipWindow();
       returnToTestSessionWindow();
       setMessage("Enable screen sharing before starting the test.");
@@ -2829,6 +2942,7 @@ export function TestSessionPage() {
       if (!activeVideoTrack || activeVideoTrack.readyState !== "live") {
         setScreenShareStatus("ended");
         setIsNativeRecordingReadyToStart(false);
+        setIsNativeTaskReadyToStart(false);
         closeRecordingPipWindow();
         returnToTestSessionWindow();
         setMessage("Screen sharing is no longer active. Enable it again before starting the test.");
@@ -2868,6 +2982,7 @@ export function TestSessionPage() {
         }
 
         setIsNativeRecordingPaused(false);
+        setIsNativeTaskReadyToStart(false);
         setCurrentTesterInstructionIndex(0);
         const chunkMimeType = recorder.mimeType || preferredMimeType || "video/webm";
         const finalBlob = new Blob(recordingChunksRef.current, { type: chunkMimeType });
@@ -2901,6 +3016,7 @@ export function TestSessionPage() {
           setScreenShareStatus("ended");
           setNativeCaptureConfirmed(false);
           setIsNativeRecordingPaused(false);
+          setIsNativeTaskReadyToStart(false);
           setCurrentTesterInstructionIndex(0);
           recordingPausedAtRef.current = null;
           mediaRecorderRef.current.stop();
@@ -2916,9 +3032,13 @@ export function TestSessionPage() {
       };
 
       recorder.start(1000);
-      recordingPipFocusTargetRef.current =
-        testerInstructionSteps.length > 1 ? "recording-pip-next" : "recording-pip-finish";
+      recordingPipFocusTargetRef.current = options?.focusPip
+        ? testerInstructionSteps.length > 1
+          ? "recording-pip-next"
+          : "recording-pip-finish"
+        : null;
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       setIsNativeRecordingPaused(false);
       setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
@@ -2942,6 +3062,7 @@ export function TestSessionPage() {
       setScreenShareStatus(displayStreamRef.current ? "active" : "error");
       setNativeCaptureConfirmed(false);
       setIsNativeRecordingReadyToStart(false);
+      setIsNativeTaskReadyToStart(false);
       setIsNativeRecordingPaused(false);
       setCurrentTesterInstructionIndex(0);
       recordingPausedAtRef.current = null;
@@ -3202,7 +3323,7 @@ export function TestSessionPage() {
                 </div>
               ) : null}
 
-              {recordingPhase === "preflight" ? (
+              {recordingPhase === "preflight" && !isNativeTaskReadyToStart ? (
                 <div className="recording-phase-stack">
                   {isNativeDesktopRecording ? (
                     <Card as="section" className={styles.setupCard}>
@@ -3550,14 +3671,16 @@ export function TestSessionPage() {
                 </div>
               ) : null}
 
-              {recordingPhase === "recording_live" ? (
+              {recordingPhase === "recording_live" || isNativeTaskReadyToStart ? (
                 <div className="recording-phase-card">
                   <div className="recording-phase-card__copy">
                     <span className="test-session__label">
                       {isNativeDesktopRecording
-                        ? isNativeRecordingPaused
-                          ? "Recording paused"
-                          : "Recording live"
+                        ? isNativeTaskReadyToStart
+                          ? "Task ready"
+                          : isNativeRecordingPaused
+                            ? "Recording paused"
+                            : "Recording live"
                         : "Testing in progress"}
                     </span>
                     <div
@@ -3569,7 +3692,7 @@ export function TestSessionPage() {
                         {isNativeDesktopRecording
                           ? isNativeRecordingPaused
                             ? "Recording paused"
-                            : testerInstructionProgress
+                            : testerTaskProgress
                           : recordingInstructions.launchTitle}
                       </h2>
                       <p>
@@ -3582,7 +3705,11 @@ export function TestSessionPage() {
                     </div>
                     {isNativeDesktopRecording ? (
                       <div className="recording-phase-card__timer">
-                        <strong>{formatElapsedDuration(liveElapsedSeconds)}</strong>
+                        <strong>
+                          {isNativeTaskReadyToStart && recordingPhase !== "recording_live"
+                            ? "00:00"
+                            : formatElapsedDuration(liveElapsedSeconds)}
+                        </strong>
                         <span>elapsed</span>
                       </div>
                     ) : null}
@@ -3621,12 +3748,30 @@ export function TestSessionPage() {
                     ) : null}
                     <Button
                       type="button"
+                      variant={
+                        isNativeDesktopRecording &&
+                        !isNativeTaskReadyToStart &&
+                        !isNativeRecordingPaused &&
+                        hasNextTesterInstruction
+                          ? "secondary"
+                          : "primary"
+                      }
+                      className={
+                        isNativeDesktopRecording &&
+                        !isNativeTaskReadyToStart &&
+                        !isNativeRecordingPaused &&
+                        hasNextTesterInstruction
+                          ? styles.taskFinishButton
+                          : undefined
+                      }
                       onClick={() => {
                         if (isNativeDesktopRecording) {
-                          if (isNativeRecordingPaused) {
+                          if (isNativeTaskReadyToStart) {
+                            handleNativeTaskStart();
+                          } else if (isNativeRecordingPaused) {
                             handleNativeRecordingResume();
                           } else if (hasNextTesterInstruction) {
-                            handleNextTesterInstruction();
+                            handleNextTesterTask();
                           } else {
                             stopNativeRecording();
                           }
@@ -3639,11 +3784,13 @@ export function TestSessionPage() {
                       }}
                     >
                       {isNativeDesktopRecording
-                        ? isNativeRecordingPaused
-                          ? "Resume recording"
-                          : hasNextTesterInstruction
-                            ? "Next instruction"
-                            : "Finish recording"
+                        ? isNativeTaskReadyToStart
+                          ? "Start task"
+                          : isNativeRecordingPaused
+                            ? "Resume recording"
+                            : hasNextTesterInstruction
+                              ? "Complete task"
+                              : "Finish recording"
                         : "I'm finished testing"}
                     </Button>
                   </div>
