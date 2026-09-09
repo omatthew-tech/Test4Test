@@ -2,12 +2,34 @@
 
 Asynchronous Node.js worker that turns usability-test screen recordings into a
 set of **unique, timestamped app-page screenshots** stored in Cloudflare R2 and
-normalized Groq Whisper transcripts returned to Supabase for persistence.
+normalized Groq Whisper transcripts returned in report job results.
 
 It exists as a standalone service because the rest of the Test4Test backend runs
 on Supabase Edge Functions (Deno), which cannot run `ffmpeg`. This worker does
 the heavy video processing and writes results back to R2 (and, optionally, to a
-completion webhook that persists references in Postgres).
+completion webhook).
+
+## Current integration status
+
+Thumbnail generation and private recording access have an active worker and
+Supabase integration in the current worktree. Report processing can generate
+timestamped transcript JSON, and the job result includes normalized segments and
+words.
+
+The Analytics transcript report now has a dedicated transcript-only worker path,
+durable transcript/word migration, owner report/retry endpoints, and an automatic
+dispatcher. Deployment and a consented staging recording must be verified before
+describing that integration as operational. See the [transcript report runbook](../../docs/transcript-reports.md).
+
+The synchronized owner transcript viewer, exact-range annotations, app-level
+priorities, clips, and AI context filtering remain outside this implementation.
+
+Transcript integration must treat the source recording’s unlimited
+retention and explicit-deletion boundary as authoritative, use idempotent
+pending/processing/ready/failed jobs, apply ownership-based RLS and explicit
+grants, and delete transcript data with the source. See
+[`../../usability_platform_product_plan.md`](../../usability_platform_product_plan.md)
+and [`../../supabase/README.md`](../../supabase/README.md).
 
 ## Why a background job (not a synchronous API)?
 
