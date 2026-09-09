@@ -1113,6 +1113,136 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+.earnTestCard {
+  display: block;
+  overflow: hidden;
+  padding: var(--ds-semantic-space-zero);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-surface-default);
+}
+
+.earnTestCardContent {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ds-semantic-space-stack-lg);
+  padding: var(--ds-semantic-space-stack-md);
+  flex-wrap: wrap;
+}
+
+.earnTestCardMain {
+  display: grid;
+  min-width: var(--ds-semantic-space-zero);
+  flex: 999 1 var(--ds-semantic-size-content-form);
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.earnTestCardBadges {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  flex-wrap: wrap;
+}
+
+.earnTestCardBadgeSurface {
+  display: inline-flex;
+  border-radius: var(--ds-semantic-radius-compact);
+}
+
+.earnTestCardBadgeSurface > span {
+  background: transparent;
+}
+
+.earnTestCardBadgeInfo {
+  background: var(--ds-semantic-color-status-info-tint);
+}
+
+.earnTestCardBadgeSuccess {
+  background: var(--ds-semantic-color-status-success-tint);
+}
+
+.earnTestCardBadgeWarning {
+  background: var(--ds-semantic-color-status-warning-tint);
+}
+
+.earnTestCardHead {
+  display: grid;
+  min-width: var(--ds-semantic-space-zero);
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.earnTestCardHead h2,
+.earnTestCardHead h3 {
+  overflow-wrap: anywhere;
+  font-size: var(--ds-semantic-typography-lead-desktop-size);
+  line-height: var(--ds-semantic-typography-lead-desktop-line-height);
+}
+
+.earnTestCardHead > p {
+  max-width: var(--ds-semantic-size-content-prose);
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.earnTestCardSupportingNote {
+  color: var(--ds-semantic-color-status-warning);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+.earnTestCardSupportingNoteAccent {
+  color: var(--ds-semantic-color-action-primary-strong);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.earnTestCardActionArea {
+  display: flex;
+  min-width: var(--ds-semantic-space-zero);
+  flex: 1 1 var(--ds-semantic-size-content-choice-min);
+  align-items: stretch;
+  justify-content: flex-end;
+  flex-direction: column;
+}
+
+.earnTestCardActionArea > a {
+  width: 100%;
+}
+
+.earnTestCardActionArea > a.buttonPrimary {
+  color: var(--ds-component-button-primary-content);
+}
+
+.earnTestCardActionArea > a.buttonSecondary {
+  color: var(--ds-semantic-color-text-primary);
+}
+
+.earnTestCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--ds-semantic-space-inline-sm);
+  padding: var(--ds-semantic-space-inline-md) var(--ds-semantic-space-stack-md);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+  background: var(--ds-semantic-color-background-subtle);
+}
+
+.earnTestCardFooterText {
+  display: flex;
+  min-width: var(--ds-semantic-space-zero);
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  flex-wrap: wrap;
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.earnTestCardAvatar {
+  width: var(--ds-semantic-size-control-compact);
+  height: var(--ds-semantic-size-control-compact);
+  border-radius: var(--ds-semantic-radius-pill);
+  object-fit: cover;
+}
+
 .questionEditor,
 .responseViewer {
   display: grid;
@@ -1165,6 +1295,14 @@
   .testRow {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+  }
+
+  .earnTestCardActionArea {
+    align-items: flex-end;
+  }
+
+  .earnTestCardActionArea > a {
+    width: auto;
   }
 }
 

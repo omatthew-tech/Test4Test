@@ -38,11 +38,46 @@
       "expires": "2027-08-07"
     },
     {
+      "id": "home-platform-brand-marks",
+      "owner": "Test4Test",
+      "scope": "The decorative Apple and Android platform marks in the testable-products section of src/pages/HomePage.tsx and their tokenized presentation in src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested reuse of the recognizable iOS and Android marks already used by the Earn platform filters. The exception is limited to those two decorative brand marks; the Web and Prototypes icons use Lucide, and layout, sizing, color, spacing, typography, and responsive behavior remain design-system controlled.",
+      "expires": "2027-08-27"
+    },
+    {
+      "id": "home-testable-products-feature-icon-sizing",
+      "owner": "Test4Test",
+      "scope": "The illustration-scale decorative icons in the testable-products section of src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested oversized feature icons matching the supplied homepage reference. The exception is limited to this section and derives every icon dimension and stroke from canonical semantic size and border tokens; icon color, spacing, typography, and responsive layout remain design-system controlled.",
+      "expires": "2027-08-28"
+    },
+    {
+      "id": "home-trusted-by-autoplay",
+      "owner": "Test4Test",
+      "scope": "The token-sized, continuously looping left-to-right card track in the Trusted by section of src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested continuous left-to-right movement for the public Earn-card showcase. The exception is limited to the long linear loop; the section provides pause and resume controls, pauses on hover and focus, removes autoplay for reduced motion, and keeps all layout and card presentation design-system controlled.",
+      "expires": "2027-08-27"
+    },
+    {
+      "id": "home-managed-comparison-media",
+      "owner": "Test4Test",
+      "scope": "The supplied looping monkey media and muted grayscale treatment in the managed-recruitment comparison section of src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly selected these two photographic loops, requested that the competitor image receive a lower-attention grayscale treatment, and requested an uncluttered comparison without a visible animation control. The exception is limited to the supplied media and its filter/opacity values; the section serves static posters for reduced motion, hides decorative imagery from assistive technology, and keeps layout, color, typography, spacing, borders, and controls design-system token controlled.",
+      "expires": "2027-08-28"
+    },
+    {
       "id": "supabase-transactional-email-functions",
       "owner": "Test4Test Backend",
       "scope": "Existing HTML embedded in Supabase Edge Functions under supabase/functions.",
       "rationale": "The approved migration explicitly excludes Supabase Function changes. Repository email previews use the new system; production function templates require a separately authorized backend migration and deployment.",
       "expires": "2026-10-23"
+    },
+    {
+      "id": "home-feedback-supplied-illustrations",
+      "owner": "Test4Test",
+      "scope": "The two user-supplied UI illustrations, prepared as public/images/home-feedback-earn-credit.webp and public/images/home-feedback-share-test.webp, in the homepage free-feedback section.",
+      "rationale": "The design owner requested these exact illustrated concepts, including the credit star, overlapping UI cards, and dark background inside the sharing artwork. This exception covers only the decorative raster artwork. Surrounding layout, colors, typography, spacing, image radius, and responsive behavior consume design-system tokens; adjacent existing copy conveys the meaning and images are hidden from assistive technology.",
+      "expires": "2027-03-09"
     }
   ]
 }

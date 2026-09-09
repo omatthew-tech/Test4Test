@@ -371,6 +371,10 @@ deno_version = 2
 [functions.get-response-recording-access]
 verify_jwt = false
 
+[functions.get-home-trusted-logos]
+verify_jwt = false
+import_map = "./functions/get-home-trusted-logos/deno.json"
+
 [functions.recording-upload-r2]
 verify_jwt = false
 
@@ -414,3 +418,16 @@ entrypoint = "./functions/send-paid-test-availability/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-paid-test-availability/*.html" ]
+
+# JWTs are verified through auth.getUser in owner handlers; internal handlers verify shared secrets.
+[functions.get-transcript-report]
+verify_jwt = true
+
+[functions.retry-recording-transcript]
+verify_jwt = true
+
+[functions.complete-recording-transcript]
+verify_jwt = false
+
+[functions.dispatch-recording-transcripts]
+verify_jwt = false

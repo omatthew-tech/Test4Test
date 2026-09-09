@@ -1,5 +1,5 @@
 import { seededState } from "../data/seeds";
-import type { AdminTestReport, AppState, TestResponse, User } from "../types";
+import type { AdminTestReport, AppState, Submission, TestResponse, User } from "../types";
 
 function createSecondPaletteResponse(source: TestResponse): TestResponse {
   return {
@@ -125,6 +125,8 @@ export function createDesignSystemFixtureState(search: string): AppState {
     "Invite a collaborator and review <strong>sharing controls</strong>.",
   ];
   const noLiveSubmission = parameters.get("ds-no-live") === "1";
+  const includeMultipleTests = parameters.get("ds-multiple-tests") === "1";
+  const includeHomeTrustedTests = parameters.get("ds-home-trusted") === "1";
   const requestedRecordingCount = parameters.get("ds-recordings");
   const availableRecordingCount =
     requestedRecordingCount === "2" ? 2 : requestedRecordingCount === "1" ? 1 : 0;
@@ -169,6 +171,64 @@ export function createDesignSystemFixtureState(search: string): AppState {
       };
     });
 
+  const paletteSubmission = seededState.submissions.find(
+    (submission) => submission.id === "submission-palette",
+  );
+  const additionalPaletteTests =
+    includeMultipleTests && paletteSubmission
+      ? [
+          {
+            ...structuredClone(paletteSubmission),
+            id: "submission-palette-beta",
+            productName: "Palette Pilot Beta",
+            description: "A second live test that can be selected for the Earn page.",
+            isOpenForMoreTests: false,
+            responseCount: 0,
+            lastResponseAt: null,
+            createdAt: "2026-08-20T12:00:00.000Z",
+          },
+          {
+            ...structuredClone(paletteSubmission),
+            id: "submission-palette-review",
+            productName: "Palette Pilot Mobile",
+            description: "A pending test that remains editable but cannot be selected for Earn.",
+            status: "pending_verification" as const,
+            isOpenForMoreTests: false,
+            responseCount: 0,
+            lastResponseAt: null,
+            createdAt: "2026-08-21T12:00:00.000Z",
+          },
+        ]
+      : [];
+  const homeTrustedTests =
+    includeHomeTrustedTests && paletteSubmission
+      ? [
+          {
+            ...structuredClone(paletteSubmission),
+            id: "submission-home-trusted-launch",
+            userId: "user-home-trusted-launch",
+            productName:
+              parameters.get("ds-home-logo-title") === "long"
+                ? "Launch Loom collaborative planning workspace for growing product teams"
+                : "Launch Loom",
+            productTypes: ["website"] as Submission["productTypes"],
+            description: "A focused launch-planning workspace for small product teams.",
+            responseCount: 2,
+            createdAt: "2026-08-24T12:00:00.000Z",
+          },
+          {
+            ...structuredClone(paletteSubmission),
+            id: "submission-home-trusted-scout",
+            userId: "user-home-trusted-scout",
+            productName: "Scoutly Mobile",
+            productTypes: ["ios", "android"] as Submission["productTypes"],
+            description: "A mobile field-research companion for capturing observations on the go.",
+            responseCount: 3,
+            createdAt: "2026-08-25T12:00:00.000Z",
+          },
+        ]
+      : [];
+
   return {
     ...structuredClone(seededState),
     currentUserId,
@@ -194,9 +254,15 @@ export function createDesignSystemFixtureState(search: string): AppState {
             : structuredClone(submission);
 
         return noLiveSubmission && fixtureSubmission.userId === currentUserId
-          ? { ...fixtureSubmission, status: "paused" as const }
+          ? {
+              ...fixtureSubmission,
+              status: "paused" as const,
+              isOpenForMoreTests: false,
+            }
           : fixtureSubmission;
       }),
+      ...additionalPaletteTests,
+      ...homeTrustedTests,
       ...(includePaidTest ? [createPaidTestFixture()] : []),
     ],
     responses,

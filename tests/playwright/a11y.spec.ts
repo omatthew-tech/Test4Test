@@ -17,6 +17,12 @@ async function findHorizontalOverflow(page: Page) {
     const viewportWidth = document.documentElement.clientWidth;
 
     return [...document.querySelectorAll<HTMLElement>("body *")]
+      .filter((element) => {
+        const overflowContainer = element.closest<HTMLElement>(
+          '[data-contained-horizontal-overflow="true"]',
+        );
+        return !overflowContainer || overflowContainer === element;
+      })
       .map((element) => {
         const rect = element.getBoundingClientRect();
         const styles = getComputedStyle(element);

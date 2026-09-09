@@ -18,12 +18,12 @@ All workflows use exports from `@test4test/design-system`, semantic tokens, expl
 - Explain the exchange accurately: one approved recording earns one credit; there is no starter credit.
 - Move through explicit preflight, microphone permission, screen-share permission, active capture, finalizing, uploading, retry/recovery, processing, and completion states.
 - Use text and live regions for every state change. Do not rely on color, animation, waveform motion, or progress alone.
-- Before capture, disclose the 60-day retention period, transcript processing, owner review, and safe screen-sharing guidance.
+- Before capture, disclose that finalized recordings are retained until owner or account deletion, along with transcript processing, owner review, and safe screen-sharing guidance.
 
 ## Recording and transcript review
 
 - Keep video, playback time, transcript position, and exact timed-word selection synchronized.
-- Expose `pending`, `ready`, `failed`, `retrying`, `expired`, and `deleted` transcript states in text.
+- Expose `pending`, `ready`, `failed`, `retrying`, and `deleted` transcript states in text.
 - Yellow means useful, red means not useful, and unmarked means neutral.
 - An annotation control must support exact word ranges, recoloring, resizing, and removal while preventing incompatible overlaps.
 - Color is never the only indicator: announce the annotation label and selection boundaries to assistive technology.
@@ -33,7 +33,7 @@ The current `ResponseViewer` and `RatingControl` document v1 behavior. They are 
 
 ## Improvement priorities
 
-- The page is scoped to one app and combines yellow annotations across all unexpired recordings for that app.
+- The page is scoped to one app and combines yellow annotations across all available recordings for that app.
 - Present ranked themes with recurrence or support information and expandable source evidence.
 - Every finding links to its recording and timestamp; a theme without current source evidence must not be shown as fact.
 - Clearly distinguish generated grouping or summary text from the owner’s original highlighted words.
@@ -43,9 +43,9 @@ The current `ResponseViewer` and `RatingControl` document v1 behavior. They are 
 
 - A clip editor provides exact start/end controls, keyboard-adjustable range boundaries, a bounded video preview, and the matching transcript excerpt.
 - Validate that the range is non-empty and inside the source recording.
-- The share dialog contains a labelled unlisted URL, copy feedback, revocation language, and the source expiration date.
+- The share dialog contains a labelled unlisted URL, copy feedback, revocation language, and the source deletion/retention policy.
 - The public clip view shows only the selected range, app name, clip title, and excerpt. It omits tester identity and navigation to the rest of the recording.
-- Deleted, revoked, expired, invalid-token, media-processing, and temporarily unavailable states do not reveal whether other private recording data exists.
+- Deleted, revoked, optional share-expired, invalid-token, media-processing, and temporarily unavailable states do not reveal whether other private recording data exists.
 
 ## AI conversations and context selection
 

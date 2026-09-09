@@ -268,6 +268,7 @@ interface AppStateContextValue {
     draft: SubmissionDraft,
     currentStatus?: Submission["status"],
   ) => Promise<void>;
+  activateEarnSubmission: (submissionId: string) => Promise<void>;
   upsertSubmissionShareLink: (
     submissionId: string,
     customMessage: string,
@@ -426,8 +427,7 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
     !row.recording_file_name ||
     !row.recording_mime_type ||
     typeof row.recording_file_size_bytes !== "number" ||
-    !row.recording_uploaded_at ||
-    !row.recording_expires_at
+    !row.recording_uploaded_at
   ) {
     return null;
   }
@@ -439,7 +439,7 @@ function mapResponseRecording(row: TestResponseRow): ResponseRecording | null {
     mimeType: row.recording_mime_type,
     fileSizeBytes: row.recording_file_size_bytes,
     uploadedAt: row.recording_uploaded_at,
-    expiresAt: row.recording_expires_at,
+    expiresAt: row.recording_expires_at ?? null,
     deletedAt: row.recording_deleted_at,
     thumbnail: {
       bucket: row.recording_thumbnail_bucket ?? null,
@@ -633,6 +633,17 @@ function shouldLoadFullStateForPath(pathname: string, currentUserId: string | nu
     normalizedPathname === "/blog" ||
     normalizedPathname.startsWith("/blog/")
   );
+}
+
+function getTestReferenceForPath(pathname: string) {
+  const match = normalizePathname(pathname).match(/^\/test\/([^/]+)/);
+  if (!match) return null;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
 }
 
 function hasUsableSession(session: Session | null | undefined): session is Session {
@@ -849,6 +860,7 @@ function isMissingSubmissionSchemaError(message: string) {
     normalized.includes("submission_versions") ||
     normalized.includes("create_submission_with_questions") ||
     normalized.includes("create_recording_submission") ||
+    normalized.includes("activate_earn_submission") ||
     normalized.includes("submit_test_response") ||
     normalized.includes("submit_public_test_response") ||
     normalized.includes("upsert_submission_share_link") ||
@@ -958,12 +970,16 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
 
   throw lastError ?? new Error("We could not finish setting up your profile. Please try again.");
 }
-async function loadVisibleSubmissions(currentUserId: string | null) {
+async function loadVisibleSubmissions(
+  currentUserId: string | null,
+  publicTestReference: string | null,
+) {
   const supabase = requireSupabase();
   const { data: liveRows, error: liveError } = await supabase
     .from("submissions")
     .select("*")
     .eq("status", "live")
+    .eq("is_open_for_more_tests", true)
     .order("created_at", { ascending: false });
 
   if (liveError) {
@@ -971,6 +987,7 @@ async function loadVisibleSubmissions(currentUserId: string | null) {
   }
 
   let ownRows: SubmissionRow[] = [];
+  let publicSharedRows: SubmissionRow[] = [];
 
   if (currentUserId) {
     const { data, error } = await supabase
@@ -986,7 +1003,30 @@ async function loadVisibleSubmissions(currentUserId: string | null) {
     ownRows = (data ?? []) as SubmissionRow[];
   }
 
-  return mergeUniqueById([...((liveRows ?? []) as SubmissionRow[]), ...ownRows])
+  if (publicTestReference) {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        publicTestReference,
+      );
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*")
+      .eq("status", "live")
+      .eq(isUuid ? "id" : "public_share_slug", publicTestReference)
+      .limit(1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    publicSharedRows = (data ?? []) as SubmissionRow[];
+  }
+
+  return mergeUniqueById([
+    ...((liveRows ?? []) as SubmissionRow[]),
+    ...ownRows,
+    ...publicSharedRows,
+  ])
     .map(mapSubmission)
     .sort(
       (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
@@ -1274,6 +1314,27 @@ async function persistRecordingSubmission(draft: SubmissionDraft) {
   return data;
 }
 
+async function persistEarnSubmissionActivation(submissionId: string) {
+  const { supabase } = await ensureAuthenticatedSession(
+    "Please sign in again before choosing an Earn test.",
+  );
+  const { data, error } = await supabase.rpc("activate_earn_submission", {
+    p_submission_id: submissionId,
+  });
+
+  if (error) {
+    if (isMissingSubmissionSchemaError(error.message)) {
+      throw new Error(latestSubmissionSchemaMessage);
+    }
+
+    throw new Error(error.message);
+  }
+
+  if (typeof data !== "string") {
+    throw new Error("The Earn test could not be changed.");
+  }
+}
+
 async function persistSubmissionDetails(
   submissionId: string,
   draft: SubmissionDraft,
@@ -1473,7 +1534,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const submissions = await loadVisibleSubmissions(currentUserId);
+        const submissions = await loadVisibleSubmissions(
+          currentUserId,
+          getTestReferenceForPath(pathname),
+        );
         const submissionIds = submissions.map((submission) => submission.id);
         const ownedSubmissionIds = currentUserId
           ? submissions
@@ -1940,6 +2004,95 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return pendingId;
         }
 
+        if (designSystemFixturesEnabled) {
+          if (currentUser.accountType !== "founder") {
+            throw new Error("Only founder accounts can submit apps.");
+          }
+
+          const productTypes = normalizeProductTypes(draft.productTypes);
+          const accessLinks = normalizeAccessLinks(draft.accessLinks);
+          const instructionSteps = normalizeInstructionSteps(
+            draft.instructionSteps,
+            draft.instructions,
+          );
+
+          if (!draft.productName.trim()) {
+            throw new Error("Add an app name before publishing.");
+          }
+
+          if (!getPrimaryAccessLink(accessLinks, productTypes)) {
+            throw new Error("Add at least one public link before publishing.");
+          }
+
+          const createdAt = new Date().toISOString();
+          const createdId = createId("submission");
+          const submissionVersionId = createId("submission-version");
+          const questionSetVersionId = createId("question-set-version");
+          const submission: Submission = {
+            id: createdId,
+            userId: currentUser.id,
+            productName: draft.productName.trim(),
+            productTypes,
+            description: draft.description,
+            targetAudience: draft.targetAudience,
+            instructions: serializeInstructionSteps(instructionSteps),
+            instructionSteps,
+            googlePlayClosedTestInstructions: draft.googlePlayClosedTestInstructions,
+            accessLinks,
+            requiresRecording: draft.requiresRecording,
+            needsGooglePlayClosedTesters: draft.needsGooglePlayClosedTesters,
+            publicShareSlug: null,
+            publicShareMessage: null,
+            status: "live",
+            questionMode: draft.questionMode,
+            isOpenForMoreTests: true,
+            rewardType: "credit",
+            promoted: false,
+            createdAt,
+            estimatedMinutes: estimateSubmissionMinutes([], draft.requiresRecording),
+            responseCount: 0,
+            lastResponseAt: null,
+            tags: productTypesBadges(productTypes),
+          };
+
+          setState((current) => ({
+            ...current,
+            submissions: [
+              submission,
+              ...current.submissions.map((item) =>
+                item.userId === currentUser.id && item.status === "live"
+                  ? { ...item, isOpenForMoreTests: false }
+                  : item,
+              ),
+            ],
+            submissionVersions: [
+              {
+                id: submissionVersionId,
+                submissionId: createdId,
+                versionNumber: 1,
+                title: "Version 1",
+                description: null,
+                createdAt,
+                isActive: true,
+              },
+              ...current.submissionVersions,
+            ],
+            questionSetVersions: [
+              {
+                id: questionSetVersionId,
+                submissionId: createdId,
+                versionNumber: 1,
+                createdAt,
+                isActive: true,
+                mode: draft.questionMode,
+                questions: [],
+              },
+              ...current.questionSetVersions,
+            ],
+          }));
+          return createdId;
+        }
+
         const createdId = await persistRecordingSubmission(draft);
         await refreshState();
         return createdId;
@@ -2005,6 +2158,40 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         await persistSubmissionDetails(submissionId, draft, estimatedMinutes, nextStatus);
+        await refreshState();
+      },
+      async activateEarnSubmission(submissionId) {
+        const submission = state.submissions.find((item) => item.id === submissionId);
+
+        if (!submission) {
+          throw new Error("That test could not be found.");
+        }
+
+        if (!currentUser || submission.userId !== currentUser.id) {
+          throw new Error("You can only use one of your own tests on Earn.");
+        }
+
+        if (currentUser.accountType !== "founder") {
+          throw new Error("Only founder accounts can choose an Earn test.");
+        }
+
+        if (submission.status !== "live") {
+          throw new Error("That test is unavailable for Earn while it is paused or under review.");
+        }
+
+        if (designSystemFixturesEnabled) {
+          setState((current) => ({
+            ...current,
+            submissions: current.submissions.map((item) =>
+              item.userId === currentUser.id && item.status === "live"
+                ? { ...item, isOpenForMoreTests: item.id === submissionId }
+                : item,
+            ),
+          }));
+          return;
+        }
+
+        await persistEarnSubmissionActivation(submissionId);
         await refreshState();
       },
       async upsertSubmissionShareLink(submissionId, customMessage) {

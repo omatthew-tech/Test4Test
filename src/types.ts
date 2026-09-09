@@ -126,7 +126,7 @@ export interface ResponseRecording {
   mimeType: string;
   fileSizeBytes: number;
   uploadedAt: string;
-  expiresAt: string;
+  expiresAt: string | null;
   deletedAt?: string | null;
   thumbnail?: RecordingThumbnailMetadata | null;
 }

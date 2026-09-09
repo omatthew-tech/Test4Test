@@ -33,7 +33,7 @@ This is a future release runbook. It does not state that the current redesign br
 
 5. Cutover and monitoring
 
-- Smoke-test sign-in, create/share, Earn, recording upload/access, transcript processing/retry, clip access/revocation, credits, payment webhooks, managed-order status, account deletion, and 60-day cleanup.
+- Smoke-test sign-in, create/share, Earn, recording upload/access, transcript processing/retry, clip access/revocation, credits, payment webhooks, managed-order status, account deletion, indefinite finalized-recording retention, and abandoned-draft cleanup.
 - Monitor client errors, auth failures, media queues, transcript queues, notification delivery, token abuse, order fulfillment, and cleanup failures.
 - Keep a tested rollback target and pause new paid orders if fulfillment or payment state is inconsistent.
 

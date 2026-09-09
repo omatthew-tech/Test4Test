@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
-import { Card, StatusIndicator, type StatusTone } from "./data-display";
+import { ArrowRight } from "lucide-react";
+import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
+import { Link } from "./actions";
+import { Badge, Card, StatusIndicator, Surface, type StatusTone } from "./data-display";
 import { Cluster, Stack } from "./layout";
 import { Progress } from "./feedback";
 import { Textarea } from "./inputs";
@@ -152,6 +154,133 @@ export function TestRow({
       </Stack>
       {actions && <Cluster>{actions}</Cluster>}
     </Card>
+  );
+}
+
+export type EarnTestCardBadgeTone = "info" | "success" | "warning";
+
+export interface EarnTestCardBadge {
+  id: string;
+  label: ReactNode;
+  tone: EarnTestCardBadgeTone;
+}
+
+export interface EarnTestCardAction {
+  label: ReactNode;
+  to: string;
+  variant?: "primary" | "secondary";
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
+}
+
+export interface EarnTestCardReputation {
+  avatarUrl?: string | null;
+  testBackRatePercent: number;
+  satisfactionRatePercent: number;
+}
+
+export interface EarnTestCardProps {
+  title: ReactNode;
+  description: ReactNode;
+  badges: EarnTestCardBadge[];
+  action?: EarnTestCardAction;
+  supportingNote?: ReactNode;
+  supportingNoteTone?: "accent" | "warning";
+  reputation?: EarnTestCardReputation;
+  headingLevel?: 2 | 3;
+  as?: "article" | "section";
+  className?: string;
+  style?: CSSProperties;
+}
+
+export function EarnTestCard({
+  title,
+  description,
+  badges,
+  action,
+  supportingNote,
+  supportingNoteTone = "warning",
+  reputation,
+  headingLevel = 3,
+  as = "article",
+  className = "",
+  style,
+}: EarnTestCardProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
+  const actionVariantClass =
+    action?.variant === "secondary" ? styles.buttonSecondary : styles.buttonPrimary;
+
+  return (
+    <Surface
+      as={as}
+      padding="none"
+      className={`${styles.earnTestCard} ${className}`.trim()}
+      style={style /* ds-exception: runtime-measurements */}
+    >
+      <div className={styles.earnTestCardContent}>
+        <div className={styles.earnTestCardMain}>
+          <div className={styles.earnTestCardBadges}>
+            {badges.map((badge) => (
+              <span
+                className={`${styles.earnTestCardBadgeSurface} ${
+                  badge.tone === "success"
+                    ? styles.earnTestCardBadgeSuccess
+                    : badge.tone === "warning"
+                      ? styles.earnTestCardBadgeWarning
+                      : styles.earnTestCardBadgeInfo
+                }`}
+                key={badge.id}
+              >
+                <Badge tone={badge.tone}>{badge.label}</Badge>
+              </span>
+            ))}
+          </div>
+          <div className={styles.earnTestCardHead}>
+            <Heading>{title}</Heading>
+            <p>{description}</p>
+            {supportingNote ? (
+              <div
+                className={`${styles.earnTestCardSupportingNote} ${
+                  supportingNoteTone === "accent" ? styles.earnTestCardSupportingNoteAccent : ""
+                }`.trim()}
+              >
+                {supportingNote}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {action ? (
+          <div className={styles.earnTestCardActionArea}>
+            <Link
+              to={action.to}
+              className={`${styles.button} ${actionVariantClass}`}
+              onClick={action.onClick}
+            >
+              {action.label}
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+        ) : null}
+      </div>
+
+      {reputation ? (
+        <div className={styles.earnTestCardFooter}>
+          {reputation.avatarUrl ? (
+            <img
+              src={reputation.avatarUrl}
+              alt=""
+              className={styles.earnTestCardAvatar}
+              loading="lazy"
+            />
+          ) : null}
+          <div className={styles.earnTestCardFooterText}>
+            <span>This user has a {reputation.testBackRatePercent}% Test-back Rate</span>
+            <span aria-hidden="true">&bull;</span>
+            <span>{reputation.satisfactionRatePercent}% Satisfaction Rate</span>
+          </div>
+        </div>
+      ) : null}
+    </Surface>
   );
 }
 

@@ -72,6 +72,7 @@ export const config = {
   },
 
   transcription: {
+    completionWebhookUrl: process.env.TRANSCRIPT_COMPLETION_WEBHOOK_URL?.trim() ?? "",
     provider: "groq",
     apiKey: process.env.GROQ_API_KEY?.trim() ?? "",
     model: optionalEnv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo"),

@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Cluster,
+  EarnTestCard,
   PageHeader,
   QuestionEditor,
   RatingControl,
@@ -313,6 +314,53 @@ export const TestRowContract: Story = {
     await expect(canvas.getByText("Loading test details")).toBeVisible();
     await expect(canvas.getByText("Closed")).toBeVisible();
     await expect(canvas.getByText("Response sync failed")).toBeVisible();
+  },
+};
+
+// @test4test-coverage earn-test-card | sizes: responsive | variants: with-action, without-action, with-reputation | states: default, long-content, narrow-width, supporting-note
+export const EarnTestCardContract: Story = {
+  render: () => (
+    <Stack>
+      <EarnTestCard
+        title="Palette Pilot"
+        description="A collaborative moodboard and creative direction workspace for design teams."
+        badges={[
+          { id: "reciprocal", label: "This user tested your app", tone: "warning" },
+          { id: "platform", label: "Web", tone: "info" },
+        ]}
+        action={{ label: "View test", to: "/test/palette-pilot" }}
+        reputation={{ testBackRatePercent: 92, satisfactionRatePercent: 100 }}
+      />
+      <EarnTestCard
+        title="A deliberately long mobile research study name that wraps without covering its action"
+        description="Review a focused onboarding journey, complete the primary task, and share detailed usability feedback about every point where the next step was unclear."
+        badges={[
+          { id: "paid", label: "Paid test", tone: "success" },
+          { id: "ios", label: "iOS", tone: "info" },
+          { id: "android", label: "Android", tone: "info" },
+          { id: "closed", label: "Google Play closed test", tone: "warning" },
+        ]}
+        supportingNote="Join the Android test and check in once a day for 14 consecutive days."
+        action={{ label: "Resume test", to: "/test/mobile-research" }}
+      />
+      <EarnTestCard
+        as="section"
+        title="Private placement preview"
+        description="This card has no primary action while its placement is being calculated."
+        badges={[{ id: "private", label: "Only visible to you", tone: "success" }]}
+      />
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByRole("article")).toHaveLength(2);
+    await expect(canvas.getByRole("heading", { name: "Private placement preview" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "View test" })).toHaveAttribute(
+      "href",
+      "/test/palette-pilot",
+    );
+    await expect(canvas.getByRole("link", { name: "Resume test" })).toBeVisible();
+    await expect(canvas.getByText("92% Test-back Rate", { exact: false })).toBeVisible();
   },
 };
 

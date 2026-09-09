@@ -5,7 +5,6 @@ import {
 } from "../_shared/response-recordings.ts";
 import {
   buildCompleteMultipartXml,
-  calculateR2RecordingExpiry,
   createR2PresignedUrl,
   getR2RecordingEnvironment,
   parseR2UploadId,
@@ -157,7 +156,6 @@ async function upsertUploadRow(
   }
 
   const uploadedAt = input.uploadedAt ?? null;
-  const expiresAt = uploadedAt ? calculateR2RecordingExpiry(new Date(uploadedAt)) : null;
 
   const { error } = await admin.from("test_response_recording_uploads").upsert(
     {
@@ -173,7 +171,7 @@ async function upsertUploadRow(
       mime_type: input.mimeType,
       file_size_bytes: input.fileSizeBytes,
       uploaded_at: uploadedAt,
-      expires_at: expiresAt,
+      expires_at: null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "storage_bucket,object_key" },

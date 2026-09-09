@@ -1,0 +1,43 @@
+.testPicker {
+  display: flex;
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-sm);
+  flex-wrap: wrap;
+  padding-block-end: var(--ds-semantic-space-stack-md);
+  border-block-end: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+  margin-block-end: var(--ds-semantic-space-stack-md);
+}
+
+.testSelect {
+  min-width: min(100%, var(--ds-semantic-size-content-choice-min));
+  flex: 1 1 var(--ds-semantic-size-content-choice-min);
+}
+
+.confirmation {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
+.confirmationCopy {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.confirmationCopy h3 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.confirmationCopy p {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.confirmationActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ds-semantic-space-inline-sm);
+  flex-wrap: wrap;
+}

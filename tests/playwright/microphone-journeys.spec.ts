@@ -7,7 +7,14 @@ declare global {
     __testMediaRecorderPauseCount: number;
     __testMediaRecorderResumeCount: number;
     __testMediaRecorderStopCount: number;
+    __testDownloadedRecordingFileName: string | null;
+    __testRecordingPipHeight: number;
     __testRecordingPipDocument: Document | null;
+    __testRecordingUploadControl?: {
+      fail: () => void;
+      setProgress: (percentage: number, state?: "uploading" | "retrying") => void;
+      succeed: () => void;
+    };
     __testEndScreenShare: () => void;
   }
 }
@@ -19,7 +26,19 @@ async function installMicrophoneFixture(page: Page) {
     window.__testMediaRecorderPauseCount = 0;
     window.__testMediaRecorderResumeCount = 0;
     window.__testMediaRecorderStopCount = 0;
+    window.__testDownloadedRecordingFileName = null;
+    window.__testRecordingPipHeight = 300;
     window.__testRecordingPipDocument = null;
+
+    const anchorClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function testRecordingDownload() {
+      if (this.download) {
+        window.__testDownloadedRecordingFileName = this.download;
+        return;
+      }
+
+      anchorClick.call(this);
+    };
 
     class TestMicrophoneAnalyser {
       fftSize = 512;
@@ -150,14 +169,19 @@ async function installMicrophoneFixture(page: Page) {
             closed: false,
             document: pipDocument,
             focus: () => undefined,
-            innerHeight: 300,
-            outerHeight: 300,
+            get innerHeight() {
+              return window.__testRecordingPipHeight;
+            },
+            get outerHeight() {
+              return window.__testRecordingPipHeight;
+            },
             outerWidth: 360,
             requestAnimationFrame: (callback: FrameRequestCallback) => {
               callback(0);
               return 1;
             },
             resizeTo: (width: number, height: number) => {
+              window.__testRecordingPipHeight = height;
               pipFrame.style.width = `${width}px`;
               pipFrame.style.height = `${height}px`;
             },
@@ -188,6 +212,27 @@ async function installMicrophoneFixture(page: Page) {
       },
     });
   });
+}
+
+async function startAndFinishNativeRecording(page: Page) {
+  await page.getByRole("button", { name: "Enable microphone" }).click();
+  await page.evaluate(() => {
+    window.__testMicrophoneIsLoud = true;
+  });
+  await expect(page.getByRole("img", { name: "Microphone test passed" })).toBeVisible();
+  await page.getByRole("button", { name: "Share screen" }).click();
+  await page.getByRole("button", { name: "Get started" }).click();
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument?.getElementById("recording-pip-start")?.click();
+  });
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument?.getElementById("recording-pip-start-task")?.click();
+  });
+  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStartCount)).toBe(1);
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument?.getElementById("recording-pip-finish")?.click();
+  });
+  await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStopCount)).toBe(1);
 }
 
 test("floating recorder starts, pauses, resumes, and finalizes capture", async ({ page }) => {
@@ -448,6 +493,200 @@ test("floating recorder starts, pauses, resumes, and finalizes capture", async (
   await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStopCount)).toBe(1);
   await expect(page.getByRole("heading", { name: "Recording paused" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Resume recording" })).toHaveCount(0);
+});
+
+test("upload recovery disclosure preserves focus and downloads a backup without stopping upload", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMicrophoneFixture(page);
+  await page.goto(
+    "/test/submission-palette?ds-user=user-avery&ds-recording=1&ds-recording-upload=controlled",
+  );
+  await startAndFinishNativeRecording(page);
+
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        chevronHidden:
+          window.__testRecordingPipDocument
+            ?.querySelector(".recording-pip__recovery-chevron")
+            ?.getAttribute("aria-hidden") ?? null,
+        downloadLabel:
+          window.__testRecordingPipDocument
+            ?.getElementById("recording-pip-download")
+            ?.textContent?.trim() ?? null,
+        help:
+          window.__testRecordingPipDocument
+            ?.querySelector(".recording-pip__recovery-help")
+            ?.textContent?.trim() ?? null,
+        open: (
+          window.__testRecordingPipDocument?.getElementById(
+            "recording-pip-upload-recovery",
+          ) as HTMLDetailsElement | null
+        )?.open,
+        summaryTag: window.__testRecordingPipDocument
+          ?.getElementById("recording-pip-upload-recovery-summary")
+          ?.tagName.toLowerCase(),
+        summaryText:
+          window.__testRecordingPipDocument
+            ?.getElementById("recording-pip-upload-recovery-summary")
+            ?.textContent?.trim() ?? null,
+        title:
+          window.__testRecordingPipDocument
+            ?.querySelector(".recording-pip__recovery-title")
+            ?.textContent?.trim() ?? null,
+      })),
+    )
+    .toEqual({
+      chevronHidden: "true",
+      downloadLabel: "Download",
+      help: "Go to the test's page and upload the recording for full credit.",
+      open: false,
+      summaryTag: "summary",
+      summaryText: "Experiencing an error?",
+      title: "Download recording",
+    });
+
+  const compactHeight = await page.evaluate(() => window.__testRecordingPipHeight);
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument
+      ?.getElementById("recording-pip-upload-recovery-summary")
+      ?.focus();
+  });
+  await page.keyboard.press("Enter");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window.__testRecordingPipDocument?.getElementById(
+              "recording-pip-upload-recovery",
+            ) as HTMLDetailsElement | null
+          )?.open,
+      ),
+    )
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.__testRecordingPipHeight))
+    .toBeGreaterThan(compactHeight);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const pipDocument = window.__testRecordingPipDocument;
+        return Boolean(
+          pipDocument &&
+          pipDocument.documentElement.scrollHeight <= window.__testRecordingPipHeight,
+        );
+      }),
+    )
+    .toBe(true);
+
+  await page.evaluate(() => {
+    const download = window.__testRecordingPipDocument?.getElementById("recording-pip-download");
+    download?.setAttribute("data-progress-stable", "true");
+    download?.focus();
+    window.__testRecordingUploadControl?.setProgress(55, "retrying");
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        activeElement: window.__testRecordingPipDocument?.activeElement?.id,
+        open: (
+          window.__testRecordingPipDocument?.getElementById(
+            "recording-pip-upload-recovery",
+          ) as HTMLDetailsElement | null
+        )?.open,
+        stableNode: window.__testRecordingPipDocument
+          ?.getElementById("recording-pip-download")
+          ?.getAttribute("data-progress-stable"),
+        status: window.__testRecordingPipDocument
+          ?.getElementById("recording-pip-upload-status")
+          ?.textContent?.trim(),
+      })),
+    )
+    .toEqual({
+      activeElement: "recording-pip-download",
+      open: true,
+      stableNode: "true",
+      status: "Retrying upload",
+    });
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument?.getElementById("recording-pip-download")?.click();
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__testDownloadedRecordingFileName))
+    .toMatch(/^screen-recording-.+\.webm$/);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+    .toBe(true);
+
+  await page.evaluate(() => {
+    window.__testRecordingPipDocument
+      ?.getElementById("recording-pip-upload-recovery-summary")
+      ?.focus();
+  });
+  await page.keyboard.press("Space");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window.__testRecordingPipDocument?.getElementById(
+              "recording-pip-upload-recovery",
+            ) as HTMLDetailsElement | null
+          )?.open,
+      ),
+    )
+    .toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__testRecordingPipHeight)).toBe(compactHeight);
+
+  await page.evaluate(() => window.__testRecordingUploadControl?.succeed());
+  await expect
+    .poll(() => page.evaluate(() => window.__testRecordingPipDocument?.title))
+    .toBe("Recording uploaded");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean(window.__testRecordingPipDocument?.getElementById("recording-pip-upload-recovery")),
+      ),
+    )
+    .toBe(false);
+});
+
+test("failed automatic upload exposes manual backup upload on the test page", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installMicrophoneFixture(page);
+  await page.goto(
+    "/test/submission-palette?ds-user=user-avery&ds-recording=1&ds-recording-upload=controlled",
+  );
+  await startAndFinishNativeRecording(page);
+
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+    .toBe(true);
+  await page.evaluate(() => window.__testRecordingUploadControl?.fail());
+
+  const manualUpload = page.getByLabel("Upload a saved backup file");
+  await expect(manualUpload).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry upload" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download backup" })).toBeVisible();
+  await manualUpload.setInputFiles({
+    name: "saved-recording.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from("saved recording"),
+  });
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+    .toBe(true);
+  await page.evaluate(() => window.__testRecordingUploadControl?.succeed());
+
+  await expect(page.getByRole("heading", { name: "RECORDING UPLOADED" })).toBeVisible();
+  await expect(manualUpload).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Retry upload" })).toHaveCount(0);
 });
 
 for (const viewport of [

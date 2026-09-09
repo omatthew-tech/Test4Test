@@ -976,6 +976,28 @@
       "examples": ["design-system/stories/Product.stories.tsx#TestRowContract"]
     },
     {
+      "id": "earn-test-card",
+      "name": "Earn test card",
+      "family": "product",
+      "version": "1.0.0",
+      "lifecycle": "stable",
+      "source": "design-system/components/product.tsx",
+      "story": "design-system/stories/Product.stories.tsx",
+      "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context.",
+      "semantics": ["Article or section", "Visible heading names the card"],
+      "keyboard": ["The navigation action is a separate focus target"],
+      "targetSize": 44,
+      "dependencies": ["badge", "link", "surface"],
+      "exportName": "EarnTestCard",
+      "sizes": ["responsive"],
+      "variants": ["with-action", "without-action", "with-reputation"],
+      "states": ["default", "long-content", "narrow-width", "supporting-note"],
+      "accessibleName": "A visible heading names the card and the action has visible link text.",
+      "controlMode": "not-applicable",
+      "storyExport": "EarnTestCardContract",
+      "examples": ["design-system/stories/Product.stories.tsx#EarnTestCardContract"]
+    },
+    {
       "id": "help-text",
       "name": "Help text",
       "family": "inputs",

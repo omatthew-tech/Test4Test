@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const homeFeedbackQuotes = [
@@ -46,149 +47,246 @@ test("home starts a named submission without losing the draft", async ({ page })
   await expect(page.getByRole("textbox", { name: "App name" })).toHaveValue("Checkout audit");
 });
 
-test("home free-feedback showcase advances around the card and supports manual control", async ({
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`home free-feedback methods stay visible and reflow at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+
+    const section = page.getByTestId("free-feedback-section");
+    const methods = section.getByRole("article");
+    await expect(methods).toHaveCount(2);
+    await expect(section.getByRole("heading", { level: 2 })).toHaveText([
+      "Test other founders",
+      "Bring your own testers",
+    ]);
+    await expect(section.locator("p")).toHaveText([
+      "Earn credits 1:1 (we don't take a cut)",
+      "There are no limits - bring as many as you want",
+    ]);
+    await expect(section.getByRole("button")).toHaveCount(0);
+    await expect(section.getByRole("link")).toHaveCount(0);
+    await expect(section.getByText("2 free ways to get feedback")).toHaveCount(0);
+
+    for (let index = 0; index < 2; index += 1) {
+      const method = methods.nth(index);
+      const illustration = method.locator("img");
+      await illustration.scrollIntoViewIfNeeded();
+      await expect(illustration).toHaveJSProperty("complete", true);
+      await expect
+        .poll(() => illustration.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+        .toBeGreaterThan(0);
+      const imageBounds = await illustration.boundingBox();
+      const copyBounds = await method.getByRole("heading").boundingBox();
+      expect(imageBounds).not.toBeNull();
+      expect(copyBounds).not.toBeNull();
+      if (!imageBounds || !copyBounds) throw new Error("Feedback method is not visible");
+      expect(imageBounds.x).toBeGreaterThanOrEqual(0);
+      expect(imageBounds.x + imageBounds.width).toBeLessThanOrEqual(viewport.width);
+      if (viewport.width < 768) {
+        expect(copyBounds.y).toBeGreaterThan(imageBounds.y + imageBounds.height);
+      } else if (index === 0) {
+        expect(copyBounds.x).toBeGreaterThan(imageBounds.x + imageBounds.width);
+      } else {
+        expect(imageBounds.x).toBeGreaterThan(copyBounds.x + copyBounds.width);
+      }
+    }
+  });
+}
+
+test("home managed recruitment follows the free-feedback showcase and uses animated media", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
 
-  const section = page.getByTestId("free-feedback-section");
-  const progress = page.getByTestId("free-feedback-progress");
-  const firstMethodButton = section.getByRole("button", {
-    name: "Show Test other founders and pause rotation",
-  });
-  const secondMethodButton = section.getByRole("button", {
-    name: "Show Bring your own testers and pause rotation",
-  });
+  const freeFeedbackSection = page.getByTestId("free-feedback-section");
+  const testableProductsSection = page.getByTestId("home-testable-products-section");
+  const managedSection = page.getByTestId("home-managed-recruitment-section");
+  const images = managedSection.locator("img");
 
   await expect(
-    section.getByRole("heading", { level: 2, name: "2 free ways to get feedback" }),
-  ).toBeVisible();
-  await expect(
-    section.getByRole("heading", { level: 3, name: "Test other founders" }),
-  ).toBeVisible();
-  await expect(firstMethodButton).toHaveAttribute("aria-pressed", "true");
-  await expect(secondMethodButton).toHaveAttribute("aria-pressed", "false");
-  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
-  await expect(secondMethodButton).toHaveAttribute("data-filled", "false");
-  await expect(
-    section.getByRole("img", {
-      name: "Earn page showing ‘Nice work. You earned 1 credit’ as your test moves up the list.",
-    }),
-  ).toHaveAttribute("src", "/images/home-test-other-founders-earn.png");
-  await expect(section.getByText("Preview coming soon")).toHaveCount(0);
-
-  const copyCenters = await section.locator("article").evaluate((card) => {
-    const headingBounds = card.querySelector("h3")?.getBoundingClientRect();
-    const descriptionBounds = card.querySelector("p")?.getBoundingClientRect();
-
-    return {
-      description: descriptionBounds ? descriptionBounds.left + descriptionBounds.width / 2 : null,
-      heading: headingBounds ? headingBounds.left + headingBounds.width / 2 : null,
-    };
-  });
-  expect(copyCenters.description).not.toBeNull();
-  expect(copyCenters.heading).not.toBeNull();
-  expect(Math.abs((copyCenters.description ?? 0) - (copyCenters.heading ?? 0))).toBeLessThan(1);
-
-  for (const methodButton of [firstMethodButton, secondMethodButton]) {
-    const bounds = await methodButton.boundingBox();
-    expect(bounds?.width).toBeGreaterThanOrEqual(44);
-    expect(bounds?.height).toBeGreaterThanOrEqual(44);
-  }
-
-  const progressTreatment = await progress.locator("rect").evaluate((element) => {
-    const tokenStrokeProbe = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    tokenStrokeProbe.style.stroke = window
-      .getComputedStyle(document.documentElement)
-      .getPropertyValue("--ds-semantic-color-action-primary")
-      .trim();
-    document.body.append(tokenStrokeProbe);
-    const tokenStroke = window.getComputedStyle(tokenStrokeProbe).stroke;
-    tokenStrokeProbe.remove();
-
-    return {
-      animationName: window.getComputedStyle(element).animationName,
-      stroke: window.getComputedStyle(element).stroke,
-      tokenStroke,
-    };
-  });
-  expect(progressTreatment.animationName).not.toBe("none");
-  expect(progressTreatment.stroke).toBe(progressTreatment.tokenStroke);
-
-  const progressAlignment = await section.locator("article").evaluate((card) => {
-    const cardBounds = card.getBoundingClientRect();
-    const progressBounds = card.querySelector("svg")?.getBoundingClientRect();
-    const cardBorderWidth = Number.parseFloat(window.getComputedStyle(card).borderLeftWidth);
-
-    return progressBounds
-      ? {
-          bottom: cardBounds.bottom - progressBounds.bottom,
-          expectedInset: cardBorderWidth / 2,
-          left: progressBounds.left - cardBounds.left,
-          right: cardBounds.right - progressBounds.right,
-          top: progressBounds.top - cardBounds.top,
-        }
-      : null;
-  });
-  expect(progressAlignment).not.toBeNull();
-  expect(progressAlignment?.left).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
-  expect(progressAlignment?.right).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
-  expect(progressAlignment?.top).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
-  expect(progressAlignment?.bottom).toBeCloseTo(progressAlignment?.expectedInset ?? 0, 1);
-
-  await progress.locator("rect").evaluate((element) => {
-    element.dispatchEvent(
-      new AnimationEvent("animationiteration", {
-        animationName: "home-feedback-showcase-progress",
-        bubbles: true,
-      }),
-    );
-  });
-  await expect(
-    section.getByRole("heading", { level: 3, name: "Bring your own testers" }),
-  ).toBeVisible();
-  await expect(firstMethodButton).toHaveAttribute("aria-pressed", "false");
-  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
-  await expect(secondMethodButton).toHaveAttribute("aria-pressed", "true");
-  await expect(secondMethodButton).toHaveAttribute("data-filled", "true");
-  await expect(
-    section.getByRole("img", {
-      name: "Share test link flowing into a Responses dashboard with 128 responses and recent feedback.",
-    }),
-  ).toHaveAttribute("src", "/images/home-bring-your-own-testers.png");
-
-  await firstMethodButton.click();
-  await expect(
-    section.getByRole("heading", { level: 3, name: "Test other founders" }),
-  ).toBeVisible();
-  await expect(
-    section.getByRole("img", {
-      name: "Earn page showing ‘Nice work. You earned 1 credit’ as your test moves up the list.",
+    managedSection.getByRole("heading", {
+      level: 2,
+      name: "Most platforms give you tools. We go find the people.",
     }),
   ).toBeVisible();
-  await expect(firstMethodButton).toHaveAttribute("data-filled", "true");
-  await expect(secondMethodButton).toHaveAttribute("data-filled", "false");
-  await expect(progress.locator("rect")).toHaveCSS("animation-play-state", "paused");
-  await expect(section.getByRole("button", { name: "Pause rotation", exact: true })).toHaveCount(0);
+  await expect(managedSection.getByRole("heading", { level: 3 })).toHaveCount(2);
+  await expect(
+    managedSection.getByRole("button", { name: "Explore managed testing" }),
+  ).toBeVisible();
+  await expect(managedSection.getByText("Pause animations", { exact: true })).toHaveCount(0);
+  await expect(images.nth(0)).toHaveAttribute("src", "/images/animations/monkey-typing-loop.webp");
+  await expect(images.nth(1)).toHaveAttribute("src", "/images/animations/monkey-vine-loop.webp");
+
+  await expect(freeFeedbackSection.locator("xpath=following-sibling::*[1]")).toHaveAttribute(
+    "data-testid",
+    "home-testable-products-section",
+  );
+  await expect(testableProductsSection.locator("xpath=following-sibling::*[1]")).toHaveAttribute(
+    "data-testid",
+    "home-managed-recruitment-section",
+  );
 });
 
-test("home free-feedback showcase removes automatic motion when reduced motion is requested", async ({
-  page,
-}) => {
+test("home managed recruitment uses static posters for reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const section = page.getByTestId("free-feedback-section");
-  await expect(page.getByTestId("free-feedback-progress")).toBeHidden();
-  await expect(section.getByRole("button", { name: "Pause rotation", exact: true })).toHaveCount(0);
-
-  await section
-    .getByRole("button", { name: "Show Bring your own testers and pause rotation" })
-    .click();
+  const managedSection = page.getByTestId("home-managed-recruitment-section");
+  await expect(managedSection.getByText("Pause animations", { exact: true })).toHaveCount(0);
   await expect(
-    section.getByRole("heading", { level: 3, name: "Bring your own testers" }),
-  ).toBeVisible();
+    managedSection.locator('source[media="(prefers-reduced-motion: reduce)"]'),
+  ).toHaveCount(2);
+});
+
+test("home Trusted by section shows six Earn cards in an accessible horizontal loop", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/?ds-home-trusted=1");
+
+  const section = page.getByTestId("home-trusted-by-section");
+  const track = page.getByTestId("home-trusted-by-track");
+  const list = section.getByRole("list", { name: "Top tests available on Earn" });
+
+  await expect(section.getByRole("heading", { level: 2, name: "Trusted by" })).toBeVisible();
+  await expect(list.getByRole("article")).toHaveCount(6);
+  const logos = list.getByTestId("home-trusted-logo");
+  await expect(logos).toHaveCount(6);
+  for (const logo of await logos.all()) {
+    await expect(logo).toHaveAttribute("aria-hidden", "true");
+    await expect(logo).toHaveCSS("width", "24px");
+    await expect(logo).toHaveCSS("height", "24px");
+    await expect(logo.locator("img")).toHaveAttribute("alt", "");
+    await expect(logo.locator("img")).toHaveCSS("visibility", "visible");
+    expect(
+      await logo.locator("img").evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    ).toBeGreaterThan(0);
+  }
+  await expect(list.getByText(/^(Web|iOS|Android)$/)).toHaveCount(0);
+  await expect(list.getByRole("link", { name: "View test" })).toHaveCount(0);
+  const openLinks = list.getByRole("link", { name: /^Open .+ test$/ });
+  await expect(openLinks).toHaveCount(6);
+  await expect(openLinks.first()).toHaveAttribute("href", /^\/test\//);
+  await expect(list.getByRole("article").first().locator("p")).toHaveCSS("-webkit-line-clamp", "2");
+  await expect(section.locator('ol[aria-hidden="true"]')).toHaveAttribute("inert", "");
+  await expect(section.getByTestId("home-trusted-by-pause")).toHaveCount(0);
+
+  const cardPositions = await list.locator("li").evaluateAll((items) =>
+    items.slice(0, 2).map((item) => {
+      const bounds = item.getBoundingClientRect();
+      return { left: bounds.left, top: bounds.top };
+    }),
+  );
+  expect(cardPositions[1]?.left).toBeGreaterThan(cardPositions[0]?.left ?? 0);
+  expect(Math.abs((cardPositions[1]?.top ?? 0) - (cardPositions[0]?.top ?? 0))).toBeLessThan(1);
+
+  await page.getByTestId("home-trusted-by-viewport").hover();
+  await expect(track).toHaveCSS("animation-play-state", "paused");
+
+  const keyframes = await track.evaluate((element) =>
+    element
+      .getAnimations()
+      .flatMap((animation) =>
+        animation.effect instanceof KeyframeEffect ? animation.effect.getKeyframes() : [],
+      )
+      .map((keyframe) => keyframe.transform),
+  );
+  expect(keyframes[0]).toContain("-");
+  expect(keyframes[keyframes.length - 1]).toMatch(/0px|matrix\(1, 0, 0, 1, 0, 0\)/);
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1440, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const cardHeights = await list
+      .getByRole("article")
+      .evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
+    expect(Math.max(...cardHeights) - Math.min(...cardHeights)).toBeLessThanOrEqual(1);
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true);
+    await testInfo.attach(`trusted-by-${viewport.width}.png`, {
+      body: await section.screenshot({ animations: "disabled" }),
+      contentType: "image/png",
+    });
+  }
+});
+
+test("home Trusted by section becomes a static scroller for reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/?ds-home-trusted=1");
+
+  const section = page.getByTestId("home-trusted-by-section");
+  const track = page.getByTestId("home-trusted-by-track");
+  const viewport = page.getByTestId("home-trusted-by-viewport");
+
+  await expect(section.getByTestId("home-trusted-by-pause")).toHaveCount(0);
+  await expect(section.locator('ol[aria-hidden="true"]')).toBeHidden();
+  await expect(track).toHaveCSS("animation-name", "none");
+  await expect(viewport).toHaveCSS("overflow-x", "auto");
+  await expect(
+    section.getByRole("list", { name: "Top tests available on Earn" }).getByRole("article"),
+  ).toHaveCount(6);
+});
+
+test("home Trusted by logos fall back to initials without changing card geometry or links", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/images/trusted-by/*.png", (route) => route.abort());
+  await page.goto("/?ds-home-trusted=1");
+  const list = page.getByRole("list", { name: "Top tests available on Earn" });
+  const failed = list.getByTestId("home-trusted-logo").nth(1);
+  await expect(failed.locator("img")).toHaveCount(0);
+  await expect(failed).toHaveText(/\S/);
+  await expect(failed).toHaveCSS("width", "24px");
+  await expect(list.getByRole("link", { name: /^Open .+ test$/ })).toHaveCount(6);
+  await page.goto("/?ds-home-trusted=1&ds-home-logos=missing");
+  await expect(list.getByTestId("home-trusted-logo").locator("img")).toHaveCount(0);
+  for (const logo of await list.getByTestId("home-trusted-logo").all())
+    await expect(logo).toHaveText(/\S/);
+  const firstLink = list.getByRole("link", { name: /^Open .+ test$/ }).first();
+  await firstLink.focus();
+  await expect(firstLink).toBeFocused();
+  await expect(page.getByTestId("home-trusted-by-track")).toHaveCSS("animation-name", "none");
+});
+
+test("home Trusted by long titles fit beside logos and keep equal card heights", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?ds-home-trusted=1&ds-home-logo-title=long");
+  const list = page.getByRole("list", { name: "Top tests available on Earn" });
+  const longCard = list
+    .getByRole("article")
+    .filter({ hasText: "Launch Loom collaborative planning workspace" });
+  await expect(longCard.getByRole("heading")).toHaveText(
+    "Launch Loom collaborative planning workspace for growing product teams",
+  );
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1440, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(longCard.getByTestId("home-trusted-logo")).toHaveCSS("width", "24px");
+    const heights = await list
+      .getByRole("article")
+      .evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
 });
 
 test("home hover feedback pauses before continuing without repeating while hovered", async ({
@@ -437,6 +535,73 @@ test("home hover feedback pauses before continuing without repeating while hover
   await expect(page).toHaveURL(/\/submit\?productName=Hover%20feedback%20test$/);
 });
 
+test("home hover feedback stays outside the centered hero content", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+
+  const panel = page.getByTestId("home-hero-panel");
+  const exclusion = page.getByTestId("home-hero-feedback-exclusion");
+  const quote = page.getByTestId("home-hover-feedback");
+  const panelBounds = await panel.boundingBox();
+  const exclusionBounds = await exclusion.boundingBox();
+  if (!panelBounds || !exclusionBounds) {
+    throw new Error("Expected the home hero and its feedback exclusion zone to have bounds.");
+  }
+
+  await page.mouse.move(0, 0);
+  await page.mouse.move(
+    exclusionBounds.x + exclusionBounds.width / 2,
+    exclusionBounds.y + exclusionBounds.height / 2,
+  );
+  await page.waitForTimeout(50);
+  await expect(quote).toHaveCount(0);
+
+  await page.mouse.move(panelBounds.x + 8, panelBounds.y + 8);
+  await expect(quote).toBeVisible();
+
+  await page.mouse.move(
+    exclusionBounds.x + exclusionBounds.width / 2,
+    exclusionBounds.y + exclusionBounds.height / 2,
+  );
+  await expect(quote).toHaveCount(0);
+  await page.waitForTimeout(1_100);
+  await expect(quote).toHaveCount(0);
+
+  await page.mouse.move(panelBounds.x + panelBounds.width - 8, panelBounds.y + 8);
+  await expect(quote).toBeVisible();
+});
+
+test("home hover feedback stays inactive while the page is scrolled", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const panel = page.getByTestId("home-hero-panel");
+  const quote = page.getByTestId("home-hover-feedback");
+  const panelBounds = await panel.boundingBox();
+  if (!panelBounds) throw new Error("Expected the home hero panel to have layout bounds.");
+
+  await page.mouse.move(0, 0);
+  await page.mouse.move(panelBounds.x + 8, panelBounds.y + 8);
+  await expect(quote).toBeVisible();
+
+  await page.evaluate(() => window.scrollTo(0, 1));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(quote).toHaveCount(0);
+  await page.waitForTimeout(1_100);
+  await expect(quote).toHaveCount(0);
+
+  await page.mouse.move(panelBounds.x + panelBounds.width - 8, panelBounds.y + 8);
+  await page.waitForTimeout(50);
+  await expect(quote).toHaveCount(0);
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(quote).toBeVisible();
+});
+
 test("home hover feedback ignores touch-like and pen pointer entry", async ({ page }) => {
   await page.goto("/");
 
@@ -464,10 +629,7 @@ test("home hover feedback ignores touch-like and pen pointer entry", async ({ pa
   }
 
   await page.mouse.move(0, 0);
-  await page.mouse.move(
-    panelBounds.x + panelBounds.width / 2,
-    panelBounds.y + panelBounds.height / 2,
-  );
+  await page.mouse.move(panelBounds.x + 8, panelBounds.y + 8);
   await expect(quote).toBeVisible();
 });
 
@@ -763,6 +925,83 @@ test("Earn edit deep links open owned paused apps and clean the URL after close 
   expect(new URL(page.url()).searchParams.has("edit")).toBe(false);
 });
 
+test("Earn edit switches among owned tests and protects unsaved changes", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("test4test:earn-platform-filter-confirmed:user-mateo", "true");
+  });
+  await page.goto("/earn?edit=submission-palette&ds-user=user-mateo&ds-multiple-tests=1");
+
+  const editDialog = page.getByRole("dialog", { name: "Edit app" });
+  const testSelect = editDialog.getByLabel("Test", { exact: true });
+  await expect(editDialog).toBeVisible();
+  await expect(editDialog.getByText("Edit app", { exact: true })).toHaveClass("ds-sr-only");
+  await expect(
+    editDialog.getByText("Update the app details, resource links, and tester instructions."),
+  ).toHaveCount(0);
+  const accessibilityResults = await new AxeBuilder({ page })
+    .include("dialog[open]")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(accessibilityResults.violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  await expect(testSelect.locator("option")).toHaveText([
+    "Palette Pilot (currently in use)",
+    "Palette Pilot Mobile (pending review)",
+    "Palette Pilot Beta",
+  ]);
+
+  await testSelect.selectOption("submission-palette-beta");
+  await expect(editDialog.getByRole("button", { name: "Use this test" })).toBeVisible();
+  await editDialog.getByRole("button", { name: "Use this test" }).click();
+  await expect(
+    editDialog.getByRole("heading", {
+      name: "Are you sure you want to swap to Palette Pilot Beta?",
+    }),
+  ).toBeFocused();
+  await expect(
+    editDialog.getByText(
+      "Your current test will stop receiving feedback from the earn page. However, you'll continue receiving feedback from any links you've shared.",
+    ),
+  ).toBeVisible();
+  await editDialog.getByRole("button", { name: "Use this test" }).click();
+  await expect(page.getByText("Earn test updated", { exact: true })).toBeVisible();
+  await expect(testSelect).toHaveValue("submission-palette-beta");
+  await expect(testSelect.locator('option[value="submission-palette-beta"]')).toHaveText(
+    "Palette Pilot Beta (currently in use)",
+  );
+
+  await testSelect.selectOption("submission-palette-review");
+  await expect(editDialog.getByText(/pending review and cannot be used on Earn yet/)).toBeVisible();
+  await expect(editDialog.getByRole("button", { name: "Use this test" })).toHaveCount(0);
+
+  await editDialog.getByRole("textbox", { name: "App name" }).fill("Unsaved mobile name");
+  await testSelect.selectOption("submission-palette");
+  await expect(
+    editDialog.getByRole("heading", { name: "Discard changes to Palette Pilot Mobile?" }),
+  ).toBeFocused();
+  await editDialog.getByRole("button", { name: "Keep editing" }).click();
+  await expect(editDialog.getByRole("textbox", { name: "App name" })).toHaveValue(
+    "Unsaved mobile name",
+  );
+  await testSelect.selectOption("submission-palette");
+  await editDialog.getByRole("button", { name: "Discard and continue" }).click();
+  await expect(testSelect).toHaveValue("submission-palette");
+  await expect(editDialog.getByRole("textbox", { name: "App name" })).toHaveValue("Palette Pilot");
+
+  await editDialog.getByRole("textbox", { name: "App name" }).fill("Another unsaved name");
+  await editDialog.getByRole("button", { name: "Add test" }).click();
+  await expect(
+    editDialog.getByRole("heading", { name: "Discard changes to Palette Pilot?" }),
+  ).toBeVisible();
+  await editDialog.getByRole("button", { name: "Discard and continue" }).click();
+  await expect(page).toHaveURL(/\/submit$/);
+});
+
 test("Earn edit deep links reject missing or unauthorized apps and require sign in", async ({
   page,
 }) => {
@@ -879,7 +1118,7 @@ test("Share page redirects guests and guides members without a live test", async
   );
 });
 
-test("Analytics is authenticated, follows Share in navigation, and exposes static controls", async ({
+test("Analytics is authenticated, follows Share in navigation, and exports transcripts", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -897,14 +1136,12 @@ test("Analytics is authenticated, follows Share in navigation, and exposes stati
     "aria-current",
     "page",
   );
-  await expect(page.getByRole("heading", { level: 1, name: "Analytics" })).toBeVisible();
-  await expect(page.getByText("You have 2 recordings available", { exact: true })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Ask about your recordings" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Submit analytics prompt" })).toBeDisabled();
-
-  for (const action of ["Get more recordings", "Share", "Purchase"]) {
-    await expect(page.getByRole("button", { name: action })).toBeDisabled();
-  }
+  await expect(page.getByRole("heading", { level: 1, name: "Transcript report" })).toBeVisible();
+  await expect(
+    page.getByText("2 of 2 transcripts ready for Palette Pilot.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
 
   await expect(page.getByRole("link", { name: "View recordings" })).toHaveAttribute(
     "href",
@@ -938,15 +1175,20 @@ test("Analytics is authenticated, follows Share in navigation, and exposes stati
   await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
 });
 
-test("Analytics pluralizes recording counts and renders no extra zero-state content", async ({
-  page,
-}) => {
+test("Analytics describes transcript coverage and its empty state", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
-  await expect(page.getByText("You have 1 recording available", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("1 of 1 transcript ready for Palette Pilot.", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "Recording 1" })).toBeVisible();
 
   await page.goto("/analytics?ds-user=user-mateo");
-  await expect(page.getByText("You have 0 recordings available", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Your transcript report will appear here when you have a recording.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy report" })).toBeDisabled();
   await expect(page.getByRole("heading", { level: 2, name: "View recordings" })).toBeVisible();
   await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
 });
@@ -1046,7 +1288,9 @@ test("Earn platform preferences expose named checkbox choices and save accessibl
   await dialog.getByRole("button", { name: "Save preferences" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByText("Sort by", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Filters", exact: true }).press("Enter");
   await expect(page.getByRole("group", { name: "Choose platforms you can test" })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Web", exact: true })).not.toBeChecked();
 });
 
 test("legacy My Feedback URLs redirect to supported destinations and preserve queries", async ({

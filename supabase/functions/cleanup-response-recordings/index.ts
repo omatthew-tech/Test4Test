@@ -5,18 +5,9 @@ import {
   recordingJson,
 } from "../_shared/response-recordings.ts";
 import { getR2RecordingEnvironment, r2Fetch } from "../_shared/r2-recordings.ts";
-import { deleteGeneratedRecordingThumbnails } from "../_shared/recording-thumbnails.ts";
 
 interface CleanupRequest {
   limit?: number;
-}
-
-interface ExpiredRecordingRow {
-  id: string;
-  recording_bucket: string | null;
-  recording_path: string | null;
-  recording_thumbnail_bucket: string | null;
-  recording_thumbnail_path: string | null;
 }
 
 interface StaleDraftRow {
@@ -68,28 +59,6 @@ Deno.serve(async (request) => {
   const limit = normalizeLimit(payload.limit, 50);
   const admin = createRecordingAdminClient(env);
   const nowIso = new Date().toISOString();
-
-  const { data: expiredRows, error: expiredError } = await admin
-    .from("test_responses")
-    .select(
-      "id, recording_bucket, recording_path, recording_thumbnail_bucket, recording_thumbnail_path",
-    )
-    .not("recording_bucket", "is", null)
-    .not("recording_path", "is", null)
-    .is("recording_deleted_at", null)
-    .lte("recording_expires_at", nowIso)
-    .order("recording_expires_at", { ascending: true })
-    .limit(limit);
-
-  if (expiredError) {
-    return recordingJson({ error: expiredError.message }, 500);
-  }
-
-  const expiredRecordings = ((expiredRows ?? []) as ExpiredRecordingRow[]).filter(
-    (row) => row.recording_bucket && row.recording_path,
-  );
-  const deletedExpiredIds: string[] = [];
-  const generatedThumbnailsToDelete: Array<{ id: string; bucket: string; key: string }> = [];
   let r2Env: ReturnType<typeof getR2RecordingEnvironment> | null = null;
 
   const getR2Env = () => {
@@ -99,63 +68,6 @@ Deno.serve(async (request) => {
 
     return r2Env;
   };
-
-  for (const row of expiredRecordings) {
-    let removed = false;
-
-    if (row.recording_bucket!.startsWith("r2:")) {
-      const removeResult = await r2Fetch(getR2Env(), row.recording_path!, { method: "DELETE" });
-      removed = removeResult.ok || removeResult.status === 404;
-      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket?.startsWith("r2:")) {
-        await r2Fetch(getR2Env(), row.recording_thumbnail_path, { method: "DELETE" }).catch(
-          () => null,
-        );
-      }
-    } else {
-      const removeResult = await admin.storage
-        .from(row.recording_bucket!)
-        .remove([row.recording_path!]);
-      const missingObject =
-        removeResult.error?.message?.toLowerCase().includes("not found") === true;
-      removed = !removeResult.error || missingObject;
-      if (row.recording_thumbnail_path && row.recording_thumbnail_bucket === row.recording_bucket) {
-        await admin.storage
-          .from(row.recording_bucket!)
-          .remove([row.recording_thumbnail_path])
-          .catch(() => null);
-      }
-    }
-
-    if (
-      row.recording_thumbnail_bucket &&
-      row.recording_thumbnail_path?.startsWith("recording-thumbnails/")
-    ) {
-      generatedThumbnailsToDelete.push({
-        id: row.id,
-        bucket: row.recording_thumbnail_bucket,
-        key: row.recording_thumbnail_path,
-      });
-    }
-
-    if (removed) {
-      const { error: updateError } = await admin
-        .from("test_responses")
-        .update({ recording_deleted_at: nowIso })
-        .eq("id", row.id);
-
-      if (!updateError) {
-        deletedExpiredIds.push(row.id);
-      }
-    }
-  }
-
-  if (generatedThumbnailsToDelete.length > 0) {
-    await deleteGeneratedRecordingThumbnails(generatedThumbnailsToDelete).catch((error) => {
-      console.error("Generated recording thumbnail cleanup failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
-  }
 
   const { data: staleDraftRows, error: staleDraftError } = await admin.rpc(
     "list_stale_test_response_recording_drafts",
@@ -248,7 +160,7 @@ Deno.serve(async (request) => {
 
   return recordingJson({
     ok: true,
-    expiredRecordingsDeleted: deletedExpiredIds.length,
+    expiredRecordingsDeleted: 0,
     staleDraftsDeleted: deletedDraftCount,
     staleR2DraftsDeleted: deletedR2DraftCount,
     staleR2MultipartUploadsAborted: abortedR2MultipartCount,

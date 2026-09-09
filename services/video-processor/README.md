@@ -16,17 +16,21 @@ Supabase integration in the current worktree. Report processing can generate
 timestamped transcript JSON, and the job result includes normalized segments and
 words.
 
-Durable recording-transcript persistence is not complete. The repository does
-not yet contain the canonical transcript/word migrations, lifecycle and retry
-orchestration, owner transcript viewer, exact-range annotations, app-level
-priorities, clips, or AI context filtering required by the recording-first
-product specification. A completion webhook is optional infrastructure, not
-evidence that those product contracts are implemented.
+The Analytics transcript report now has a dedicated transcript-only worker path,
+durable transcript/word migration, owner report/retry endpoints, and an automatic
+dispatcher. The Render/Supabase deployment and a real transcription of the
+authorized test-account recording were verified on September 8, 2026. Overall
+release sign-off still awaits the unrelated visual baseline review and a separate
+staging-environment check. See the [transcript report runbook](../../docs/transcript-reports.md).
 
-Future transcript integration must treat the source recording’s 60-day
-expiration as authoritative, use idempotent pending/processing/ready/failed jobs,
-apply ownership-based RLS and explicit grants, and delete transcript data with
-the source. See [`../../usability_platform_product_plan.md`](../../usability_platform_product_plan.md)
+The synchronized owner transcript viewer, exact-range annotations, app-level
+priorities, clips, and AI context filtering remain outside this implementation.
+
+Transcript integration must treat the source recording’s unlimited
+retention and explicit-deletion boundary as authoritative, use idempotent
+pending/processing/ready/failed jobs, apply ownership-based RLS and explicit
+grants, and delete transcript data with the source. See
+[`../../usability_platform_product_plan.md`](../../usability_platform_product_plan.md)
 and [`../../supabase/README.md`](../../supabase/README.md).
 
 ## Why a background job (not a synchronous API)?

@@ -21,7 +21,8 @@ The design system controls interface implementation, accessibility, tokens, and 
 ## 3. Operational guidance
 
 - [Supabase operations](supabase/README.md) — migrations are the authoritative database setup path.
-- [Video processor](services/video-processor/README.md) — current worker behavior and the incomplete transcript integration.
+- [Video processor](services/video-processor/README.md) — recording media processing and transcription.
+- [Transcript reports](docs/transcript-reports.md) — export format, deployed processing pipeline, and release validation evidence.
 - [Cloudflare deployment and production cutover](cloudflare-pages-setup.txt) — gated preview-to-production process.
 
 ## 4. Historical evidence

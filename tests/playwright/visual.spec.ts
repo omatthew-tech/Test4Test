@@ -65,6 +65,7 @@ const contractStories = [
   "patterns-product--rating-control-contract",
   "patterns-product--recording-status-contract",
   "patterns-product--test-row-contract",
+  "patterns-product--earn-test-card-contract",
   "patterns-product--question-editor-contract",
   "patterns-product--response-viewer-contract",
 ];
@@ -109,8 +110,11 @@ test.beforeEach(async ({ page }) => {
 async function settleRouteImages(page: Page) {
   const images = page.locator("main img");
   const count = await images.count();
-  for (let index = 0; index < count; index += 1) {
-    await images.nth(index).scrollIntoViewIfNeeded();
+  // Eager images in moving tracks already load without scrolling. Waiting for
+  // their geometry to settle would hang on a continuously animated carousel.
+  const lazyImages = page.locator('main img[loading="lazy"]:visible');
+  for (let index = 0; index < (await lazyImages.count()); index += 1) {
+    await lazyImages.nth(index).scrollIntoViewIfNeeded();
   }
   if (count > 0) {
     await expect

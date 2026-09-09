@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -17,6 +17,8 @@ import {
   Button,
   Checkbox,
   Dialog,
+  EarnTestCard,
+  type EarnTestCardBadge,
   IconButton,
   Progress,
   Surface,
@@ -57,16 +59,6 @@ const EARN_PLATFORM_CONFIRMATION_STORAGE_PREFIX = "test4test:earn-platform-filte
 const EARN_PRIVATE_PLACEMENT_ROW_OFFSET_PX = 112;
 const EARN_PRIVATE_PLACEMENT_MAX_OFFSET_PX = 448;
 const productTypeSet = new Set<ProductType>(PRODUCT_TYPE_ORDER);
-
-type EarnBadgeTone = "info" | "success" | "warning";
-
-function EarnBadge({ children, tone }: { children: ReactNode; tone: EarnBadgeTone }) {
-  return (
-    <span className={`earn-row__badge-surface earn-row__badge-surface--${tone}`}>
-      <Badge tone={tone}>{children}</Badge>
-    </span>
-  );
-}
 
 function compareEarnSubmissionsByMode(first: Submission, second: Submission, sortMode: string) {
   if (sortMode === "newest") {
@@ -127,6 +119,7 @@ function userIsInGooglePlayClosedTestPool(submissions: Submission[], userId: str
     (submission) =>
       submission.userId === userId &&
       submission.status === "live" &&
+      submission.isOpenForMoreTests &&
       submission.needsGooglePlayClosedTesters,
   );
 }
@@ -135,7 +128,10 @@ function getGooglePlayClosedTestPoolUserIds(submissions: Submission[]) {
   return new Set(
     submissions
       .filter(
-        (submission) => submission.status === "live" && submission.needsGooglePlayClosedTesters,
+        (submission) =>
+          submission.status === "live" &&
+          submission.isOpenForMoreTests &&
+          submission.needsGooglePlayClosedTesters,
       )
       .map((submission) => submission.userId)
       .filter((userId): userId is string => Boolean(userId)),
@@ -322,6 +318,7 @@ export function EarnPage() {
     currentUser,
     isConfigured,
     listEarnSubmissions,
+    activateEarnSubmission,
     updateSubmissionDetails,
     updateTesterProfile,
     getTesterEarnAccessSummary,
@@ -384,6 +381,7 @@ export function EarnPage() {
     parseEarnCreditCelebrationState(location.state),
   );
   const [showCreditToast, setShowCreditToast] = useState(Boolean(creditCelebration));
+  const [earnTestToastMessage, setEarnTestToastMessage] = useState("");
   const available = getAvailableSubmissions(state);
 
   const defaultSelectedProductTypes = useMemo(
@@ -400,6 +398,25 @@ export function EarnPage() {
     () => getGooglePlayClosedTestPoolUserIds(state.submissions),
     [state.submissions],
   );
+  const ownedSubmissions = useMemo(() => {
+    if (!currentUser) return [];
+
+    return state.submissions
+      .filter((submission) => submission.userId === currentUser.id)
+      .sort((first, second) => {
+        if (first.isOpenForMoreTests !== second.isOpenForMoreTests) {
+          return first.isOpenForMoreTests ? -1 : 1;
+        }
+
+        return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+      });
+  }, [currentUser, state.submissions]);
+  const activeEarnSubmissionId =
+    visibilitySummary?.submissionId ??
+    ownedSubmissions.find(
+      (submission) => submission.status === "live" && submission.isOpenForMoreTests,
+    )?.id ??
+    null;
   const editingVisibilitySubmission = useMemo(
     () =>
       editingVisibilitySubmissionId
@@ -549,6 +566,13 @@ export function EarnPage() {
       window.clearTimeout(toastTimer);
     };
   }, [creditCelebration, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (!earnTestToastMessage) return undefined;
+
+    const toastTimer = window.setTimeout(() => setEarnTestToastMessage(""), 5200);
+    return () => window.clearTimeout(toastTimer);
+  }, [earnTestToastMessage]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -1125,6 +1149,62 @@ export function EarnPage() {
     }
   };
 
+  const selectVisibilitySubmission = (submissionId: string) => {
+    setEditLinkError("");
+    setDeepLinkSubmission(null);
+    setEditingVisibilitySubmissionId(submissionId);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("edit", submissionId);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
+  const activateVisibilitySubmission = async (submissionId: string) => {
+    await activateEarnSubmission(submissionId);
+    const selectedSubmission = ownedSubmissions.find((item) => item.id === submissionId) ?? null;
+
+    if (isConfigured) {
+      try {
+        const [summary, updatedSubmission] = await Promise.all([
+          loadEarnVisibilitySummary(),
+          loadEarnVisibilitySubmission(submissionId),
+        ]);
+        setVisibilitySummary(summary);
+        setVisibilitySubmission(updatedSubmission);
+      } catch (error) {
+        console.error(error);
+        if (selectedSubmission) {
+          setVisibilitySummary((current) =>
+            current
+              ? {
+                  ...current,
+                  submissionId: selectedSubmission.id,
+                  productName: selectedSubmission.productName,
+                  rank: null,
+                  wouldRank: null,
+                }
+              : current,
+          );
+          setVisibilitySubmission({ ...selectedSubmission, isOpenForMoreTests: true });
+        }
+      }
+    } else if (selectedSubmission) {
+      setVisibilitySummary((current) =>
+        current
+          ? {
+              ...current,
+              submissionId: selectedSubmission.id,
+              productName: selectedSubmission.productName,
+            }
+          : current,
+      );
+      setVisibilitySubmission({ ...selectedSubmission, isOpenForMoreTests: true });
+    }
+
+    setEarnTestToastMessage(
+      `${selectedSubmission?.productName ?? "Your selected test"} is now receiving feedback from Earn.`,
+    );
+  };
+
   const openVisibilityEditModal = (submissionId: string) => {
     setEditLinkError("");
     setEditingVisibilitySubmissionId(submissionId);
@@ -1180,6 +1260,9 @@ export function EarnPage() {
     <AppShell>
       <Toast open={showCreditToast} tone="success" title="Credit earned">
         {EARN_CREDIT_CELEBRATION_COPY}
+      </Toast>
+      <Toast open={Boolean(earnTestToastMessage)} tone="success" title="Earn test updated">
+        {earnTestToastMessage}
       </Toast>
       <div className={styles.page}>
         <h1 className="ds-sr-only">Earn</h1>
@@ -1382,7 +1465,12 @@ export function EarnPage() {
       ) : null}
       {!isTester && editingVisibilitySubmission ? (
         <EditSubmissionModal
+          submissions={ownedSubmissions}
+          activeSubmissionId={activeEarnSubmissionId}
           submission={editingVisibilitySubmission}
+          onSelect={selectVisibilitySubmission}
+          onActivate={activateVisibilitySubmission}
+          onAdd={() => navigate("/submit")}
           onClose={closeVisibilityEditModal}
           onSave={saveVisibilitySubmissionDetails}
         />
@@ -1872,7 +1960,6 @@ function EarnPrivatePlacementRow({
   const description =
     submission?.description || "This is your private placement preview on the Earn page.";
   const placementClasses = [
-    "earn-row",
     "earn-row--private-placement",
     animationMode === "rise" ? "earn-row--private-placement-rise" : "",
     animationMode === "pulse" ? "earn-row--private-placement-pulse" : "",
@@ -1882,43 +1969,37 @@ function EarnPrivatePlacementRow({
   const placementStyle = {
     "--private-placement-offset": `${animationOffsetPx}px`,
   } as CSSProperties;
+  const badges: EarnTestCardBadge[] = [
+    { id: "private", label: "Only visible to you", tone: "success" },
+    ...(submission
+      ? productTypesBadges(submission.productTypes).map((badge) => ({
+          id: `${submission.id}-${badge}`,
+          label: badge,
+          tone: "info" as const,
+        }))
+      : []),
+    ...(submission?.needsGooglePlayClosedTesters
+      ? [{ id: "closed-test", label: "Google Play closed test", tone: "warning" as const }]
+      : []),
+  ];
 
   // ds-exception: runtime-measurements — measured placement offset for the private row.
   return (
-    <Surface as="section" padding="none" className={placementClasses} style={placementStyle}>
-      <div className="earn-row__content">
-        <div className="earn-row__main">
-          <div className="earn-row__pills">
-            <EarnBadge tone="success">Only visible to you</EarnBadge>
-            {submission
-              ? productTypesBadges(submission.productTypes).map((badge) => (
-                  <EarnBadge key={`${submission.id}-${badge}`} tone="info">
-                    {badge}
-                  </EarnBadge>
-                ))
-              : null}
-            {submission?.needsGooglePlayClosedTesters ? (
-              <EarnBadge tone="warning">Google Play closed test</EarnBadge>
-            ) : null}
-          </div>
-          <div className="earn-row__head">
-            <h3>{productName}</h3>
-            <p>{description}</p>
-            {!summary.hasCompletedTest ? (
-              <p className="earn-row__private-note">
-                Private preview of where your test will appear after you complete one credited test.
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="earn-row__aside earn-row__aside--private-placement">
-          <Link to="/analytics" className="button button--secondary">
-            View analytics
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
-    </Surface>
+    <EarnTestCard
+      as="section"
+      title={productName}
+      description={description}
+      badges={badges}
+      supportingNote={
+        !summary.hasCompletedTest
+          ? "Private preview of where your test will appear after you complete one credited test."
+          : undefined
+      }
+      supportingNoteTone="accent"
+      action={{ label: "View analytics", to: "/analytics", variant: "secondary" }}
+      className={placementClasses}
+      style={placementStyle /* ds-exception: runtime-measurements */}
+    />
   );
 }
 
@@ -1936,6 +2017,22 @@ function EarnRow({
   const { submission, reputation } = card;
   const showReciprocalTag = showFounderReputation && reputation?.ownerHasTestedYou === true;
   const showRateReputation = showFounderReputation && reputation?.ownerHasCompletedTest === true;
+  const badges: EarnTestCardBadge[] = [
+    ...(showReciprocalTag
+      ? [{ id: "reciprocal", label: "This user tested your app", tone: "warning" as const }]
+      : []),
+    ...(submission.rewardType === "paid"
+      ? [{ id: "paid", label: "Paid test", tone: "success" as const }]
+      : []),
+    ...productTypesBadges(submission.productTypes).map((badge) => ({
+      id: `${submission.id}-${badge}`,
+      label: badge,
+      tone: "info" as const,
+    })),
+    ...(submission.needsGooglePlayClosedTesters
+      ? [{ id: "closed-test", label: "Google Play closed test", tone: "warning" as const }]
+      : []),
+  ];
 
   const savePlacementSnapshot = () => {
     if (!placementSnapshot) {
@@ -1949,68 +2046,32 @@ function EarnRow({
   };
 
   return (
-    <Surface as="article" padding="none" className="earn-row">
-      <div className="earn-row__content">
-        <div className="earn-row__main">
-          <div className="earn-row__pills">
-            {showReciprocalTag ? (
-              <EarnBadge tone="warning">This user tested your app</EarnBadge>
-            ) : null}
-            {submission.rewardType === "paid" ? (
-              <EarnBadge tone="success">Paid test</EarnBadge>
-            ) : null}
-            {productTypesBadges(submission.productTypes).map((badge) => (
-              <EarnBadge key={`${submission.id}-${badge}`} tone="info">
-                {badge}
-              </EarnBadge>
-            ))}
-            {submission.needsGooglePlayClosedTesters ? (
-              <EarnBadge tone="warning">Google Play closed test</EarnBadge>
-            ) : null}
-          </div>
-          <div className="earn-row__head">
-            <h3>{submission.productName}</h3>
-            <p>
-              {submission.description ||
-                "Open the app, move through the main experience, and share thoughtful usability feedback."}
-            </p>
-            {submission.needsGooglePlayClosedTesters ? (
-              <p className="earn-row__closed-test-note">
-                Google Play closed test: join the Android test and check in once a day for 14
-                consecutive days.
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="earn-row__aside">
-          <Link
-            to={`/test/${submission.id}`}
-            className="button button--primary"
-            onClick={savePlacementSnapshot}
-          >
-            {hasDraftProgress ? "Resume test" : "View test"}
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
-
-      {showRateReputation && reputation ? (
-        <div className="earn-row__footer">
-          {reputation.ownerAvatarUrl ? (
-            <img
-              src={reputation.ownerAvatarUrl}
-              alt=""
-              className="earn-row__avatar"
-              loading="lazy"
-            />
-          ) : null}
-          <div className="earn-row__footer-text">
-            <span>This user has a {reputation.ownerTestBackRatePercent}% Test-back Rate</span>
-            <span aria-hidden="true">&bull;</span>
-            <span>{reputation.ownerSatisfactionRatePercent}% Satisfaction Rate</span>
-          </div>
-        </div>
-      ) : null}
-    </Surface>
+    <EarnTestCard
+      title={submission.productName}
+      description={
+        submission.description ||
+        "Open the app, move through the main experience, and share thoughtful usability feedback."
+      }
+      badges={badges}
+      supportingNote={
+        submission.needsGooglePlayClosedTesters
+          ? "Google Play closed test: join the Android test and check in once a day for 14 consecutive days."
+          : undefined
+      }
+      action={{
+        label: hasDraftProgress ? "Resume test" : "View test",
+        to: `/test/${submission.id}`,
+        onClick: savePlacementSnapshot,
+      }}
+      reputation={
+        showRateReputation && reputation
+          ? {
+              avatarUrl: reputation.ownerAvatarUrl,
+              testBackRatePercent: reputation.ownerTestBackRatePercent,
+              satisfactionRatePercent: reputation.ownerSatisfactionRatePercent,
+            }
+          : undefined
+      }
+    />
   );
 }

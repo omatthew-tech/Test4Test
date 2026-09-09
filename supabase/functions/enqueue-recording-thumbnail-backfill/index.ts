@@ -45,7 +45,6 @@ Deno.serve(async (request) => {
   const payload = (await request.json().catch(() => ({}))) as BackfillRequest;
   const limit = normalizeLimit(payload.batchSize ?? payload.limit);
   const admin = createRecordingAdminClient(env);
-  const nowIso = new Date().toISOString();
   const staleFilter = [
     "thumbnail_generation_version.is.null",
     `thumbnail_generation_version.neq.${RECORDING_THUMBNAIL_GENERATION_VERSION}`,
@@ -56,7 +55,6 @@ Deno.serve(async (request) => {
     .select("*")
     .eq("status", "completed")
     .not("attached_response_id", "is", null)
-    .gt("expires_at", nowIso)
     .or(staleFilter)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -75,7 +73,6 @@ Deno.serve(async (request) => {
       .not("recording_bucket", "is", null)
       .not("recording_path", "is", null)
       .is("recording_deleted_at", null)
-      .gt("recording_expires_at", nowIso)
       .or(
         [
           "recording_thumbnail_generation_version.is.null",

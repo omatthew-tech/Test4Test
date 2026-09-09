@@ -2,7 +2,7 @@
   {
     "name": "home",
     "routePattern": "/",
-    "path": "/"
+    "path": "/?ds-home-trusted=1"
   },
   {
     "name": "sign-in",

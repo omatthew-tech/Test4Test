@@ -220,7 +220,7 @@ export function SubmitFlowPage() {
   const [selectedAdditionalKind, setSelectedAdditionalKind] = useState<AdditionalLinkKind>("ios");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
-  const [pausedLiveSubmissionName, setPausedLiveSubmissionName] = useState("");
+  const [replacedEarnSubmissionName, setReplacedEarnSubmissionName] = useState("");
 
   const orderedAccessLinks = useMemo(
     () => getOrderedAccessLinks(draft.accessLinks, productTypesFromAccessLinks(draft.accessLinks)),
@@ -241,6 +241,7 @@ export function SubmitFlowPage() {
             (submission) =>
               submission.userId === currentUser.id &&
               submission.status === "live" &&
+              submission.isOpenForMoreTests &&
               submission.id !== submissionId,
           ) ?? null)
         : null,
@@ -253,8 +254,8 @@ export function SubmitFlowPage() {
         : 0,
     [currentUser, state.submissions],
   );
-  const submitSuccessMessage = pausedLiveSubmissionName
-    ? `${draft.productName || "Your app"} is now live. ${pausedLiveSubmissionName} was paused so only one test appears on Earn at a time.`
+  const submitSuccessMessage = replacedEarnSubmissionName
+    ? `${draft.productName || "Your app"} is now live on Earn. ${replacedEarnSubmissionName} is no longer shown on Earn, but its shared links can still receive feedback.`
     : !currentUser || ownedSubmissionCount <= 1
       ? "Congrats on submitting your first app! You're helping other founders, like yourself, make better apps."
       : "Congrats on submitting another app! Go earn credits or view your tests to see how they're doing";
@@ -541,7 +542,7 @@ export function SubmitFlowPage() {
       const createdId = await createSubmission(finalDraft);
       setDraft(finalDraft);
       setSubmissionId(createdId);
-      setPausedLiveSubmissionName(replacedLiveSubmissionName);
+      setReplacedEarnSubmissionName(replacedLiveSubmissionName);
       setFlowPhase("email");
       setCurrentStep(COMPLETE_STEP);
     } catch (submissionError) {
@@ -850,8 +851,9 @@ export function SubmitFlowPage() {
                     </div>
                     {currentLiveSubmission ? (
                       <Alert>
-                        Submitting this app will make it your live Earn test and pause{" "}
-                        {currentLiveSubmission.productName}.
+                        Submitting this app will make it your active Earn test and remove{" "}
+                        {currentLiveSubmission.productName} from Earn. Its shared links will still
+                        receive feedback.
                       </Alert>
                     ) : null}
                     <div className={styles.reviewList}>
@@ -990,7 +992,14 @@ export function SubmitFlowPage() {
                 </div>
               ) : (
                 <div className={styles.successActions}>
-                  <Button type="button" onClick={() => navigate("/earn")}>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        submissionId ? `/earn?edit=${encodeURIComponent(submissionId)}` : "/earn",
+                      )
+                    }
+                  >
                     Go to Earn
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => navigate("/analytics")}>

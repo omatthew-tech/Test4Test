@@ -28,12 +28,17 @@ The legacy `generate-ai-questions` function and question/answer schema support h
 - Auth, submissions, responses, credits, public test links, recording upload/access, notifications, and moderation have timestamped migrations and Edge Function code.
 - Private recording upload and access use the `test-response-recordings` R2 path.
 - Recording thumbnails have dedicated migration and worker integration in the current worktree.
-- The recording-retention migration establishes a 60-day source lifetime.
+- The recording-retention migration establishes no automatic expiry for finalized recordings.
 - The video processor can return timestamped transcript data as part of report processing.
 
-### Incomplete transcript integration
+### Transcript report integration
 
-The repository does not yet have an applied canonical schema and owner workflow for durable transcript persistence, timed words, lifecycle status, retry, exact-range annotations, priorities, clips, or AI context filtering. A worker job returning transcript JSON is not equivalent to a complete transcript product.
+The repository includes a durable transcript/word migration, automatic dispatcher,
+authenticated completion and owner report/retry endpoints, and an Analytics export
+interface. Apply and validate them together using the [transcript report runbook](../docs/transcript-reports.md).
+Local implementation does not establish that the migration, worker, secrets, and
+scheduled dispatcher are deployed. The synchronized viewer, annotations,
+priorities, clips, and AI context filtering remain future work.
 
 Do not document transcript persistence as operational until migrations, RLS, grants, completion handling, backfill, retry, cleanup, and the owner interface are implemented and validated together.
 
@@ -60,15 +65,15 @@ Legacy question and answer tables remain temporarily for existing records but ar
 - Put privileged helper functions in a non-exposed schema, set an empty or safe `search_path`, verify the caller, and revoke unnecessary execute privileges.
 - Avoid broad `security definer` functions. Public clip resolution belongs behind a server endpoint using a narrowly scoped service credential.
 - Keep media private. A successful clip-token exchange returns only approved clip metadata and a short-lived private-media URL; it never exposes the R2 bucket.
-- Hash raw clip tokens and check revocation, deletion, and source expiration on every exchange.
+- Hash raw clip tokens and check revocation, deletion, and any optional share expiration on every exchange.
 
 ## Retention, cleanup, and retry
 
-- Derive every transcript, annotation, priority source, clip, and share expiration from its source recording.
+- Retain every transcript, annotation, priority source, clip, and share with its source recording until explicit deletion; keep source-derived expiration columns `null`.
 - Use foreign-key cascades for owned database records and a separate idempotent queue for object-store deletion.
-- Cleanup must record partial failures and retry without extending the 60-day lifetime.
+- Explicit-deletion cleanup must record partial failures and retry without making deleted media available again.
 - Transcript jobs must have pending, processing, ready, and failed states, bounded retry, idempotency, and an owner-visible retry path.
-- Backfill only unexpired recordings whose private source object is still available.
+- Backfill only retained recordings whose private source object is still available.
 - Logs must not contain transcript text, raw share tokens, signed media URLs, or secrets.
 
 ## Edge Function and secret review

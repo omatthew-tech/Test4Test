@@ -4,21 +4,16 @@
   margin-inline: auto;
 }
 
-.prompt {
-  position: relative;
+.reportStatus {
+  margin: var(--ds-semantic-space-zero);
+  color: var(--ds-semantic-color-text-secondary);
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
-.promptTextarea {
-  padding-inline-end: calc(
-    var(--ds-semantic-size-control-default) + var(--ds-semantic-space-inline-lg)
-  );
-  resize: none;
-}
-
-.promptAction {
-  position: absolute;
-  right: var(--ds-semantic-space-inline-md);
-  bottom: var(--ds-semantic-space-stack-md);
+.reportPreview {
+  overflow-wrap: anywhere;
+  font-family: var(--ds-semantic-typography-family-technical);
 }
 
 .actions {

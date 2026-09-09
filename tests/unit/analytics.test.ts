@@ -3,11 +3,9 @@ import { seededState } from "../../src/data/seeds";
 import { getAvailableRecordingsForCurrentUser } from "../../src/lib/selectors";
 import type { ResponseRecording, TestResponse } from "../../src/types";
 
-const now = Date.parse("2026-08-08T12:00:00.000Z");
-
 function createRecording(
   id: string,
-  expiresAt = "2026-09-08T12:00:00.000Z",
+  expiresAt: string | null = null,
   deletedAt: string | null = null,
 ): ResponseRecording {
   return {
@@ -23,7 +21,7 @@ function createRecording(
 }
 
 describe("available Analytics recordings", () => {
-  it("returns only current-user recordings that have not expired or been deleted", () => {
+  it("returns retained current-user recordings unless they have been deleted", () => {
     const state = structuredClone(seededState);
     state.currentUserId = "user-mateo";
     const template = state.responses.find(
@@ -55,10 +53,10 @@ describe("available Analytics recordings", () => {
         createRecording("available-newest"),
       ),
       response(
-        "expired",
+        "legacy-expired",
         "submission-palette",
         "2026-08-06T12:00:00.000Z",
-        createRecording("expired", "2026-08-08T12:00:00.000Z"),
+        createRecording("legacy-expired", "2026-08-08T12:00:00.000Z"),
       ),
       response(
         "deleted",
@@ -81,10 +79,11 @@ describe("available Analytics recordings", () => {
       ),
     ];
 
-    const availableRecordings = getAvailableRecordingsForCurrentUser(state, now);
+    const availableRecordings = getAvailableRecordingsForCurrentUser(state);
 
     expect(availableRecordings.map(({ response: item }) => item.id)).toEqual([
       "available-newest",
+      "legacy-expired",
       "available-older",
     ]);
     expect(availableRecordings[0]).toMatchObject({
@@ -97,6 +96,6 @@ describe("available Analytics recordings", () => {
     const state = structuredClone(seededState);
     state.currentUserId = null;
 
-    expect(getAvailableRecordingsForCurrentUser(state, now)).toEqual([]);
+    expect(getAvailableRecordingsForCurrentUser(state)).toEqual([]);
   });
 });

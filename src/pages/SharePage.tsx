@@ -57,7 +57,10 @@ async function copyTextToClipboard(value: string) {
 export function SharePage() {
   const { state, upsertSubmissionShareLink } = useAppState();
   const liveSubmission = useMemo(
-    () => getMySubmissions(state).find((submission) => submission.status === "live") ?? null,
+    () =>
+      getMySubmissions(state).find(
+        (submission) => submission.status === "live" && submission.isOpenForMoreTests,
+      ) ?? null,
     [state],
   );
   const questionSet = liveSubmission ? getActiveQuestionSet(state, liveSubmission.id) : null;

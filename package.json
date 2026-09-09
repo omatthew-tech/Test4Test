@@ -15,6 +15,7 @@
     "lint": "eslint src design-system .storybook tests scripts",
     "typecheck": "tsc",
     "test": "vitest run --project unit",
+    "test:home-logos:backend": "npm exec --yes --package=deno@2.9.6 -- deno test --config supabase/functions/get-home-trusted-logos/deno.json --allow-env --allow-read supabase/functions/get-home-trusted-logos/",
     "test:components": "vitest run --project storybook",
     "ds:generate": "node scripts/generate-design-system.mjs",
     "ds:validate": "node scripts/validate-design-system.mjs",
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
+    "@electric-sql/pglite": "0.5.8",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@storybook/addon-a11y": "^10.5.3",

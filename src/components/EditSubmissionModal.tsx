@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
   Alert,
@@ -22,10 +22,13 @@ import {
   serializeInstructionSteps,
 } from "../lib/instructions";
 import { validateAccessLink } from "../lib/questions";
+import { getSubmissionSelectOptions } from "../lib/selectors";
 import { AccessLinks, ProductType, Submission, SubmissionDraft } from "../types";
+import styles from "./EditSubmissionModal.module.css";
 
 const additionalLinkKinds = ["ios", "android", "figma", "other"] as const;
 type AdditionalLinkKind = (typeof additionalLinkKinds)[number];
+type PendingNavigation = { type: "select"; submissionId: string } | { type: "add" };
 
 const additionalLinkLabels: Record<AdditionalLinkKind, string> = {
   ios: "iOS app",
@@ -60,12 +63,37 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
   };
 }
 
+function getSubmissionOptionLabel(submission: Submission, activeSubmissionId: string | null) {
+  if (submission.id === activeSubmissionId) {
+    return `${submission.productName} (currently in use)`;
+  }
+
+  const statusLabels: Partial<Record<Submission["status"], string>> = {
+    draft: "draft",
+    pending_verification: "pending review",
+    paused: "paused",
+    flagged: "flagged",
+  };
+  const statusLabel = statusLabels[submission.status];
+  return statusLabel ? `${submission.productName} (${statusLabel})` : submission.productName;
+}
+
 export function EditSubmissionModal({
+  submissions,
+  activeSubmissionId,
   submission,
+  onSelect,
+  onActivate,
+  onAdd,
   onClose,
   onSave,
 }: {
+  submissions: Submission[];
+  activeSubmissionId: string | null;
   submission: Submission;
+  onSelect: (submissionId: string) => void;
+  onActivate: (submissionId: string) => Promise<void>;
+  onAdd: () => void;
   onClose: () => void;
   onSave: (submissionId: string, draft: SubmissionDraft) => Promise<void>;
 }) {
@@ -73,14 +101,42 @@ export function EditSubmissionModal({
   const [selectedAdditionalKind, setSelectedAdditionalKind] = useState<AdditionalLinkKind>("ios");
   const [editError, setEditError] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
+  const [activationTargetId, setActivationTargetId] = useState<string | null>(null);
+  const [activationError, setActivationError] = useState("");
+  const [isActivating, setIsActivating] = useState(false);
+  const confirmationHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const editedSubmissionIdRef = useRef(submission.id);
   const isLegacyWithoutWebsite = !submission.accessLinks.website?.trim();
   const canManageExistingClosedTest = submission.needsGooglePlayClosedTesters;
+  const isActiveSubmission = submission.id === activeSubmissionId;
+  const canActivateSubmission = submission.status === "live" && !isActiveSubmission;
+  const submissionOptions = useMemo(
+    () => getSubmissionSelectOptions(submissions, submission),
+    [submission, submissions],
+  );
+  const activationTarget = submissionOptions.find((item) => item.id === activationTargetId) ?? null;
 
   useEffect(() => {
+    if (editedSubmissionIdRef.current === submission.id) return;
+
+    editedSubmissionIdRef.current = submission.id;
     setEditDraft(buildEditDraft(submission));
     setEditError("");
     setIsSavingEdit(false);
+    setIsDirty(false);
+    setPendingNavigation(null);
+    setActivationTargetId(null);
+    setActivationError("");
+    setIsActivating(false);
   }, [submission]);
+
+  useEffect(() => {
+    if (pendingNavigation || activationTarget) {
+      window.requestAnimationFrame(() => confirmationHeadingRef.current?.focus());
+    }
+  }, [activationTarget, pendingNavigation]);
 
   const activeAdditionalKinds = useMemo(
     () => additionalLinkKinds.filter((kind) => editDraft.accessLinks[kind] !== undefined),
@@ -101,16 +157,31 @@ export function EditSubmissionModal({
   }, [availableAdditionalKinds, selectedAdditionalKind]);
 
   const closeEditTest = () => {
-    if (!isSavingEdit) onClose();
+    if (isSavingEdit || isActivating) return;
+
+    if (pendingNavigation) {
+      setPendingNavigation(null);
+      return;
+    }
+
+    if (activationTarget) {
+      setActivationTargetId(null);
+      setActivationError("");
+      return;
+    }
+
+    onClose();
   };
 
   const updateEditDraft = (next: Partial<SubmissionDraft>) => {
     setEditError("");
+    setIsDirty(true);
     setEditDraft((current) => ({ ...current, ...next }));
   };
 
   const updateAccessLinks = (nextAccessLinks: AccessLinks) => {
     setEditError("");
+    setIsDirty(true);
     setEditDraft((current) => ({
       ...current,
       accessLinks: nextAccessLinks,
@@ -137,6 +208,7 @@ export function EditSubmissionModal({
   };
 
   const updateInstructionStep = (index: number, value: string) => {
+    setIsDirty(true);
     setEditDraft((current) => {
       const instructionSteps = current.instructionSteps.map((step, stepIndex) =>
         stepIndex === index ? value : step,
@@ -258,223 +330,377 @@ export function EditSubmissionModal({
     }
   };
 
+  const selectSubmission = (submissionId: string) => {
+    if (submissionId === submission.id) return;
+
+    if (isDirty) {
+      setPendingNavigation({ type: "select", submissionId });
+      return;
+    }
+
+    onSelect(submissionId);
+  };
+
+  const addTest = () => {
+    if (isDirty) {
+      setPendingNavigation({ type: "add" });
+      return;
+    }
+
+    onAdd();
+  };
+
+  const discardAndContinue = () => {
+    if (!pendingNavigation) return;
+
+    const nextNavigation = pendingNavigation;
+    setPendingNavigation(null);
+    setIsDirty(false);
+    if (nextNavigation.type === "select") {
+      onSelect(nextNavigation.submissionId);
+      return;
+    }
+
+    onAdd();
+  };
+
+  const activateSubmission = async () => {
+    if (!activationTarget) return;
+
+    setIsActivating(true);
+    setActivationError("");
+    try {
+      await onActivate(activationTarget.id);
+      setActivationTargetId(null);
+    } catch (error) {
+      setActivationError(
+        error instanceof Error ? error.message : "The Earn test could not be changed.",
+      );
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   return (
     <Dialog
       open
       onOpenChange={(open) => {
         if (!open) closeEditTest();
       }}
-      title="Edit app"
-      description="Update the app details, resource links, and tester instructions."
+      title={<span className="ds-sr-only">Edit app</span>}
     >
-      <div className="form-stack form-stack--edit-test-modal">
-        <div className="edit-test-modal__section">
-          <div className="section-heading">
-            <h2>App details</h2>
+      {pendingNavigation ? (
+        <div className={styles.confirmation}>
+          <div className={styles.confirmationCopy}>
+            <h3 ref={confirmationHeadingRef} tabIndex={-1}>
+              Discard changes to {submission.productName}?
+            </h3>
+            <p>Your unsaved changes will be lost.</p>
           </div>
-          <TextField
-            label="App name"
-            value={editDraft.productName}
-            onChange={(event) => updateEditDraft({ productName: event.target.value })}
-            placeholder="Palette Pilot"
-            required
-          />
-          <Textarea
-            label="Short app description visible to testers (optional)"
-            rows={4}
-            value={editDraft.description}
-            onChange={(event) => updateEditDraft({ description: event.target.value })}
-            placeholder="Write something interesting to catch a tester's attention."
-          />
+          <div className={styles.confirmationActions}>
+            <Button type="button" variant="secondary" onClick={() => setPendingNavigation(null)}>
+              Keep editing
+            </Button>
+            <Button type="button" onClick={discardAndContinue}>
+              Discard and continue
+            </Button>
+          </div>
         </div>
-
-        <div className="edit-test-modal__section">
-          <div className="section-heading">
-            <h2>App links</h2>
+      ) : activationTarget ? (
+        <div className={styles.confirmation}>
+          <div className={styles.confirmationCopy}>
+            <h3 ref={confirmationHeadingRef} tabIndex={-1}>
+              Are you sure you want to swap to {activationTarget.productName}?
+            </h3>
+            <p>
+              Your current test will stop receiving feedback from the earn page. However, you'll
+              continue receiving feedback from any links you've shared.
+            </p>
           </div>
-          <TextField
-            type="url"
-            label={
-              isLegacyWithoutWebsite
-                ? "Website / Web app link (optional for this existing app)"
-                : "Website / Web app link"
-            }
-            value={editDraft.accessLinks.website ?? ""}
-            onChange={(event) =>
-              updateAccessLinks({ ...editDraft.accessLinks, website: event.target.value })
-            }
-            placeholder={accessLinkPlaceholder("website")}
-            disabled={editDraft.needsGooglePlayClosedTesters && isLegacyWithoutWebsite}
-          />
-
-          {activeAdditionalKinds.map((kind) =>
-            kind === "other" ? (
-              <div className="edit-test-modal__field-row" key={kind}>
-                <div className="edit-test-modal__field-stack">
-                  <TextField
-                    label="Other link name"
-                    value={editDraft.accessLinks.other?.label ?? ""}
-                    onChange={(event) =>
-                      updateAccessLinks({
-                        ...editDraft.accessLinks,
-                        other: {
-                          label: event.target.value,
-                          url: editDraft.accessLinks.other?.url ?? "",
-                        },
-                      })
-                    }
-                    placeholder="Interactive prototype"
-                    required
-                  />
-                  <TextField
-                    type="url"
-                    label="Other link URL"
-                    value={editDraft.accessLinks.other?.url ?? ""}
-                    onChange={(event) =>
-                      updateAccessLinks({
-                        ...editDraft.accessLinks,
-                        other: {
-                          label: editDraft.accessLinks.other?.label ?? "",
-                          url: event.target.value,
-                        },
-                      })
-                    }
-                    placeholder={accessLinkPlaceholder("other")}
-                    required
-                  />
-                </div>
-                <IconButton
-                  type="button"
-                  label="Remove Other link"
-                  variant="danger"
-                  onClick={() => removeAdditionalLink(kind)}
-                >
-                  <Trash2 size={16} />
-                </IconButton>
-              </div>
-            ) : (
-              <div className="edit-test-modal__field-row" key={kind}>
-                <div className="edit-test-modal__field-stack">
-                  <TextField
-                    type="url"
-                    label={accessLinkFieldLabel(kind)}
-                    value={editDraft.accessLinks[kind] ?? ""}
-                    onChange={(event) =>
-                      updateAccessLinks({ ...editDraft.accessLinks, [kind]: event.target.value })
-                    }
-                    placeholder={accessLinkPlaceholder(kind)}
-                    required
-                  />
-                </div>
-                <IconButton
-                  type="button"
-                  label={`Remove ${additionalLinkLabels[kind]} link`}
-                  variant="danger"
-                  onClick={() => removeAdditionalLink(kind)}
-                  disabled={editDraft.needsGooglePlayClosedTesters && kind === "android"}
-                >
-                  <Trash2 size={16} />
-                </IconButton>
-              </div>
-            ),
-          )}
-
-          {availableAdditionalKinds.length > 0 ? (
-            <div className="edit-test-modal__add-link">
+          {activationError ? <Alert tone="danger">{activationError}</Alert> : null}
+          <div className={styles.confirmationActions}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setActivationTargetId(null);
+                setActivationError("");
+              }}
+              disabled={isActivating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void activateSubmission()}
+              loading={isActivating}
+              loadingLabel="Switching test..."
+            >
+              Use this test
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={styles.testPicker}>
+            <div className={styles.testSelect}>
               <Select
-                label="Additional link type"
-                value={selectedAdditionalKind}
-                onChange={(event) =>
-                  setSelectedAdditionalKind(event.target.value as AdditionalLinkKind)
-                }
+                label="Test"
+                value={submission.id}
+                onChange={(event) => selectSubmission(event.target.value)}
               >
-                {availableAdditionalKinds.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {additionalLinkLabels[kind]}
+                {submissionOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getSubmissionOptionLabel(item, activeSubmissionId)}
                   </option>
                 ))}
               </Select>
-              <Button type="button" variant="secondary" onClick={addAdditionalLink}>
-                <Plus size={16} />
-                Add another link
+            </div>
+            {canActivateSubmission ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setActivationError("");
+                  setActivationTargetId(submission.id);
+                }}
+              >
+                Use this test
               </Button>
-            </div>
-          ) : null}
-
-          {canManageExistingClosedTest ? (
-            <>
-              <GooglePlayClosedTestOption
-                checked={editDraft.needsGooglePlayClosedTesters}
-                onChange={setEditGooglePlayClosedTestRequirement}
-              />
-              {editDraft.needsGooglePlayClosedTesters ? (
-                <Textarea
-                  label="Google Play closed-test access instructions"
-                  rows={4}
-                  value={editDraft.googlePlayClosedTestInstructions}
-                  onChange={(event) =>
-                    updateEditDraft({ googlePlayClosedTestInstructions: event.target.value })
-                  }
-                  helpText="Include any opt-in or install steps needed before testers can access the Android closed test."
-                  required
-                />
-              ) : null}
-            </>
-          ) : null}
-        </div>
-
-        <div className="edit-test-modal__section">
-          <div className="section-heading">
-            <h2>Tester instructions</h2>
-            <p>Keep the full task focused enough to complete in 5–10 minutes.</p>
-          </div>
-          {editDraft.instructionSteps.map((instruction, index) => (
-            <div className="edit-test-modal__field-row" key={`instruction-${index}`}>
-              <div className="edit-test-modal__field-stack">
-                <Textarea
-                  label={`Step ${index + 1}`}
-                  rows={3}
-                  value={instruction}
-                  onChange={(event) => updateInstructionStep(index, event.target.value)}
-                  required
-                />
-              </div>
-              {index > 0 ? (
-                <IconButton
-                  type="button"
-                  label={`Remove Step ${index + 1}`}
-                  variant="danger"
-                  onClick={() => removeInstructionStep(index)}
-                >
-                  <Trash2 size={16} />
-                </IconButton>
-              ) : null}
-            </div>
-          ))}
-          {editDraft.instructionSteps.length < MAX_INSTRUCTION_STEPS ? (
-            <Button type="button" variant="secondary" onClick={addInstructionStep}>
+            ) : null}
+            <Button type="button" variant="secondary" onClick={addTest}>
               <Plus size={16} />
-              Add another step
+              Add test
             </Button>
+          </div>
+
+          {submission.status !== "live" ? (
+            <Alert>
+              This test is{" "}
+              {getSubmissionOptionLabel(submission, activeSubmissionId).match(/\((.+)\)$/)?.[1] ??
+                "unavailable"}{" "}
+              and cannot be used on Earn yet.
+            </Alert>
           ) : null}
-        </div>
-      </div>
 
-      {editError ? <Alert tone="danger">{editError}</Alert> : null}
+          <div className="form-stack form-stack--edit-test-modal">
+            <div className="edit-test-modal__section">
+              <div className="section-heading">
+                <h2>App details</h2>
+              </div>
+              <TextField
+                label="App name"
+                value={editDraft.productName}
+                onChange={(event) => updateEditDraft({ productName: event.target.value })}
+                placeholder="Palette Pilot"
+                required
+              />
+              <Textarea
+                label="Short app description visible to testers (optional)"
+                rows={4}
+                value={editDraft.description}
+                onChange={(event) => updateEditDraft({ description: event.target.value })}
+                placeholder="Write something interesting to catch a tester's attention."
+              />
+            </div>
 
-      <div className="wizard-actions">
-        <Button type="button" variant="secondary" onClick={closeEditTest} disabled={isSavingEdit}>
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={() => void saveEditTest()}
-          loading={isSavingEdit}
-          loadingLabel="Saving changes..."
-        >
-          Save changes
-        </Button>
-      </div>
+            <div className="edit-test-modal__section">
+              <div className="section-heading">
+                <h2>App links</h2>
+              </div>
+              <TextField
+                type="url"
+                label={
+                  isLegacyWithoutWebsite
+                    ? "Website / Web app link (optional for this existing app)"
+                    : "Website / Web app link"
+                }
+                value={editDraft.accessLinks.website ?? ""}
+                onChange={(event) =>
+                  updateAccessLinks({ ...editDraft.accessLinks, website: event.target.value })
+                }
+                placeholder={accessLinkPlaceholder("website")}
+                disabled={editDraft.needsGooglePlayClosedTesters && isLegacyWithoutWebsite}
+              />
+
+              {activeAdditionalKinds.map((kind) =>
+                kind === "other" ? (
+                  <div className="edit-test-modal__field-row" key={kind}>
+                    <div className="edit-test-modal__field-stack">
+                      <TextField
+                        label="Other link name"
+                        value={editDraft.accessLinks.other?.label ?? ""}
+                        onChange={(event) =>
+                          updateAccessLinks({
+                            ...editDraft.accessLinks,
+                            other: {
+                              label: event.target.value,
+                              url: editDraft.accessLinks.other?.url ?? "",
+                            },
+                          })
+                        }
+                        placeholder="Interactive prototype"
+                        required
+                      />
+                      <TextField
+                        type="url"
+                        label="Other link URL"
+                        value={editDraft.accessLinks.other?.url ?? ""}
+                        onChange={(event) =>
+                          updateAccessLinks({
+                            ...editDraft.accessLinks,
+                            other: {
+                              label: editDraft.accessLinks.other?.label ?? "",
+                              url: event.target.value,
+                            },
+                          })
+                        }
+                        placeholder={accessLinkPlaceholder("other")}
+                        required
+                      />
+                    </div>
+                    <IconButton
+                      type="button"
+                      label="Remove Other link"
+                      variant="danger"
+                      onClick={() => removeAdditionalLink(kind)}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </div>
+                ) : (
+                  <div className="edit-test-modal__field-row" key={kind}>
+                    <div className="edit-test-modal__field-stack">
+                      <TextField
+                        type="url"
+                        label={accessLinkFieldLabel(kind)}
+                        value={editDraft.accessLinks[kind] ?? ""}
+                        onChange={(event) =>
+                          updateAccessLinks({
+                            ...editDraft.accessLinks,
+                            [kind]: event.target.value,
+                          })
+                        }
+                        placeholder={accessLinkPlaceholder(kind)}
+                        required
+                      />
+                    </div>
+                    <IconButton
+                      type="button"
+                      label={`Remove ${additionalLinkLabels[kind]} link`}
+                      variant="danger"
+                      onClick={() => removeAdditionalLink(kind)}
+                      disabled={editDraft.needsGooglePlayClosedTesters && kind === "android"}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </div>
+                ),
+              )}
+
+              {availableAdditionalKinds.length > 0 ? (
+                <div className="edit-test-modal__add-link">
+                  <Select
+                    label="Additional link type"
+                    value={selectedAdditionalKind}
+                    onChange={(event) =>
+                      setSelectedAdditionalKind(event.target.value as AdditionalLinkKind)
+                    }
+                  >
+                    {availableAdditionalKinds.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {additionalLinkLabels[kind]}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button type="button" variant="secondary" onClick={addAdditionalLink}>
+                    <Plus size={16} />
+                    Add another link
+                  </Button>
+                </div>
+              ) : null}
+
+              {canManageExistingClosedTest ? (
+                <>
+                  <GooglePlayClosedTestOption
+                    checked={editDraft.needsGooglePlayClosedTesters}
+                    onChange={setEditGooglePlayClosedTestRequirement}
+                  />
+                  {editDraft.needsGooglePlayClosedTesters ? (
+                    <Textarea
+                      label="Google Play closed-test access instructions"
+                      rows={4}
+                      value={editDraft.googlePlayClosedTestInstructions}
+                      onChange={(event) =>
+                        updateEditDraft({ googlePlayClosedTestInstructions: event.target.value })
+                      }
+                      helpText="Include any opt-in or install steps needed before testers can access the Android closed test."
+                      required
+                    />
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+
+            <div className="edit-test-modal__section">
+              <div className="section-heading">
+                <h2>Tester instructions</h2>
+                <p>Keep the full task focused enough to complete in 5–10 minutes.</p>
+              </div>
+              {editDraft.instructionSteps.map((instruction, index) => (
+                <div className="edit-test-modal__field-row" key={`instruction-${index}`}>
+                  <div className="edit-test-modal__field-stack">
+                    <Textarea
+                      label={`Step ${index + 1}`}
+                      rows={3}
+                      value={instruction}
+                      onChange={(event) => updateInstructionStep(index, event.target.value)}
+                      required
+                    />
+                  </div>
+                  {index > 0 ? (
+                    <IconButton
+                      type="button"
+                      label={`Remove Step ${index + 1}`}
+                      variant="danger"
+                      onClick={() => removeInstructionStep(index)}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  ) : null}
+                </div>
+              ))}
+              {editDraft.instructionSteps.length < MAX_INSTRUCTION_STEPS ? (
+                <Button type="button" variant="secondary" onClick={addInstructionStep}>
+                  <Plus size={16} />
+                  Add another step
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          {editError ? <Alert tone="danger">{editError}</Alert> : null}
+
+          <div className="wizard-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeEditTest}
+              disabled={isSavingEdit}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void saveEditTest()}
+              loading={isSavingEdit}
+              loadingLabel="Saving changes..."
+            >
+              Save changes
+            </Button>
+          </div>
+        </>
+      )}
     </Dialog>
   );
 }

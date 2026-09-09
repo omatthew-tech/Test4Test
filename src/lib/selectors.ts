@@ -36,6 +36,15 @@ export function getUserById(state: AppState, userId: string | null) {
   return state.users.find((user) => user.id === userId) ?? null;
 }
 
+export function getSubmissionSelectOptions(
+  submissions: Submission[],
+  selectedSubmission: Submission,
+) {
+  return submissions.some((submission) => submission.id === selectedSubmission.id)
+    ? submissions
+    : [selectedSubmission, ...submissions];
+}
+
 export function getCreditBalance(state: AppState, userId: string | null) {
   if (!userId) {
     return 0;
@@ -100,10 +109,7 @@ export interface AvailableRecording {
   submission: Submission;
 }
 
-export function getAvailableRecordingsForCurrentUser(
-  state: AppState,
-  now = Date.now(),
-): AvailableRecording[] {
+export function getAvailableRecordingsForCurrentUser(state: AppState): AvailableRecording[] {
   if (!state.currentUserId) {
     return [];
   }
@@ -118,15 +124,8 @@ export function getAvailableRecordingsForCurrentUser(
     .reduce<AvailableRecording[]>((availableRecordings, response) => {
       const submission = ownedSubmissions.get(response.submissionId);
       const recording = response.recording;
-      const expiresAt = recording ? Date.parse(recording.expiresAt) : Number.NaN;
 
-      if (
-        !submission ||
-        !recording ||
-        recording.deletedAt ||
-        !Number.isFinite(expiresAt) ||
-        expiresAt <= now
-      ) {
+      if (!submission || !recording || recording.deletedAt) {
         return availableRecordings;
       }
 
@@ -145,6 +144,10 @@ export function getAvailableSubmissions(state: AppState) {
   return state.submissions
     .filter((submission) => {
       if (submission.status !== "live") {
+        return false;
+      }
+
+      if (!submission.isOpenForMoreTests) {
         return false;
       }
 

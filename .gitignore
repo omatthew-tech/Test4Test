@@ -9,3 +9,4 @@ debug.log
 !.env.example
 .codex-*.log
 .wrangler
+/local-design-archive/

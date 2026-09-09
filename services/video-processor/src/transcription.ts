@@ -151,6 +151,7 @@ async function callGroqTranscription(audioPath: string): Promise<GroqTranscripti
 
   const response = await fetch(config.transcription.endpoint, {
     method: "POST",
+    signal: AbortSignal.timeout(600_000),
     headers: {
       Authorization: `Bearer ${config.transcription.apiKey}`,
     },

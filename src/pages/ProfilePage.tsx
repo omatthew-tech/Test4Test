@@ -76,7 +76,8 @@ export function ProfilePage() {
 
   if (!currentUser) {
     return (
-      <AppShell title="Profile" eyebrowLabel={null}>
+      <AppShell>
+        <h1 className="ds-sr-only">Profile</h1>
         <div className="page-stack">
           <Surface>
             <div className="empty-state empty-state--left">
@@ -156,7 +157,8 @@ export function ProfilePage() {
   };
 
   return (
-    <AppShell title="Profile" eyebrowLabel={null}>
+    <AppShell>
+      <h1 className="ds-sr-only">Profile</h1>
       <div className="page-stack profile-page profile-page--settings">
         <div className="profile-settings-shell">
           <Surface className="profile-panel profile-panel--account">
@@ -241,7 +243,9 @@ export function ProfilePage() {
               <h2>Payment methods</h2>
             </div>
             <div className="profile-payments-stack">
-              <p className="profile-payments-copy">Add your preferred payment method(s). Users can tip you for your feedback.</p>
+              <p className="profile-payments-copy">
+                Add your preferred payment method(s). Users can tip you for your feedback.
+              </p>
 
               <form
                 className={`profile-payments-form${isSavingPayments ? " profile-payments-form--saving" : ""}`}
@@ -304,7 +308,9 @@ export function ProfilePage() {
               <h2>Delete account</h2>
             </div>
             <div className="profile-danger-stack">
-              <p className="profile-danger-copy">Deleting your account permanently removes your apps, ratings, and credits.</p>
+              <p className="profile-danger-copy">
+                Deleting your account permanently removes your apps, ratings, and credits.
+              </p>
               <button
                 type="button"
                 className="button button--secondary profile-delete-button"

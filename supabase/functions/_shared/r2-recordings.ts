@@ -5,7 +5,6 @@ export const R2_RECORDING_PROVIDER = "r2";
 export const R2_RECORDING_BUCKET_NAME = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `${R2_RECORDING_PROVIDER}:${R2_RECORDING_BUCKET_NAME}`;
 export const R2_RECORDING_MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024;
-export const R2_RECORDING_STORAGE_DAYS = 60;
 export const R2_RECORDING_ALLOWED_MIME_TYPES = new Set([
   "video/mp4",
   "video/quicktime",
@@ -80,12 +79,6 @@ export function isR2RecordingBucket(bucket: string | null | undefined) {
   return (
     bucket === R2_RECORDING_BUCKET_ID || bucket === `r2:${Deno.env.get("R2_BUCKET_NAME")?.trim()}`
   );
-}
-
-export function calculateR2RecordingExpiry(uploadedAt = new Date()) {
-  return new Date(
-    uploadedAt.getTime() + R2_RECORDING_STORAGE_DAYS * 24 * 60 * 60 * 1000,
-  ).toISOString();
 }
 
 export function normalizeR2RecordingMimeType(

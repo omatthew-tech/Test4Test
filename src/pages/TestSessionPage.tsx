@@ -68,6 +68,14 @@ import { ProductType, Question, ResponseRecording, TestAnswer, TestReportReason 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
 type DraftSaveStatus =
   "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
+type DesignSystemRecordingUploadControl = {
+  fail: () => void;
+  setProgress: (percentage: number, state?: RecordingUploadProgress["state"]) => void;
+  succeed: () => void;
+};
+type WindowWithDesignSystemRecordingUploadControl = Window & {
+  __testRecordingUploadControl?: DesignSystemRecordingUploadControl;
+};
 
 const reportReasons: Array<{ value: TestReportReason; label: string }> = [
   { value: "app_unavailable", label: "App unavailable" },
@@ -611,6 +619,11 @@ export function TestSessionPage() {
   const { submissionId: testRef = "" } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const useControlledRecordingUploadFixture =
+    import.meta.env.VITE_DS_FIXTURES === "1" &&
+    searchParams.get("ds-recording-upload") === "controlled";
+  const controlledRecordingUploadFixtureRef = useRef(useControlledRecordingUploadFixture);
+  controlledRecordingUploadFixtureRef.current = useControlledRecordingUploadFixture;
   const {
     state,
     currentUser,
@@ -649,6 +662,8 @@ export function TestSessionPage() {
   const microphoneStreamRef = useRef<MediaStream | null>(null);
   const combinedStreamRef = useRef<MediaStream | null>(null);
   const recordingPipWindowRef = useRef<Window | null>(null);
+  const recordingPipUploadRecoveryOpenRef = useRef(false);
+  const recordingPipUploadCompactHeightRef = useRef<number | null>(null);
   const recordingPipFocusTargetRef = useRef<
     | "recording-pip-pause"
     | "recording-pip-resume"
@@ -1004,9 +1019,21 @@ export function TestSessionPage() {
     displayStreamRef.current = null;
   };
 
+  const resetRecordingPipUploadRecovery = (restoreCompactHeight = false) => {
+    const pipWindow = recordingPipWindowRef.current;
+    const compactOuterHeight = recordingPipUploadCompactHeightRef.current;
+    recordingPipUploadRecoveryOpenRef.current = false;
+    recordingPipUploadCompactHeightRef.current = null;
+
+    if (restoreCompactHeight && compactOuterHeight !== null && pipWindow && !pipWindow.closed) {
+      pipWindow.resizeTo(pipWindow.outerWidth, compactOuterHeight);
+    }
+  };
+
   const closeRecordingPipWindow = () => {
     const pipWindow = recordingPipWindowRef.current;
     recordingPipWindowRef.current = null;
+    resetRecordingPipUploadRecovery();
 
     if (!pipWindow || pipWindow.closed) {
       return;
@@ -1017,6 +1044,24 @@ export function TestSessionPage() {
     } catch {
       // The browser owns PiP window lifecycle; closing can fail during teardown.
     }
+  };
+
+  const resizeRecordingPipWindowToContent = () => {
+    const pipWindow = recordingPipWindowRef.current;
+
+    if (!pipWindow || pipWindow.closed) {
+      return;
+    }
+
+    pipWindow.requestAnimationFrame(() => {
+      const contentHeight = Math.ceil(pipWindow.document.documentElement.scrollHeight);
+      const browserFrameHeight = Math.max(0, pipWindow.outerHeight - pipWindow.innerHeight);
+      const targetOuterHeight = contentHeight + browserFrameHeight;
+
+      if (targetOuterHeight > pipWindow.outerHeight) {
+        pipWindow.resizeTo(pipWindow.outerWidth, targetOuterHeight);
+      }
+    });
   };
 
   const focusTestSessionWindow = () => {
@@ -1060,6 +1105,7 @@ export function TestSessionPage() {
       recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
     const submitDisabledAttribute = submitDisabled ? " disabled" : "";
     const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
+    const downloadDisabledAttribute = nativeRecordingBlob ? "" : " disabled";
     const submitLabel = isSubmitting ? "Submitting..." : "Submit test";
     const deleteLabel = isDeletingRecording ? "Deleting..." : "Delete and re-record";
     const trashIcon = `
@@ -1068,6 +1114,11 @@ export function TestSessionPage() {
         <path d="M8 6V4h8v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M19 6l-1 14H6L5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+    const chevronDownIcon = `
+      <svg class="recording-pip__recovery-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m6 9 6 6 6-6"/>
       </svg>
     `;
     pipDocument.title = isDeleteConfirm
@@ -1109,7 +1160,12 @@ export function TestSessionPage() {
           --pip-border-width: ${tokens["primitive.border.width.default"].value};
           --pip-focus-width: ${tokens["primitive.border.width.focus"].value};
           --pip-radius-control: ${tokens["semantic.radius.control"].value};
+          --pip-radius-surface: ${tokens["semantic.radius.surface"].value};
+          --pip-control-target: ${tokens["semantic.size.control.target"].value};
+          --pip-icon-small: ${tokens["semantic.size.icon.small"].value};
           --pip-icon-medium: ${tokens["semantic.size.icon.medium"].value};
+          --pip-caption-size: ${tokens["semantic.typography.caption.size"].value};
+          --pip-caption-line-height: ${tokens["semantic.typography.caption.line-height"].value};
           --pip-interface-size: ${tokens["semantic.typography.interface.size"].value};
           --pip-interface-line-height: ${tokens["semantic.typography.interface.line-height"].value};
           --pip-weight-semibold: ${tokens["semantic.typography.weight.semibold"].value};
@@ -1241,6 +1297,7 @@ export function TestSessionPage() {
         }
 
         .recording-pip__pause-button:focus-visible,
+        .recording-pip__recovery-summary:focus-visible,
         .recording-pip__button:focus-visible {
           outline: var(--pip-focus-width) solid var(--pip-focus-ring);
           outline-offset: var(--space-025);
@@ -1415,6 +1472,68 @@ export function TestSessionPage() {
           background: var(--pip-danger-tint);
         }
 
+        .recording-pip__recovery[open] {
+          display: grid;
+          gap: var(--space-100);
+        }
+
+        .recording-pip__recovery-summary {
+          display: flex;
+          width: 100%;
+          min-height: var(--pip-control-target);
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--space-100);
+          border-radius: var(--pip-radius-control);
+          color: var(--pip-text-secondary);
+          cursor: pointer;
+          font-size: var(--pip-interface-size);
+          font-weight: var(--pip-weight-semibold);
+          line-height: var(--pip-interface-line-height);
+          list-style: none;
+        }
+
+        .recording-pip__recovery-summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .recording-pip__recovery-chevron {
+          width: var(--pip-icon-small);
+          height: var(--pip-icon-small);
+          flex: 0 0 auto;
+        }
+
+        .recording-pip__recovery[open] .recording-pip__recovery-chevron {
+          transform: rotate(180deg);
+        }
+
+        .recording-pip__recovery-body {
+          display: grid;
+          gap: var(--space-150);
+          padding: var(--space-150);
+          border: var(--pip-border-width) solid var(--pip-border);
+          border-radius: var(--pip-radius-surface);
+          background: var(--pip-background);
+        }
+
+        .recording-pip__recovery-title,
+        .recording-pip__recovery-help {
+          margin: 0;
+        }
+
+        .recording-pip__recovery-title {
+          color: var(--pip-text);
+          font-size: var(--pip-interface-size);
+          font-weight: var(--pip-weight-semibold);
+          line-height: var(--pip-interface-line-height);
+        }
+
+        .recording-pip__recovery-help {
+          color: var(--pip-text-secondary);
+          font-size: var(--pip-caption-size);
+          line-height: var(--pip-caption-line-height);
+        }
+
         .recording-pip__actions {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1587,13 +1706,24 @@ export function TestSessionPage() {
             <p class="recording-pip__text">Keep this window open while Test4Test saves your recording.</p>
             <div class="recording-pip__progress" aria-label="Recording upload in progress">
               <!-- ds-exception: runtime-measurements — determinate upload percentage. -->
-              <span class="recording-pip__progress-fill" style="width: ${uploadProgressPercentage.toFixed(1)}%"></span>
+              <span id="recording-pip-upload-progress-fill" class="recording-pip__progress-fill" style="width: ${uploadProgressPercentage.toFixed(1)}%"></span>
             </div>
             <div class="recording-pip__status">
-              <span class="recording-pip__pill recording-pip__pill--ok">${uploadStatusLabel}</span>
-              <span class="recording-pip__pill">${uploadProgressLabel}</span>
+              <span id="recording-pip-upload-status" class="recording-pip__pill recording-pip__pill--ok">${uploadStatusLabel}</span>
+              <span id="recording-pip-upload-progress" class="recording-pip__pill">${uploadProgressLabel}</span>
             </div>
           </div>
+          <details id="recording-pip-upload-recovery" class="recording-pip__recovery"${recordingPipUploadRecoveryOpenRef.current ? " open" : ""}>
+            <summary id="recording-pip-upload-recovery-summary" class="recording-pip__recovery-summary">
+              <span>Experiencing an error?</span>
+              ${chevronDownIcon}
+            </summary>
+            <div class="recording-pip__recovery-body">
+              <p class="recording-pip__recovery-title">Download recording</p>
+              <button id="recording-pip-download" class="recording-pip__button" type="button"${downloadDisabledAttribute}>Download</button>
+              <p class="recording-pip__recovery-help">Go to the test's page and upload the recording for full credit.</p>
+            </div>
+          </details>
           <div class="recording-pip__actions">
             <button class="recording-pip__button recording-pip__button--danger" type="button" disabled>
               ${trashIcon}
@@ -1603,6 +1733,31 @@ export function TestSessionPage() {
           </div>
         </section>
       `;
+
+      const uploadRecovery = pipDocument.getElementById(
+        "recording-pip-upload-recovery",
+      ) as HTMLDetailsElement | null;
+      uploadRecovery?.addEventListener("toggle", () => {
+        recordingPipUploadRecoveryOpenRef.current = uploadRecovery.open;
+
+        if (uploadRecovery.open) {
+          recordingPipUploadCompactHeightRef.current ??= pipWindow.outerHeight;
+          resizeRecordingPipWindowToContent();
+          return;
+        }
+
+        const compactOuterHeight = recordingPipUploadCompactHeightRef.current;
+        recordingPipUploadCompactHeightRef.current = null;
+        if (compactOuterHeight !== null) {
+          pipWindow.resizeTo(pipWindow.outerWidth, compactOuterHeight);
+        }
+      });
+      pipDocument.getElementById("recording-pip-download")?.addEventListener("click", () => {
+        if (nativeRecordingBlob) {
+          downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName);
+        }
+      });
+      resizeRecordingPipWindowToContent();
       return;
     }
 
@@ -1720,6 +1875,7 @@ export function TestSessionPage() {
       pipWindow.addEventListener("pagehide", () => {
         if (recordingPipWindowRef.current === pipWindow) {
           recordingPipWindowRef.current = null;
+          resetRecordingPipUploadRecovery();
         }
       });
       renderRecordingPipWindow(readyToStartOverride);
@@ -1942,6 +2098,53 @@ export function TestSessionPage() {
     }
   };
 
+  const runControlledRecordingUploadFixture = (file: File, path: string) =>
+    new Promise<ResponseRecording>((resolve, reject) => {
+      const fixtureWindow = window as WindowWithDesignSystemRecordingUploadControl;
+      const setFixtureProgress = (
+        percentage: number,
+        state: RecordingUploadProgress["state"] = "uploading",
+      ) => {
+        const safePercentage = Math.min(100, Math.max(0, percentage));
+        setRecordingUploadProgress({
+          bytesUploaded: Math.round(file.size * (safePercentage / 100)),
+          bytesTotal: file.size,
+          percentage: safePercentage,
+          state,
+        });
+      };
+      const cleanupFixture = () => {
+        if (fixtureWindow.__testRecordingUploadControl === control) {
+          delete fixtureWindow.__testRecordingUploadControl;
+        }
+      };
+      const control: DesignSystemRecordingUploadControl = {
+        fail: () => {
+          cleanupFixture();
+          reject(new Error("The recording could not be uploaded automatically."));
+        },
+        setProgress: setFixtureProgress,
+        succeed: () => {
+          const uploadedAt = new Date().toISOString();
+          setFixtureProgress(100);
+          cleanupFixture();
+          resolve({
+            bucket: "response-recordings",
+            path,
+            fileName: file.name,
+            mimeType: file.type,
+            fileSizeBytes: file.size,
+            uploadedAt,
+            expiresAt: "2099-12-31T23:59:59.000Z",
+            deletedAt: null,
+          });
+        },
+      };
+
+      fixtureWindow.__testRecordingUploadControl = control;
+      setFixtureProgress(10);
+    });
+
   const uploadManualRecordingFile = async (file: File, successMessage: string) => {
     if (!recordingUploadIdentity) {
       setMessage("Verify your email before uploading a recording.");
@@ -1963,18 +2166,25 @@ export function TestSessionPage() {
     setRecordingPipDeleteConfirm(false);
 
     try {
-      const nextRecording = await uploadRecordingDraft(
-        recordingUploadIdentity,
-        recordingSessionId,
-        file,
-        uploadedRecording,
-        {
-          ...recordingUploadIdentityOptions,
-          onProgress: setRecordingUploadProgress,
-        },
-      );
+      const nextRecording = controlledRecordingUploadFixtureRef.current
+        ? await runControlledRecordingUploadFixture(
+            file,
+            buildRecordingDraftPath(recordingUploadIdentity, recordingSessionId, file.name),
+          )
+        : await uploadRecordingDraft(
+            recordingUploadIdentity,
+            recordingSessionId,
+            file,
+            uploadedRecording,
+            {
+              ...recordingUploadIdentityOptions,
+              onProgress: setRecordingUploadProgress,
+            },
+          );
       setUploadedRecording(nextRecording);
+      setNativeRecordingBlob(null);
       setNativeRecoveryUploadEnabled(false);
+      setPendingRecordingUploadPath("");
       setRecordingPhase("return_and_submit");
       setRecordingUploadProgress(null);
       setMessage(successMessage);
@@ -1991,6 +2201,7 @@ export function TestSessionPage() {
   };
 
   const finalizeNativeRecording = async (blob: Blob, mimeType: string) => {
+    resetRecordingPipUploadRecovery(true);
     const resolvedMimeType =
       normalizeRecordingMimeType(
         "",
@@ -2036,19 +2247,22 @@ export function TestSessionPage() {
         buildRecordingDraftPath(recordingUploadIdentity, recordingSessionId, generatedFile.name);
       setPendingRecordingUploadPath(uploadPath);
 
-      const nextRecording = await uploadGeneratedRecordingDraft(
-        recordingUploadIdentity,
-        recordingSessionId,
-        blob,
-        resolvedMimeType,
-        uploadedRecording,
-        {
-          ...recordingUploadIdentityOptions,
-          path: uploadPath,
-          onProgress: setRecordingUploadProgress,
-        },
-      );
+      const nextRecording = controlledRecordingUploadFixtureRef.current
+        ? await runControlledRecordingUploadFixture(generatedFile, uploadPath)
+        : await uploadGeneratedRecordingDraft(
+            recordingUploadIdentity,
+            recordingSessionId,
+            blob,
+            resolvedMimeType,
+            uploadedRecording,
+            {
+              ...recordingUploadIdentityOptions,
+              path: uploadPath,
+              onProgress: setRecordingUploadProgress,
+            },
+          );
       setUploadedRecording(nextRecording);
+      resetRecordingPipUploadRecovery(true);
       setNativeRecordingBlob(null);
       setNativeRecoveryUploadEnabled(false);
       setPendingRecordingUploadPath("");
@@ -2063,8 +2277,10 @@ export function TestSessionPage() {
           ? error.message
           : "The recording could not be uploaded automatically.";
       setRecordingPhase("return_and_submit");
+      resetRecordingPipUploadRecovery(true);
       setScreenShareStatus("ended");
       setNativeCaptureConfirmed(false);
+      setNativeRecoveryUploadEnabled(true);
       setNativeUploadError(errorMessage);
       setMessage(errorMessage);
     } finally {
@@ -2074,6 +2290,7 @@ export function TestSessionPage() {
 
   const resetNativeDesktopFlow = () => {
     cleanupActiveCaptureStreams();
+    resetRecordingPipUploadRecovery(true);
     setRecordingPhase("preflight");
     setIsNativeRecordingReadyToStart(false);
     setIsNativeTaskReadyToStart(false);
@@ -2574,12 +2791,41 @@ export function TestSessionPage() {
     microphoneStatus,
     recordingPipDeleteConfirm,
     recordingPhase,
-    recordingUploadProgress,
     screenShareStatus,
     submitDisabled,
     uploadedRecording,
     currentTesterInstructionIndex,
   ]);
+
+  useEffect(() => {
+    if (
+      !isNativeDesktopRecording ||
+      (recordingPhase !== "uploading_recording" && !isUploadingRecording)
+    ) {
+      return;
+    }
+
+    const pipWindow = recordingPipWindowRef.current;
+    if (!pipWindow || pipWindow.closed) {
+      return;
+    }
+
+    const progressPercentage = Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0));
+    const progressFill = pipWindow.document.getElementById("recording-pip-upload-progress-fill");
+    const status = pipWindow.document.getElementById("recording-pip-upload-status");
+    const progress = pipWindow.document.getElementById("recording-pip-upload-progress");
+
+    if (progressFill) {
+      progressFill.style.width = `${progressPercentage.toFixed(1)}%`;
+    }
+    if (status) {
+      status.textContent =
+        recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
+    }
+    if (progress) {
+      progress.textContent = formatUploadProgress(recordingUploadProgress);
+    }
+  }, [isNativeDesktopRecording, isUploadingRecording, recordingPhase, recordingUploadProgress]);
 
   useEffect(() => {
     if (!isNativeDesktopRecording) {
@@ -2642,6 +2888,8 @@ export function TestSessionPage() {
   }, [isNativeDesktopRecording, isRecordingTest]);
 
   useEffect(() => {
+    isUnmountingRef.current = false;
+
     return () => {
       isUnmountingRef.current = true;
       nativeStopReasonRef.current = "unmounted";
@@ -3193,10 +3441,7 @@ export function TestSessionPage() {
     !isNativeDesktopRecording && !recordingExperience.isMobile;
   const shouldShowManualRecordingGuidance = !isNativeDesktopRecording && isPhoneManualRecording;
   const shouldShowManualRecoveryUpload =
-    isNativeDesktopRecording &&
-    nativeRecoveryUploadEnabled &&
-    !uploadedRecording &&
-    !nativeRecordingBlob;
+    isNativeDesktopRecording && nativeRecoveryUploadEnabled && !uploadedRecording;
   const testSessionHeaderCopy =
     !isSharedPublicVisit && !isRecordingTest && isPublicTester
       ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
@@ -3929,11 +4174,17 @@ export function TestSessionPage() {
                         onChange={handleRecordingUpload}
                         disabled={isUploadingRecording}
                       />
-                      <div className="recording-upload-card__actions inline-actions">
-                        <Button type="button" variant="secondary" onClick={resetNativeDesktopFlow}>
-                          Start a new recording
-                        </Button>
-                      </div>
+                      {!nativeRecordingBlob ? (
+                        <div className="recording-upload-card__actions inline-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={resetNativeDesktopFlow}
+                          >
+                            Start a new recording
+                          </Button>
+                        </div>
+                      ) : null}
                     </>
                   ) : null}
                 </div>

@@ -124,7 +124,8 @@ export function TesterProfileSettings() {
 
   if (!testerProfile) {
     return (
-      <AppShell title="Profile" eyebrowLabel={null}>
+      <AppShell>
+        <h1 className="ds-sr-only">Profile</h1>
         <Alert title="Tester profile unavailable" tone="warning">
           We could not load your tester details. Refresh the page or contact support if this
           continues.
@@ -209,7 +210,8 @@ export function TesterProfileSettings() {
   };
 
   return (
-    <AppShell title="Profile" eyebrowLabel={null}>
+    <AppShell>
+      <h1 className="ds-sr-only">Profile</h1>
       <div className={styles.page}>
         <Surface as="section" className={styles.panel}>
           <div className={styles.sectionHeading}>

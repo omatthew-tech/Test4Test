@@ -31,7 +31,7 @@ interface ResponseRow {
   duration_seconds: number;
   recording_bucket: string;
   recording_path: string;
-  recording_expires_at: string;
+  recording_expires_at: string | null;
   recording_thumbnail_bucket: string | null;
   recording_thumbnail_path: string | null;
   recording_thumbnail_content_type: string | null;
@@ -188,7 +188,6 @@ Deno.serve(async (request) => {
     });
   }
 
-  const nowIso = new Date().toISOString();
   let responseQuery = admin
     .from("test_responses")
     .select(
@@ -198,7 +197,6 @@ Deno.serve(async (request) => {
     .not("recording_bucket", "is", null)
     .not("recording_path", "is", null)
     .is("recording_deleted_at", null)
-    .gt("recording_expires_at", nowIso)
     .order("submitted_at", { ascending: false })
     .limit(100);
 

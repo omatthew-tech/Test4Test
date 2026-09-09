@@ -1,17 +1,15 @@
-import { ArrowRight, ArrowUp, Play, RefreshCw } from "lucide-react";
+import { ArrowRight, Play, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
   Card,
-  Cluster,
   Grid,
   IconButton,
   Link,
   Skeleton,
   Stack,
-  Textarea,
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
@@ -23,11 +21,8 @@ import {
 import { invalidateResponseRecordingUrl, requestResponseRecordingUrl } from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
 import type { RecordingPreviewSummary } from "../types";
+import { AnalyticsTranscriptReport } from "./AnalyticsTranscriptReport";
 import styles from "./AnalyticsPage.module.css";
-
-function availableRecordingDescription(recordingCount: number) {
-  return `You have ${recordingCount} ${recordingCount === 1 ? "recording" : "recordings"} available`;
-}
 
 function formatOffset(timestampMs: number | null) {
   if (timestampMs === null) {
@@ -321,40 +316,9 @@ export function AnalyticsPage() {
       });
   }
 
-  const recordingCount = fixtureMode ? availableRecordings.length : previews.length;
-
   return (
-    <AppShell
-      title="Analytics"
-      description={availableRecordingDescription(recordingCount)}
-      eyebrowLabel={null}
-      headerAlignment="center"
-    >
+    <AppShell>
       <Stack className={styles.content} gap="xl">
-        <div className={styles.prompt}>
-          <Textarea className={styles.promptTextarea} disabled label="Ask about your recordings" />
-          <IconButton
-            className={styles.promptAction}
-            disabled
-            label="Submit analytics prompt"
-            variant="secondary"
-          >
-            <ArrowUp aria-hidden="true" size={20} />
-          </IconButton>
-        </div>
-
-        <Cluster className={styles.actions} gap="md">
-          <Button disabled type="button" variant="secondary">
-            Get more recordings
-          </Button>
-          <Button disabled type="button" variant="secondary">
-            Share
-          </Button>
-          <Button disabled type="button" variant="secondary">
-            Purchase
-          </Button>
-        </Cluster>
-
         <section aria-labelledby="analytics-recordings-heading">
           <Stack gap="md">
             <h2 className={styles.sectionHeading} id="analytics-recordings-heading">
@@ -431,6 +395,8 @@ export function AnalyticsPage() {
             ) : null}
           </Stack>
         </section>
+
+        <AnalyticsTranscriptReport key={state.currentUserId ?? "guest"} />
       </Stack>
     </AppShell>
   );

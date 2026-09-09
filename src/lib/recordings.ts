@@ -3,7 +3,6 @@ import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
-export const RECORDING_STORAGE_DAYS = 60;
 export const RECORDING_MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024;
 export const RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
 const RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES = 10 * 1024 * 1024;
@@ -122,12 +121,6 @@ export function createRecordingSessionId() {
   }
 
   return `recording-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-export function calculateRecordingExpiry(uploadedAt = new Date()) {
-  return new Date(
-    uploadedAt.getTime() + RECORDING_STORAGE_DAYS * 24 * 60 * 60 * 1000,
-  ).toISOString();
 }
 
 export function loadRecordingTestSession(submissionId: string) {
@@ -743,7 +736,7 @@ async function uploadRecordingObject(
     mimeType: contentType,
     fileSizeBytes: file.size,
     uploadedAt,
-    expiresAt: calculateRecordingExpiry(new Date(uploadedAt)),
+    expiresAt: null,
     deletedAt: null,
   } satisfies ResponseRecording;
 }

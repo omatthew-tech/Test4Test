@@ -5,10 +5,35 @@ import { jobQueue } from "./jobQueue.js";
 import { logger } from "./logger.js";
 import { assertBucketReachable, createSignedObjectUrl, deleteObjects } from "./r2Client.js";
 import { thumbnailQueue } from "./thumbnailQueue.js";
+import { createTranscriptNotifier, TranscriptQueue } from "./transcriptQueue.js";
+import { parseTranscriptJob, processRecordingTranscript } from "./transcriptProcessor.js";
 import type { RecordingThumbnailSource, VideoSource } from "./types.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+
+const transcriptQueue = new TranscriptQueue(
+  processRecordingTranscript,
+  createTranscriptNotifier(config.transcription.completionWebhookUrl, config.http.sharedSecret),
+);
+
+app.post("/recordings/transcripts/process", requireSecret, (req: Request, res: Response) => {
+  if (!config.transcription.completionWebhookUrl || !config.transcription.apiKey) {
+    res.status(503).json({ error: "Transcript worker is not configured." });
+    return;
+  }
+  const job = parseTranscriptJob(req.body);
+  if (!job) {
+    res.status(400).json({ error: "Invalid transcript job." });
+    return;
+  }
+  try {
+    transcriptQueue.enqueue(job);
+    res.status(202).json({ ok: true, attemptId: job.attemptId });
+  } catch {
+    res.status(429).json({ error: "Transcript worker is busy." });
+  }
+});
 
 /** Require the configured shared secret on every protected endpoint. */
 function requireSecret(req: Request, res: Response, next: NextFunction): void {

@@ -44,10 +44,10 @@ Paid recruitment is a human-managed service. Test4Test may use software to help 
 
 ### Retention
 
-- A recording expires 60 days after it is submitted.
-- The transcript, timed words, annotations, priority sources, clips, and share access derived from that recording expire with it.
-- Owners may delete recordings and clips sooner.
-- Deletion or expiration revokes public clip access and removes derived records through a cascading cleanup process.
+- A finalized recording has no automatic expiration and remains available until its owner deletes it or the owning account is deleted.
+- The transcript, timed words, annotations, priority sources, clips, and share access derived from that recording follow the same source-deletion boundary.
+- Owners may delete recordings and clips at any time.
+- Deletion revokes public clip access and removes derived records through a cascading cleanup process.
 
 ## 3. Roles and access
 
@@ -152,11 +152,11 @@ Rejected, duplicate, empty, inaccessible, or policy-violating recordings do not 
 6. The owner may mark exact word ranges yellow, red, or unmarked.
 7. The owner may recolor, resize, or remove a selection without overlapping incompatible annotations.
 
-Every recording must expose transcript state in text, including pending, ready, failed, retrying, and unavailable after deletion or expiration.
+Every recording must expose transcript state in text, including pending, ready, failed, retrying, and unavailable after deletion.
 
 ### D. Review app-level improvement priorities
 
-1. Test4Test collects yellow annotations from every unexpired recording for the app.
+1. Test4Test collects yellow annotations from every available recording for the app.
 2. It groups semantically related findings into themes.
 3. It ranks themes by recurrence and supporting evidence, while keeping the ranking method explainable.
 4. Each theme links to every source recording, annotation, and timestamp.
@@ -171,14 +171,14 @@ No theme may be presented as evidence unless it can be traced to at least one cu
 3. The owner supplies a clip title and creates an opaque, unlisted share token.
 4. Anyone with the link may see only the clip, app name, clip title, and transcript excerpt.
 5. The public page never identifies the tester or exposes the rest of the recording.
-6. Deleting the clip revokes access immediately. Deleting or expiring the source also makes the link unavailable.
+6. Deleting the clip revokes access immediately. Deleting the source also makes the link unavailable.
 
 ### F. Chat with app research
 
 1. The owner starts or opens an app-level AI conversation.
 2. A visible context selector offers `yellow only`, `yellow plus unmarked`, or `all content including red`.
 3. New conversations default to `yellow plus unmarked`.
-4. The server builds model input from current, unexpired transcript words that match the selected mode.
+4. The server builds model input from current, available transcript words that match the selected mode.
 5. Excluded text is filtered before the model request and is never sent to the model.
 6. The answer links claims back to available recordings and timestamps when possible.
 
@@ -231,7 +231,7 @@ Filtering is a server-side privacy boundary, not a client convenience. The model
 
 - Recording media remains private.
 - Public pages never receive bucket credentials or a permanent bucket URL.
-- A revocable token endpoint hashes and validates the opaque clip token, clip status, source ownership state, and expiration.
+- A revocable token endpoint hashes and validates the opaque clip token, clip status, source ownership and deletion state, and any optional share expiration.
 - A valid request returns only public clip metadata and a short-lived private-media URL limited to the clip playback path.
 - Raw share tokens are not stored after creation; only a one-way hash is stored.
 - Revocation is checked on every token exchange so deleting a clip takes effect immediately even if a prior media URL remains valid for its short lifetime.
@@ -239,9 +239,9 @@ Filtering is a server-side privacy boundary, not a client convenience. The model
 
 ## 9. Retention, deletion, and consent
 
-- Before capture, testers see what is recorded, who can review it, transcript processing, public-clip behavior, and the 60-day retention period.
+- Before capture, testers see what is recorded, who can review it, transcript processing, public-clip behavior, and that finalized recordings are retained until owner or account deletion.
 - The product must warn testers not to expose secrets, personal messages, payment data, or unrelated private content while sharing their screen.
-- Recordings, thumbnails, report frames, transcripts, annotations, priority sources, clips, and share records share one source expiration boundary.
+- Recordings, thumbnails, report frames, transcripts, annotations, priority sources, clips, and share records share one source-deletion boundary.
 - Cleanup must be idempotent, observable, retryable, and safe when storage deletion partially fails.
 - Database rows use cascading ownership relationships where appropriate; object cleanup is queued and verified separately.
 - Owner deletion and account deletion must cover media and all derived data.
@@ -257,7 +257,7 @@ These contracts define product intent, not an applied migration. Names may chang
 - `status`: `pending | processing | ready | failed`
 - `provider`, `model`, `language`, `duration_ms`, `full_text`
 - `attempt_count`, `last_error_code`, `retry_after`, `processed_at`
-- `created_at`, `updated_at`, `expires_at`, `deleted_at`
+- `created_at`, `updated_at`, nullable `expires_at`, `deleted_at`; `expires_at` is `null` under the unlimited-retention policy.
 - One active transcript per response; retries update a durable attempt state.
 
 ### `transcript_words`
@@ -271,19 +271,19 @@ These contracts define product intent, not an applied migration. Names may chang
 - `id`, `transcript_id`, `owner_user_id`
 - `kind`: `useful | not_useful`
 - `start_word_id`, `end_word_id`, `start_ms`, `end_ms`
-- `created_at`, `updated_at`, `expires_at`
+- `created_at`, `updated_at`, nullable `expires_at`; `expires_at` is `null` while the source recording is retained.
 - A database-backed exclusion rule prevents overlapping yellow/red coverage.
 
 ### `improvement_priorities` and sources
 
-- Priority: `id`, `submission_id`, `title`, `summary`, `rank`, `support_count`, `generated_at`, `expires_at`
+- Priority: `id`, `submission_id`, `title`, `summary`, `rank`, `support_count`, `generated_at`, nullable `expires_at`
 - Source: `priority_id`, `annotation_id`, `response_id`, `start_ms`, `end_ms`
 - Sources cascade when annotations or recordings are removed.
 
 ### `recording_clips` and `recording_clip_shares`
 
-- Clip: `id`, `response_id`, `owner_user_id`, `title`, `start_ms`, `end_ms`, `transcript_excerpt`, `expires_at`, `deleted_at`
-- Share: `id`, `clip_id`, `token_hash`, `status`, `created_at`, `revoked_at`, `expires_at`
+- Clip: `id`, `response_id`, `owner_user_id`, `title`, `start_ms`, `end_ms`, `transcript_excerpt`, nullable `expires_at`, `deleted_at`
+- Share: `id`, `clip_id`, `token_hash`, `status`, `created_at`, `revoked_at`, optional `expires_at`
 - Start/end constraints keep clips inside the source duration.
 
 ### `recording_ratings`
@@ -326,7 +326,7 @@ These contracts define product intent, not an applied migration. Names may chang
 - Public test links exist.
 - Credit earning and removal of starter credit are partly represented in current migrations and flows.
 - The video worker can generate timestamped transcript data while building a report.
-- Recording storage has a 60-day retention migration.
+- Recording storage has an unlimited-retention migration that uses `null` as the canonical no-expiry value.
 
 ### Incomplete or missing
 
@@ -356,8 +356,8 @@ These blockers are recorded here for later implementation. This documentation ph
 - Mark those tables and AI-question functions non-canonical for new tests; do not invoke them from the new creation flow.
 - Migrate legacy recording satisfaction values as `frowny → 1`, `neutral → 3`, and `smiley → 5`.
 - Make star migration idempotent and preserve the original legacy value for audit until the migration is accepted.
-- Backfill transcript jobs only for unexpired, accessible recordings and record failures without blocking unrelated recordings.
-- Derive all new expiration timestamps from the source recording rather than adding a fresh 60-day clock.
+- Backfill transcript jobs only for retained, accessible recordings and record failures without blocking unrelated recordings.
+- Keep source-derived expiration timestamps `null` while the source recording is retained; optional share-token expiration remains independent.
 - Existing public test links remain valid unless separately revoked.
 - No legacy recording becomes publicly shareable merely because clips are introduced.
 
@@ -382,7 +382,7 @@ No new component is authorized by this specification alone. Each reusable compon
 - AI agents pretending to be recruited human participants.
 - Using transcript usefulness annotations to punish testers or change credit awards.
 - Public recording libraries, permanent public media URLs, or discoverable clip indexes.
-- Permanent recording or transcript storage.
+- Undeletable recording or transcript storage; owner and account deletion must remain effective.
 - Unlimited free managed recruiting.
 - Publishing exact prices, compensation, SLA, or refund promises before those decisions are approved.
 
@@ -397,7 +397,7 @@ No new component is authorized by this specification alone. Each reusable compon
 ### Data and service gate
 
 - Review and apply migrations for transcripts, words, annotations, priorities, clips, ratings, AI conversations, and managed orders.
-- Verify RLS, explicit grants, indexes, cascade behavior, token hashing, retry safety, and 60-day cleanup.
+- Verify RLS, explicit grants, indexes, cascade behavior, token hashing, retry safety, and explicit-deletion cleanup.
 - Prove private media cannot be enumerated and public clips reveal only the approved range and metadata.
 - Complete backup, monitoring, error reporting, and operational runbooks.
 
@@ -405,7 +405,7 @@ No new component is authorized by this specification alone. Each reusable compon
 
 - Implement and test every future interface in Section 14.
 - Remove questionnaire-first creation from the canonical path while preserving legacy reads.
-- Validate keyboard, screen-reader, mobile, desktop, reduced-motion, forced-colors, loading, empty, failed, retry, delete, and expired states.
+- Validate keyboard, screen-reader, mobile, desktop, reduced-motion, forced-colors, loading, empty, failed, retry, delete, revoked, and unavailable states.
 - Validate at 390 × 844 and 1440 × 900 and pass the design-system checks.
 
 ### Release gate

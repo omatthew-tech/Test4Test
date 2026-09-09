@@ -45,7 +45,10 @@ Deno.serve(async (request) => {
   try {
     env = getRecordingEnvironment();
   } catch (error) {
-    return recordingJson({ error: error instanceof Error ? error.message : "Recording setup is incomplete." }, 500);
+    return recordingJson(
+      { error: error instanceof Error ? error.message : "Recording setup is incomplete." },
+      500,
+    );
   }
 
   const authHeader = request.headers.get("Authorization") ?? "";
@@ -74,7 +77,9 @@ Deno.serve(async (request) => {
 
   const { data: responseRow, error: responseError } = await admin
     .from("test_responses")
-    .select("id, submission_id, tester_user_id, recording_bucket, recording_path, recording_file_name, recording_expires_at, recording_deleted_at")
+    .select(
+      "id, submission_id, tester_user_id, recording_bucket, recording_path, recording_file_name, recording_expires_at, recording_deleted_at",
+    )
     .eq("id", responseId)
     .single();
 
@@ -84,15 +89,12 @@ Deno.serve(async (request) => {
 
   const responseRecord = responseRow as ResponseRow;
 
-  if (!responseRecord.recording_bucket || !responseRecord.recording_path || !responseRecord.recording_expires_at) {
+  if (!responseRecord.recording_bucket || !responseRecord.recording_path) {
     return recordingJson({ error: "Recording not available for this response." }, 404);
   }
 
-  if (
-    responseRecord.recording_deleted_at ||
-    new Date(responseRecord.recording_expires_at).getTime() <= Date.now()
-  ) {
-    return recordingJson({ error: "Recording has expired." }, 410);
+  if (responseRecord.recording_deleted_at) {
+    return recordingJson({ error: "Recording has been deleted." }, 410);
   }
 
   const { data: submissionRow, error: submissionError } = await admin
@@ -106,7 +108,8 @@ Deno.serve(async (request) => {
   }
 
   const submissionRecord = submissionRow as SubmissionRow;
-  const isAllowed = user.id === responseRecord.tester_user_id || user.id === submissionRecord.user_id;
+  const isAllowed =
+    user.id === responseRecord.tester_user_id || user.id === submissionRecord.user_id;
 
   if (!isAllowed) {
     return recordingJson({ error: "You do not have permission to access this recording." }, 403);
@@ -121,7 +124,10 @@ Deno.serve(async (request) => {
     try {
       r2Env = getR2RecordingEnvironment();
     } catch (error) {
-      return recordingJson({ error: error instanceof Error ? error.message : "R2 recording setup is incomplete." }, 500);
+      return recordingJson(
+        { error: error instanceof Error ? error.message : "R2 recording setup is incomplete." },
+        500,
+      );
     }
 
     if (responseRecord.recording_bucket !== r2Env.providerBucket) {
@@ -132,7 +138,10 @@ Deno.serve(async (request) => {
 
     if (objectHead.status === 404) {
       return recordingJson(
-        { error: "Recording file was not found in Cloudflare R2. It may have been deleted from storage." },
+        {
+          error:
+            "Recording file was not found in Cloudflare R2. It may have been deleted from storage.",
+        },
         404,
       );
     }
@@ -153,13 +162,14 @@ Deno.serve(async (request) => {
       .createSignedUrl(
         responseRecord.recording_path,
         60 * 5,
-        payload.download
-          ? { download: fileName }
-          : undefined,
+        payload.download ? { download: fileName } : undefined,
       );
 
     if (signedUrlResult.error || !signedUrlResult.data?.signedUrl) {
-      return recordingJson({ error: signedUrlResult.error?.message ?? "Recording URL could not be created." }, 502);
+      return recordingJson(
+        { error: signedUrlResult.error?.message ?? "Recording URL could not be created." },
+        502,
+      );
     }
 
     signedUrl = signedUrlResult.data.signedUrl;
