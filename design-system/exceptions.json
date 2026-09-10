@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "home-trusted-by-faded",
+      "owner": "Test4Test",
+      "scope": "The Trusted by cards, caption, and nested decorative stars in src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested faded cards, trust text, and stars. No semantic opacity token exists, so this route-local exception permits 0.65 opacity for the cards and caption, including the caption's nested stars. This intentionally reduces resting contrast; cards return to full opacity on hover or keyboard focus, and forced-colors mode restores full opacity throughout. Content, links, spacing, and autoplay behavior remain unchanged.",
+      "expires": "2027-03-10"
+    },
+    {
       "id": "home-trust-caption-stars",
       "owner": "Test4Test",
       "scope": "The five decorative Lucide stars after the Trusted by caption in src/pages/HomePage.tsx and their styling in src/pages/HomePage.module.css.",
@@ -13,7 +20,7 @@
       "id": "home-how-it-works-screenshot-previews",
       "owner": "Test4Test",
       "scope": "The three screenshot-based previews at public/images/home-step-*-actual.webp and their decorative presentation in the homepage how-it-works section in src/pages/HomePage.tsx.",
-      "rationale": "The design owner requested actual project screenshots. The source captures render the existing submit, share, and analytics routes with repository demo data. Image editing removes browser edges, adds a token-colored surround, replaces the local development origin in the share-link image with the public origin, and restores the submit form's actual 1–2–3 progress indicator from the user's reference. Raster images cannot bind internal pixels to runtime tokens. Section layout, typography, spacing, radius, and responsive presentation continue using existing semantic tokens and canonical layout components.",
+      "rationale": "The design owner requested actual project screenshots. The source captures render the existing submit, share, and analytics routes with repository demo data. Image editing removes browser edges, adds a token-colored surround, replaces the local development origin in the share-link image with the public origin, and restores the submit form's actual 1–2–3 progress indicator from the user's reference. On 2026-09-10 the owner explicitly requested a very gradual left-to-right light-blue to mint to yellow progression across the three previews. This permits simple horizontal gradient backdrops interpolated only from semantic action-tint, success-tint, and warning-tint colors; tint colors here are decorative and convey no status. The first two previews advance through that color progression. At the owner's subsequent request, the third preview reverses direction with pale yellow on the left and mint on the right. All gradients remain gradual and horizontal, without hard midpoints. At the owner's subsequent request, the final analytics screenshot is enclosed by a rounded white surface frame using surface-default white and the existing subtle boundary treatment. The yellow-to-mint gradient remains visible outside this frame, matching the first two screenshot panels. Raster images cannot bind internal pixels to runtime tokens. Section layout, typography, spacing, radius, and responsive presentation continue using existing semantic tokens and canonical layout components.",
       "expires": "2027-03-09"
     },
     {

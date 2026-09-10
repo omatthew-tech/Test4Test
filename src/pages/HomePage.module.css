@@ -74,7 +74,7 @@
 .trustedByStars {
   display: inline-flex;
   color: var(--ds-semantic-color-text-primary);
-  vertical-align: middle;
+  vertical-align: calc(var(--ds-semantic-border-width-default) * -1);
 }
 
 .trustedByStars > svg {
@@ -126,7 +126,20 @@
 }
 
 .trustedByCard {
+  position: relative;
   width: 100%;
+  cursor: pointer;
+}
+
+.trustedByCard,
+.trustedByCaption {
+  /* ds-exception: home-trusted-by-faded */
+  opacity: 0.65;
+}
+
+.trustedByCard:hover,
+.trustedByCard:focus-within {
+  opacity: 1;
 }
 
 .trustedByCardTitle {
@@ -189,6 +202,22 @@
   flex: 0 0 var(--ds-semantic-size-control-default);
   justify-content: center;
   text-decoration: none;
+}
+
+.trustedByOpenLink::after {
+  position: absolute;
+  inset: var(--ds-semantic-space-zero);
+  content: "";
+  cursor: pointer;
+}
+
+.trustedByOpenLink:focus-visible {
+  outline: none;
+}
+
+.trustedByCard:has(.trustedByOpenLink:focus-visible) {
+  outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-focus-ring);
+  outline-offset: var(--ds-semantic-border-offset-focus);
 }
 
 @keyframes home-trusted-by-scroll {
@@ -556,13 +585,6 @@
   text-align: center;
 }
 
-.howItWorksNumber {
-  color: var(--ds-semantic-color-action-primary-strong);
-  font-size: var(--ds-semantic-typography-heading-display-mobile-size);
-  font-weight: var(--ds-semantic-typography-weight-regular);
-  line-height: var(--ds-semantic-typography-heading-display-mobile-line-height);
-}
-
 .howItWorksImage {
   display: block;
   width: 100%;
@@ -898,6 +920,13 @@
   max-width: var(--ds-semantic-size-content-compact-form);
 }
 
+@media (forced-colors: active) {
+  .trustedByCard,
+  .trustedByCaption {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .homeFeedbackQuote,
   .homeFeedbackQuoteParticle {
@@ -997,11 +1026,6 @@
 @media (min-width: 1024px) {
   .howItWorksSteps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .howItWorksNumber {
-    font-size: var(--ds-semantic-typography-heading-display-desktop-size);
-    line-height: var(--ds-semantic-typography-heading-display-desktop-line-height);
   }
 
   .trustedBy {

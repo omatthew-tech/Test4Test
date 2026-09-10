@@ -180,7 +180,11 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
   await expect(openLinks).toHaveCount(6);
   await expect(openLinks.first()).toHaveAttribute("href", /^\/test\//);
   await expect(list.getByRole("article").first().locator("p")).toHaveCSS("-webkit-line-clamp", "2");
-  await expect(section.locator('ol[aria-hidden="true"]')).toHaveAttribute("inert", "");
+  const duplicateList = section.locator('ol[aria-hidden="true"]');
+  await expect(duplicateList).not.toHaveAttribute("inert");
+  for (const link of await duplicateList.locator("a").all()) {
+    await expect(link).toHaveAttribute("tabindex", "-1");
+  }
   await expect(section.getByTestId("home-trusted-by-pause")).toHaveCount(0);
 
   const cardPositions = await list.locator("li").evaluateAll((items) =>
@@ -223,6 +227,86 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
       contentType: "image/png",
     });
   }
+});
+
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+]) {
+  for (const duplicate of [false, true]) {
+    test(`home Trusted by ${duplicate ? "duplicate" : "primary"} cards open a new tab from their body and padding at ${viewport.width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+
+      for (const target of ["body", "padding"]) {
+        await page.goto("/?ds-home-trusted=1");
+        const section = page.getByTestId("home-trusted-by-section");
+        const track = page.getByTestId("home-trusted-by-track");
+        await section.scrollIntoViewIfNeeded();
+        // Inspect both halves of the loop without waiting for a complete animation cycle.
+        await track.evaluate((element, showDuplicate) => {
+          for (const animation of element.getAnimations()) {
+            animation.pause();
+            const duration = Number(animation.effect?.getTiming().duration);
+            animation.currentTime = showDuplicate ? duration - 1 : 0;
+          }
+        }, duplicate);
+
+        const list = duplicate
+          ? section.locator('ol[aria-hidden="true"]')
+          : section.getByRole("list", { name: "Top tests available on Earn" });
+        const card = list.locator("article").first();
+        const link = card.locator("a");
+        const href = await link.getAttribute("href");
+        const bounds = await card.boundingBox();
+        if (!bounds || !href) throw new Error("Expected a visible card with an app link");
+        const position = {
+          x: bounds.width / 2,
+          y: target === "body" ? bounds.height - 40 : bounds.height - 8,
+        };
+        await card.hover({ position });
+        await expect(card).toHaveCSS("opacity", "1");
+        await expect(track).toHaveCSS("animation-play-state", "paused");
+        expect(
+          await card.evaluate((element, point) => {
+            const rect = element.getBoundingClientRect();
+            const hit = document.elementFromPoint(rect.x + point.x, rect.y + point.y);
+            return hit ? getComputedStyle(hit).cursor : null;
+          }, position),
+        ).toBe("pointer");
+        const newTabPromise = page.waitForEvent("popup");
+        await card.click({ position });
+        const newTab = await newTabPromise;
+        await expect(newTab).toHaveURL(href);
+        await expect(page).toHaveURL("/?ds-home-trusted=1");
+        await newTab.close();
+      }
+    });
+  }
+}
+
+test("home Trusted by cards open a new tab from the keyboard with a full-card focus ring", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/?ds-home-trusted=1");
+  const card = page
+    .getByRole("list", { name: "Top tests available on Earn" })
+    .getByRole("article")
+    .first();
+  const link = card.getByRole("link");
+  const href = await link.getAttribute("href");
+  if (!href) throw new Error("Expected an app link");
+  await link.focus();
+  await expect(card).toHaveCSS("opacity", "1");
+  await expect(card).toHaveCSS("outline-style", "solid");
+  const newTabPromise = page.waitForEvent("popup");
+  await link.press("Enter");
+  const newTab = await newTabPromise;
+  await expect(newTab).toHaveURL(href);
+  await expect(page).toHaveURL("/?ds-home-trusted=1");
+  await newTab.close();
 });
 
 test("home Trusted by section becomes a static scroller for reduced motion", async ({ page }) => {

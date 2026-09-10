@@ -149,9 +149,11 @@ function HomeTrustedLogo({ name, url }: { name: string; url: string | null }) {
 function HomeTrustedTestCard({
   submission,
   logoUrl,
+  duplicate,
 }: {
   submission: HomeTrustedSubmission;
   logoUrl: string | null;
+  duplicate: boolean;
 }) {
   return (
     <EarnTestCard
@@ -166,9 +168,13 @@ function HomeTrustedTestCard({
           <span className={styles.trustedByProductName}>{submission.productName}</span>
           <Link
             aria-label={`Open ${submission.productName} test`}
+            aria-description="Opens in a new tab"
             className={styles.trustedByOpenLink}
-            title={`Open ${submission.productName} test`}
+            title={`Open ${submission.productName} test (opens in a new tab)`}
             to={`/test/${submission.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={duplicate ? -1 : undefined}
           >
             <ExternalLink aria-hidden="true" size={16} />
           </Link>
@@ -210,7 +216,11 @@ function HomeTrustedBySection({
         className={styles.trustedByItem}
         key={`${duplicate ? "duplicate" : "primary"}-${submission.id}`}
       >
-        <HomeTrustedTestCard submission={submission} logoUrl={logos[submission.id] ?? null} />
+        <HomeTrustedTestCard
+          submission={submission}
+          logoUrl={logos[submission.id] ?? null}
+          duplicate={duplicate}
+        />
         {!duplicate ? (
           <span className="ds-sr-only">
             Rank {index + 1} of {submissions.length}
@@ -240,7 +250,6 @@ function HomeTrustedBySection({
             <ol
               className={`${styles.trustedByList} ${styles.trustedByDuplicate}`}
               aria-hidden="true"
-              inert
             >
               {renderCards(true)}
             </ol>
@@ -274,13 +283,13 @@ const homeHowItWorksSteps = [
   },
   {
     title: "Get testers",
-    description: "Share your test with as many as you want or earn 1:1 credits.",
+    description: "Share your test to as many users as you want or earn 1:1 credits",
     image: "/images/home-step-get-testers-actual.webp",
   },
   {
     title: "Gain insights",
     description:
-      "Manage everything from the analytics page. Watch your tests, clip them or export to your favorite LLM",
+      "Manage everything from one dashboard. Watch your tests, clip or export them to your favorite LLM",
     image: "/images/home-step-gain-insights-actual.webp",
   },
 ] as const;
@@ -361,7 +370,7 @@ function HomeManagedRecruitmentSection() {
         <div className={styles.managedRecruitmentHeader}>
           <Stack className={styles.managedRecruitmentHeading} gap="sm">
             <h2 id="home-managed-recruitment-title">Go Wild</h2>
-            <p>Start recruiting users from social media, online forums and other communities</p>
+            <p>Start recruiting users from social media, forums and communities</p>
           </Stack>
         </div>
 
@@ -416,7 +425,7 @@ function HomeManagedRecruitmentSection() {
                   Test4Test
                 </span>
                 <h3>Recruit REAL users</h3>
-                <p>Recruit users who actually experience problem you're trying to solve</p>
+                <p>Recruit users who actually experience the problem you're trying to solve</p>
               </Stack>
               <Button
                 className={styles.managedRecruitmentCta}
@@ -940,14 +949,17 @@ export function HomePage() {
 
         <Container>
           <div className={styles.pageSections}>
-            <Section aria-label="How it works" data-testid="home-how-it-works-section">
+            <Section
+              aria-labelledby="home-how-it-works-title"
+              data-testid="home-how-it-works-section"
+            >
               <Stack className={styles.howItWorksContent} gap="xl">
+                <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
+                  How it works
+                </h2>
                 <Grid as="ol" className={styles.howItWorksSteps} gap="lg" role="list">
-                  {homeHowItWorksSteps.map((step, index) => (
+                  {homeHowItWorksSteps.map((step) => (
                     <Stack as="li" className={styles.howItWorksStep} gap="lg" key={step.title}>
-                      <span className={styles.howItWorksNumber} aria-hidden="true">
-                        {index + 1}
-                      </span>
                       {/* ds-exception: home-how-it-works-screenshot-previews */}
                       <img
                         alt=""
@@ -1020,10 +1032,7 @@ export function HomePage() {
               <Stack className={styles.testableProductsContent} gap="xl">
                 <Stack className={styles.testableProductsHeading} gap="sm">
                   <h2 id="home-testable-products-title">If you can link to it, you can test it</h2>
-                  <p>
-                    Founder, UX designer, product manager, researcher, or student — Test4Test makes
-                    it free and easy to get valuable insights
-                  </p>
+                  <p>Founders, students, UX designers, product managers, or researchers — Test4Test makes getting valuable insights free and easy</p>
                 </Stack>
                 <Grid className={styles.testableProductsGrid} gap="xl">
                   <HomeTestableProduct

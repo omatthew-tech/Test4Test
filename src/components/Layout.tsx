@@ -94,7 +94,7 @@ export function AppShell({
       : [
           { to: "/earn", label: "Earn" },
           { to: "/share", label: "Share" },
-          { to: "/analytics", label: "Analytics" },
+          { to: "/analytics", label: "Analyze" },
         ];
   const guestItems = [
     { to: "/blog", label: "Blog" },

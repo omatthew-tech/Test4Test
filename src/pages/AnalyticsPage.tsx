@@ -379,10 +379,7 @@ export function AnalyticsPage() {
                           : buildRecordingHref(group.recordings[0].responseId)
                       }
                     >
-                      <span>
-                        View {group.productName}'s{" "}
-                        {group.recordings.length === 1 ? "recording" : "recordings"}
-                      </span>
+                      <span>View recordings</span>
                       <ArrowRight aria-hidden="true" size={20} />
                     </Link>
                   </h2>
