@@ -1125,13 +1125,7 @@ test("Analytics is authenticated, follows Share in navigation, and exports trans
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
 
   const navigation = page.getByRole("navigation", { name: "Primary" });
-  await expect(navigation.getByRole("link")).toHaveText([
-    "Earn",
-    "Share",
-    "Analytics",
-    "New app",
-    "My reviews",
-  ]);
+  await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analytics"]);
   await expect(navigation.getByRole("link", { name: "Analytics" })).toHaveAttribute(
     "aria-current",
     "page",
@@ -1139,21 +1133,19 @@ test("Analytics is authenticated, follows Share in navigation, and exports trans
   await expect(page.getByRole("heading", { level: 1, name: "Transcript report" })).toBeVisible();
   await expect(
     page.getByText("2 of 2 transcripts ready for Palette Pilot.", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
 
-  await expect(page.getByRole("link", { name: "View recordings" })).toHaveAttribute(
+  const viewRecordings = page.getByRole("link", { name: "View Palette Pilot's recordings" });
+  await expect(viewRecordings).toHaveAttribute(
     "href",
     "/recordings?ds-user=user-mateo&ds-recordings=2",
   );
 
-  const firstRecording = page.getByRole("link", { name: "Recording 1" });
-  await expect(firstRecording).toHaveAttribute(
-    "href",
-    "/recordings?ds-user=user-mateo&ds-recordings=2&response=response-palette-2",
-  );
-  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
+  await expect(page.getByText(/^Recording [12]$/)).toHaveCount(0);
+  await expect(page.getByText(/^Preview from /)).toHaveCount(0);
   await expect(page.getByRole("img", { name: /recording preview$/ })).toHaveCount(2);
   await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(2);
   await expect(page.locator("video")).toHaveCount(0);
@@ -1169,18 +1161,20 @@ test("Analytics is authenticated, follows Share in navigation, and exports trans
   await expect(page.locator('video[aria-label="Recording 1: Palette Pilot"]')).toHaveCount(0);
   await expect(page.locator("video")).toHaveCount(1);
 
-  await firstRecording.click();
+  await viewRecordings.click();
   await expect(page).toHaveURL(/\/recordings\?/);
-  expect(new URL(page.url()).searchParams.get("response")).toBe("response-palette-2");
   await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
 });
 
-test("Analytics describes transcript coverage and its empty state", async ({ page }) => {
+test("Analytics exposes report actions and its empty state", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
+  await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
   await expect(
-    page.getByText("1 of 1 transcript ready for Palette Pilot.", { exact: true }),
+    page.getByRole("link", { name: "View Palette Pilot's recording", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Recording 1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(1);
+  await expect(page.getByText("Recording 1", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/^Preview from /)).toHaveCount(0);
 
   await page.goto("/analytics?ds-user=user-mateo");
   await expect(
@@ -1195,7 +1189,7 @@ test("Analytics describes transcript coverage and its empty state", async ({ pag
 
 test("Recording view opens the latest video and browses available recordings", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
-  await page.getByRole("link", { name: "View recordings" }).click();
+  await page.getByRole("link", { name: "View Palette Pilot's recordings" }).click();
 
   await expect(page).toHaveURL(/\/recordings\?ds-user=user-mateo&ds-recordings=2$/);
   await expect(page.getByRole("heading", { level: 1, name: "Palette Pilot" })).toBeVisible();

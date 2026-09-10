@@ -1,0 +1,41 @@
+# Homepage screenshots
+
+The homepage uses captures of the actual project screens, rendered locally with the repository's built-in design-system demo data. Source captures are retained here. No backend data or source UI was changed for the screenshots.
+
+| Step             | Source capture           | Actual route                                   | Website asset                               |
+| ---------------- | ------------------------ | ---------------------------------------------- | ------------------------------------------- |
+| Create your test | create-test-source.png   | /submit, first form with Palette Pilot entered | /images/home-step-create-test-actual.webp   |
+| Get testers      | get-testers-source.png   | /share?ds-user=user-mateo                      | /images/home-step-get-testers-actual.webp   |
+| Gain insights    | gain-insights-source.png | /analytics?ds-user=user-mateo&ds-recordings=2  | /images/home-step-gain-insights-actual.webp |
+
+The analytics recording thumbnails are the repository's existing demo previews. The homepage descriptions are unchanged.
+
+Final edited images are 1448 × 1086 and encoded as WebP at quality 90, totaling 158,692 bytes. The source PNG captures remain in this directory. The first image now includes the actual form's connected 1–2–3 progress indicator, with step 1 active, as requested in the follow-up reference.
+
+Validation: **Fast-checked**. Formatting, lint, TypeScript, and design-system invariants passed. All four targeted homepage accessibility checks passed (WCAG A/AA, 320 CSS px reflow, 200% text enlargement, and forced colors/reduced motion). Visually inspected the replacement imagery at 1440 × 900 and 390 × 844, verified all images load, and confirmed the descriptions remain verbatim. Review captures are `home-desktop-1440.png`, `home-mobile-390.png`, and `home-mobile-390-insights.png`.
+
+Edits use the built-in image-generation tool with each real screenshot passed as the edit target. The requested changes are framing, browser-edge cleanup, the sharing image's local-origin replacement, and restoring the first form's progress indicator from the user's actual project screenshot. Website files use WebP encoding. No visual baselines are updated.
+
+## Progress indicator follow-up
+
+Updated `public/images/home-step-create-test-actual.webp` in place. Reference: the user-provided `codex-clipboard-1a56ae5c-8a35-4633-8675-3ba5636ce752.png` showing `/submit`. The existing first homepage image was the edit target. Only the first screenshot asset changed; the homepage text and layout remain intact.
+
+Validation: **Fast-checked**. The exception registry passes formatting and design-system invariants. Visually verified the updated image on the homepage, confirmed all three images load at 1448 × 1086, and compared all 62 static text blocks before and after this edit with no differences. Follow-up review: `home-create-test-progress-review.png`.
+
+### Edit prompt
+
+Edit the FIRST reference image, which is the current first homepage image from Test4Test. The SECOND reference is a real project screenshot and only supplies the exact appearance of the connected 1–2–3 progress indicator above the form. Add that actual progress indicator centered above the white form card in the FIRST image, on the pale blue background. Show three small circular steps in one horizontal row, connected by thin light gray lines: 1 has the same solid blue fill as the Continue button and a white digit; 2 and 3 have white fills, thin light gray borders, and gray digits. Match their size relative to the form, spacing, and appearance to the actual second reference screenshot. Preserve the original first image's 4:3 landscape proportions and clean pale blue surround. Shift the card down and scale it only as needed to make sufficient breathing room for the indicator, while keeping the entire form and both bottom buttons fully visible. Preserve all the actual form UI exactly: title "What's the name of your app?", App name *, Palette Pilot, Short app description visible to testers (optional), Build and share color palettes for your next project., Back, Continue, arrow, borders, typography, and white card. This is a minimal screenshot edit, not a redesign. No red annotations, no browser chrome, no Test4Test logo, no extra text, no extra decorations, no perspective. Crisp and realistic UI screenshot.
+
+## Edit prompts
+
+### home-step-create-test-actual
+
+Edit this actual screenshot from the user's Test4Test project for a homepage image. The attached image is the edit target, NOT inspiration for a newly designed UI. Keep the actual UI faithfully: exact labels, button appearance, field styling, typography, proportions, colors, and layout. Do not invent any feature, icon, avatar, brand, metric, or control. Only perform the explicitly requested framing/cleanup. Final landscape 4:3 image, pale blue #E1F6FF surround, the existing white UI occupies almost the whole image with a small, even outer margin. No external step number or caption, no browser chrome, no tilt or perspective, no new decoration. The screenshot must still look like the original project, sharp and readable. Isolate the complete existing form card headed "What's the name of your app?". Remove the right browser scrollbar and the tiny clipped progress-circle fragments at the very top; replace only the white area outside the form with the pale blue surround. Preserve the whole form including App name = Palette Pilot, the short app description, Back, and the blue Continue button. Do not change or redesign the contents of the form.
+
+### home-step-get-testers-actual
+
+Edit this actual screenshot from the user's Test4Test project for a homepage image. The attached image is the edit target, NOT inspiration for a newly designed UI. Keep the actual UI faithfully: exact labels, button appearance, field styling, typography, proportions, colors, and layout. Do not invent any feature, icon, avatar, brand, metric, or control. Only perform the explicitly requested framing/cleanup. Final landscape 4:3 image, pale blue #E1F6FF surround, the existing white UI occupies almost the whole image with a small, even outer margin. No external step number or caption, no browser chrome, no tilt or perspective, no new decoration. The screenshot must still look like the original project, sharp and readable. Isolate the existing rounded "Share Palette Pilot" form card. Remove the site header above it, browser scrollbar on the right, and the clipped Preview heading below it; center the whole existing card on the pale blue surround. In the Share test link field only, replace "http://127.0.0.1:5181/test/palette-pilot" with "https://test4test.io/test/palette-pilot". Preserve every other word and control exactly, including the full-width Copy link button on its own row and the custom message field. Do not add avatars or credit UI.
+
+### home-step-gain-insights-actual
+
+Edit this actual screenshot from the user's Test4Test project for a homepage image. The attached image is the edit target, NOT inspiration for a newly designed UI. Keep the actual UI faithfully: exact labels, button appearance, field styling, typography, proportions, colors, and layout. Do not invent any feature, icon, avatar, brand, metric, or control. Only perform the explicitly requested framing/cleanup. Final landscape 4:3 image, pale blue #E1F6FF surround, the existing white UI occupies almost the whole image with a small, even outer margin. No external step number or caption, no browser chrome, no tilt or perspective, no new decoration. The screenshot must still look like the original project, sharp and readable. Remove the right scrollbar and trim excess outer page whitespace. Keep the entire actual analytics content together on one white panel: View recordings heading, BOTH actual recording cards and their original screenshot thumbnails, Recording 1 and Recording 2 titles, Palette Pilot labels and timestamps, the Transcript report heading, its supporting copy, status, Copy report, Download report, and Preview report controls. Fit all of it into the image without cutting off any controls, keeping the existing layout and hierarchy. Preserve the original recording thumbnails; do not invent a different website or webcam participant. Add only a small pale blue margin around the white screenshot panel.

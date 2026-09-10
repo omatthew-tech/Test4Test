@@ -1,6 +1,6 @@
 # Menu
 
-Compact list of actions with full keyboard behavior.
+Compact action list, standalone or opened by an optional button trigger. Dropdowns align to start or end; separatorBefore groups items. Row backgrounds highlight only on hover; keyboard focus retains the standard focus outline. Existing standalone calls remain supported.
 
 - Family: navigation
 - Lifecycle: stable
@@ -8,7 +8,7 @@ Compact list of actions with full keyboard behavior.
 - Public export: `Menu`
 - Source: `design-system/components/navigation.tsx`
 - Story: `design-system/stories/Navigation.stories.tsx#MenuContract`
-- Control mode: controlled
+- Control mode: uncontrolled
 
 ## Public API
 
@@ -20,15 +20,21 @@ Compact list of actions with full keyboard behavior.
 ## Accessibility contract
 
 - Menu and menuitem roles for application actions
+- Button trigger exposes aria-haspopup, aria-expanded, and aria-controls
+- Separators are not focusable
 
 ## Keyboard
 
-- Arrow keys move
-- Escape closes
+- Arrow keys move past disabled items
+- Escape closes and restores trigger focus
 - Home and End move to edges
+- Enter or Space opens and selects
+- Arrow Down or Up on the trigger opens at the first or last enabled item
+- Tab closes without trapping focus
 
 Minimum interactive target: 44 × 44 px.
 
 ## Examples and tests
 
 - `design-system/stories/Navigation.stories.tsx#MenuContract`
+- `design-system/stories/Navigation.stories.tsx#ProfileMenuDropdown`

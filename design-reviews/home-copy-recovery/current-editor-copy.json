@@ -1,0 +1,639 @@
+{
+  "footer": "Test4Test\n\n© 2026 Test4Test. All rights reserved.\n\nProduct\nGet your app tested\nGet paid to test\nBlog\nSign in\nSupport\nsupport@test4test.io",
+  "header": "Skip to content\nTest4Test\nBlog\nGet paid to test\nSign in\nGet started",
+  "main": "Get FREE user testing on your web or mobile app\n\nThe only 100% free user testing platform with recordings and meaningful feedback guaranteed\n\nApp name\nGet started\nTrusted by\nT\nTest4Test\n\nYou've already tested this! Please fill out a few quick questions to earn a credit (:\n\nV\nVidShare\n\nVidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.\n\nVO\nVideo offering pricing page\n\nWe're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.\n\nOA\nOne-Minute Akari\n\nA private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing.\n\nM\nMyTinerary\n\nWhatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.\n\nL\nLoventro\n\nA dating platform focused on compatibility, transparency, and genuine connections—not just swipes.\n\nT\nTest4Test\n\nYou've already tested this! Please fill out a few quick questions to earn a credit (:\n\nRank 1 of 6\nV\nVidShare\n\nVidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.\n\nRank 2 of 6\nVO\nVideo offering pricing page\n\nWe're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.\n\nRank 3 of 6\nOA\nOne-Minute Akari\n\nA private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing.\n\nRank 4 of 6\nM\nMyTinerary\n\nWhatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.\n\nRank 5 of 6\nL\nLoventro\n\nA dating platform focused on compatibility, transparency, and genuine connections—not just swipes.\n\nRank 6 of 6\nUser testing used to take weeks.\nNow you’re done in hours.\n1\nCreate your test\n\nCreate your first test in seconds\n\n2\nGet testers\n\nShare your test with as many as you want or earn 1:1 credits.\n\n3\nGain insights\n\nManage everything from the analytics page. Watch your tests, clip them or export to your favorite LLM\n\nEarn 1:1 credits\n\nEarn credits 1:1 (we don't take a cut)\n\nBring your own testers\n\nThere are no limits - bring as many as you want\n\nIf you can link to it, you can test it\n\nFounder, UX designer, product manager, researcher, or student — Test4Test makes it free and easy to get valuable insights\n\nWebsites\n\nTest live websites, sites in development, password-protected pages, and even competitors’ sites\n\nPrototypes\n\nTest any prototype with a link — Figma, Adobe XD, Axure, Sketch, Balsamiq, and others\n\nMobile apps\n\nTest mobile apps on Android or iOS. Whether they're published or still in beta\n\nGo Wild\n\nAre you tired of professional survey takers? Start recruiting users from social media, forms and other communities\n\nTYPICAL PLATFORMS\n\"Users\" come from pools\n\nMost user testing platforms recruit users from giant pools\n\nTEST4TEST  WILD\nRecruit REAL users\n\nWe recruit users from social media, forms and other communities\n\nExplore managed testing\nReady for feedback?\n\nIt takes minutes to submit your app. Start seeing real user feedback today!\n\nGet started",
+  "nodes": [
+    {
+      "href": null,
+      "id": "home-hero-title",
+      "placeholder": null,
+      "tag": "H1",
+      "text": "Get FREE user testing on your web or mobile app",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "The only 100% free user testing platform with recordings and meaningful feedback guaranteed",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-product-name",
+      "placeholder": "Enter your app's name",
+      "tag": "INPUT",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "BUTTON",
+      "text": "Get started",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-trusted-by-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Trusted by",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "T\nTest4Test",
+      "value": ""
+    },
+    {
+      "href": "/test/f4afe8df-d3cb-48cf-b894-c4061fad86f9",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "You've already tested this! Please fill out a few quick questions to earn a credit (:",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "V\nVidShare",
+      "value": ""
+    },
+    {
+      "href": "/test/06cc58db-e2d2-4f1e-9c98-c5af9864b6b6",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "VidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "VO\nVideo offering pricing page",
+      "value": ""
+    },
+    {
+      "href": "/test/3e7dee0a-ab78-40c9-a5aa-56b0bbafc374",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "We're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "OA\nOne-Minute Akari",
+      "value": ""
+    },
+    {
+      "href": "/test/2d31edac-1151-4786-976c-0b9674eda273",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "A private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "M\nMyTinerary",
+      "value": ""
+    },
+    {
+      "href": "/test/ccb8473b-49d6-4554-b180-d3c4e59b2e05",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Whatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "L\nLoventro",
+      "value": ""
+    },
+    {
+      "href": "/test/1bd407b6-4c52-4948-8251-0436de7493b6",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "A dating platform focused on compatibility, transparency, and genuine connections—not just swipes.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "T\nTest4Test",
+      "value": ""
+    },
+    {
+      "href": "/test/f4afe8df-d3cb-48cf-b894-c4061fad86f9",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "You've already tested this! Please fill out a few quick questions to earn a credit (:",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "V\nVidShare",
+      "value": ""
+    },
+    {
+      "href": "/test/06cc58db-e2d2-4f1e-9c98-c5af9864b6b6",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "VidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "VO\nVideo offering pricing page",
+      "value": ""
+    },
+    {
+      "href": "/test/3e7dee0a-ab78-40c9-a5aa-56b0bbafc374",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "We're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "OA\nOne-Minute Akari",
+      "value": ""
+    },
+    {
+      "href": "/test/2d31edac-1151-4786-976c-0b9674eda273",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "A private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "M\nMyTinerary",
+      "value": ""
+    },
+    {
+      "href": "/test/ccb8473b-49d6-4554-b180-d3c4e59b2e05",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Whatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "L\nLoventro",
+      "value": ""
+    },
+    {
+      "href": "/test/1bd407b6-4c52-4948-8251-0436de7493b6",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "A dating platform focused on compatibility, transparency, and genuine connections—not just swipes.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-how-it-works-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "User testing used to take weeks.\nNow you’re done in hours.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Create your test",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Create your first test in seconds",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Get testers",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Share your test with as many as you want or earn 1:1 credits.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Gain insights",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Manage everything from the analytics page. Watch your tests, clip them or export to your favorite LLM",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-test-other-founders-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Earn 1:1 credits",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Earn credits 1:1 (we don't take a cut)",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-bring-your-own-testers-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Bring your own testers",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "There are no limits - bring as many as you want",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-testable-products-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "If you can link to it, you can test it",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Founder, UX designer, product manager, researcher, or student — Test4Test makes it free and easy to get valuable insights",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Websites",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Test live websites, sites in development, password-protected pages, and even competitors’ sites",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Prototypes",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Test any prototype with a link — Figma, Adobe XD, Axure, Sketch, Balsamiq, and others",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Mobile apps",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Test mobile apps on Android or iOS. Whether they're published or still in beta",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-managed-recruitment-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Go Wild",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Are you tired of professional survey takers? Start recruiting users from social media, forms and other communities",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "\"Users\" come from pools",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "Most user testing platforms recruit users from giant pools",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H3",
+      "text": "Recruit REAL users",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "We recruit users from social media, forms and other communities",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "BUTTON",
+      "text": "Explore managed testing",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "home-final-cta-title",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Ready for feedback?",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "It takes minutes to submit your app. Start seeing real user feedback today!",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "BUTTON",
+      "text": "Get started",
+      "value": ""
+    },
+    {
+      "href": "/",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "Test4Test",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "P",
+      "text": "© 2026 Test4Test. All rights reserved.",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Product",
+      "value": ""
+    },
+    {
+      "href": "/submit",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "Get your app tested",
+      "value": ""
+    },
+    {
+      "href": "/get-paid-to-test",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "Get paid to test",
+      "value": ""
+    },
+    {
+      "href": "/blog",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "Blog",
+      "value": ""
+    },
+    {
+      "href": "/sign-in",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "Sign in",
+      "value": ""
+    },
+    {
+      "href": null,
+      "id": "",
+      "placeholder": null,
+      "tag": "H2",
+      "text": "Support",
+      "value": ""
+    },
+    {
+      "href": "mailto:support@test4test.io",
+      "id": "",
+      "placeholder": null,
+      "tag": "A",
+      "text": "support@test4test.io",
+      "value": ""
+    }
+  ]
+}

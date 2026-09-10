@@ -7,11 +7,6 @@ test.beforeEach(async ({ page }) => {
   await page.route(/https:\/\/[^/]*\.supabase\.co\//, (route) => {
     throw new Error(`Fixture contacted Supabase: ${route.request().url()}`);
   });
-});
-
-test("Transcript report preview, clipboard, and UTF-8 download contain identical text", async ({
-  page,
-}) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -22,6 +17,11 @@ test("Transcript report preview, clipboard, and UTF-8 download contain identical
       },
     });
   });
+});
+
+test("Transcript report preview, clipboard, and UTF-8 download contain identical text", async ({
+  page,
+}) => {
   await page.goto(path);
   await expect(page.getByRole("combobox", { name: "App" })).toHaveCount(0);
   await page.getByRole("button", { name: "Preview report", exact: true }).click();
@@ -32,7 +32,8 @@ test("Transcript report preview, clipboard, and UTF-8 download contain identical
   expect(text).toContain("## Transcripts");
   expect(text).toContain("[00:12.340–00:18.720]");
   await page.getByRole("button", { name: "Copy report", exact: true }).click();
-  await expect(page.getByText("Report copied.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Report copied!", exact: true })).toBeEnabled();
+  await expect(page.getByText("Report copied.", { exact: true })).toHaveCount(0);
   expect(
     await page.evaluate(() => (window as Window & { copiedReport?: string }).copiedReport),
   ).toBe(text);
@@ -41,22 +42,21 @@ test("Transcript report preview, clipboard, and UTF-8 download contain identical
   const download = await pending;
   expect(download.suggestedFilename()).toBe("test4test-palette-pilot-2026-09-08.txt");
   expect(await readFile((await download.path())!, "utf8")).toBe(text);
+  await expect(page.getByRole("button", { name: "Copy report", exact: true })).toBeVisible();
 });
 
 test("Transcript report permits partial exports and retries only failed transcripts", async ({
   page,
 }) => {
   await page.goto(`${path}&ds-transcripts=partial`);
-  await expect(page.getByText(/1 of 2 transcripts ready/)).toBeVisible();
+  await expect(page.getByText("The report lists any missing transcripts.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
   await page.getByRole("button", { name: "Preview report", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Report preview" })).toContainText(
     "Transcript failed.",
   );
   await page.getByRole("button", { name: "Retry transcript 2", exact: true }).click();
-  await expect(
-    page.getByText("2 of 2 transcripts ready for Palette Pilot.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("The report lists any missing transcripts.")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Retry transcript 2", exact: true })).toHaveCount(
     0,
   );
@@ -98,13 +98,17 @@ test("Transcript report offers a focused manual-copy fallback", async ({ page })
     }),
   ).toBe(true);
   await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Report copied!", exact: true })).toHaveCount(0);
 });
 
 test("Transcript report switches app scope and clears previous preview state", async ({ page }) => {
   await page.goto(`${path}&ds-transcripts=multi`);
   await expect(page.getByRole("combobox", { name: "App" })).toHaveValue("submission-palette");
   await page.getByRole("button", { name: "Preview report", exact: true }).click();
+  await page.getByRole("button", { name: "Copy report", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Report copied!", exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "App" }).selectOption("submission-report-second-app");
+  await expect(page.getByRole("button", { name: "Report copied!", exact: true })).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Report preview" })).toHaveCount(0);
   await page.getByRole("button", { name: "Preview report", exact: true }).click();
   const preview = page.getByRole("textbox", { name: "Report preview" });
@@ -127,7 +131,17 @@ for (const viewport of [
       path: testInfo.outputPath(`transcript-report-${viewport.name}.png`),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Copy report", exact: true }).focus();
+    const copyButton = page.getByRole("button", { name: "Copy report", exact: true });
+    await copyButton.focus();
+    const originalButtonBox = await copyButton.boundingBox();
+    await page.keyboard.press("Enter");
+    const copiedButton = page.getByRole("button", { name: "Report copied!", exact: true });
+    await expect(copiedButton).toBeFocused();
+    expect(await copiedButton.boundingBox()).toEqual(originalButtonBox);
+    await page.screenshot({
+      path: testInfo.outputPath(`transcript-report-${viewport.name}-copied.png`),
+      fullPage: true,
+    });
     await page.keyboard.press("Tab");
     await expect(page.getByRole("button", { name: "Download report" })).toBeFocused();
     await page.keyboard.press("Tab");

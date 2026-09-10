@@ -253,6 +253,25 @@ function HomeTrustedBySection({ submissions }: { submissions: HomeTrustedSubmiss
   );
 }
 
+const homeHowItWorksSteps = [
+  {
+    title: "Create your test",
+    description: "Create your first test in seconds",
+    image: "/images/home-step-create-test-actual.webp",
+  },
+  {
+    title: "Get testers",
+    description: "Share your test with as many as you want or earn 1:1 credits.",
+    image: "/images/home-step-get-testers-actual.webp",
+  },
+  {
+    title: "Gain insights",
+    description:
+      "Manage everything from the analytics page. Watch your tests, clip them or export to your favorite LLM",
+    image: "/images/home-step-gain-insights-actual.webp",
+  },
+] as const;
+
 const freeFeedbackMethods = [
   {
     title: "Earn 1:1 credits",
@@ -294,7 +313,7 @@ function FreeFeedbackShowcase() {
             width={method.width}
           />
           <Stack className={styles.feedbackMethodCopy} gap="md">
-            <h2 id={method.id}>{method.title}</h2>
+            <h3 id={method.id}>{method.title}</h3>
             <p>{method.description}</p>
           </Stack>
         </Grid>
@@ -319,13 +338,8 @@ function HomeManagedRecruitmentSection() {
       <Stack className={styles.managedRecruitmentContent} gap="xl">
         <div className={styles.managedRecruitmentHeader}>
           <Stack className={styles.managedRecruitmentHeading} gap="sm">
-            <h2 id="home-managed-recruitment-title">
-              Most platforms give you tools. We go find the people.
-            </h2>
-            <p>
-              Use Test4Test for free, or let us recruit real, target-matched participants from
-              relevant communities.
-            </p>
+            <h2 id="home-managed-recruitment-title">Go Wild</h2>
+            <p>Start recruiting users from social media, online forums and other communities</p>
           </Stack>
         </div>
 
@@ -348,9 +362,9 @@ function HomeManagedRecruitmentSection() {
               />
             </picture>
             <Stack className={styles.managedComparisonCopy} gap="sm">
-              <span className={styles.managedComparisonLabel}>Typical platforms</span>
-              <h3>Do the recruiting yourself</h3>
-              <p>You manage outreach, screening, and follow-up.</p>
+              <span className={styles.managedComparisonLabel}>Other platforms</span>
+              <h3>&quot;Users&quot; come from pools</h3>
+              <p>Most users are professional survey takers, trained to get past screeners</p>
             </Stack>
           </Card>
 
@@ -377,10 +391,10 @@ function HomeManagedRecruitmentSection() {
             <div className={styles.managedPremiumBody}>
               <Stack className={styles.managedComparisonCopy} gap="sm">
                 <span className={`${styles.managedComparisonLabel} ${styles.managedPremiumLabel}`}>
-                  Test4Test Managed
+                  Test4Test
                 </span>
-                <h3>Let us handle recruitment</h3>
-                <p>We recruit real people who match your audience and send them to your test.</p>
+                <h3>Recruit REAL users</h3>
+                <p>Recruit users who actually experience problem you're trying to solve</p>
               </Stack>
               <Button
                 className={styles.managedRecruitmentCta}
@@ -891,6 +905,40 @@ export function HomePage() {
 
         <Container>
           <div className={styles.pageSections}>
+            <Section
+              aria-labelledby="home-how-it-works-title"
+              data-testid="home-how-it-works-section"
+            >
+              <Stack className={styles.howItWorksContent} gap="xl">
+                <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
+                  How it works
+                </h2>
+                <Grid as="ol" className={styles.howItWorksSteps} gap="lg" role="list">
+                  {homeHowItWorksSteps.map((step, index) => (
+                    <Stack as="li" className={styles.howItWorksStep} gap="lg" key={step.title}>
+                      <span className={styles.howItWorksNumber} aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      {/* ds-exception: home-how-it-works-screenshot-previews */}
+                      <img
+                        alt=""
+                        className={styles.howItWorksImage}
+                        decoding="async"
+                        height={1086}
+                        loading="lazy"
+                        src={step.image}
+                        width={1448}
+                      />
+                      <Stack className={styles.howItWorksCopy} gap="sm">
+                        <h3>{step.title}</h3>
+                        <p>{step.description}</p>
+                      </Stack>
+                    </Stack>
+                  ))}
+                </Grid>
+              </Stack>
+            </Section>
+
             {showRetiredHomeSections ? (
               <Section className={styles.process} aria-labelledby="home-process-title">
                 <Stack gap="xl">
@@ -926,11 +974,13 @@ export function HomePage() {
               </Section>
             ) : null}
 
-            <Section
-              aria-labelledby="home-test-other-founders-title home-bring-your-own-testers-title"
-              data-testid="free-feedback-section"
-            >
-              <FreeFeedbackShowcase />
+            <Section aria-labelledby="home-free-feedback-title" data-testid="free-feedback-section">
+              <Stack gap="xl">
+                <h2 className={styles.freeFeedbackHeading} id="home-free-feedback-title">
+                  2 <s aria-hidden="true">paid</s> <span>free</span> ways to get feedback
+                </h2>
+                <FreeFeedbackShowcase />
+              </Stack>
             </Section>
 
             <Section
@@ -942,8 +992,8 @@ export function HomePage() {
                 <Stack className={styles.testableProductsHeading} gap="sm">
                   <h2 id="home-testable-products-title">If you can link to it, you can test it</h2>
                   <p>
-                    UX designer, product manager, researcher, founder, or agency — Userbrain lets
-                    you test your products with real people.
+                    Founder, UX designer, product manager, researcher, or student — Test4Test makes
+                    it free and easy to get valuable insights
                   </p>
                 </Stack>
                 <Grid className={styles.testableProductsGrid} gap="xl">
@@ -952,18 +1002,17 @@ export function HomePage() {
                     title="Websites"
                   >
                     Test live websites, sites in development, password-protected pages, and even
-                    competitors’ sites.
+                    competitors’ sites
                   </HomeTestableProduct>
                   <HomeTestableProduct
                     icon={<Workflow aria-hidden="true" size={24} />}
                     title="Prototypes"
                   >
-                    Test any prototype with a public link — Figma, Adobe XD, Axure, Sketch,
-                    Balsamiq, and many more.
+                    Test any prototype with a link — Figma, Adobe XD, Axure, Sketch, Balsamiq, and
+                    others
                   </HomeTestableProduct>
                   <HomeTestableProduct icon={<HomeMobilePlatformMarks />} title="Mobile apps">
-                    Test mobile apps on Android or iOS, and choose whether participants use phones
-                    or tablets.
+                    Test mobile apps on Android or iOS. Whether they're published or still in beta
                   </HomeTestableProduct>
                 </Grid>
               </Stack>
@@ -1042,10 +1091,10 @@ export function HomePage() {
             ) : null}
 
             <Section className={styles.finalCta} aria-labelledby="home-final-cta-title">
-              <Stack gap="lg">
+              <Stack className={styles.finalCtaContent} gap="lg">
                 <h2 id="home-final-cta-title">Ready for feedback?</h2>
-                <p>It takes minutes to submit your app and start seeing real user feedback</p>
-                <Cluster>
+                <p>It takes minutes to submit your app. Start seeing real user feedback today!</p>
+                <Cluster className={styles.finalCtaActions}>
                   <Button size="large" onClick={continueSubmission}>
                     Get started
                     <ArrowRight aria-hidden="true" size={20} />

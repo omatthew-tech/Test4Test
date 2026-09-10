@@ -1,0 +1,32 @@
+{
+  "tool": "Built-in image_gen",
+  "purpose": "Three analytics page spacing mockups for review",
+  "reference": "current-reference.png",
+  "implementation": "Preview artifacts only; no application layout changes. Spacing values are prompt targets; generated images are approximate visual concepts.",
+  "options": [
+    {
+      "file": "option-1-moderate.png",
+      "spacingToken": "--ds-semantic-space-stack-section",
+      "key": "option-1-moderate",
+      "gap": 64,
+      "description": "Moderate spacing: a modest but clear increase from the current 40 px gap to 64 px.",
+      "prompt": "Use case: ui-mockup. Asset: one high-fidelity desktop Test4Test analytics page mockup, 1440 x 1000 landscape, straight-on screenshot with no browser chrome. Input image is the EDIT TARGET and authoritative visual reference. Preserve the entire page as closely as possible: pure white canvas, precise existing Test4Test logo, navigation, active Analytics tab, Profile button, centered 960 px content column, recording heading, two side-by-side 16:9 recording thumbnails with play buttons, rounded corners, charcoal Geist typography and the blue Copy report button. The recording cards end near y=535. They have NO caption panels beneath them. Keep the recording cards' position and dimensions fixed. Preserve all current text exactly, including \"View Palette Pilot's recordings\" with the arrow, \"Transcript report\", \"Copy or download your app's transcripts, then export it to ChatGPT, Claude, or another LLM.\", \"Copy report\", \"Download report\", and \"Preview report\". The ONLY requested design change is more blank white vertical space BETWEEN the bottom of the recording cards and the Transcript report section. Move the complete transcript report group down together; keep the internal heading-to-description, description-to-buttons, and buttons-to-preview-link spacing exactly as in the reference. Keep both sections within the frame. Do not add dividers, cards, backgrounds, decorative shapes, captions, option labels, spacing rulers, new copy, or watermarks. Output ONE screenshot image, not a collage.\nSpacing option: Moderate spacing: a modest but clear increase from the current 40 px gap to 64 px.\nPrecisely target 64 px of section spacing on this 1440 px-wide canvas. Preserve every other design decision."
+    },
+    {
+      "file": "option-2-balanced.png",
+      "spacingToken": "--ds-semantic-space-stack-section-large",
+      "key": "option-2-balanced",
+      "gap": 80,
+      "description": "Balanced spacing: a comfortable 80 px gap. Make the two page sections feel naturally distinct while still connected.",
+      "prompt": "Use case: ui-mockup. Asset: one high-fidelity desktop Test4Test analytics page mockup, 1440 x 1000 landscape, straight-on screenshot with no browser chrome. Input image is the EDIT TARGET and authoritative visual reference. Preserve the entire page as closely as possible: pure white canvas, precise existing Test4Test logo, navigation, active Analytics tab, Profile button, centered 960 px content column, recording heading, two side-by-side 16:9 recording thumbnails with play buttons, rounded corners, charcoal Geist typography and the blue Copy report button. The recording cards end near y=535. They have NO caption panels beneath them. Keep the recording cards' position and dimensions fixed. Preserve all current text exactly, including \"View Palette Pilot's recordings\" with the arrow, \"Transcript report\", \"Copy or download your app's transcripts, then export it to ChatGPT, Claude, or another LLM.\", \"Copy report\", \"Download report\", and \"Preview report\". The ONLY requested design change is more blank white vertical space BETWEEN the bottom of the recording cards and the Transcript report section. Move the complete transcript report group down together; keep the internal heading-to-description, description-to-buttons, and buttons-to-preview-link spacing exactly as in the reference. Keep both sections within the frame. Do not add dividers, cards, backgrounds, decorative shapes, captions, option labels, spacing rulers, new copy, or watermarks. Output ONE screenshot image, not a collage.\nSpacing option: Balanced spacing: a comfortable 80 px gap. Make the two page sections feel naturally distinct while still connected.\nPrecisely target 80 px of section spacing on this 1440 px-wide canvas. Preserve every other design decision."
+    },
+    {
+      "file": "option-3-spacious.png",
+      "spacingToken": "--ds-semantic-space-stack-macro",
+      "key": "option-3-spacious",
+      "gap": 128,
+      "description": "Spacious spacing: a generous 128 px gap. The report section sits visibly lower, with a substantial clean band of white breathing room.",
+      "prompt": "Use case: ui-mockup. Asset: one high-fidelity desktop Test4Test analytics page mockup, 1440 x 1000 landscape, straight-on screenshot with no browser chrome. Input image is the EDIT TARGET and authoritative visual reference. Preserve the entire page as closely as possible: pure white canvas, precise existing Test4Test logo, navigation, active Analytics tab, Profile button, centered 960 px content column, recording heading, two side-by-side 16:9 recording thumbnails with play buttons, rounded corners, charcoal Geist typography and the blue Copy report button. The recording cards end near y=535. They have NO caption panels beneath them. Keep the recording cards' position and dimensions fixed. Preserve all current text exactly, including \"View Palette Pilot's recordings\" with the arrow, \"Transcript report\", \"Copy or download your app's transcripts, then export it to ChatGPT, Claude, or another LLM.\", \"Copy report\", \"Download report\", and \"Preview report\". The ONLY requested design change is more blank white vertical space BETWEEN the bottom of the recording cards and the Transcript report section. Move the complete transcript report group down together; keep the internal heading-to-description, description-to-buttons, and buttons-to-preview-link spacing exactly as in the reference. Keep both sections within the frame. Do not add dividers, cards, backgrounds, decorative shapes, captions, option labels, spacing rulers, new copy, or watermarks. Output ONE screenshot image, not a collage.\nSpacing option: Spacious spacing: a generous 128 px gap. The report section sits visibly lower, with a substantial clean band of white breathing room.\nPrecisely target 128 px of section spacing on this 1440 px-wide canvas. Preserve every other design decision."
+    }
+  ]
+}

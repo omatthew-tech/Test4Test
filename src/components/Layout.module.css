@@ -48,8 +48,13 @@
   color: var(--ds-semantic-color-text-primary);
 }
 
-.profileLink:hover,
-.profileLinkActive {
+.profileTrigger {
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-background-subtle);
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.profileLink:hover {
   border-color: var(--ds-semantic-color-border-accent);
   background: var(--ds-semantic-color-action-tint);
   color: var(--ds-semantic-color-action-primary-strong);

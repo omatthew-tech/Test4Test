@@ -1,0 +1,2701 @@
+Serving C:\Projects\Test4Test-Redesign\storybook-static at http://127.0.0.1:6006
+
+Running 384 tests using 4 workers
+
+(node:23048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35484) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34668) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:17472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   2 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--variants at laptop (23.1s)
+  ok   1 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--variants at tablet (23.1s)
+  ok   3 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--variants at mobile (23.0s)
+  ok   4 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--variants at desktop (23.0s)
+  ok   5 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--states at mobile (16.9s)
+  ok   6 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--states at tablet (17.0s)
+  ok   7 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--states at laptop (17.0s)
+  ok   8 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--states at desktop (17.0s)
+  ok   9 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--navigation-patterns at mobile (1.3s)
+  ok  10 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--navigation-patterns at tablet (1.3s)
+  ok  11 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--navigation-patterns at laptop (1.3s)
+  ok  12 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--navigation-patterns at desktop (1.4s)
+  ok  13 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--states at mobile (1.2s)
+  ok  14 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--states at tablet (1.2s)
+  ok  15 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--states at laptop (1.2s)
+  ok  16 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--states at desktop (1.3s)
+  ok  17 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--data-states at mobile (1.1s)
+  ok  18 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--data-states at tablet (1.1s)
+  ok  19 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--data-states at laptop (1.1s)
+  ok  20 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--data-states at desktop (1.1s)
+  ok  21 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--workflow-states at mobile (1.2s)
+  ok  22 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--workflow-states at tablet (1.2s)
+  ok  23 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--workflow-states at laptop (1.3s)
+  ok  24 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--workflow-states at desktop (1.3s)
+  ok  25 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--analytics-data-presentation at mobile (1.1s)
+  ok  26 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--analytics-data-presentation at tablet (1.1s)
+  ok  27 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--analytics-data-presentation at laptop (1.1s)
+  ok  28 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--analytics-data-presentation at desktop (1.1s)
+  ok  29 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-flow at mobile (1.1s)
+  ok  30 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-flow at tablet (1.2s)
+  ok  31 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-flow at laptop (1.2s)
+  ok  32 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-flow at desktop (1.2s)
+  ok  33 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--button-contract at mobile (1.1s)
+  ok  34 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--button-contract at tablet (1.2s)
+  ok  35 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--button-contract at laptop (1.1s)
+  ok  36 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--button-contract at desktop (1.1s)
+  ok  37 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--icon-button-contract at mobile (1.0s)
+  ok  38 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--icon-button-contract at tablet (1.1s)
+  ok  39 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--icon-button-contract at laptop (1.1s)
+  ok  40 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--icon-button-contract at desktop (1.1s)
+  ok  41 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--link-contract at mobile (1.1s)
+  ok  42 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--link-contract at tablet (1.1s)
+  ok  43 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--link-contract at laptop (1.1s)
+  ok  44 [visual] › tests\playwright\visual.spec.ts:154:5 › components-actions--link-contract at desktop (1.1s)
+  ok  45 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--text-field-contract at mobile (1.1s)
+  ok  46 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--text-field-contract at tablet (1.2s)
+  ok  47 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--text-field-contract at laptop (1.2s)
+  ok  48 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--text-field-contract at desktop (1.3s)
+  ok  49 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--textarea-contract at mobile (1.3s)
+  ok  50 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--textarea-contract at tablet (1.4s)
+  ok  51 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--textarea-contract at laptop (1.4s)
+  ok  52 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--textarea-contract at desktop (1.4s)
+  ok  53 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--select-contract at mobile (1.1s)
+  ok  54 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--select-contract at tablet (1.2s)
+  ok  55 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--select-contract at laptop (1.1s)
+  ok  56 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--select-contract at desktop (1.2s)
+  ok  57 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--combobox-contract at mobile (1.2s)
+  ok  58 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--combobox-contract at tablet (1.2s)
+  ok  59 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--combobox-contract at laptop (1.2s)
+  ok  60 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--combobox-contract at desktop (1.2s)
+  ok  61 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--checkbox-contract at mobile (1.1s)
+  ok  62 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--checkbox-contract at tablet (1.2s)
+  ok  63 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--checkbox-contract at laptop (1.2s)
+  ok  64 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--checkbox-contract at desktop (1.2s)
+  ok  65 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--radio-contract at mobile (1.1s)
+  ok  66 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--radio-contract at tablet (1.1s)
+  ok  67 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--radio-contract at laptop (1.1s)
+  ok  68 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--radio-contract at desktop (1.2s)
+  ok  69 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--switch-contract at mobile (1.1s)
+  ok  70 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--switch-contract at tablet (1.2s)
+  ok  71 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--switch-contract at laptop (1.1s)
+  ok  72 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--switch-contract at desktop (1.2s)
+  ok  73 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--help-text-contract at mobile (1.1s)
+  ok  74 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--help-text-contract at tablet (1.1s)
+  ok  75 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--help-text-contract at laptop (1.1s)
+  ok  76 [visual] › tests\playwright\visual.spec.ts:154:5 › components-inputs--help-text-contract at desktop (1.2s)
+  ok  77 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--container-contract at mobile (1.2s)
+  ok  78 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--container-contract at tablet (1.1s)
+  ok  79 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--container-contract at laptop (1.1s)
+  ok  80 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--container-contract at desktop (1.1s)
+  ok  81 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--stack-contract at mobile (1.1s)
+  ok  82 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--stack-contract at tablet (1.2s)
+  ok  83 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--stack-contract at laptop (1.2s)
+  ok  84 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--stack-contract at desktop (1.3s)
+  ok  85 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--cluster-contract at mobile (1.2s)
+  ok  86 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--cluster-contract at tablet (1.2s)
+  ok  87 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--cluster-contract at laptop (1.1s)
+  ok  89 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--grid-contract at mobile (1.1s)
+  ok  88 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--cluster-contract at desktop (1.1s)
+  ok  90 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--grid-contract at tablet (1.1s)
+  ok  91 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--grid-contract at laptop (1.1s)
+  ok  93 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--divider-contract at mobile (1.1s)
+  ok  92 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--grid-contract at desktop (1.1s)
+  ok  94 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--divider-contract at tablet (1.1s)
+  ok  95 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--divider-contract at laptop (1.1s)
+  ok  96 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--divider-contract at desktop (1.1s)
+  ok  97 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--section-contract at mobile (1.1s)
+  ok  98 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--section-contract at tablet (1.2s)
+  ok  99 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--section-contract at laptop (1.2s)
+  ok 100 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--section-contract at desktop (1.2s)
+  ok 101 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--bento-grid-contract at mobile (1.1s)
+  ok 102 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--bento-grid-contract at tablet (1.2s)
+  ok 103 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--bento-grid-contract at laptop (1.2s)
+  ok 104 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--bento-grid-contract at desktop (1.2s)
+  ok 105 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--application-shell-contract at mobile (1.2s)
+  ok 106 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--application-shell-contract at tablet (1.2s)
+  ok 107 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--application-shell-contract at laptop (1.2s)
+  ok 109 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-contract at mobile (1.2s)
+  ok 108 [visual] › tests\playwright\visual.spec.ts:154:5 › components-layout--application-shell-contract at desktop (1.2s)
+  ok 110 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-contract at tablet (1.1s)
+  ok 111 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-contract at laptop (1.1s)
+  ok 112 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-contract at desktop (1.1s)
+  ok 113 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-contract at mobile (1.1s)
+  ok 114 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-contract at tablet (1.1s)
+  ok 115 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-contract at laptop (1.2s)
+  ok 116 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-contract at desktop (1.1s)
+  ok 117 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--tabs-contract at mobile (1.1s)
+  ok 118 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--tabs-contract at tablet (1.1s)
+  ok 119 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--tabs-contract at laptop (1.1s)
+  ok 120 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--tabs-contract at desktop (1.1s)
+  ok 121 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--breadcrumb-contract at mobile (1.1s)
+  ok 122 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--breadcrumb-contract at tablet (1.1s)
+  ok 123 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--breadcrumb-contract at laptop (1.0s)
+  ok 124 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--breadcrumb-contract at desktop (1.1s)
+  ok 125 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--pagination-contract at mobile (1.1s)
+  ok 126 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--pagination-contract at tablet (1.1s)
+  ok 127 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--pagination-contract at laptop (1.1s)
+  ok 128 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--pagination-contract at desktop (1.1s)
+  ok 129 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--menu-contract at mobile (1.1s)
+  ok 130 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--menu-contract at tablet (1.1s)
+  ok 131 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--menu-contract at laptop (1.1s)
+  ok 132 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--menu-contract at desktop (1.1s)
+  ok 133 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--alert-contract at mobile (1.1s)
+  ok 134 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--alert-contract at tablet (1.1s)
+  ok 135 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--alert-contract at laptop (1.1s)
+  ok 137 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-contract at mobile (1.1s)
+  ok 136 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--alert-contract at desktop (1.2s)
+  ok 138 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-contract at tablet (1.1s)
+  ok 139 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-contract at laptop (1.1s)
+  ok 140 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-contract at desktop (1.1s)
+  ok 141 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--inline-validation-contract at mobile (1.1s)
+  ok 142 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--inline-validation-contract at tablet (1.1s)
+  ok 143 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--inline-validation-contract at laptop (1.1s)
+  ok 144 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--inline-validation-contract at desktop (1.1s)
+  ok 145 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--form-summary-contract at mobile (1.1s)
+  ok 146 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--form-summary-contract at tablet (1.1s)
+  ok 147 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--form-summary-contract at laptop (1.1s)
+  ok 148 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--form-summary-contract at desktop (1.1s)
+  ok 149 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--progress-contract at mobile (1.1s)
+  ok 150 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--progress-contract at tablet (1.1s)
+  ok 151 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--progress-contract at laptop (1.1s)
+  ok 152 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--progress-contract at desktop (1.1s)
+  ok 153 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--skeleton-contract at mobile (1.0s)
+  ok 154 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--skeleton-contract at tablet (1.1s)
+  ok 155 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--skeleton-contract at laptop (1.1s)
+  ok 156 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--skeleton-contract at desktop (1.1s)
+  ok 157 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--empty-state-contract at mobile (1.1s)
+  ok 158 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--empty-state-contract at tablet (1.1s)
+  ok 159 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--empty-state-contract at laptop (1.1s)
+  ok 160 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--empty-state-contract at desktop (1.2s)
+  ok 161 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-contract at mobile (1.1s)
+  ok 162 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-contract at tablet (1.1s)
+  ok 163 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-contract at laptop (1.1s)
+  ok 164 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-contract at desktop (1.1s)
+  ok 165 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-contract at mobile (1.1s)
+  ok 166 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-contract at tablet (1.1s)
+  ok 167 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-contract at laptop (1.1s)
+  ok 168 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-contract at desktop (1.1s)
+  ok 169 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-contract at mobile (1.1s)
+  ok 170 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-contract at tablet (1.1s)
+  ok 171 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-contract at laptop (1.1s)
+  ok 172 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-contract at desktop (1.1s)
+  ok 173 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-contract at mobile (1.1s)
+  ok 174 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-contract at tablet (1.2s)
+  ok 175 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-contract at laptop (1.1s)
+  ok 176 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-contract at desktop (1.1s)
+  ok 177 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--card-contract at mobile (1.1s)
+  ok 178 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--card-contract at tablet (1.1s)
+  ok 179 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--card-contract at laptop (1.1s)
+  ok 180 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--card-contract at desktop (1.1s)
+  ok 181 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--surface-contract at mobile (1.1s)
+  ok 182 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--surface-contract at tablet (1.1s)
+  ok 183 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--surface-contract at laptop (1.1s)
+  ok 185 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--table-contract at mobile (1.1s)
+  ok 184 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--surface-contract at desktop (1.1s)
+  ok 187 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--table-contract at laptop (1.1s)
+  ok 186 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--table-contract at tablet (1.1s)
+  ok 188 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--table-contract at desktop (1.1s)
+  ok 189 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--list-contract at mobile (1.1s)
+  ok 191 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--list-contract at laptop (1.1s)
+  ok 190 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--list-contract at tablet (1.1s)
+  ok 192 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--list-contract at desktop (1.1s)
+  ok 193 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--badge-contract at mobile (1.1s)
+  ok 195 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--badge-contract at tablet (1.1s)
+  ok 194 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--badge-contract at laptop (1.1s)
+  ok 197 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--status-indicator-contract at mobile (1.1s)
+  ok 196 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--badge-contract at desktop (1.1s)
+  ok 198 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--status-indicator-contract at tablet (1.1s)
+  ok 199 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--status-indicator-contract at laptop (1.1s)
+  ok 201 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--technical-value-contract at mobile (1.1s)
+  ok 200 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--status-indicator-contract at desktop (1.1s)
+  ok 202 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--technical-value-contract at laptop (1.1s)
+  ok 203 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--technical-value-contract at tablet (1.1s)
+  ok 205 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--page-header-contract at mobile (1.1s)
+  ok 204 [visual] › tests\playwright\visual.spec.ts:154:5 › components-data-display--technical-value-contract at desktop (1.1s)
+  ok 206 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--page-header-contract at tablet (1.1s)
+  ok 207 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--page-header-contract at laptop (1.1s)
+  ok 209 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--stepper-contract at mobile (1.1s)
+  ok 208 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--page-header-contract at desktop (1.1s)
+  ok 210 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--stepper-contract at tablet (1.1s)
+  ok 211 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--stepper-contract at laptop (1.1s)
+  ok 212 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--stepper-contract at desktop (1.1s)
+  ok 213 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--rating-control-contract at mobile (1.1s)
+  ok 214 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--rating-control-contract at tablet (1.1s)
+  ok 215 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--rating-control-contract at laptop (1.1s)
+  ok 216 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--rating-control-contract at desktop (1.1s)
+  ok 217 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-status-contract at mobile (1.1s)
+  ok 219 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-status-contract at laptop (1.1s)
+  ok 218 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-status-contract at tablet (1.2s)
+  ok 221 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--test-row-contract at mobile (1.1s)
+  ok 220 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--recording-status-contract at desktop (1.2s)
+  ok 222 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--test-row-contract at tablet (1.1s)
+  ok 223 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--test-row-contract at laptop (1.1s)
+  ok 224 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--test-row-contract at desktop (1.2s)
+  x  225 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at mobile (1.3s)
+  x  226 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at tablet (1.3s)
+  x  227 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at laptop (1.3s)
+(node:20896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  228 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at desktop (1.3s)
+(node:35688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:20220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 229 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--question-editor-contract at mobile (1.6s)
+  ok 230 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--question-editor-contract at tablet (1.7s)
+  ok 231 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--question-editor-contract at laptop (1.6s)
+  ok 233 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--response-viewer-contract at mobile (1.2s)
+  ok 232 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--question-editor-contract at desktop (1.6s)
+  ok 234 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--response-viewer-contract at tablet (1.1s)
+  ok 235 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--response-viewer-contract at laptop (1.1s)
+  ok 236 [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--response-viewer-contract at desktop (1.2s)
+  ok 237 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-public-state at mobile (1.1s)
+  ok 238 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-public-state at tablet (1.1s)
+  ok 239 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-public-state at laptop (1.1s)
+  ok 240 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--top-navigation-public-state at desktop (1.1s)
+  ok 241 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-open-state at mobile (1.1s)
+  ok 242 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-open-state at tablet (1.1s)
+  ok 243 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-open-state at laptop (1.1s)
+  ok 245 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-info-state at mobile (1.0s)
+  ok 244 [visual] › tests\playwright\visual.spec.ts:154:5 › components-navigation--mobile-navigation-drawer-open-state at desktop (1.1s)
+  ok 246 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-info-state at tablet (1.1s)
+  ok 247 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-info-state at laptop (1.1s)
+  ok 249 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-warning-state at mobile (1.1s)
+  ok 248 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-info-state at desktop (1.2s)
+  ok 251 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-warning-state at laptop (1.2s)
+  ok 250 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-warning-state at tablet (1.2s)
+  ok 253 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-danger-state at mobile (1.0s)
+  ok 252 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-warning-state at desktop (1.1s)
+  ok 254 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-danger-state at tablet (1.2s)
+  ok 255 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-danger-state at laptop (1.1s)
+  ok 257 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-open-state at mobile (1.1s)
+  ok 256 [visual] › tests\playwright\visual.spec.ts:154:5 › components-feedback--toast-danger-state at desktop (1.2s)
+  ok 258 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-open-state at laptop (1.1s)
+  ok 259 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-open-state at tablet (1.1s)
+  ok 261 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-open-state at mobile (1.0s)
+  ok 260 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--dialog-open-state at desktop (1.2s)
+  ok 262 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-open-state at tablet (1.1s)
+  ok 263 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-open-state at laptop (1.0s)
+  ok 264 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--drawer-open-state at desktop (1.1s)
+  ok 265 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-open-state at mobile (1.1s)
+  ok 266 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-open-state at laptop (1.1s)
+  ok 267 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-open-state at tablet (1.1s)
+  ok 268 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--popover-open-state at desktop (1.1s)
+  ok 269 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-open-state at mobile (1.1s)
+  ok 270 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-open-state at tablet (1.0s)
+  ok 271 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-open-state at laptop (1.0s)
+  ok 272 [visual] › tests\playwright\visual.spec.ts:154:5 › components-overlays--tooltip-open-state at desktop (2.0s)
+  x  273 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile (5.5s)
+(node:36368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  275 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop (6.8s)
+  x  274 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet (7.2s)
+(node:36708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 277 [visual] › tests\playwright\visual.spec.ts:172:5 › sign-in route at mobile (992ms)
+(node:16452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 278 [visual] › tests\playwright\visual.spec.ts:172:5 › sign-in route at desktop (1.5s)
+  x  276 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop (8.2s)
+  ok 279 [visual] › tests\playwright\visual.spec.ts:172:5 › sign-in route at tablet (1.5s)
+(node:22224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 280 [visual] › tests\playwright\visual.spec.ts:172:5 › sign-in route at laptop (1.5s)
+  ok 281 [visual] › tests\playwright\visual.spec.ts:172:5 › submit-test route at mobile (1.3s)
+  ok 282 [visual] › tests\playwright\visual.spec.ts:172:5 › submit-test route at laptop (1.4s)
+  ok 283 [visual] › tests\playwright\visual.spec.ts:172:5 › submit-test route at desktop (1.4s)
+  ok 285 [visual] › tests\playwright\visual.spec.ts:172:5 › verify route at mobile (1.3s)
+  ok 284 [visual] › tests\playwright\visual.spec.ts:172:5 › submit-test route at tablet (1.4s)
+  ok 287 [visual] › tests\playwright\visual.spec.ts:172:5 › verify route at laptop (917ms)
+  ok 286 [visual] › tests\playwright\visual.spec.ts:172:5 › verify route at tablet (1.4s)
+  ok 288 [visual] › tests\playwright\visual.spec.ts:172:5 › verify route at desktop (937ms)
+  x  289 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at mobile (2.0s)
+  x  290 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at tablet (2.4s)
+  x  292 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at desktop (2.4s)
+(node:9444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  291 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at laptop (2.6s)
+(node:1600) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  293 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at mobile (1.2s)
+  x  294 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at tablet (1.1s)
+(node:30992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  295 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at laptop (1.7s)
+(node:37332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  296 [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at desktop (1.7s)
+(node:36504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 297 [visual] › tests\playwright\visual.spec.ts:172:5 › blog route at mobile (1.1s)
+  ok 298 [visual] › tests\playwright\visual.spec.ts:172:5 › blog route at tablet (1.2s)
+  ok 299 [visual] › tests\playwright\visual.spec.ts:172:5 › blog route at laptop (1.2s)
+  ok 301 [visual] › tests\playwright\visual.spec.ts:172:5 › blog route at desktop (1.4s)
+  x  300 [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at mobile (3.4s)
+(node:37872) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  302 [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at tablet (4.6s)
+(node:21036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  305 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile (1.9s)
+  x  303 [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at laptop (5.4s)
+(node:36404) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:29148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  304 [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at desktop (6.7s)
+  x  306 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet (2.2s)
+(node:9292) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  307 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop (1.8s)
+  x  308 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop (2.5s)
+(node:38388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  309 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at mobile (1.6s)
+  x  310 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at tablet (1.7s)
+(node:1600) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38276) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  311 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at laptop (1.7s)
+(node:25800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  312 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at desktop (1.8s)
+(node:16088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  313 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at mobile (1.6s)
+  x  314 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at tablet (1.7s)
+(node:21088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  315 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at laptop (1.6s)
+(node:26568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  316 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at desktop (1.7s)
+  x  317 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at mobile (1.2s)
+(node:38172) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  318 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at tablet (1.7s)
+(node:37324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  319 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at laptop (1.7s)
+  x  320 [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at desktop (1.7s)
+(node:38764) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 322 [visual] › tests\playwright\visual.spec.ts:172:5 › share route at tablet (1.3s)
+  x  321 [visual] › tests\playwright\visual.spec.ts:172:5 › share route at mobile (2.8s)
+(node:36848) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 323 [visual] › tests\playwright\visual.spec.ts:172:5 › share route at laptop (1.7s)
+  x  324 [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at mobile (2.0s)
+  ok 325 [visual] › tests\playwright\visual.spec.ts:172:5 › share route at desktop (1.4s)
+(node:35288) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 328 [visual] › tests\playwright\visual.spec.ts:172:5 › recording-view route at mobile (1.4s)
+  x  327 [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at laptop (2.2s)
+  x  326 [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at tablet (2.1s)
+(node:27772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 330 [visual] › tests\playwright\visual.spec.ts:172:5 › recording-view route at tablet (1.4s)
+(node:3440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 331 [visual] › tests\playwright\visual.spec.ts:172:5 › email-preview route at mobile (1.4s)
+  x  329 [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at desktop (2.7s)
+(node:5180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 332 [visual] › tests\playwright\visual.spec.ts:172:5 › recording-view route at laptop (1.5s)
+  ok 333 [visual] › tests\playwright\visual.spec.ts:172:5 › recording-view route at desktop (1.5s)
+  ok 334 [visual] › tests\playwright\visual.spec.ts:172:5 › email-preview route at tablet (1.4s)
+  ok 335 [visual] › tests\playwright\visual.spec.ts:172:5 › email-preview route at desktop (1.1s)
+  ok 336 [visual] › tests\playwright\visual.spec.ts:172:5 › email-preview route at laptop (1.3s)
+  x  337 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at mobile (1.6s)
+(node:8736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  338 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at tablet (2.6s)
+  x  339 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at laptop (2.7s)
+(node:12488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  340 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at desktop (3.0s)
+(node:38132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  341 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at mobile (2.0s)
+(node:37828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  342 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at tablet (1.5s)
+(node:4196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  343 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at laptop (2.3s)
+(node:20896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 345 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success route at mobile (1.4s)
+  x  344 [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at desktop (2.4s)
+  ok 346 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success route at tablet (1.5s)
+(node:2984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 347 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success route at desktop (991ms)
+  ok 348 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success route at laptop (1.5s)
+  x  349 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at tablet (1.5s)
+  x  350 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at laptop (1.5s)
+(node:35664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  351 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at mobile (1.6s)
+  x  352 [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at desktop (1.5s)
+(node:35424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 353 [visual] › tests\playwright\visual.spec.ts:172:5 › submissions route at mobile (977ms)
+  ok 354 [visual] › tests\playwright\visual.spec.ts:172:5 › submissions route at tablet (1.5s)
+  ok 356 [visual] › tests\playwright\visual.spec.ts:172:5 › revise-response route at mobile (1.5s)
+  ok 355 [visual] › tests\playwright\visual.spec.ts:172:5 › submissions route at laptop (1.5s)
+  ok 357 [visual] › tests\playwright\visual.spec.ts:172:5 › submissions route at desktop (1.1s)
+  ok 358 [visual] › tests\playwright\visual.spec.ts:172:5 › revise-response route at tablet (1.6s)
+  ok 359 [visual] › tests\playwright\visual.spec.ts:172:5 › revise-response route at laptop (1.6s)
+  ok 361 [visual] › tests\playwright\visual.spec.ts:172:5 › credits route at mobile (1.4s)
+  ok 360 [visual] › tests\playwright\visual.spec.ts:172:5 › revise-response route at desktop (1.7s)
+  ok 362 [visual] › tests\playwright\visual.spec.ts:172:5 › credits route at tablet (1.4s)
+  ok 363 [visual] › tests\playwright\visual.spec.ts:172:5 › credits route at laptop (1.4s)
+  ok 364 [visual] › tests\playwright\visual.spec.ts:172:5 › credits route at desktop (1.4s)
+  x  365 [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at mobile (1.9s)
+  x  366 [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at tablet (2.2s)
+(node:37816) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  367 [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at laptop (2.2s)
+  x  368 [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at desktop (2.5s)
+(node:28384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18884) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  369 [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at mobile (1.5s)
+  x  370 [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at tablet (1.4s)
+(node:18316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  371 [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at laptop (2.0s)
+  x  372 [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at desktop (2.0s)
+(node:38316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 373 [visual] › tests\playwright\visual.spec.ts:172:5 › admin route at mobile (1.0s)
+  ok 374 [visual] › tests\playwright\visual.spec.ts:172:5 › admin route at tablet (1.1s)
+(node:36628) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 375 [visual] › tests\playwright\visual.spec.ts:172:5 › banned route at mobile (1.4s)
+  ok 376 [visual] › tests\playwright\visual.spec.ts:172:5 › banned route at tablet (1.4s)
+  ok 377 [visual] › tests\playwright\visual.spec.ts:172:5 › admin route at laptop (1.1s)
+  ok 379 [visual] › tests\playwright\visual.spec.ts:172:5 › banned route at laptop (1.0s)
+  ok 378 [visual] › tests\playwright\visual.spec.ts:172:5 › admin route at desktop (1.3s)
+  ok 380 [visual] › tests\playwright\visual.spec.ts:172:5 › banned route at desktop (1.5s)
+  x  381 [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at mobile (4.2s)
+  x  382 [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at tablet (6.0s)
+  x  383 [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at laptop (5.6s)
+  x  384 [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at desktop (6.9s)
+
+
+  1) [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at mobile 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-mobile-visual-win32.png, writing actual.
+
+      162 |         await expect(page).toHaveScreenshot(screenshotName, options);
+      163 |       } else {
+    > 164 |         await expect(page.locator("#storybook-root")).toHaveScreenshot(screenshotName, options);
+          |         ^
+      165 |       }
+      166 |     });
+      167 |   }
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:164:9
+
+    attachment #1: patterns-product--earn-test-card-contract-mobile (image/png) ────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-mobile-visual-win32.png
+    Received: test-results\visual-patterns-product--earn-test-card-contract-at-mobile-visual\patterns-product--earn-test-card-contract-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-patterns-product--earn-test-card-contract-at-mobile-visual\error-context.md
+
+  2) [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at tablet 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-tablet-visual-win32.png, writing actual.
+
+      162 |         await expect(page).toHaveScreenshot(screenshotName, options);
+      163 |       } else {
+    > 164 |         await expect(page.locator("#storybook-root")).toHaveScreenshot(screenshotName, options);
+          |         ^
+      165 |       }
+      166 |     });
+      167 |   }
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:164:9
+
+    attachment #1: patterns-product--earn-test-card-contract-tablet (image/png) ────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-tablet-visual-win32.png
+    Received: test-results\visual-patterns-product--earn-test-card-contract-at-tablet-visual\patterns-product--earn-test-card-contract-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-patterns-product--earn-test-card-contract-at-tablet-visual\error-context.md
+
+  3) [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at laptop 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-laptop-visual-win32.png, writing actual.
+
+      162 |         await expect(page).toHaveScreenshot(screenshotName, options);
+      163 |       } else {
+    > 164 |         await expect(page.locator("#storybook-root")).toHaveScreenshot(screenshotName, options);
+          |         ^
+      165 |       }
+      166 |     });
+      167 |   }
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:164:9
+
+    attachment #1: patterns-product--earn-test-card-contract-laptop (image/png) ────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-laptop-visual-win32.png
+    Received: test-results\visual-patterns-product--earn-test-card-contract-at-laptop-visual\patterns-product--earn-test-card-contract-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-patterns-product--earn-test-card-contract-at-laptop-visual\error-context.md
+
+  4) [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at desktop 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-desktop-visual-win32.png, writing actual.
+
+      162 |         await expect(page).toHaveScreenshot(screenshotName, options);
+      163 |       } else {
+    > 164 |         await expect(page.locator("#storybook-root")).toHaveScreenshot(screenshotName, options);
+          |         ^
+      165 |       }
+      166 |     });
+      167 |   }
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:164:9
+
+    attachment #1: patterns-product--earn-test-card-contract-desktop (image/png) ───────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\patterns-product--earn-test-card-contract-desktop-visual-win32.png
+    Received: test-results\visual-patterns-product--earn-test-card-contract-at-desktop-visual\patterns-product--earn-test-card-contract-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-patterns-product--earn-test-card-contract-at-desktop-visual\error-context.md
+
+  5) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 4674px, received 390px by 6961px. 229582 pixels (ratio 0.09 of all image pixels) are different.
+
+      Snapshot: home-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 4674px, received 390px by 6961px. 229529 pixels (ratio 0.09 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 4674px, received 390px by 6961px. 229582 pixels (ratio 0.09 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-mobile (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-mobile-visual-win32.png
+    Received: test-results\visual-home-route-at-mobile-visual\home-mobile-actual.png
+    Diff:     test-results\visual-home-route-at-mobile-visual\home-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-mobile-visual\error-context.md
+
+  6) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 4126px, received 768px by 7558px. 396702 pixels (ratio 0.07 of all image pixels) are different.
+
+      Snapshot: home-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 4126px, received 768px by 7558px. 398068 pixels (ratio 0.07 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 4126px, received 768px by 7558px. 396702 pixels (ratio 0.07 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-tablet (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-tablet-visual-win32.png
+    Received: test-results\visual-home-route-at-tablet-visual\home-tablet-actual.png
+    Diff:     test-results\visual-home-route-at-tablet-visual\home-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-tablet-visual\error-context.md
+
+  7) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 3142px, received 1024px by 5688px. 304449 pixels (ratio 0.06 of all image pixels) are different.
+
+      Snapshot: home-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 3142px, received 1024px by 5688px. 305364 pixels (ratio 0.06 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 3142px, received 1024px by 5688px. 304449 pixels (ratio 0.06 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-laptop (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-laptop-visual-win32.png
+    Received: test-results\visual-home-route-at-laptop-visual\home-laptop-actual.png
+    Diff:     test-results\visual-home-route-at-laptop-visual\home-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-laptop-visual\error-context.md
+
+  8) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 3220px, received 1440px by 5988px. 384422 pixels (ratio 0.05 of all image pixels) are different.
+
+      Snapshot: home-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 3220px, received 1440px by 5988px. 385407 pixels (ratio 0.05 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 3220px, received 1440px by 5988px. 384422 pixels (ratio 0.05 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-desktop (image/png) ────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-desktop-visual-win32.png
+    Received: test-results\visual-home-route-at-desktop-visual\home-desktop-actual.png
+    Diff:     test-results\visual-home-route-at-desktop-visual\home-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-desktop-visual\error-context.md
+
+  9) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at mobile ─────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 2577px, received 390px by 2517px. 13762 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: tester-landing-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(tester-landing-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 2577px, received 390px by 2517px. 13762 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 2577px, received 390px by 2517px. 13762 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: tester-landing-mobile (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-landing-mobile-visual-win32.png
+    Received: test-results\visual-tester-landing-route-at-mobile-visual\tester-landing-mobile-actual.png
+    Diff:     test-results\visual-tester-landing-route-at-mobile-visual\tester-landing-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-landing-route-at-mobile-visual\error-context.md
+
+  10) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at tablet ────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1882px, received 768px by 1876px. 18774 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: tester-landing-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(tester-landing-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1882px, received 768px by 1876px. 18774 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1882px, received 768px by 1876px. 18774 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: tester-landing-tablet (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-landing-tablet-visual-win32.png
+    Received: test-results\visual-tester-landing-route-at-tablet-visual\tester-landing-tablet-actual.png
+    Diff:     test-results\visual-tester-landing-route-at-tablet-visual\tester-landing-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-landing-route-at-tablet-visual\error-context.md
+
+  11) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at laptop ────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 1582px, received 1024px by 1492px. 21810 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: tester-landing-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(tester-landing-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 1582px, received 1024px by 1492px. 21810 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 1582px, received 1024px by 1492px. 21810 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: tester-landing-laptop (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-landing-laptop-visual-win32.png
+    Received: test-results\visual-tester-landing-route-at-laptop-visual\tester-landing-laptop-actual.png
+    Diff:     test-results\visual-tester-landing-route-at-laptop-visual\tester-landing-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-landing-route-at-laptop-visual\error-context.md
+
+  12) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at desktop ───────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 1541px, received 1440px by 1487px. 22376 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: tester-landing-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(tester-landing-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 1541px, received 1440px by 1487px. 22376 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 1541px, received 1440px by 1487px. 22376 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: tester-landing-desktop (image/png) ──────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-landing-desktop-visual-win32.png
+    Received: test-results\visual-tester-landing-route-at-desktop-visual\tester-landing-desktop-actual.png
+    Diff:     test-results\visual-tester-landing-route-at-desktop-visual\tester-landing-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-landing-route-at-desktop-visual\error-context.md
+
+  13) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at mobile ─────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\tester-signup-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: tester-signup-mobile (image/png) ────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-signup-mobile-visual-win32.png
+    Received: test-results\visual-tester-signup-route-at-mobile-visual\tester-signup-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-signup-route-at-mobile-visual\error-context.md
+
+  14) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at tablet ─────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\tester-signup-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: tester-signup-tablet (image/png) ────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-signup-tablet-visual-win32.png
+    Received: test-results\visual-tester-signup-route-at-tablet-visual\tester-signup-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-signup-route-at-tablet-visual\error-context.md
+
+  15) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at laptop ─────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\tester-signup-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: tester-signup-laptop (image/png) ────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-signup-laptop-visual-win32.png
+    Received: test-results\visual-tester-signup-route-at-laptop-visual\tester-signup-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-signup-route-at-laptop-visual\error-context.md
+
+  16) [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at desktop ────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\tester-signup-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: tester-signup-desktop (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\tester-signup-desktop-visual-win32.png
+    Received: test-results\visual-tester-signup-route-at-desktop-visual\tester-signup-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-tester-signup-route-at-desktop-visual\error-context.md
+
+  17) [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at mobile ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 5923px, received 390px by 7080px. 298963 pixels (ratio 0.11 of all image pixels) are different.
+
+      Snapshot: blog-post-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(blog-post-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 5923px, received 390px by 7080px. 298963 pixels (ratio 0.11 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 5923px, received 390px by 7080px. 298963 pixels (ratio 0.11 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: blog-post-mobile (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\blog-post-mobile-visual-win32.png
+    Received: test-results\visual-blog-post-route-at-mobile-visual\blog-post-mobile-actual.png
+    Diff:     test-results\visual-blog-post-route-at-mobile-visual\blog-post-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-blog-post-route-at-mobile-visual\error-context.md
+
+  18) [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at tablet ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 4682px, received 768px by 6060px. 629279 pixels (ratio 0.14 of all image pixels) are different.
+
+      Snapshot: blog-post-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(blog-post-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 4682px, received 768px by 6060px. 629279 pixels (ratio 0.14 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 4682px, received 768px by 6060px. 629279 pixels (ratio 0.14 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: blog-post-tablet (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\blog-post-tablet-visual-win32.png
+    Received: test-results\visual-blog-post-route-at-tablet-visual\blog-post-tablet-actual.png
+    Diff:     test-results\visual-blog-post-route-at-tablet-visual\blog-post-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-blog-post-route-at-tablet-visual\error-context.md
+
+  19) [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at laptop ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 4682px, received 1024px by 6514px. 655408 pixels (ratio 0.10 of all image pixels) are different.
+
+      Snapshot: blog-post-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(blog-post-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 4682px, received 1024px by 6514px. 655408 pixels (ratio 0.10 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 4682px, received 1024px by 6514px. 655408 pixels (ratio 0.10 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: blog-post-laptop (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\blog-post-laptop-visual-win32.png
+    Received: test-results\visual-blog-post-route-at-laptop-visual\blog-post-laptop-actual.png
+    Diff:     test-results\visual-blog-post-route-at-laptop-visual\blog-post-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-blog-post-route-at-laptop-visual\error-context.md
+
+  20) [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at desktop ────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 4682px, received 1440px by 6514px. 655333 pixels (ratio 0.07 of all image pixels) are different.
+
+      Snapshot: blog-post-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(blog-post-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 4682px, received 1440px by 6514px. 655333 pixels (ratio 0.07 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 4682px, received 1440px by 6514px. 655333 pixels (ratio 0.07 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: blog-post-desktop (image/png) ───────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\blog-post-desktop-visual-win32.png
+    Received: test-results\visual-blog-post-route-at-desktop-visual\blog-post-desktop-actual.png
+    Diff:     test-results\visual-blog-post-route-at-desktop-visual\blog-post-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-blog-post-route-at-desktop-visual\error-context.md
+
+  21) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+
+      Snapshot: earn-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-mobile (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-mobile-visual-win32.png
+    Received: test-results\visual-earn-route-at-mobile-visual\earn-mobile-actual.png
+    Diff:     test-results\visual-earn-route-at-mobile-visual\earn-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-mobile-visual\error-context.md
+
+  22) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: earn-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-tablet (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tablet-visual-win32.png
+    Received: test-results\visual-earn-route-at-tablet-visual\earn-tablet-actual.png
+    Diff:     test-results\visual-earn-route-at-tablet-visual\earn-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-tablet-visual\error-context.md
+
+  23) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+
+      Snapshot: earn-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-laptop (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-laptop-visual-win32.png
+    Received: test-results\visual-earn-route-at-laptop-visual\earn-laptop-actual.png
+    Diff:     test-results\visual-earn-route-at-laptop-visual\earn-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-laptop-visual\error-context.md
+
+  24) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop ─────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      27389 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: earn-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - 27389 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - 27389 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-desktop (image/png) ────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-desktop-visual-win32.png
+    Received: test-results\visual-earn-route-at-desktop-visual\earn-desktop-actual.png
+    Diff:     test-results\visual-earn-route-at-desktop-visual\earn-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-desktop-visual\error-context.md
+
+  25) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at mobile ────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-locked-mobile (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-mobile-visual-win32.png
+    Received: test-results\visual-earn-tester-locked-route-at-mobile-visual\earn-tester-locked-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-locked-route-at-mobile-visual\error-context.md
+
+  26) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at tablet ────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-locked-tablet (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-tablet-visual-win32.png
+    Received: test-results\visual-earn-tester-locked-route-at-tablet-visual\earn-tester-locked-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-locked-route-at-tablet-visual\error-context.md
+
+  27) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at laptop ────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-locked-laptop (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-laptop-visual-win32.png
+    Received: test-results\visual-earn-tester-locked-route-at-laptop-visual\earn-tester-locked-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-locked-route-at-laptop-visual\error-context.md
+
+  28) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at desktop ───────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-locked-desktop (image/png) ──────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-locked-desktop-visual-win32.png
+    Received: test-results\visual-earn-tester-locked-route-at-desktop-visual\earn-tester-locked-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-locked-route-at-desktop-visual\error-context.md
+
+  29) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at mobile ─
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-paid-mobile (image/png) ────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-mobile-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-paid-route-at-mobile-visual\earn-tester-unlocked-paid-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-paid-route-at-mobile-visual\error-context.md
+
+  30) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at tablet ─
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-paid-tablet (image/png) ────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-tablet-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-paid-route-at-tablet-visual\earn-tester-unlocked-paid-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-paid-route-at-tablet-visual\error-context.md
+
+  31) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at laptop ─
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-paid-laptop (image/png) ────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-laptop-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-paid-route-at-laptop-visual\earn-tester-unlocked-paid-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-paid-route-at-laptop-visual\error-context.md
+
+  32) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at desktop 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-paid-desktop (image/png) ───────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-paid-desktop-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-paid-route-at-desktop-visual\earn-tester-unlocked-paid-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-paid-route-at-desktop-visual\error-context.md
+
+  33) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at mobile 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-empty-mobile (image/png) ───────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-mobile-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-empty-route-at-mobile-visual\earn-tester-unlocked-empty-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-empty-route-at-mobile-visual\error-context.md
+
+  34) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at tablet 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-empty-tablet (image/png) ───────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-tablet-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-empty-route-at-tablet-visual\earn-tester-unlocked-empty-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-empty-route-at-tablet-visual\error-context.md
+
+  35) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at laptop 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-empty-laptop (image/png) ───────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-laptop-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-empty-route-at-laptop-visual\earn-tester-unlocked-empty-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-empty-route-at-laptop-visual\error-context.md
+
+  36) [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at desktop 
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: earn-tester-unlocked-empty-desktop (image/png) ──────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tester-unlocked-empty-desktop-visual-win32.png
+    Received: test-results\visual-earn-tester-unlocked-empty-route-at-desktop-visual\earn-tester-unlocked-empty-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-tester-unlocked-empty-route-at-desktop-visual\error-context.md
+
+  37) [visual] › tests\playwright\visual.spec.ts:172:5 › share route at mobile ─────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 3374px, received 390px by 3350px. 35689 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: share-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(share-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 3374px, received 390px by 3350px. 35689 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 3374px, received 390px by 3350px. 35689 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: share-mobile (image/png) ────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\share-mobile-visual-win32.png
+    Received: test-results\visual-share-route-at-mobile-visual\share-mobile-actual.png
+    Diff:     test-results\visual-share-route-at-mobile-visual\share-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-share-route-at-mobile-visual\error-context.md
+
+  38) [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at mobile ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 1284px, received 390px by 1012px. 32912 pixels (ratio 0.07 of all image pixels) are different.
+
+      Snapshot: analytics-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(analytics-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 1284px, received 390px by 1012px. 32912 pixels (ratio 0.07 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 1284px, received 390px by 1012px. 32912 pixels (ratio 0.07 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: analytics-mobile (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\analytics-mobile-visual-win32.png
+    Received: test-results\visual-analytics-route-at-mobile-visual\analytics-mobile-actual.png
+    Diff:     test-results\visual-analytics-route-at-mobile-visual\analytics-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-analytics-route-at-mobile-visual\error-context.md
+
+  39) [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at tablet ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      21973 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: analytics-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(analytics-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - 21973 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - 21973 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: analytics-tablet (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\analytics-tablet-visual-win32.png
+    Received: test-results\visual-analytics-route-at-tablet-visual\analytics-tablet-actual.png
+    Diff:     test-results\visual-analytics-route-at-tablet-visual\analytics-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-analytics-route-at-tablet-visual\error-context.md
+
+  40) [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at laptop ─────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 1065px, received 1024px by 965px. 25336 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: analytics-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(analytics-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 1065px, received 1024px by 965px. 25336 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 1065px, received 1024px by 965px. 25336 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: analytics-laptop (image/png) ────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\analytics-laptop-visual-win32.png
+    Received: test-results\visual-analytics-route-at-laptop-visual\analytics-laptop-actual.png
+    Diff:     test-results\visual-analytics-route-at-laptop-visual\analytics-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-analytics-route-at-laptop-visual\error-context.md
+
+  41) [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at desktop ────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 1069px, received 1440px by 969px. 25336 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: analytics-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(analytics-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 1069px, received 1440px by 969px. 25336 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 1069px, received 1440px by 969px. 25336 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: analytics-desktop (image/png) ───────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\analytics-desktop-visual-win32.png
+    Received: test-results\visual-analytics-route-at-desktop-visual\analytics-desktop-actual.png
+    Diff:     test-results\visual-analytics-route-at-desktop-visual\analytics-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-analytics-route-at-desktop-visual\error-context.md
+
+  42) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at mobile ──────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 2477px, received 390px by 2374px. 29132 pixels (ratio 0.04 of all image pixels) are different.
+
+      Snapshot: test-session-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 2477px, received 390px by 2374px. 29132 pixels (ratio 0.04 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 2477px, received 390px by 2374px. 29132 pixels (ratio 0.04 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-mobile (image/png) ─────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-mobile-visual-win32.png
+    Received: test-results\visual-test-session-route-at-mobile-visual\test-session-mobile-actual.png
+    Diff:     test-results\visual-test-session-route-at-mobile-visual\test-session-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-route-at-mobile-visual\error-context.md
+
+  43) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at tablet ──────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1863px, received 768px by 1768px. 32093 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: test-session-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1863px, received 768px by 1768px. 32093 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1863px, received 768px by 1768px. 32093 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-tablet (image/png) ─────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-tablet-visual-win32.png
+    Received: test-results\visual-test-session-route-at-tablet-visual\test-session-tablet-actual.png
+    Diff:     test-results\visual-test-session-route-at-tablet-visual\test-session-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-route-at-tablet-visual\error-context.md
+
+  44) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at laptop ──────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 1755px, received 1024px by 1652px. 34840 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: test-session-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 1755px, received 1024px by 1652px. 34840 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 1755px, received 1024px by 1652px. 34840 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-laptop (image/png) ─────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-laptop-visual-win32.png
+    Received: test-results\visual-test-session-route-at-laptop-visual\test-session-laptop-actual.png
+    Diff:     test-results\visual-test-session-route-at-laptop-visual\test-session-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-route-at-laptop-visual\error-context.md
+
+  45) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at desktop ─────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 1755px, received 1440px by 1652px. 44656 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: test-session-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 1755px, received 1440px by 1652px. 44656 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 1755px, received 1440px by 1652px. 44656 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-desktop (image/png) ────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-desktop-visual-win32.png
+    Received: test-results\visual-test-session-route-at-desktop-visual\test-session-desktop-actual.png
+    Diff:     test-results\visual-test-session-route-at-desktop-visual\test-session-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-route-at-desktop-visual\error-context.md
+
+  46) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at mobile ────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 1242px, received 390px by 987px. 23572 pixels (ratio 0.05 of all image pixels) are different.
+
+      Snapshot: test-session-recording-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-recording-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 1242px, received 390px by 987px. 23572 pixels (ratio 0.05 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 1242px, received 390px by 987px. 23572 pixels (ratio 0.05 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-recording-mobile (image/png) ───────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-recording-mobile-visual-win32.png
+    Received: test-results\visual-test-session-recording-route-at-mobile-visual\test-session-recording-mobile-actual.png
+    Diff:     test-results\visual-test-session-recording-route-at-mobile-visual\test-session-recording-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-recording-route-at-mobile-visual\error-context.md
+
+  47) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at tablet ────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1030px, received 768px by 1024px. 22987 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: test-session-recording-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-recording-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1030px, received 768px by 1024px. 22987 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1030px, received 768px by 1024px. 22987 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-recording-tablet (image/png) ───────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-recording-tablet-visual-win32.png
+    Received: test-results\visual-test-session-recording-route-at-tablet-visual\test-session-recording-tablet-actual.png
+    Diff:     test-results\visual-test-session-recording-route-at-tablet-visual\test-session-recording-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-recording-route-at-tablet-visual\error-context.md
+
+  48) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at laptop ────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 1038px, received 1024px by 855px. 25342 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: test-session-recording-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-recording-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 1038px, received 1024px by 855px. 25342 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 1038px, received 1024px by 855px. 25342 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-recording-laptop (image/png) ───────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-recording-laptop-visual-win32.png
+    Received: test-results\visual-test-session-recording-route-at-laptop-visual\test-session-recording-laptop-actual.png
+    Diff:     test-results\visual-test-session-recording-route-at-laptop-visual\test-session-recording-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-recording-route-at-laptop-visual\error-context.md
+
+  49) [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at desktop ───
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 1038px, received 1440px by 900px. 25431 pixels (ratio 0.02 of all image pixels) are different.
+
+      Snapshot: test-session-recording-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(test-session-recording-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 1038px, received 1440px by 900px. 25431 pixels (ratio 0.02 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 1038px, received 1440px by 900px. 25431 pixels (ratio 0.02 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: test-session-recording-desktop (image/png) ──────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-session-recording-desktop-visual-win32.png
+    Received: test-results\visual-test-session-recording-route-at-desktop-visual\test-session-recording-desktop-actual.png
+    Diff:     test-results\visual-test-session-recording-route-at-desktop-visual\test-session-recording-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-session-recording-route-at-desktop-visual\error-context.md
+
+  50) [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at mobile ───────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\test-success-tester-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: test-success-tester-mobile (image/png) ──────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-success-tester-mobile-visual-win32.png
+    Received: test-results\visual-test-success-tester-route-at-mobile-visual\test-success-tester-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-success-tester-route-at-mobile-visual\error-context.md
+
+  51) [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at tablet ───────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\test-success-tester-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: test-success-tester-tablet (image/png) ──────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-success-tester-tablet-visual-win32.png
+    Received: test-results\visual-test-success-tester-route-at-tablet-visual\test-success-tester-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-success-tester-route-at-tablet-visual\error-context.md
+
+  52) [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at laptop ───────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\test-success-tester-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: test-success-tester-laptop (image/png) ──────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-success-tester-laptop-visual-win32.png
+    Received: test-results\visual-test-success-tester-route-at-laptop-visual\test-success-tester-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-success-tester-route-at-laptop-visual\error-context.md
+
+  53) [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at desktop ──────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\test-success-tester-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: test-success-tester-desktop (image/png) ─────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\test-success-tester-desktop-visual-win32.png
+    Received: test-results\visual-test-success-tester-route-at-desktop-visual\test-success-tester-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-test-success-tester-route-at-desktop-visual\error-context.md
+
+  54) [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at mobile ───────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 1399px, received 390px by 1273px. 54127 pixels (ratio 0.10 of all image pixels) are different.
+
+      Snapshot: profile-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(profile-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 1399px, received 390px by 1273px. 54127 pixels (ratio 0.10 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 1399px, received 390px by 1273px. 54127 pixels (ratio 0.10 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: profile-mobile (image/png) ──────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-mobile-visual-win32.png
+    Received: test-results\visual-profile-route-at-mobile-visual\profile-mobile-actual.png
+    Diff:     test-results\visual-profile-route-at-mobile-visual\profile-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-route-at-mobile-visual\error-context.md
+
+  55) [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at tablet ───────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1347px, received 768px by 1221px. 53585 pixels (ratio 0.06 of all image pixels) are different.
+
+      Snapshot: profile-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(profile-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1347px, received 768px by 1221px. 53585 pixels (ratio 0.06 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1347px, received 768px by 1221px. 53585 pixels (ratio 0.06 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: profile-tablet (image/png) ──────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-tablet-visual-win32.png
+    Received: test-results\visual-profile-route-at-tablet-visual\profile-tablet-actual.png
+    Diff:     test-results\visual-profile-route-at-tablet-visual\profile-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-route-at-tablet-visual\error-context.md
+
+  56) [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at laptop ───────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 1307px, received 1024px by 1221px. 58276 pixels (ratio 0.05 of all image pixels) are different.
+
+      Snapshot: profile-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(profile-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 1307px, received 1024px by 1221px. 58276 pixels (ratio 0.05 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 1307px, received 1024px by 1221px. 58276 pixels (ratio 0.05 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: profile-laptop (image/png) ──────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-laptop-visual-win32.png
+    Received: test-results\visual-profile-route-at-laptop-visual\profile-laptop-actual.png
+    Diff:     test-results\visual-profile-route-at-laptop-visual\profile-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-route-at-laptop-visual\error-context.md
+
+  57) [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at desktop ──────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 1307px, received 1440px by 1221px. 62369 pixels (ratio 0.04 of all image pixels) are different.
+
+      Snapshot: profile-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(profile-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 1307px, received 1440px by 1221px. 62369 pixels (ratio 0.04 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 1307px, received 1440px by 1221px. 62369 pixels (ratio 0.04 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: profile-desktop (image/png) ─────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-desktop-visual-win32.png
+    Received: test-results\visual-profile-route-at-desktop-visual\profile-desktop-actual.png
+    Diff:     test-results\visual-profile-route-at-desktop-visual\profile-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-route-at-desktop-visual\error-context.md
+
+  58) [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at mobile ────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\profile-tester-mobile-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: profile-tester-mobile (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-tester-mobile-visual-win32.png
+    Received: test-results\visual-profile-tester-route-at-mobile-visual\profile-tester-mobile-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-tester-route-at-mobile-visual\error-context.md
+
+  59) [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at tablet ────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\profile-tester-tablet-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: profile-tester-tablet (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-tester-tablet-visual-win32.png
+    Received: test-results\visual-profile-tester-route-at-tablet-visual\profile-tester-tablet-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-tester-route-at-tablet-visual\error-context.md
+
+  60) [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at laptop ────────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\profile-tester-laptop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: profile-tester-laptop (image/png) ───────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-tester-laptop-visual-win32.png
+    Received: test-results\visual-profile-tester-route-at-laptop-visual\profile-tester-laptop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-tester-route-at-laptop-visual\error-context.md
+
+  61) [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at desktop ───────────
+
+    Error: A snapshot doesn't exist at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts-snapshots\profile-tester-desktop-visual-win32.png, writing actual.
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |       ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:7
+
+    attachment #1: profile-tester-desktop (image/png) ──────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\profile-tester-desktop-visual-win32.png
+    Received: test-results\visual-profile-tester-route-at-desktop-visual\profile-tester-desktop-actual.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-profile-tester-route-at-desktop-visual\error-context.md
+
+  62) [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at mobile ────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 4674px, received 390px by 6961px. 226661 pixels (ratio 0.09 of all image pixels) are different.
+
+      Snapshot: not-found-fallback-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(not-found-fallback-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 4674px, received 390px by 6961px. 226620 pixels (ratio 0.09 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 4674px, received 390px by 6961px. 226661 pixels (ratio 0.09 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: not-found-fallback-mobile (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\not-found-fallback-mobile-visual-win32.png
+    Received: test-results\visual-not-found-fallback-route-at-mobile-visual\not-found-fallback-mobile-actual.png
+    Diff:     test-results\visual-not-found-fallback-route-at-mobile-visual\not-found-fallback-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-not-found-fallback-route-at-mobile-visual\error-context.md
+
+  63) [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at tablet ────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 4126px, received 768px by 7558px. 396649 pixels (ratio 0.07 of all image pixels) are different.
+
+      Snapshot: not-found-fallback-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(not-found-fallback-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 4126px, received 768px by 7558px. 398088 pixels (ratio 0.07 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 4126px, received 768px by 7558px. 396649 pixels (ratio 0.07 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: not-found-fallback-tablet (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\not-found-fallback-tablet-visual-win32.png
+    Received: test-results\visual-not-found-fallback-route-at-tablet-visual\not-found-fallback-tablet-actual.png
+    Diff:     test-results\visual-not-found-fallback-route-at-tablet-visual\not-found-fallback-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-not-found-fallback-route-at-tablet-visual\error-context.md
+
+  64) [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at laptop ────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 3142px, received 1024px by 5688px. 304535 pixels (ratio 0.06 of all image pixels) are different.
+
+      Snapshot: not-found-fallback-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(not-found-fallback-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 3142px, received 1024px by 5688px. 305379 pixels (ratio 0.06 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 3142px, received 1024px by 5688px. 304535 pixels (ratio 0.06 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: not-found-fallback-laptop (image/png) ───────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\not-found-fallback-laptop-visual-win32.png
+    Received: test-results\visual-not-found-fallback-route-at-laptop-visual\not-found-fallback-laptop-actual.png
+    Diff:     test-results\visual-not-found-fallback-route-at-laptop-visual\not-found-fallback-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-not-found-fallback-route-at-laptop-visual\error-context.md
+
+  65) [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at desktop ───────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 3220px, received 1440px by 5988px. 384109 pixels (ratio 0.05 of all image pixels) are different.
+
+      Snapshot: not-found-fallback-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(not-found-fallback-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 3220px, received 1440px by 5988px. 385463 pixels (ratio 0.05 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 3220px, received 1440px by 5988px. 384109 pixels (ratio 0.05 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: not-found-fallback-desktop (image/png) ──────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\not-found-fallback-desktop-visual-win32.png
+    Received: test-results\visual-not-found-fallback-route-at-desktop-visual\not-found-fallback-desktop-actual.png
+    Diff:     test-results\visual-not-found-fallback-route-at-desktop-visual\not-found-fallback-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-not-found-fallback-route-at-desktop-visual\error-context.md
+
+  65 failed
+    [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at mobile 
+    [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at tablet 
+    [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at laptop 
+    [visual] › tests\playwright\visual.spec.ts:154:5 › patterns-product--earn-test-card-contract at desktop 
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop ───────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at mobile ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at tablet ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at laptop ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-landing route at desktop ─────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at mobile ───────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at tablet ───────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at laptop ───────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › tester-signup route at desktop ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at mobile ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at tablet ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at laptop ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › blog-post route at desktop ──────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop ───────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at mobile ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at tablet ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at laptop ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-locked route at desktop ─────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at mobile ───
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at tablet ───
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at laptop ───
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-paid route at desktop ──
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at mobile ──
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at tablet ──
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at laptop ──
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn-tester-unlocked-empty route at desktop ─
+    [visual] › tests\playwright\visual.spec.ts:172:5 › share route at mobile ───────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at mobile ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at tablet ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at laptop ───────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › analytics route at desktop ──────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at mobile ────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at tablet ────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at laptop ────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session route at desktop ───────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at mobile ──────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at tablet ──────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at laptop ──────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-session-recording route at desktop ─────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at mobile ─────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at tablet ─────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at laptop ─────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › test-success-tester route at desktop ────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at mobile ─────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at tablet ─────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at laptop ─────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile route at desktop ────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at mobile ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at tablet ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at laptop ──────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › profile-tester route at desktop ─────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at mobile ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at tablet ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at laptop ──────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › not-found-fallback route at desktop ─────────
+  319 passed (3.5m)

@@ -24,17 +24,6 @@ import type { RecordingPreviewSummary } from "../types";
 import { AnalyticsTranscriptReport } from "./AnalyticsTranscriptReport";
 import styles from "./AnalyticsPage.module.css";
 
-function formatOffset(timestampMs: number | null) {
-  if (timestampMs === null) {
-    return null;
-  }
-
-  const totalSeconds = Math.max(0, Math.round(timestampMs / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
-
 interface PlaybackState {
   responseId: string;
   status: "loading" | "ready" | "error";
@@ -45,7 +34,6 @@ interface PlaybackState {
 function RecordingPreviewCard({
   preview,
   index,
-  recordingHref,
   playback,
   videoRef,
   onPlay,
@@ -54,7 +42,6 @@ function RecordingPreviewCard({
 }: {
   preview: RecordingPreviewSummary;
   index: number;
-  recordingHref: string;
   playback: PlaybackState | null;
   videoRef: RefObject<HTMLVideoElement | null>;
   onPlay: (preview: RecordingPreviewSummary, force?: boolean) => void;
@@ -62,7 +49,6 @@ function RecordingPreviewCard({
   onRetryThumbnail: (responseId: string) => void;
 }) {
   const isActive = playback?.responseId === preview.responseId;
-  const thumbnailOffset = formatOffset(preview.thumbnail?.timestampMs ?? null);
 
   return (
     <Card as="li" className={styles.recordingCard}>
@@ -129,37 +115,31 @@ function RecordingPreviewCard({
         ) : null}
       </div>
 
-      <Stack className={styles.recordingDetails} gap="xs">
-        <Link className={styles.recordingLink} to={recordingHref}>
-          Recording {index + 1}
-        </Link>
-        <span className={styles.recordingName}>{preview.productName}</span>
-        {thumbnailOffset ? (
-          <span className={styles.previewTime}>Preview from {thumbnailOffset}</span>
-        ) : null}
+      {preview.thumbnailStatus === "failed" || (isActive && playback?.error) ? (
+        <Stack className={styles.recordingAlerts} gap="xs">
+          {preview.thumbnailStatus === "failed" ? (
+            <Alert className={styles.cardAlert} title="Preview unavailable" tone="warning">
+              <Stack gap="xs">
+                <span>{preview.thumbnailError ?? "The recording can still be played."}</span>
+                <Button
+                  onClick={() => onRetryThumbnail(preview.responseId)}
+                  size="compact"
+                  type="button"
+                  variant="quiet"
+                >
+                  Retry preview
+                </Button>
+              </Stack>
+            </Alert>
+          ) : null}
 
-        {preview.thumbnailStatus === "failed" ? (
-          <Alert className={styles.cardAlert} title="Preview unavailable" tone="warning">
-            <Stack gap="xs">
-              <span>{preview.thumbnailError ?? "The recording can still be played."}</span>
-              <Button
-                onClick={() => onRetryThumbnail(preview.responseId)}
-                size="compact"
-                type="button"
-                variant="quiet"
-              >
-                Retry preview
-              </Button>
-            </Stack>
-          </Alert>
-        ) : null}
-
-        {isActive && playback?.error ? (
-          <Alert className={styles.cardAlert} title="Playback unavailable" tone="danger">
-            {playback.error}
-          </Alert>
-        ) : null}
-      </Stack>
+          {isActive && playback?.error ? (
+            <Alert className={styles.cardAlert} title="Playback unavailable" tone="danger">
+              {playback.error}
+            </Alert>
+          ) : null}
+        </Stack>
+      ) : null}
     </Card>
   );
 }
@@ -177,6 +157,21 @@ export function AnalyticsPage() {
     [fixtureMode, fixtureKey],
   );
   const [previews, setPreviews] = useState<RecordingPreviewSummary[]>(fixturePreviews);
+  const recordingGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { productName: string; recordings: (RecordingPreviewSummary & { index: number })[] }
+    >();
+    previews.forEach((preview, index) => {
+      const group = groups.get(preview.submissionId) ?? {
+        productName: preview.productName,
+        recordings: [],
+      };
+      group.recordings.push({ ...preview, index });
+      groups.set(preview.submissionId, group);
+    });
+    return [...groups];
+  }, [previews]);
   const [previewLoading, setPreviewLoading] = useState(!fixtureMode);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [playback, setPlayback] = useState<PlaybackState | null>(null);
@@ -319,14 +314,16 @@ export function AnalyticsPage() {
   return (
     <AppShell>
       <Stack className={styles.content} gap="xl">
-        <section aria-labelledby="analytics-recordings-heading">
+        <section aria-label="Recordings">
           <Stack gap="md">
-            <h2 className={styles.sectionHeading} id="analytics-recordings-heading">
-              <Link className={styles.sectionHeadingLink} to={recordingsHref}>
-                View recordings
-                <ArrowRight aria-hidden="true" size={20} />
-              </Link>
-            </h2>
+            {recordingGroups.length === 0 ? (
+              <h2 className={styles.sectionHeading}>
+                <Link className={styles.sectionHeadingLink} to={recordingsHref}>
+                  <span>View recordings</span>
+                  <ArrowRight aria-hidden="true" size={20} />
+                </Link>
+              </h2>
+            ) : null}
 
             {previewError ? (
               <Alert title="Recordings could not be loaded" tone="danger">
@@ -371,27 +368,46 @@ export function AnalyticsPage() {
                 ))}
               </Grid>
             ) : previews.length > 0 ? (
-              <Grid as="ul" className={styles.recordingGrid} gap="md">
-                {previews.map((preview, index) => (
-                  <RecordingPreviewCard
-                    index={index}
-                    key={preview.responseId}
-                    onPlay={handlePlay}
-                    onPlaybackError={(message) => {
-                      setPlayback((current) =>
-                        current && current.responseId === preview.responseId
-                          ? { ...current, status: "error", error: message }
-                          : current,
-                      );
-                    }}
-                    onRetryThumbnail={handleRetryThumbnail}
-                    playback={playback?.responseId === preview.responseId ? playback : null}
-                    preview={preview}
-                    recordingHref={buildRecordingHref(preview.responseId)}
-                    videoRef={videoRef}
-                  />
-                ))}
-              </Grid>
+              recordingGroups.map(([submissionId, group]) => (
+                <Stack gap="md" key={submissionId}>
+                  <h2 className={styles.sectionHeading}>
+                    <Link
+                      className={styles.sectionHeadingLink}
+                      to={
+                        recordingGroups.length === 1
+                          ? recordingsHref
+                          : buildRecordingHref(group.recordings[0].responseId)
+                      }
+                    >
+                      <span>
+                        View {group.productName}'s{" "}
+                        {group.recordings.length === 1 ? "recording" : "recordings"}
+                      </span>
+                      <ArrowRight aria-hidden="true" size={20} />
+                    </Link>
+                  </h2>
+                  <Grid as="ul" className={styles.recordingGrid} gap="md">
+                    {group.recordings.map((preview) => (
+                      <RecordingPreviewCard
+                        index={preview.index}
+                        key={preview.responseId}
+                        onPlay={handlePlay}
+                        onPlaybackError={(message) => {
+                          setPlayback((current) =>
+                            current && current.responseId === preview.responseId
+                              ? { ...current, status: "error", error: message }
+                              : current,
+                          );
+                        }}
+                        onRetryThumbnail={handleRetryThumbnail}
+                        playback={playback?.responseId === preview.responseId ? playback : null}
+                        preview={preview}
+                        videoRef={videoRef}
+                      />
+                    ))}
+                  </Grid>
+                </Stack>
+              ))
             ) : null}
           </Stack>
         </section>

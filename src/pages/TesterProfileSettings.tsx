@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { LogOut, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -51,14 +51,8 @@ const paymentMethods: Array<{ key: PaymentField; label: string; placeholder: str
 
 export function TesterProfileSettings() {
   const navigate = useNavigate();
-  const {
-    currentUser,
-    updateTesterProfile,
-    changeEmail,
-    updatePaymentMethods,
-    signOut,
-    deleteAccount,
-  } = useAppState();
+  const { currentUser, updateTesterProfile, changeEmail, updatePaymentMethods, deleteAccount } =
+    useAppState();
   const testerProfile = currentUser?.testerProfile ?? null;
   const [draft, setDraft] = useState<TesterProfileDraft>(() =>
     testerProfile
@@ -99,7 +93,6 @@ export function TesterProfileSettings() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [isSavingPayments, setIsSavingPayments] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState("");
@@ -189,12 +182,6 @@ export function TesterProfileSettings() {
     } finally {
       setIsSavingPayments(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await signOut();
-    navigate("/get-paid-to-test", { replace: true });
   };
 
   const handleDelete = async () => {
@@ -399,16 +386,6 @@ export function TesterProfileSettings() {
               <h2>Email and account</h2>
               <p>Use this email to sign in and receive account messages.</p>
             </div>
-            <Button
-              type="button"
-              variant="quiet"
-              onClick={() => void handleSignOut()}
-              loading={isSigningOut}
-              loadingLabel="Signing out"
-            >
-              <LogOut aria-hidden="true" size={16} />
-              Sign out
-            </Button>
           </div>
           <div className={styles.inlineForm}>
             <TextField

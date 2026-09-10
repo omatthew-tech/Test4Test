@@ -1,0 +1,371 @@
+
+> test4test@0.1.0 ds:check
+> npm run ds:check:release
+
+
+> test4test@0.1.0 ds:check:release
+> npm run format:check && npm run lint && npm run typecheck && npm run ds:validate && npm run test && npm run ds:a11y && npm run ds:visual && npm run build
+
+
+> test4test@0.1.0 format:check
+> prettier --check "design-system/**/*.{ts,tsx,css,json,md}" "src/**/*.{ts,tsx,css}" ".storybook/**/*.{ts,tsx}" "tests/**/*.{ts,tsx,json}" "scripts/**/*.{mjs,ts}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> test4test@0.1.0 lint
+> eslint src design-system .storybook tests scripts
+
+
+C:\Projects\Test4Test-Redesign\src\pages\AdminPage.tsx
+  142:6  warning  React Hook useEffect has a missing dependency: 'loadReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\EarnPage.tsx
+   616:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+   654:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+   717:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'visibilitySummary'. Either include them or remove the dependency array            react-hooks/exhaustive-deps
+   742:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'defaultSelectedProductTypes'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   802:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'selectedProductTypes'. Either include them or remove the dependency array         react-hooks/exhaustive-deps
+   838:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+   997:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+  1025:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\ReviseSubmissionPage.tsx
+  132:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'response'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  162:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'response'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  206:6  warning  React Hook useEffect has a missing dependency: 'response'. Either include it or remove the dependency array                      react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\SubmissionsPage.tsx
+  162:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\TestSessionPage.tsx
+   906:6  warning  React Hook useEffect has a missing dependency: 'submission'. Either include it or remove the dependency array                                                   react-hooks/exhaustive-deps
+  2616:6  warning  React Hook useEffect has missing dependencies: 'draftIdentity' and 'questionSet'. Either include them or remove the dependency array                            react-hooks/exhaustive-deps
+  2669:6  warning  React Hook useEffect has missing dependencies: 'buildDraftInput', 'draftIdentity', and 'questionSet'. Either include them or remove the dependency array        react-hooks/exhaustive-deps
+  2743:6  warning  React Hook useEffect has a missing dependency: 'stopMicrophonePreviewStream'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
+  2783:6  warning  React Hook useEffect has missing dependencies: 'closeRecordingPipWindow' and 'renderRecordingPipWindow'. Either include them or remove the dependency array     react-hooks/exhaustive-deps
+  2908:6  warning  React Hook useEffect has missing dependencies: 'cleanupActiveCaptureStreams' and 'closeRecordingPipWindow'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 19 problems (0 errors, 19 warnings)
+
+
+> test4test@0.1.0 typecheck
+> tsc
+
+
+> test4test@0.1.0 ds:validate
+> node scripts/validate-design-system.mjs
+
+Validated 274 tokens, 51 components and Storybook coverage contracts, 58 UI files, 30 route states, schemas, documentation, static brand artifacts, exceptions, and public imports.
+
+> test4test@0.1.0 test
+> vitest run --project unit
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+
+ Test Files  10 passed (10)
+      Tests  61 passed (61)
+   Start at  19:55:50
+   Duration  3.23s (transform 1.03s, setup 0ms, import 1.61s, tests 5.19s, environment 20.41s)
+
+
+> test4test@0.1.0 ds:a11y
+> npm run test:components && node scripts/run-playwright.mjs a11y
+
+
+> test4test@0.1.0 test:components
+> vitest run --project storybook
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+
+ Test Files  8 passed (8)
+      Tests  71 passed (71)
+   Start at  19:55:57
+   Duration  7.32s (transform 0ms, setup 20.26s, import 1.99s, tests 11.20s, environment 0ms)
+
+
+Running 175 tests using 1 worker
+
+(node:4112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   1 [a11y] › tests\playwright\a11y.spec.ts:57:3 › home has no automatically detectable WCAG A or AA violations (1.0s)
+  ok   2 [a11y] › tests\playwright\a11y.spec.ts:57:3 › sign-in has no automatically detectable WCAG A or AA violations (1.4s)
+  ok   3 [a11y] › tests\playwright\a11y.spec.ts:57:3 › submit-test has no automatically detectable WCAG A or AA violations (1.4s)
+  ok   4 [a11y] › tests\playwright\a11y.spec.ts:57:3 › verify has no automatically detectable WCAG A or AA violations (1.4s)
+  ok   5 [a11y] › tests\playwright\a11y.spec.ts:57:3 › tester-landing has no automatically detectable WCAG A or AA violations (995ms)
+  ok   6 [a11y] › tests\playwright\a11y.spec.ts:57:3 › tester-signup has no automatically detectable WCAG A or AA violations (956ms)
+  ok   7 [a11y] › tests\playwright\a11y.spec.ts:57:3 › blog has no automatically detectable WCAG A or AA violations (1.1s)
+  ok   8 [a11y] › tests\playwright\a11y.spec.ts:57:3 › blog-post has no automatically detectable WCAG A or AA violations (1.2s)
+  ok   9 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  10 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-locked has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  11 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-unlocked-paid has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  12 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-unlocked-empty has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  13 [a11y] › tests\playwright\a11y.spec.ts:57:3 › share has no automatically detectable WCAG A or AA violations (1.1s)
+  ok  14 [a11y] › tests\playwright\a11y.spec.ts:57:3 › analytics has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  15 [a11y] › tests\playwright\a11y.spec.ts:57:3 › recording-view has no automatically detectable WCAG A or AA violations (968ms)
+  ok  16 [a11y] › tests\playwright\a11y.spec.ts:57:3 › email-preview has no automatically detectable WCAG A or AA violations (965ms)
+  ok  17 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-session has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  18 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-session-recording has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  19 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-success has no automatically detectable WCAG A or AA violations (975ms)
+  ok  20 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-success-tester has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  21 [a11y] › tests\playwright\a11y.spec.ts:57:3 › submissions has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  22 [a11y] › tests\playwright\a11y.spec.ts:57:3 › revise-response has no automatically detectable WCAG A or AA violations (1.1s)
+  ok  23 [a11y] › tests\playwright\a11y.spec.ts:57:3 › credits has no automatically detectable WCAG A or AA violations (932ms)
+  ok  24 [a11y] › tests\playwright\a11y.spec.ts:57:3 › profile has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  25 [a11y] › tests\playwright\a11y.spec.ts:57:3 › profile-tester has no automatically detectable WCAG A or AA violations (1.1s)
+  ok  26 [a11y] › tests\playwright\a11y.spec.ts:57:3 › admin has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  27 [a11y] › tests\playwright\a11y.spec.ts:57:3 › banned has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  28 [a11y] › tests\playwright\a11y.spec.ts:57:3 › not-found-fallback has no automatically detectable WCAG A or AA violations (857ms)
+  ok  29 [a11y] › tests\playwright\a11y.spec.ts:72:3 › home reflows at 320 CSS pixels (376ms)
+  ok  30 [a11y] › tests\playwright\a11y.spec.ts:82:3 › home supports 200% text enlargement (362ms)
+  ok  31 [a11y] › tests\playwright\a11y.spec.ts:95:3 › home supports forced colors and reduced motion (313ms)
+  ok  32 [a11y] › tests\playwright\a11y.spec.ts:72:3 › sign-in reflows at 320 CSS pixels (1.1s)
+  ok  33 [a11y] › tests\playwright\a11y.spec.ts:82:3 › sign-in supports 200% text enlargement (601ms)
+  ok  34 [a11y] › tests\playwright\a11y.spec.ts:95:3 › sign-in supports forced colors and reduced motion (1.1s)
+  ok  35 [a11y] › tests\playwright\a11y.spec.ts:72:3 › submit-test reflows at 320 CSS pixels (581ms)
+  ok  36 [a11y] › tests\playwright\a11y.spec.ts:82:3 › submit-test supports 200% text enlargement (630ms)
+  ok  37 [a11y] › tests\playwright\a11y.spec.ts:95:3 › submit-test supports forced colors and reduced motion (1.1s)
+  ok  38 [a11y] › tests\playwright\a11y.spec.ts:72:3 › verify reflows at 320 CSS pixels (1.1s)
+  ok  39 [a11y] › tests\playwright\a11y.spec.ts:82:3 › verify supports 200% text enlargement (580ms)
+  ok  40 [a11y] › tests\playwright\a11y.spec.ts:95:3 › verify supports forced colors and reduced motion (1.1s)
+  ok  41 [a11y] › tests\playwright\a11y.spec.ts:72:3 › tester-landing reflows at 320 CSS pixels (1.1s)
+  ok  42 [a11y] › tests\playwright\a11y.spec.ts:82:3 › tester-landing supports 200% text enlargement (668ms)
+  ok  43 [a11y] › tests\playwright\a11y.spec.ts:95:3 › tester-landing supports forced colors and reduced motion (637ms)
+  ok  44 [a11y] › tests\playwright\a11y.spec.ts:72:3 › tester-signup reflows at 320 CSS pixels (1.1s)
+  ok  45 [a11y] › tests\playwright\a11y.spec.ts:82:3 › tester-signup supports 200% text enlargement (614ms)
+  ok  46 [a11y] › tests\playwright\a11y.spec.ts:95:3 › tester-signup supports forced colors and reduced motion (1.1s)
+  ok  47 [a11y] › tests\playwright\a11y.spec.ts:72:3 › blog reflows at 320 CSS pixels (578ms)
+  ok  48 [a11y] › tests\playwright\a11y.spec.ts:82:3 › blog supports 200% text enlargement (656ms)
+  ok  49 [a11y] › tests\playwright\a11y.spec.ts:95:3 › blog supports forced colors and reduced motion (574ms)
+  ok  50 [a11y] › tests\playwright\a11y.spec.ts:72:3 › blog-post reflows at 320 CSS pixels (594ms)
+  ok  51 [a11y] › tests\playwright\a11y.spec.ts:82:3 › blog-post supports 200% text enlargement (658ms)
+  ok  52 [a11y] › tests\playwright\a11y.spec.ts:95:3 › blog-post supports forced colors and reduced motion (579ms)
+  ok  53 [a11y] › tests\playwright\a11y.spec.ts:72:3 › earn reflows at 320 CSS pixels (1.1s)
+  ok  54 [a11y] › tests\playwright\a11y.spec.ts:82:3 › earn supports 200% text enlargement (652ms)
+  ok  55 [a11y] › tests\playwright\a11y.spec.ts:95:3 › earn supports forced colors and reduced motion (1.1s)
+  ok  56 [a11y] › tests\playwright\a11y.spec.ts:72:3 › earn-tester-locked reflows at 320 CSS pixels (591ms)
+  ok  57 [a11y] › tests\playwright\a11y.spec.ts:82:3 › earn-tester-locked supports 200% text enlargement (614ms)
+  ok  58 [a11y] › tests\playwright\a11y.spec.ts:95:3 › earn-tester-locked supports forced colors and reduced motion (614ms)
+  ok  59 [a11y] › tests\playwright\a11y.spec.ts:72:3 › earn-tester-unlocked-paid reflows at 320 CSS pixels (1.1s)
+  ok  60 [a11y] › tests\playwright\a11y.spec.ts:82:3 › earn-tester-unlocked-paid supports 200% text enlargement (607ms)
+  ok  61 [a11y] › tests\playwright\a11y.spec.ts:95:3 › earn-tester-unlocked-paid supports forced colors and reduced motion (1.1s)
+  ok  62 [a11y] › tests\playwright\a11y.spec.ts:72:3 › earn-tester-unlocked-empty reflows at 320 CSS pixels (1.1s)
+  ok  63 [a11y] › tests\playwright\a11y.spec.ts:82:3 › earn-tester-unlocked-empty supports 200% text enlargement (597ms)
+  ok  64 [a11y] › tests\playwright\a11y.spec.ts:95:3 › earn-tester-unlocked-empty supports forced colors and reduced motion (1.1s)
+  ok  65 [a11y] › tests\playwright\a11y.spec.ts:72:3 › share reflows at 320 CSS pixels (662ms)
+  ok  66 [a11y] › tests\playwright\a11y.spec.ts:82:3 › share supports 200% text enlargement (622ms)
+  ok  67 [a11y] › tests\playwright\a11y.spec.ts:95:3 › share supports forced colors and reduced motion (1.1s)
+  ok  68 [a11y] › tests\playwright\a11y.spec.ts:72:3 › analytics reflows at 320 CSS pixels (1.1s)
+  ok  69 [a11y] › tests\playwright\a11y.spec.ts:82:3 › analytics supports 200% text enlargement (596ms)
+  ok  70 [a11y] › tests\playwright\a11y.spec.ts:95:3 › analytics supports forced colors and reduced motion (1.1s)
+  ok  71 [a11y] › tests\playwright\a11y.spec.ts:72:3 › recording-view reflows at 320 CSS pixels (1.1s)
+  ok  72 [a11y] › tests\playwright\a11y.spec.ts:82:3 › recording-view supports 200% text enlargement (597ms)
+  ok  73 [a11y] › tests\playwright\a11y.spec.ts:95:3 › recording-view supports forced colors and reduced motion (1.1s)
+  ok  74 [a11y] › tests\playwright\a11y.spec.ts:72:3 › email-preview reflows at 320 CSS pixels (1.1s)
+  ok  75 [a11y] › tests\playwright\a11y.spec.ts:82:3 › email-preview supports 200% text enlargement (619ms)
+  ok  76 [a11y] › tests\playwright\a11y.spec.ts:95:3 › email-preview supports forced colors and reduced motion (1.1s)
+  ok  77 [a11y] › tests\playwright\a11y.spec.ts:72:3 › test-session reflows at 320 CSS pixels (1.1s)
+  ok  78 [a11y] › tests\playwright\a11y.spec.ts:82:3 › test-session supports 200% text enlargement (626ms)
+  ok  79 [a11y] › tests\playwright\a11y.spec.ts:95:3 › test-session supports forced colors and reduced motion (1.1s)
+  ok  80 [a11y] › tests\playwright\a11y.spec.ts:72:3 › test-session-recording reflows at 320 CSS pixels (1.1s)
+  ok  81 [a11y] › tests\playwright\a11y.spec.ts:82:3 › test-session-recording supports 200% text enlargement (632ms)
+  ok  82 [a11y] › tests\playwright\a11y.spec.ts:95:3 › test-session-recording supports forced colors and reduced motion (1.1s)
+  ok  83 [a11y] › tests\playwright\a11y.spec.ts:72:3 › test-success reflows at 320 CSS pixels (1.1s)
+  ok  84 [a11y] › tests\playwright\a11y.spec.ts:82:3 › test-success supports 200% text enlargement (618ms)
+  ok  85 [a11y] › tests\playwright\a11y.spec.ts:95:3 › test-success supports forced colors and reduced motion (1.1s)
+  ok  86 [a11y] › tests\playwright\a11y.spec.ts:72:3 › test-success-tester reflows at 320 CSS pixels (586ms)
+  ok  87 [a11y] › tests\playwright\a11y.spec.ts:82:3 › test-success-tester supports 200% text enlargement (630ms)
+  ok  88 [a11y] › tests\playwright\a11y.spec.ts:95:3 › test-success-tester supports forced colors and reduced motion (1.1s)
+  ok  89 [a11y] › tests\playwright\a11y.spec.ts:72:3 › submissions reflows at 320 CSS pixels (1.1s)
+  ok  90 [a11y] › tests\playwright\a11y.spec.ts:82:3 › submissions supports 200% text enlargement (624ms)
+  ok  91 [a11y] › tests\playwright\a11y.spec.ts:95:3 › submissions supports forced colors and reduced motion (1.1s)
+  ok  92 [a11y] › tests\playwright\a11y.spec.ts:72:3 › revise-response reflows at 320 CSS pixels (1.1s)
+  ok  93 [a11y] › tests\playwright\a11y.spec.ts:82:3 › revise-response supports 200% text enlargement (611ms)
+  ok  94 [a11y] › tests\playwright\a11y.spec.ts:95:3 › revise-response supports forced colors and reduced motion (1.1s)
+  ok  95 [a11y] › tests\playwright\a11y.spec.ts:72:3 › credits reflows at 320 CSS pixels (1.1s)
+  ok  96 [a11y] › tests\playwright\a11y.spec.ts:82:3 › credits supports 200% text enlargement (637ms)
+  ok  97 [a11y] › tests\playwright\a11y.spec.ts:95:3 › credits supports forced colors and reduced motion (591ms)
+  ok  98 [a11y] › tests\playwright\a11y.spec.ts:72:3 › profile reflows at 320 CSS pixels (1.1s)
+  ok  99 [a11y] › tests\playwright\a11y.spec.ts:82:3 › profile supports 200% text enlargement (674ms)
+  ok 100 [a11y] › tests\playwright\a11y.spec.ts:95:3 › profile supports forced colors and reduced motion (598ms)
+  ok 101 [a11y] › tests\playwright\a11y.spec.ts:72:3 › profile-tester reflows at 320 CSS pixels (649ms)
+  ok 102 [a11y] › tests\playwright\a11y.spec.ts:82:3 › profile-tester supports 200% text enlargement (629ms)
+  ok 103 [a11y] › tests\playwright\a11y.spec.ts:95:3 › profile-tester supports forced colors and reduced motion (1.1s)
+  ok 104 [a11y] › tests\playwright\a11y.spec.ts:72:3 › admin reflows at 320 CSS pixels (1.1s)
+  ok 105 [a11y] › tests\playwright\a11y.spec.ts:82:3 › admin supports 200% text enlargement (619ms)
+  ok 106 [a11y] › tests\playwright\a11y.spec.ts:95:3 › admin supports forced colors and reduced motion (1.1s)
+  ok 107 [a11y] › tests\playwright\a11y.spec.ts:72:3 › banned reflows at 320 CSS pixels (615ms)
+  ok 108 [a11y] › tests\playwright\a11y.spec.ts:82:3 › banned supports 200% text enlargement (605ms)
+  ok 109 [a11y] › tests\playwright\a11y.spec.ts:95:3 › banned supports forced colors and reduced motion (1.1s)
+  ok 110 [a11y] › tests\playwright\a11y.spec.ts:72:3 › not-found-fallback reflows at 320 CSS pixels (351ms)
+  ok 111 [a11y] › tests\playwright\a11y.spec.ts:82:3 › not-found-fallback supports 200% text enlargement (373ms)
+  ok 112 [a11y] › tests\playwright\a11y.spec.ts:95:3 › not-found-fallback supports forced colors and reduced motion (350ms)
+  ok 113 [a11y] › tests\playwright\a11y.spec.ts:102:1 › home preserves visible keyboard focus (382ms)
+  ok 114 [a11y] › tests\playwright\a11y.spec.ts:117:1 › mobile navigation closes with Escape and restores focus (433ms)
+  ok 115 [a11y] › tests\playwright\a11y.spec.ts:128:1 › account dialog traps focus, closes with Escape, and restores focus (1.1s)
+  ok 116 [a11y] › tests\playwright\journeys.spec.ts:21:1 › selected Get paid to test navigation returns to the home page (1.2s)
+  ok 117 [a11y] › tests\playwright\journeys.spec.ts:39:1 › home starts a named submission without losing the draft (524ms)
+  x  118 [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 1440px (5.4s)
+(node:32000) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  119 [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 390px (5.4s)
+(node:26092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  120 [a11y] › tests\playwright\journeys.spec.ts:102:1 › home managed recruitment follows the free-feedback showcase and uses animated media (5.3s)
+(node:21068) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 121 [a11y] › tests\playwright\journeys.spec.ts:137:1 › home managed recruitment uses static posters for reduced motion (370ms)
+  ok 122 [a11y] › tests\playwright\journeys.spec.ts:148:1 › home Trusted by section shows six Earn cards in an accessible horizontal loop (976ms)
+  ok 123 [a11y] › tests\playwright\journeys.spec.ts:223:1 › home Trusted by section becomes a static scroller for reduced motion (442ms)
+  ok 124 [a11y] › tests\playwright\journeys.spec.ts:241:1 › home Trusted by logos fall back to initials without changing card geometry or links (672ms)
+  ok 125 [a11y] › tests\playwright\journeys.spec.ts:264:1 › home Trusted by long titles fit beside logos and keep equal card heights (599ms)
+  ok 126 [a11y] › tests\playwright\journeys.spec.ts:292:1 › home hover feedback pauses before continuing without repeating while hovered (3.6s)
+  ok 127 [a11y] › tests\playwright\journeys.spec.ts:538:1 › home hover feedback stays outside the centered hero content (1.7s)
+  ok 128 [a11y] › tests\playwright\journeys.spec.ts:577:1 › home hover feedback stays inactive while the page is scrolled (1.7s)
+  ok 129 [a11y] › tests\playwright\journeys.spec.ts:605:1 › home hover feedback ignores touch-like and pen pointer entry (606ms)
+  ok 130 [a11y] › tests\playwright\journeys.spec.ts:636:1 › home hover feedback is suppressed for reduced motion (615ms)
+  ok 131 [a11y] › tests\playwright\journeys.spec.ts:654:1 › public audience selection reaches the tester landing route (459ms)
+  ok 132 [a11y] › tests\playwright\journeys.spec.ts:666:1 › test-account sign-in exposes the passcode state and recovery path (745ms)
+  ok 133 [a11y] › tests\playwright\journeys.spec.ts:700:1 › submission wizard uses three input steps and an unnumbered review (4.7s)
+  ok 134 [a11y] › tests\playwright\journeys.spec.ts:852:1 › legacy submission drafts migrate to the first missing three-step stage (1.1s)
+  ok 135 [a11y] › tests\playwright\journeys.spec.ts:906:1 › Earn edit deep links open owned paused apps and clean the URL after close or save (2.2s)
+  ok 136 [a11y] › tests\playwright\journeys.spec.ts:928:1 › Earn edit switches among owned tests and protects unsaved changes (1.9s)
+  ok 137 [a11y] › tests\playwright\journeys.spec.ts:1005:1 › Earn edit deep links reject missing or unauthorized apps and require sign in (3.0s)
+  ok 138 [a11y] › tests\playwright\journeys.spec.ts:1023:1 › Share page saves, resets, copies, and previews the current live test (1.6s)
+  ok 139 [a11y] › tests\playwright\journeys.spec.ts:1085:1 › Share page explains clipboard failure without hiding the manual link (1.1s)
+  ok 140 [a11y] › tests\playwright\journeys.spec.ts:1107:1 › Share page redirects guests and guides members without a live test (1.3s)
+  ok 141 [a11y] › tests\playwright\journeys.spec.ts:1121:1 › Analytics is authenticated, follows Share in navigation, and exports transcripts (830ms)
+  ok 142 [a11y] › tests\playwright\journeys.spec.ts:1169:1 › Analytics exposes report actions and its empty state (2.1s)
+  ok 143 [a11y] › tests\playwright\journeys.spec.ts:1190:1 › Recording view opens the latest video and browses available recordings (878ms)
+  ok 144 [a11y] › tests\playwright\journeys.spec.ts:1223:1 › Recording view normalizes invalid selections and exposes empty and error states (2.6s)
+  ok 145 [a11y] › tests\playwright\journeys.spec.ts:1244:1 › Recording view redirects guests with the complete return URL (313ms)
+  ok 146 [a11y] › tests\playwright\journeys.spec.ts:1251:1 › Analytics redirects guests to sign in and stays out of guest navigation (483ms)
+  ok 147 [a11y] › tests\playwright\journeys.spec.ts:1266:1 › Earn platform preferences expose named checkbox choices and save accessibly (1.2s)
+  ok 148 [a11y] › tests\playwright\journeys.spec.ts:1290:1 › legacy My Feedback URLs redirect to supported destinations and preserve queries (617ms)
+  ok 149 [a11y] › tests\playwright\journeys.spec.ts:1312:1 › recording permission denial provides recovery guidance and keeps start disabled (1.2s)
+  ok 150 [a11y] › tests\playwright\journeys.spec.ts:1345:1 › test report dialog is keyboard-dismissible and restores focus (1.2s)
+  ok 151 [a11y] › tests\playwright\journeys.spec.ts:1357:1 › admin decisions require an explicit confirmation and support cancel (1.2s)
+  ok 152 [a11y] › tests\playwright\journeys.spec.ts:1367:1 › email previews expose every required transactional state (1.1s)
+  ok 153 [a11y] › tests\playwright\journeys.spec.ts:1377:1 › tester signup validates each step and exposes technology help to keyboard users (1.6s)
+  ok 154 [a11y] › tests\playwright\journeys.spec.ts:1431:1 › tester role routing exposes only Earn, Profile, and test routes (1.8s)
+  ok 155 [a11y] › tests\playwright\journeys.spec.ts:1450:1 › tester Earn separates locked progress from unlocked paid availability (3.0s)
+  ok 156 [a11y] › tests\playwright\microphone-journeys.spec.ts:238:1 › floating recorder starts, pauses, resumes, and finalizes capture (7.6s)
+  ok 157 [a11y] › tests\playwright\microphone-journeys.spec.ts:498:1 › upload recovery disclosure preserves focus and downloads a backup without stopping upload (1.3s)
+  ok 158 [a11y] › tests\playwright\microphone-journeys.spec.ts:660:1 › failed automatic upload exposes manual backup upload on the test page (970ms)
+  ok 159 [a11y] › tests\playwright\microphone-journeys.spec.ts:696:3 › tester tasks advance in sync with a ready state before each recording segment at mobile (2.2s)
+  ok 160 [a11y] › tests\playwright\microphone-journeys.spec.ts:696:3 › tester tasks advance in sync with a ready state before each recording segment at desktop (2.8s)
+  ok 161 [a11y] › tests\playwright\microphone-journeys.spec.ts:951:3 › microphone check unlocks screen sharing at mobile (906ms)
+  ok 162 [a11y] › tests\playwright\microphone-journeys.spec.ts:951:3 › microphone check unlocks screen sharing at desktop (1.4s)
+  ok 163 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:18:5 › profile dropdown at 1440 › groups destinations and navigates, including the current route (3.4s)
+  ok 164 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:63:5 › profile dropdown at 1440 › supports keyboard movement, dismissal, and nested Escape (1.2s)
+  ok 165 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:100:5 › profile dropdown at 1440 › preserves tester restrictions and guest navigation (2.0s)
+  ok 166 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:18:5 › profile dropdown at 390 › groups destinations and navigates, including the current route (2.6s)
+  ok 167 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:63:5 › profile dropdown at 390 › supports keyboard movement, dismissal, and nested Escape (760ms)
+  ok 168 [a11y] › tests\playwright\profile-menu.journeys.spec.ts:100:5 › profile dropdown at 390 › preserves tester restrictions and guest navigation (2.1s)
+  ok 169 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:22:1 › Transcript report preview, clipboard, and UTF-8 download contain identical text (4.2s)
+  ok 170 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:48:1 › Transcript report permits partial exports and retries only failed transcripts (1.2s)
+  ok 171 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:65:1 › Transcript report waits for preparation but exports completed silent recordings (2.1s)
+  ok 172 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:79:1 › Transcript report offers a focused manual-copy fallback (635ms)
+  ok 173 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:104:1 › Transcript report switches app scope and clears previous preview state (1.2s)
+  ok 174 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:124:3 › Transcript report reflows and is accessible at mobile (1.6s)
+  ok 175 [a11y] › tests\playwright\transcript-reports.journeys.spec.ts:124:3 › Transcript report reflows and is accessible at desktop (1.7s)
+
+
+  1) [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 1440px 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('free-feedback-section').getByRole('heading', { level: 2 })
+    Timeout: 5000ms
+    - Expected  - 2
+    + Received  + 1
+
+      Array [
+    -   "Test other founders",
+    -   "Bring your own testers",
+    +   "2 paid free ways to get feedback",
+      ]
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for getByTestId('free-feedback-section').getByRole('heading', { level: 2 })
+        14 × locator resolved to 1 element
+
+
+      62 |     const methods = section.getByRole("article");
+      63 |     await expect(methods).toHaveCount(2);
+    > 64 |     await expect(section.getByRole("heading", { level: 2 })).toHaveText([
+         |                                                              ^
+      65 |       "Test other founders",
+      66 |       "Bring your own testers",
+      67 |     ]);
+        at C:\Projects\Test4Test-Redesign\tests\playwright\journeys.spec.ts:64:62
+
+    Error Context: test-results\journeys-home-free-feedbac-d1194-isible-and-reflow-at-1440px-a11y\error-context.md
+
+  2) [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 390px 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('free-feedback-section').getByRole('heading', { level: 2 })
+    Timeout: 5000ms
+    - Expected  - 2
+    + Received  + 1
+
+      Array [
+    -   "Test other founders",
+    -   "Bring your own testers",
+    +   "2 paid free ways to get feedback",
+      ]
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for getByTestId('free-feedback-section').getByRole('heading', { level: 2 })
+        14 × locator resolved to 1 element
+
+
+      62 |     const methods = section.getByRole("article");
+      63 |     await expect(methods).toHaveCount(2);
+    > 64 |     await expect(section.getByRole("heading", { level: 2 })).toHaveText([
+         |                                                              ^
+      65 |       "Test other founders",
+      66 |       "Bring your own testers",
+      67 |     ]);
+        at C:\Projects\Test4Test-Redesign\tests\playwright\journeys.spec.ts:64:62
+
+    Error Context: test-results\journeys-home-free-feedbac-e426f-visible-and-reflow-at-390px-a11y\error-context.md
+
+  3) [a11y] › tests\playwright\journeys.spec.ts:102:1 › home managed recruitment follows the free-feedback showcase and uses animated media 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('home-managed-recruitment-section').getByRole('heading', { name: 'Most platforms give you tools. We go find the people.', level: 2 })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByTestId('home-managed-recruitment-section').getByRole('heading', { name: 'Most platforms give you tools. We go find the people.', level: 2 })
+
+
+      116 |       name: "Most platforms give you tools. We go find the people.",
+      117 |     }),
+    > 118 |   ).toBeVisible();
+          |     ^
+      119 |   await expect(managedSection.getByRole("heading", { level: 3 })).toHaveCount(2);
+      120 |   await expect(
+      121 |     managedSection.getByRole("button", { name: "Explore managed testing" }),
+        at C:\Projects\Test4Test-Redesign\tests\playwright\journeys.spec.ts:118:5
+
+    Error Context: test-results\journeys-home-managed-recr-2730c-ase-and-uses-animated-media-a11y\error-context.md
+
+  3 failed
+    [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 1440px 
+    [a11y] › tests\playwright\journeys.spec.ts:54:3 › home free-feedback methods stay visible and reflow at 390px 
+    [a11y] › tests\playwright\journeys.spec.ts:102:1 › home managed recruitment follows the free-feedback showcase and uses animated media 
+  172 passed (3.7m)

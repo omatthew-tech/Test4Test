@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Made menu row highlights hover-only while retaining keyboard focus outlines, and moved Sign out from both Profile page variants to the bottom of the profile dropdown.
+- Added the signed-in profile dropdown with Profile, New app, and My reviews; tester accounts retain Profile only. Extended Menu with optional triggers, alignment, grouping, dismissal, and keyboard focus, and TopNavigation with mobile actions that can close its drawer.
 - Added a deterministic, native-Figma DTCG variable export generated from the canonical tokens, with documented conversions for font families, font weights, and durations.
 - Documented the recording-first product decision and future transcript, annotation, clip, priority, AI-context, star-rating, and managed-order interface needs.
 - Added a semantic 288 px compact-form width for focused lead-capture compositions.

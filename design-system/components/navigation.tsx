@@ -1,9 +1,20 @@
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  cloneElement,
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { ChevronRight, Menu as MenuIcon } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { IconButton } from "./actions";
 import { Test4TestBrand } from "./brand";
-import { Container } from "./layout";
+import { Container, Divider } from "./layout";
 import { Drawer } from "./overlays";
 import styles from "./components.module.css";
 
@@ -16,6 +27,7 @@ export interface TopNavigationProps {
   items: NavigationItem[];
   actions?: ReactNode;
   homeTo?: string;
+  mobileActions?: (closeNavigation: () => void) => ReactNode;
 }
 
 export interface MobileNavigationDrawerProps {
@@ -54,7 +66,7 @@ export function MobileNavigationDrawer({
   );
 }
 
-export function TopNavigation({ items, actions, homeTo = "/" }: TopNavigationProps) {
+export function TopNavigation({ items, actions, homeTo = "/", mobileActions }: TopNavigationProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const links = items.map((item) => (
     <NavLink
@@ -92,7 +104,7 @@ export function TopNavigation({ items, actions, homeTo = "/" }: TopNavigationPro
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         items={items}
-        actions={actions}
+        actions={mobileActions ? drawerOpen && mobileActions(() => setDrawerOpen(false)) : actions}
       />
     </header>
   );
@@ -230,56 +242,151 @@ export interface MenuItem {
   label: string;
   onSelect: () => void;
   disabled?: boolean;
+  separatorBefore?: boolean;
 }
 
-export function Menu({
-  items,
-  label,
-  onEscape,
-}: {
+export interface MenuProps {
   items: MenuItem[];
   label: string;
   onEscape?: () => void;
-}) {
+  trigger?: ReactElement<ButtonHTMLAttributes<HTMLButtonElement>>;
+  align?: "start" | "end";
+}
+
+export function Menu({ items, label, onEscape, trigger, align = "end" }: MenuProps) {
+  const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(() => items.findIndex((item) => !item.disabled));
+  const initialFocus = useRef<"first" | "last">("first");
+  const tabbing = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const enabled = refs.current.filter((item) => item && !item.disabled);
+    const first = initialFocus.current === "last" ? enabled[enabled.length - 1] : enabled[0];
+    first?.focus();
+
+    const closeOnOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutside);
+    return () => document.removeEventListener("pointerdown", closeOnOutside);
+  }, [open]);
+
+  const closeMenu = (restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus) {
+      rootRef.current?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")?.focus();
+    }
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    if (trigger && event.key === "Tab") {
+      tabbing.current = true;
+      return;
+    }
     if (event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
+      if (trigger) closeMenu(true);
       onEscape?.();
       return;
     }
-    const activeIndex = refs.current.findIndex((item) => item === document.activeElement);
+    const enabled = refs.current.filter((item) => item && !item.disabled);
+    const activeIndex = enabled.findIndex((item) => item === document.activeElement);
     const next =
       event.key === "ArrowDown"
-        ? Math.min(items.length - 1, activeIndex + 1)
+        ? Math.min(enabled.length - 1, activeIndex + 1)
         : event.key === "ArrowUp"
           ? Math.max(0, activeIndex - 1)
           : event.key === "Home"
             ? 0
             : event.key === "End"
-              ? items.length - 1
+              ? enabled.length - 1
               : null;
     if (next === null) return;
     event.preventDefault();
-    refs.current[next]?.focus();
+    enabled[next]?.focus();
   };
-  return (
-    <ul className={styles.menu} role="menu" aria-label={label} onKeyDown={handleKeyDown}>
+  const menu = (
+    <ul
+      className={`${styles.menu} ${trigger ? styles.menuDropdown : ""}`.trim()}
+      id={id}
+      role="menu"
+      aria-label={label}
+      onKeyDown={handleKeyDown}
+    >
       {items.map((item, index) => (
-        <li key={item.id} role="none">
-          <button
-            ref={(node) => {
-              refs.current[index] = node;
-            }}
-            className={styles.menuItem}
-            role="menuitem"
-            disabled={item.disabled}
-            onClick={item.onSelect}
-          >
-            {item.label}
-          </button>
-        </li>
+        <Fragment key={item.id}>
+          {item.separatorBefore && index > 0 && (
+            <li role="none" className={styles.menuSeparator}>
+              <Divider className={styles.menuDivider} />
+            </li>
+          )}
+          <li role="none">
+            <button
+              ref={(node) => {
+                refs.current[index] = node;
+              }}
+              className={styles.menuItem}
+              type="button"
+              role="menuitem"
+              disabled={item.disabled}
+              tabIndex={trigger ? (focusedIndex === index ? 0 : -1) : undefined}
+              onFocus={() => setFocusedIndex(index)}
+              onClick={() => {
+                if (trigger) closeMenu(true);
+                item.onSelect();
+              }}
+            >
+              {item.label}
+            </button>
+          </li>
+        </Fragment>
       ))}
     </ul>
+  );
+
+  if (!trigger) return menu;
+
+  return (
+    <div
+      ref={rootRef}
+      className={`${styles.menuAnchor} ${align === "start" ? styles.menuAlignStart : ""}`.trim()}
+      onBlur={(event) => {
+        if (tabbing.current || !event.currentTarget.contains(event.relatedTarget)) closeMenu();
+        tabbing.current = false;
+      }}
+    >
+      {cloneElement(trigger, {
+        "aria-haspopup": "menu",
+        "aria-expanded": open,
+        "aria-controls": open ? id : undefined,
+        onClick: (event) => {
+          trigger.props.onClick?.(event);
+          if (event.defaultPrevented) return;
+          initialFocus.current = "first";
+          setOpen((value) => !value);
+        },
+        onKeyDown: (event) => {
+          trigger.props.onKeyDown?.(event);
+          if (event.defaultPrevented) return;
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            initialFocus.current = event.key === "ArrowUp" ? "last" : "first";
+            setOpen(true);
+          } else if (event.key === "Escape" && open) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeMenu(true);
+            onEscape?.();
+          }
+        },
+      })}
+      {open && menu}
+    </div>
   );
 }

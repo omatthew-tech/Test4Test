@@ -1,0 +1,190 @@
+
+Running 4 tests using 2 workers
+
+(node:22144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15692) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile (1.5s)
+  x  2 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet (1.8s)
+(node:13320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:22664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop (1.5s)
+  x  4 [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop (1.9s)
+
+
+  1) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+
+      Snapshot: earn-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 1373px, received 390px by 1143px. 57978 pixels (ratio 0.11 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-mobile (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-mobile-visual-win32.png
+    Received: test-results\visual-earn-route-at-mobile-visual\earn-mobile-actual.png
+    Diff:     test-results\visual-earn-route-at-mobile-visual\earn-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-mobile-visual\error-context.md
+
+  2) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: earn-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 1268px, received 768px by 1094px. 27732 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-tablet (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-tablet-visual-win32.png
+    Received: test-results\visual-earn-route-at-tablet-visual\earn-tablet-actual.png
+    Diff:     test-results\visual-earn-route-at-tablet-visual\earn-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-tablet-visual\error-context.md
+
+  3) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+
+      Snapshot: earn-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 864px, received 1024px by 778px. 29579 pixels (ratio 0.04 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-laptop (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-laptop-visual-win32.png
+    Received: test-results\visual-earn-route-at-laptop-visual\earn-laptop-actual.png
+    Diff:     test-results\visual-earn-route-at-laptop-visual\earn-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-laptop-visual\error-context.md
+
+  4) [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      28572 pixels (ratio 0.03 of all image pixels) are different.
+
+      Snapshot: earn-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(earn-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - 28572 pixels (ratio 0.03 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - 28572 pixels (ratio 0.03 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: earn-desktop (image/png) ────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\earn-desktop-visual-win32.png
+    Received: test-results\visual-earn-route-at-desktop-visual\earn-desktop-actual.png
+    Diff:     test-results\visual-earn-route-at-desktop-visual\earn-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-earn-route-at-desktop-visual\error-context.md
+
+  4 failed
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at mobile ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at tablet ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at laptop ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › earn route at desktop ───────────────────────

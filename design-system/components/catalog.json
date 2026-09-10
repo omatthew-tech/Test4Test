@@ -385,7 +385,7 @@
       "lifecycle": "stable",
       "source": "design-system/components/navigation.tsx",
       "story": "design-system/stories/Navigation.stories.tsx",
-      "description": "Desktop application and marketing navigation.",
+      "description": "Desktop application and marketing navigation with an optional mobile-actions renderer that receives a drawer-close callback.",
       "semantics": ["Header and named navigation landmark", "Current page uses aria-current"],
       "keyboard": ["Tab follows document order"],
       "targetSize": 44,
@@ -495,19 +495,33 @@
       "lifecycle": "stable",
       "source": "design-system/components/navigation.tsx",
       "story": "design-system/stories/Navigation.stories.tsx",
-      "description": "Compact list of actions with full keyboard behavior.",
-      "semantics": ["Menu and menuitem roles for application actions"],
-      "keyboard": ["Arrow keys move", "Escape closes", "Home and End move to edges"],
+      "description": "Compact action list, standalone or opened by an optional button trigger. Dropdowns align to start or end; separatorBefore groups items. Row backgrounds highlight only on hover; keyboard focus retains the standard focus outline. Existing standalone calls remain supported.",
+      "semantics": [
+        "Menu and menuitem roles for application actions",
+        "Button trigger exposes aria-haspopup, aria-expanded, and aria-controls",
+        "Separators are not focusable"
+      ],
+      "keyboard": [
+        "Arrow keys move past disabled items",
+        "Escape closes and restores trigger focus",
+        "Home and End move to edges",
+        "Enter or Space opens and selects",
+        "Arrow Down or Up on the trigger opens at the first or last enabled item",
+        "Tab closes without trapping focus"
+      ],
       "targetSize": 44,
-      "dependencies": ["popover"],
+      "dependencies": ["icon-button", "divider"],
       "exportName": "Menu",
       "sizes": ["default"],
       "variants": ["action-menu"],
       "states": ["enabled", "disabled", "focus-visible", "long-content"],
       "accessibleName": "Required label prop names the menu; visible text names each menu item.",
-      "controlMode": "controlled",
+      "controlMode": "uncontrolled",
       "storyExport": "MenuContract",
-      "examples": ["design-system/stories/Navigation.stories.tsx#MenuContract"]
+      "examples": [
+        "design-system/stories/Navigation.stories.tsx#MenuContract",
+        "design-system/stories/Navigation.stories.tsx#ProfileMenuDropdown"
+      ]
     },
     {
       "id": "alert",

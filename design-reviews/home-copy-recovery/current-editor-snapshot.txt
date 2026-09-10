@@ -1,0 +1,259 @@
+- banner:
+  - link "Skip to content":
+    - /url: "#main-content"
+  - link "Test4Test home":
+    - /url: /
+    - generic: Test4Test
+  - navigation "Primary":
+    - link "Blog":
+      - /url: /blog
+    - link "Get paid to test":
+      - /url: /get-paid-to-test
+  - link "Sign in":
+    - /url: /sign-in
+  - link "Get started":
+    - /url: /submit
+- main:
+  - region "Get FREE user testing on your web or mobile app":
+    - heading "Get FREE user testing on your web or mobile app" [level=1]:
+      - text: Get
+      - mark: FREE
+      - text: user testing on your web or mobile app
+    - paragraph: The only 100% free user testing platform with recordings and meaningful feedback guaranteed
+    - generic: App name
+    - textbox "App name":
+      - /placeholder: Enter your app's name
+    - button "Get started"
+  - region "Trusted by":
+    - heading "Trusted by" [level=2]
+    - list:
+      - article:
+        - heading [level=3]:
+          - generic: T
+          - generic: Test4Test
+          - link:
+            - /url: /test/f4afe8df-d3cb-48cf-b894-c4061fad86f9
+        - paragraph: "You've already tested this! Please fill out a few quick questions to earn a credit (:"
+      - article:
+        - heading [level=3]:
+          - generic: V
+          - generic: VidShare
+          - link:
+            - /url: /test/06cc58db-e2d2-4f1e-9c98-c5af9864b6b6
+        - paragraph: VidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.
+      - article:
+        - heading [level=3]:
+          - generic: VO
+          - generic: Video offering pricing page
+          - link:
+            - /url: /test/3e7dee0a-ab78-40c9-a5aa-56b0bbafc374
+        - paragraph: We're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.
+      - article:
+        - heading [level=3]:
+          - generic: OA
+          - generic: One-Minute Akari
+          - link:
+            - /url: /test/2d31edac-1151-4786-976c-0b9674eda273
+        - paragraph: "A private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing."
+      - article:
+        - heading [level=3]:
+          - generic: M
+          - generic: MyTinerary
+          - link:
+            - /url: /test/ccb8473b-49d6-4554-b180-d3c4e59b2e05
+        - paragraph: Whatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.
+      - article:
+        - heading [level=3]:
+          - generic: L
+          - generic: Loventro
+          - link:
+            - /url: /test/1bd407b6-4c52-4948-8251-0436de7493b6
+        - paragraph: A dating platform focused on compatibility, transparency, and genuine connections—not just swipes.
+    - list "Top tests available on Earn":
+      - article:
+        - heading "Test4Test Open Test4Test test" [level=3]:
+          - generic: T
+          - generic: Test4Test
+          - link "Open Test4Test test":
+            - /url: /test/f4afe8df-d3cb-48cf-b894-c4061fad86f9
+        - paragraph: "You've already tested this! Please fill out a few quick questions to earn a credit (:"
+      - generic: Rank 1 of 6
+      - article:
+        - heading "VidShare Open VidShare test" [level=3]:
+          - generic: V
+          - generic: VidShare
+          - link "Open VidShare test":
+            - /url: /test/06cc58db-e2d2-4f1e-9c98-c5af9864b6b6
+        - paragraph: VidShare is an AI-powered social media manager for creators, businesses, and marketers. Upload a video once, generate AI captions and posts, schedule content, and publish across multiple social media platforms from one dashboard. We're looking for testers to provide honest feedback on usability, onboarding, AI content generation, scheduling, and the overall publishing experience.
+      - generic: Rank 2 of 6
+      - article:
+        - heading "Video offering pricing page Open Video offering pricing page test" [level=3]:
+          - generic: VO
+          - generic: Video offering pricing page
+          - link "Open Video offering pricing page test":
+            - /url: /test/3e7dee0a-ab78-40c9-a5aa-56b0bbafc374
+        - paragraph: We're putting together a new pricing page for our video offering. I want to ensure the pricing is as clear and transparent as possible, so I'm looking for feedback on how we can improve how we present the pricing so it's simple to understand.
+      - generic: Rank 3 of 6
+      - article:
+        - heading "One-Minute Akari Open One-Minute Akari test" [level=3]:
+          - generic: OA
+          - generic: One-Minute Akari
+          - link "Open One-Minute Akari test":
+            - /url: /test/2d31edac-1151-4786-976c-0b9674eda273
+        - paragraph: "A private one-minute reset: choose the difficult state that feels closest and receive a small 60-second response immediately. No signup or personal writing."
+      - generic: Rank 4 of 6
+      - article:
+        - heading "MyTinerary Open MyTinerary test" [level=3]:
+          - generic: M
+          - generic: MyTinerary
+          - link "Open MyTinerary test":
+            - /url: /test/ccb8473b-49d6-4554-b180-d3c4e59b2e05
+        - paragraph: Whatever traveling in a new city or bored in your own, build personalized itineraries based on your itinerary preferences, price range, and pace. Select as many options to create a comprehensive itinerary, save for future reference, and connect with other users that share similar interests / itineraries.
+      - generic: Rank 5 of 6
+      - article:
+        - heading "Loventro Open Loventro test" [level=3]:
+          - generic: L
+          - generic: Loventro
+          - link "Open Loventro test":
+            - /url: /test/1bd407b6-4c52-4948-8251-0436de7493b6
+        - paragraph: A dating platform focused on compatibility, transparency, and genuine connections—not just swipes.
+      - generic: Rank 6 of 6
+  - region "User testing used to take weeks. Now you’re done in hours.":
+    - heading "User testing used to take weeks. Now you’re done in hours." [level=2]:
+      - generic: User testing used to take weeks.
+      - text: Now you’re
+      - strong: done in hours.
+    - list:
+      - generic: "1"
+      - heading "Create your test" [level=3]
+      - paragraph: Create your first test in seconds
+      - generic: "2"
+      - heading "Get testers" [level=3]
+      - paragraph: Share your test with as many as you want or earn 1:1 credits.
+      - generic: "3"
+      - heading "Gain insights" [level=3]
+      - paragraph: Manage everything from the analytics page. Watch your tests, clip them or export to your favorite LLM
+  - region "Earn 1:1 credits Bring your own testers":
+    - article "Earn 1:1 credits":
+      - heading "Earn 1:1 credits" [level=2]
+      - paragraph: Earn credits 1:1 (we don't take a cut)
+    - article "Bring your own testers":
+      - heading "Bring your own testers" [level=2]
+      - paragraph: There are no limits - bring as many as you want
+  - region "If you can link to it, you can test it":
+    - heading "If you can link to it, you can test it" [level=2]
+    - paragraph: Founder, UX designer, product manager, researcher, or student — Test4Test makes it free and easy to get valuable insights
+    - article:
+      - heading "Websites" [level=3]
+      - paragraph: Test live websites, sites in development, password-protected pages, and even competitors’ sites
+    - article:
+      - heading "Prototypes" [level=3]
+      - paragraph: Test any prototype with a link — Figma, Adobe XD, Axure, Sketch, Balsamiq, and others
+    - article:
+      - heading "Mobile apps" [level=3]
+      - paragraph: Test mobile apps on Android or iOS. Whether they're published or still in beta
+  - region "Go Wild":
+    - heading "Go Wild" [level=2]
+    - paragraph: Are you tired of professional survey takers? Start recruiting users from social media, forms and other communities
+    - article:
+      - generic: Typical platforms
+      - heading "\"Users\" come from pools" [level=3]
+      - paragraph: Most user testing platforms recruit users from giant pools
+    - article:
+      - generic: Test4Test WILD
+      - heading "Recruit REAL users" [level=3]
+      - paragraph: We recruit users from social media, forms and other communities
+      - button "Explore managed testing":
+        - text: Explore managed testing
+  - region "Ready for feedback?":
+    - heading "Ready for feedback?" [level=2]
+    - paragraph: It takes minutes to submit your app. Start seeing real user feedback today!
+    - button "Get started":
+      - text: Get started
+- contentinfo:
+  - link "Test4Test home":
+    - /url: /
+    - generic: Test4Test
+  - paragraph: © 2026 Test4Test. All rights reserved.
+  - navigation "Product":
+    - heading "Product" [level=2]
+    - list:
+      - link "Get your app tested":
+        - /url: /submit
+      - link "Get paid to test":
+        - /url: /get-paid-to-test
+      - link "Blog":
+        - /url: /blog
+      - link "Sign in":
+        - /url: /sign-in
+  - heading "Support" [level=2]
+  - link "support@test4test.io":
+    - /url: mailto:support@test4test.io
+- generic: <p>
+- generic: Stack
+- generic: /design-system/components/layout.tsx:50
+- button "Undo Reorder" [disabled]:
+- button "Confirm"
+- button "Close ReactRewrite":
+- generic: Operation in progress
+- generic: <Stack>
+- generic "/design-system/components/layout.tsx:50"
+- button "Collapse panel":
+- generic: Spacing
+- generic: margin
+- generic: padding
+- generic "Top": "0"
+- generic "Left": "0"
+- generic "Top": "0"
+- generic "Left": "0"
+- generic: content
+- generic "Right": "0"
+- generic "Bottom": "0"
+- generic "Right": "0"
+- generic "Bottom": "0"
+- generic: Size
+- generic "W"
+- textbox: "378.344"
+- generic "H"
+- textbox: "48"
+- generic "Min W"
+- textbox: auto
+- generic "Max W"
+- textbox: none
+- generic "Min H"
+- textbox: auto
+- generic "Max H"
+- textbox: none
+- generic: Typography
+- generic "Size"
+- textbox: "16"
+- generic "Weight"
+- button "300"
+- button "400"
+- button "500"
+- button "600"
+- button "700"
+- generic "Height"
+- textbox: "24"
+- generic "Spacing"
+- textbox: normal
+- generic "Align"
+- button "Left"
+- button "Center"
+- button "Right"
+- button "Justify"
+- generic "Color"
+- textbox "#rrggbb": rgb(74, 84, 92)
+- generic: Background
+- generic "Color"
+- textbox "#rrggbb": rgba(0, 0, 0, 0)
+- generic: Show all properties
+- generic: Stack/design-system/components/layout.tsx:50
+- button:
+- button:
+- button "Undo (Ctrl+Z)":
+- button "17":
+  - generic: "17"
+- button "Reset Canvas":
+- button "Toggle Infinite Canvas":
+- button "Keyboard Shortcuts (Ctrl+/)":

@@ -485,6 +485,69 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+.howItWorksContent {
+  align-items: center;
+}
+
+.howItWorksHeading {
+  max-width: var(--ds-semantic-size-content-prose);
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.howItWorksHeading span {
+  display: block;
+}
+
+.howItWorksHeading strong {
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+.howItWorksSteps {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--ds-semantic-space-stack-section);
+  margin: var(--ds-semantic-space-zero);
+  padding: var(--ds-semantic-space-zero);
+  list-style: none;
+}
+
+.howItWorksStep {
+  min-width: var(--ds-semantic-space-zero);
+  align-content: start;
+  text-align: center;
+}
+
+.howItWorksNumber {
+  color: var(--ds-semantic-color-action-primary-strong);
+  font-size: var(--ds-semantic-typography-heading-display-mobile-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+  line-height: var(--ds-semantic-typography-heading-display-mobile-line-height);
+}
+
+.howItWorksImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-action-tint);
+  object-fit: cover;
+}
+
+.howItWorksCopy h3 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+}
+
+.howItWorksCopy p {
+  color: var(--ds-semantic-color-text-secondary);
+  text-wrap: pretty;
+}
+
 .processGrid {
   align-items: stretch;
 }
@@ -522,6 +585,22 @@
   gap: var(--ds-semantic-space-stack-section);
 }
 
+.freeFeedbackHeading {
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.freeFeedbackHeading s {
+  color: var(--ds-semantic-color-text-secondary);
+  text-decoration-color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.freeFeedbackHeading span {
+  color: var(--ds-semantic-color-action-primary-strong);
+}
+
 .feedbackMethod {
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
@@ -536,7 +615,7 @@
   background: var(--ds-semantic-color-background-subtle);
 }
 
-.feedbackMethodCopy h2 {
+.feedbackMethodCopy h3 {
   font-size: var(--ds-semantic-typography-heading-section-mobile-size);
   line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
 }
@@ -706,7 +785,15 @@
 .finalCta {
   border-block-start: var(--ds-semantic-border-width-default) solid
     var(--ds-semantic-color-border-subtle);
-  text-align: start;
+  text-align: center;
+}
+
+.finalCtaContent {
+  align-items: center;
+}
+
+.finalCtaActions {
+  justify-content: center;
 }
 
 .testableProductsContent {
@@ -863,8 +950,49 @@
 }
 
 @media (min-width: 1024px) {
-  .feedbackMethod {
+  .howItWorksContent {
     gap: var(--ds-semantic-space-stack-section);
+  }
+
+  .howItWorksSteps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .howItWorksNumber {
+    font-size: var(--ds-semantic-typography-heading-display-desktop-size);
+    line-height: var(--ds-semantic-typography-heading-display-desktop-line-height);
+  }
+
+  .page,
+  .pageSections {
+    gap: var(--ds-semantic-space-zero);
+  }
+
+  /* Adjacent sections each provide half of the desktop section spacing. */
+  .trustedBy,
+  .pageSections > section {
+    padding-block: var(--ds-semantic-space-stack-macro);
+  }
+
+  .freeFeedbackContent {
+    gap: var(--ds-semantic-space-stack-macro);
+  }
+
+  .feedbackMethod {
+    gap: var(--ds-semantic-space-stack-section-large);
+  }
+
+  .testableProductsContent,
+  .managedRecruitmentContent {
+    gap: var(--ds-semantic-space-stack-section);
+  }
+
+  .managedRecruitment {
+    padding-inline: var(--ds-semantic-space-stack-section-large);
+  }
+
+  .finalCta {
+    margin-block-start: var(--ds-semantic-space-stack-macro);
   }
 
   .hero {
@@ -886,11 +1014,18 @@
   }
 
   .managedPremiumBody {
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .managedPremiumBody .managedComparisonCopy {
+    flex: 1 1 var(--ds-semantic-size-content-compact-form);
   }
 
   .managedRecruitmentCta {
     width: auto;
+    flex-shrink: 0;
   }
 
   .heroTitle {
@@ -904,8 +1039,10 @@
   }
 
   .sectionHeading h2,
+  .howItWorksHeading,
   .trustedByHeader h2,
-  .feedbackMethodCopy h2,
+  .freeFeedbackHeading,
+  .feedbackMethodCopy h3,
   .managedRecruitmentHeading h2,
   .qualityCopy h2,
   .finalCta h2,

@@ -1,6 +1,6 @@
 # Top navigation
 
-Desktop application and marketing navigation.
+Desktop application and marketing navigation with an optional mobile-actions renderer that receives a drawer-close callback.
 
 - Family: navigation
 - Lifecycle: stable

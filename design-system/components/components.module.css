@@ -429,6 +429,8 @@
 
 .navBar {
   display: flex;
+  max-width: var(--ds-semantic-size-content-data);
+  margin-inline: auto;
   min-height: var(--ds-semantic-space-stack-section-large);
   align-items: center;
   justify-content: space-between;
@@ -586,10 +588,38 @@
   cursor: pointer;
 }
 
-.menuItem:hover,
-.menuItem:focus {
+.menuItem:hover:not(:disabled) {
   background: var(--ds-semantic-color-action-tint);
   color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.menuAnchor {
+  position: relative;
+  display: inline-block;
+  min-width: 0;
+}
+
+.menuDropdown {
+  position: absolute;
+  z-index: 40;
+  inset-block-start: calc(100% + var(--ds-semantic-space-inline-sm));
+  inset-inline-end: 0;
+  width: var(--ds-semantic-size-overlay-popover-min);
+  min-width: 0;
+}
+
+.menuAlignStart .menuDropdown {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  max-width: 100%;
+}
+
+.menuSeparator {
+  padding-block: var(--ds-semantic-space-stack-xs);
+}
+
+.menuDivider {
+  margin: 0;
 }
 
 .alert,

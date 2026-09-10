@@ -1,4 +1,4 @@
-import { Copy, Download } from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -48,12 +48,14 @@ export function AnalyticsTranscriptReport() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [copyFailed, setCopyFailed] = useState(false);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const previewRef = useRef<HTMLTextAreaElement>(null);
   const retriedFixtures = useRef(new Set<string>());
   const selectionVersion = useRef(0);
   const retryController = useRef<AbortController | null>(null);
+  const copyResetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -131,6 +133,7 @@ export function AnalyticsTranscriptReport() {
     () => () => {
       selectionVersion.current++;
       retryController.current?.abort();
+      clearTimeout(copyResetTimer.current);
     },
     [],
   );
@@ -151,16 +154,23 @@ export function AnalyticsTranscriptReport() {
   );
   const coverage = transcriptCoverage(snapshot?.data.recordings ?? []);
   const canExport = Boolean(snapshot && coverage.ready > 0 && !loading);
+  const copied = canExport && copiedText === reportText;
   const recordings = orderReportRecordings(snapshot?.data.recordings ?? []);
 
   async function copyReport() {
     if (!canExport) return;
     const version = selectionVersion.current;
+    clearTimeout(copyResetTimer.current);
+    setCopiedText(null);
     setCopyFailed(false);
+    setNotice("");
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(reportText);
-      if (version === selectionVersion.current) setNotice("Report copied.");
+      if (version === selectionVersion.current) {
+        setCopiedText(reportText);
+        copyResetTimer.current = setTimeout(() => setCopiedText(null), 3000);
+      }
     } catch {
       if (version !== selectionVersion.current) return;
       setPreviewOpen(true);
@@ -208,7 +218,7 @@ export function AnalyticsTranscriptReport() {
     <Stack gap="lg">
       <PageHeader
         title="Transcript report"
-        description="Copy or download your app's transcripts, then add your own question in ChatGPT, Claude, or another LLM."
+        description="Copy or download your app's transcripts, then export it to ChatGPT, Claude, or another LLM."
         alignment="center"
       />
       {apps.length > 1 ? (
@@ -224,6 +234,8 @@ export function AnalyticsTranscriptReport() {
             setError(null);
             setNotice("");
             setCopyFailed(false);
+            setCopiedText(null);
+            clearTimeout(copyResetTimer.current);
             setPreviewOpen(false);
             setRetrying(null);
           }}
@@ -253,15 +265,14 @@ export function AnalyticsTranscriptReport() {
       ) : null}
       {snapshot ? (
         <>
-          <p className={styles.reportStatus} role="status">
-            {coverage.ready} of {coverage.total}{" "}
-            {coverage.total === 1 ? "transcript" : "transcripts"} ready for{" "}
-            {snapshot.data.app.productName}.
-            {coverage.preparing > 0
-              ? ` ${coverage.preparing} ${coverage.preparing === 1 ? "is" : "are"} being prepared automatically.`
-              : ""}
-            {coverage.ready < coverage.total ? " The report lists any missing transcripts." : ""}
-          </p>
+          {coverage.ready < coverage.total ? (
+            <p className={styles.reportStatus} role="status">
+              {coverage.preparing > 0
+                ? `${coverage.preparing} ${coverage.preparing === 1 ? "is" : "are"} being prepared automatically. `
+                : ""}
+              The report lists any missing transcripts.
+            </p>
+          ) : null}
           {coverage.failed > 0 ? (
             <Alert title="Some transcripts need another attempt" tone="warning">
               <Stack gap="sm">
@@ -290,13 +301,20 @@ export function AnalyticsTranscriptReport() {
       ) : null}
       <Cluster className={styles.actions} gap="md">
         <Button
+          className={styles.copyButton}
+          data-copied={copied}
+          aria-live="polite"
+          aria-atomic="true"
           disabled={!canExport}
           onClick={() => {
             void copyReport();
           }}
         >
-          <Copy aria-hidden="true" size={20} />
-          Copy report
+          {copied ? <Check aria-hidden="true" size={20} /> : <Copy aria-hidden="true" size={20} />}
+          <span className={styles.copyButtonLabels}>
+            <span aria-hidden="true">Report copied!</span>
+            <span>{copied ? "Report copied!" : "Copy report"}</span>
+          </span>
         </Button>
         <Button disabled={!canExport} variant="secondary" onClick={downloadReport}>
           <Download aria-hidden="true" size={20} />
@@ -323,8 +341,7 @@ export function AnalyticsTranscriptReport() {
               <Textarea
                 ref={previewRef}
                 className={styles.reportPreview}
-                label="Report preview"
-                helpText="This is the exact text included when you copy or download the report."
+                label={<span className="ds-sr-only">Report preview</span>}
                 readOnly
                 rows={12}
                 value={reportText}

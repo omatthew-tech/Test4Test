@@ -6,7 +6,7 @@
   "lifecycle": "stable",
   "source": "design-system/components/navigation.tsx",
   "story": "design-system/stories/Navigation.stories.tsx",
-  "description": "Desktop application and marketing navigation.",
+  "description": "Desktop application and marketing navigation with an optional mobile-actions renderer that receives a drawer-close callback.",
   "semantics": [
     "Header and named navigation landmark",
     "Current page uses aria-current"

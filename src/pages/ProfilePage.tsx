@@ -1,13 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import {
-  AlertTriangle,
-  ArrowRight,
-  LogOut,
-  Mail,
-  PencilLine,
-  Trash2,
-  UserRound,
-} from "lucide-react";
+import { AlertTriangle, ArrowRight, Mail, PencilLine, Trash2, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useModalFocus } from "@test4test/design-system";
 import { AppShell, Surface } from "../components/Layout";
@@ -51,7 +43,7 @@ function createPaymentDraft(
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { currentUser, signOut, changeEmail, updatePaymentMethods, deleteAccount } = useAppState();
+  const { currentUser, changeEmail, updatePaymentMethods, deleteAccount } = useAppState();
 
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [nextEmail, setNextEmail] = useState("");
@@ -63,7 +55,6 @@ export function ProfilePage() {
   const [deleteMessage, setDeleteMessage] = useState("");
   const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [isSavingPayments, setIsSavingPayments] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteDialogFocus = useModalFocus<HTMLDivElement>(showDeleteConfirm, () =>
@@ -134,12 +125,6 @@ export function ProfilePage() {
     }
   };
 
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await signOut();
-    navigate("/");
-  };
-
   const handleDeleteAccount = async () => {
     setIsDeletingAccount(true);
 
@@ -185,16 +170,6 @@ export function ProfilePage() {
                       Change email
                     </button>
                   ) : null}
-
-                  <button
-                    type="button"
-                    className="button button--ghost button--small profile-signout-button"
-                    onClick={() => void handleSignOut()}
-                    disabled={isSigningOut}
-                  >
-                    <LogOut size={16} />
-                    {isSigningOut ? "Signing out..." : "Sign out"}
-                  </button>
                 </div>
               </div>
 

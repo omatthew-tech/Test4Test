@@ -156,7 +156,7 @@ export function RecordingViewPage() {
             <p className={styles.position}>{positionLabel}</p>
             <h1>{selectedRecording.submission.productName}</h1>
             <p className={styles.submittedAt}>
-              Submitted {formatDateTime(selectedRecording.response.submittedAt)}
+              {formatDateTime(selectedRecording.response.submittedAt)}
             </p>
           </header>
 

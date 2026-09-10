@@ -2,6 +2,7 @@
   width: 100%;
   max-width: var(--ds-semantic-size-content-data);
   margin-inline: auto;
+  row-gap: var(--ds-semantic-space-stack-section);
 }
 
 .reportStatus {
@@ -20,6 +21,23 @@
   justify-content: center;
 }
 
+.copyButton[data-copied="true"] {
+  --ds-component-button-primary-background-default: var(--ds-semantic-color-status-success);
+  --ds-component-button-primary-background-hover: var(--ds-semantic-color-status-success);
+}
+
+.copyButtonLabels {
+  display: grid;
+}
+
+.copyButtonLabels > span {
+  grid-area: 1 / 1;
+}
+
+.copyButtonLabels > span[aria-hidden="true"] {
+  visibility: hidden;
+}
+
 .sectionHeading {
   margin: 0;
   font-size: var(--ds-semantic-typography-heading-small-size);
@@ -28,11 +46,21 @@
 
 .sectionHeadingLink {
   display: inline-flex;
+  max-width: 100%;
   min-height: var(--ds-semantic-size-control-default);
   align-items: center;
   gap: var(--ds-semantic-space-inline-sm);
   color: var(--ds-semantic-color-text-primary);
   text-decoration: none;
+}
+
+.sectionHeadingLink > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sectionHeadingLink > svg {
+  flex-shrink: 0;
 }
 
 .sectionHeadingLink:hover {
@@ -85,38 +113,16 @@
   transform: translate(-50%, -50%);
 }
 
-.recordingDetails {
+.recordingAlerts {
   padding: var(--ds-semantic-space-inset-card-mobile);
-}
-
-.recordingLink {
-  display: inline-flex;
-  min-height: var(--ds-semantic-size-control-target);
-  align-items: center;
-  color: var(--ds-semantic-color-text-primary);
-  font-size: var(--ds-semantic-typography-body-size);
-  font-weight: var(--ds-semantic-typography-weight-semibold);
-  line-height: var(--ds-semantic-typography-body-line-height);
-  text-decoration: none;
-}
-
-.recordingLink:hover {
-  color: var(--ds-semantic-color-action-primary-strong);
-  text-decoration: underline;
-}
-
-.recordingName {
-  color: var(--ds-semantic-color-text-secondary);
-  font-size: var(--ds-semantic-typography-body-small-size);
-  line-height: var(--ds-semantic-typography-body-small-line-height);
-}
-
-.previewTime {
-  color: var(--ds-semantic-color-text-secondary);
-  font-size: var(--ds-semantic-typography-caption-size);
-  line-height: var(--ds-semantic-typography-caption-line-height);
 }
 
 .cardAlert {
   margin-block-start: var(--ds-semantic-space-stack-xs);
+}
+
+@media (min-width: 768px) {
+  .content {
+    row-gap: calc(var(--ds-semantic-space-stack-xl) + var(--ds-semantic-space-stack-section-large));
+  }
 }

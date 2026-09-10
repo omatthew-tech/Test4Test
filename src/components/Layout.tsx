@@ -1,13 +1,18 @@
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
+import { useState } from "react";
+import { UserRound } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ApplicationShell as DesignSystemApplicationShell,
   Cluster,
   Container,
+  IconButton,
+  Menu,
   PageHeader,
   Stack,
   Surface as DesignSystemSurface,
   Test4TestBrand,
+  Toast,
   TopNavigation,
 } from "@test4test/design-system";
 import { useAppState } from "../context/AppStateContext";
@@ -78,9 +83,10 @@ export function AppShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAppState();
+  const { currentUser, signOut } = useAppState();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;
-  const profileHref = currentUser ? "/profile" : "/sign-in";
 
   const memberItems =
     currentUser?.accountType === "tester"
@@ -89,8 +95,6 @@ export function AppShell({
           { to: "/earn", label: "Earn" },
           { to: "/share", label: "Share" },
           { to: "/analytics", label: "Analytics" },
-          { to: "/submit", label: "New app" },
-          { to: "/submissions", label: "My reviews" },
         ];
   const guestItems = [
     { to: "/blog", label: "Blog" },
@@ -106,23 +110,82 @@ export function AppShell({
     navigate("/");
   };
 
-  const navigationActions = !hideMemberChrome ? (
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+    const isTester = currentUser?.accountType === "tester";
+    setIsSigningOut(true);
+    setSignOutError("");
+    try {
+      await signOut();
+      navigate(isTester ? "/get-paid-to-test" : "/", { replace: isTester });
+    } catch {
+      setSignOutError("We couldn't sign you out. Please try again.");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const renderProfileMenu = (closeNavigation?: () => void) => (
+    <Menu
+      key={`${location.key}-${currentUser?.id}`}
+      label="Profile menu"
+      align={closeNavigation ? "start" : "end"}
+      trigger={
+        <IconButton className={styles.profileTrigger} label="Profile menu">
+          <UserRound aria-hidden="true" size={24} />
+        </IconButton>
+      }
+      items={[
+        ...[
+          { id: "profile", label: "Profile", to: "/profile" },
+          ...(currentUser?.accountType === "tester"
+            ? []
+            : [
+                { id: "new-app", label: "New app", to: "/submit", separatorBefore: true },
+                { id: "my-reviews", label: "My reviews", to: "/submissions" },
+              ]),
+        ].map(({ to, ...item }) => ({
+          ...item,
+          onSelect: () => {
+            closeNavigation?.();
+            const fixtureSearch = new URLSearchParams();
+            // Keep fixture identity across local preview routes; production URLs stay unchanged.
+            if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
+              const currentSearch = new URLSearchParams(location.search);
+              for (const name of ["ds-user", "ds-tester"]) {
+                const value = currentSearch.get(name);
+                if (value) fixtureSearch.set(name, value);
+              }
+            }
+            navigate({ pathname: to, search: fixtureSearch.toString() });
+          },
+        })),
+        {
+          id: "sign-out",
+          label: isSigningOut ? "Signing out..." : "Sign out",
+          separatorBefore: true,
+          disabled: isSigningOut,
+          onSelect: () => {
+            closeNavigation?.();
+            void handleSignOut();
+          },
+        },
+      ]}
+    />
+  );
+
+  const navigationActions = hideMemberChrome ? null : currentUser ? (
+    renderProfileMenu()
+  ) : (
     <Cluster gap="sm">
-      <NavLink
-        to={profileHref}
-        className={({ isActive }) =>
-          `${styles.profileLink} ${currentUser && isActive ? styles.profileLinkActive : ""}`.trim()
-        }
-      >
-        {currentUser ? "Profile" : "Sign in"}
+      <NavLink to="/sign-in" className={styles.profileLink}>
+        Sign in
       </NavLink>
-      {!currentUser && (
-        <NavLink className={styles.startLink} to="/submit">
-          Get started
-        </NavLink>
-      )}
+      <NavLink className={styles.startLink} to="/submit">
+        Get started
+      </NavLink>
     </Cluster>
-  ) : null;
+  );
 
   const content = (
     <Stack gap="xl">
@@ -140,6 +203,9 @@ export function AppShell({
         />
       ) : null}
       {children}
+      <Toast open={Boolean(signOutError)} tone="danger">
+        {signOutError}
+      </Toast>
     </Stack>
   );
 
@@ -153,6 +219,9 @@ export function AppShell({
             <TopNavigation
               items={showMemberNav ? memberItems : guestItems}
               actions={navigationActions}
+              mobileActions={
+                showMemberNav ? (closeNavigation) => renderProfileMenu(closeNavigation) : undefined
+              }
             />
           </div>
         ) : undefined

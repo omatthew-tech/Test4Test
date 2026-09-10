@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { UserRound } from "lucide-react";
 import { expect, userEvent, within } from "storybook/test";
 import {
   Breadcrumb,
   Button,
+  IconButton,
   Menu,
   MobileNavigationDrawer,
   Pagination,
@@ -281,4 +283,75 @@ export const MobileNavigationDrawerOpenState: Story = {
       ]}
     />
   ),
+};
+
+export const ProfileMenuDropdown: Story = {
+  render: function ProfileMenuDropdownStory() {
+    const [selected, setSelected] = useState("None");
+    return (
+      <Stack>
+        <Menu
+          label="Profile menu"
+          align="start"
+          trigger={
+            <IconButton label="Profile menu">
+              <UserRound aria-hidden="true" size={24} />
+            </IconButton>
+          }
+          items={[
+            { id: "profile", label: "Profile", onSelect: () => setSelected("Profile") },
+            {
+              id: "disabled",
+              label: "Unavailable action",
+              disabled: true,
+              onSelect: () => setSelected("Unavailable"),
+            },
+            {
+              id: "new-app",
+              label: "New app",
+              separatorBefore: true,
+              onSelect: () => setSelected("New app"),
+            },
+            { id: "reviews", label: "My reviews", onSelect: () => setSelected("My reviews") },
+            {
+              id: "sign-out",
+              label: "Sign out",
+              separatorBefore: true,
+              onSelect: () => setSelected("Sign out"),
+            },
+          ]}
+        />
+        <output>Selected: {selected}</output>
+        <Button variant="secondary">Outside action</Button>
+      </Stack>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "Profile menu" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(canvas.getByRole("menuitem", { name: "Profile" })).toHaveFocus();
+    await expect(canvas.getAllByRole("separator")).toHaveLength(2);
+    await userEvent.keyboard("{ArrowDown}");
+    await expect(canvas.getByRole("menuitem", { name: "New app" })).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    await expect(canvas.getByRole("menuitem", { name: "Sign out" })).toHaveFocus();
+    await userEvent.keyboard("{Home}{Escape}");
+    await expect(trigger).toHaveFocus();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await userEvent.keyboard("{ArrowUp}");
+    await expect(canvas.getByRole("menuitem", { name: "Sign out" })).toHaveFocus();
+    await userEvent.keyboard(" ");
+    await expect(canvas.getByText("Selected: Sign out")).toBeVisible();
+    await expect(trigger).toHaveFocus();
+    await userEvent.keyboard(" ");
+    await expect(canvas.getByRole("menuitem", { name: "Profile" })).toHaveFocus();
+    await userEvent.keyboard("{Tab}");
+    await expect(canvas.getByRole("button", { name: "Outside action" })).toHaveFocus();
+    await expect(canvas.queryByRole("menu")).not.toBeInTheDocument();
+    await userEvent.click(trigger);
+    await userEvent.click(canvas.getByRole("button", { name: "Outside action" }));
+    await expect(canvas.queryByRole("menu")).not.toBeInTheDocument();
+  },
 };

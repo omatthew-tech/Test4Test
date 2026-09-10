@@ -1403,10 +1403,6 @@
   flex-direction: column;
 }
 
-.application [class~="profile-signout-button"] {
-  color: var(--ds-semantic-color-text-secondary);
-}
-
 .application
   :is(
     [class~="profile-inline-actions"],
