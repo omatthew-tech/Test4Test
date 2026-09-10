@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink, Globe2, Workflow } from "lucide-react";
+import { ArrowRight, ExternalLink, Globe, PanelsTopLeft, Star } from "lucide-react";
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -41,6 +41,7 @@ import {
 } from "../lib/pageMetadata";
 import { clearSubmitFlowResume, getSubmitFlowResume } from "../lib/pendingSubmission";
 import styles from "./HomePage.module.css";
+import { useHomeSubmittedTestCount } from "./useHomeSubmittedTestCount";
 
 const homeOrganizationJsonLd = {
   "@context": "https://schema.org",
@@ -179,7 +180,13 @@ function HomeTrustedTestCard({
   );
 }
 
-function HomeTrustedBySection({ submissions }: { submissions: HomeTrustedSubmission[] }) {
+function HomeTrustedBySection({
+  submissions,
+  submittedTestCount,
+}: {
+  submissions: HomeTrustedSubmission[];
+  submittedTestCount: number | null;
+}) {
   const shouldAnimate = submissions.length > 1;
   const [logos, setLogos] = useState<Record<string, string | null>>({});
 
@@ -218,12 +225,6 @@ function HomeTrustedBySection({ submissions }: { submissions: HomeTrustedSubmiss
       aria-labelledby="home-trusted-by-title"
       data-testid="home-trusted-by-section"
     >
-      <Container>
-        <div className={styles.trustedByHeader}>
-          <h2 id="home-trusted-by-title">Trusted by</h2>
-        </div>
-      </Container>
-
       <div
         className={styles.trustedByViewport}
         data-contained-horizontal-overflow="true"
@@ -249,6 +250,18 @@ function HomeTrustedBySection({ submissions }: { submissions: HomeTrustedSubmiss
           </ol>
         </div>
       </div>
+      <Container>
+        <h2 className={styles.trustedByCaption} id="home-trusted-by-title">
+          Trusted by{" "}
+          {submittedTestCount === null ? "" : `${submittedTestCount.toLocaleString("en-US")}+ `}
+          global startups {/* ds-exception: home-trust-caption-stars */}
+          <span className={styles.trustedByStars} aria-hidden="true">
+            {Array.from({ length: 5 }, (_, index) => (
+              <Star key={index} size={16} />
+            ))}
+          </span>
+        </h2>
+      </Container>
     </Section>
   );
 }
@@ -276,6 +289,8 @@ const freeFeedbackMethods = [
   {
     title: "Earn 1:1 credits",
     description: "Earn credits 1:1 (we don't take a cut)",
+    actionLabel: "Earn credits",
+    actionPath: "/earn",
     id: "home-test-other-founders-title",
     illustration: "/images/home-feedback-earn-credit.webp",
     width: 1419,
@@ -284,6 +299,8 @@ const freeFeedbackMethods = [
   {
     title: "Bring your own testers",
     description: "There are no limits - bring as many as you want",
+    actionLabel: "Get started",
+    actionPath: "/submit",
     id: "home-bring-your-own-testers-title",
     illustration: "/images/home-feedback-share-test.webp",
     width: 1420,
@@ -292,6 +309,8 @@ const freeFeedbackMethods = [
 ] as const;
 
 function FreeFeedbackShowcase() {
+  const navigate = useNavigate();
+
   return (
     <Stack className={styles.freeFeedbackContent}>
       {freeFeedbackMethods.map((method) => (
@@ -315,6 +334,9 @@ function FreeFeedbackShowcase() {
           <Stack className={styles.feedbackMethodCopy} gap="md">
             <h3 id={method.id}>{method.title}</h3>
             <p>{method.description}</p>
+            <Cluster>
+              <Button onClick={() => navigate(method.actionPath)}>{method.actionLabel}</Button>
+            </Cluster>
           </Stack>
         </Grid>
       ))}
@@ -491,6 +513,16 @@ export function HomePage() {
   const [homeFeedbackQuote, setHomeFeedbackQuote] = useState<HomeFeedbackQuote | null>(null);
   const [trustedSubmissions, setTrustedSubmissions] = useState<HomeTrustedSubmission[]>([]);
   const { state, isConfigured } = useAppState();
+  const submittedTestCount = useHomeSubmittedTestCount(
+    isConfigured,
+    import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1"
+      ? state.submissions.filter(
+          (submission) =>
+            submission.status === "live" &&
+            state.users.some((user) => user.id === submission.userId && user.banStatus === "clear"),
+        ).length
+      : undefined,
+  );
   const heroPanelRef = useRef<HTMLDivElement>(null);
   const heroFeedbackExclusionRef = useRef<HTMLDivElement>(null);
   const homeFeedbackQuoteRef = useRef<HTMLSpanElement>(null);
@@ -901,18 +933,15 @@ export function HomePage() {
           </div>
         </Section>
 
-        <HomeTrustedBySection submissions={trustedSubmissions} />
+        <HomeTrustedBySection
+          submissions={trustedSubmissions}
+          submittedTestCount={submittedTestCount}
+        />
 
         <Container>
           <div className={styles.pageSections}>
-            <Section
-              aria-labelledby="home-how-it-works-title"
-              data-testid="home-how-it-works-section"
-            >
+            <Section aria-label="How it works" data-testid="home-how-it-works-section">
               <Stack className={styles.howItWorksContent} gap="xl">
-                <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
-                  How it works
-                </h2>
                 <Grid as="ol" className={styles.howItWorksSteps} gap="lg" role="list">
                   {homeHowItWorksSteps.map((step, index) => (
                     <Stack as="li" className={styles.howItWorksStep} gap="lg" key={step.title}>
@@ -975,7 +1004,7 @@ export function HomePage() {
             ) : null}
 
             <Section aria-labelledby="home-free-feedback-title" data-testid="free-feedback-section">
-              <Stack gap="xl">
+              <Stack className={styles.freeFeedbackSectionContent} gap="xl">
                 <h2 className={styles.freeFeedbackHeading} id="home-free-feedback-title">
                   2 <s aria-hidden="true">paid</s> <span>free</span> ways to get feedback
                 </h2>
@@ -998,14 +1027,14 @@ export function HomePage() {
                 </Stack>
                 <Grid className={styles.testableProductsGrid} gap="xl">
                   <HomeTestableProduct
-                    icon={<Globe2 aria-hidden="true" size={24} />}
+                    icon={<Globe aria-hidden="true" size={24} />}
                     title="Websites"
                   >
                     Test live websites, sites in development, password-protected pages, and even
                     competitors’ sites
                   </HomeTestableProduct>
                   <HomeTestableProduct
-                    icon={<Workflow aria-hidden="true" size={24} />}
+                    icon={<PanelsTopLeft aria-hidden="true" size={24} />}
                     title="Prototypes"
                   >
                     Test any prototype with a link — Figma, Adobe XD, Axure, Sketch, Balsamiq, and

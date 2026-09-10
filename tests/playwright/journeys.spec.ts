@@ -155,7 +155,12 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
   const track = page.getByTestId("home-trusted-by-track");
   const list = section.getByRole("list", { name: "Top tests available on Earn" });
 
-  await expect(section.getByRole("heading", { level: 2, name: "Trusted by" })).toBeVisible();
+  await expect(
+    section.getByRole("heading", {
+      level: 2,
+      name: /^Trusted by \d[\d,]*\+ global startups$/,
+    }),
+  ).toBeVisible();
   await expect(list.getByRole("article")).toHaveCount(6);
   const logos = list.getByTestId("home-trusted-logo");
   await expect(logos).toHaveCount(6);

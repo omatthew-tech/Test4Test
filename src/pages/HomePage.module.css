@@ -1,7 +1,25 @@
 .page,
 .pageSections {
   display: grid;
-  gap: var(--ds-semantic-space-inline-2xl);
+  gap: var(--ds-semantic-space-zero);
+}
+
+.pageSections {
+  gap: var(--ds-semantic-space-stack-section);
+  /* Continue the same rhythm after the trust strip without moving the hero. */
+  padding-block-start: var(--ds-semantic-space-stack-section);
+}
+
+/* Desktop content separation: 64 px bottom + 64 px grid gap + 64 px top. */
+.pageSections > section {
+  padding-block: var(--ds-semantic-space-inline-2xl);
+}
+
+.howItWorksContent,
+.freeFeedbackSectionContent,
+.testableProductsContent,
+.managedRecruitmentContent {
+  gap: var(--ds-semantic-space-stack-xl);
 }
 
 .hero {
@@ -38,21 +56,32 @@
 .trustedBy {
   display: grid;
   min-width: var(--ds-semantic-space-zero);
-  gap: var(--ds-semantic-space-stack-lg);
+  /* The viewport-sized hero keeps this tighter card strip below the fold. */
+  padding-block-start: var(--ds-semantic-space-stack-lg);
+  padding-block-end: var(--ds-semantic-space-inline-2xl);
+  gap: var(--ds-semantic-space-stack-sm);
   overflow: hidden;
 }
 
-.trustedByHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ds-semantic-space-inline-md);
-  flex-wrap: wrap;
+.trustedByCaption {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+  text-align: center;
 }
 
-.trustedByHeader h2 {
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+.trustedByStars {
+  display: inline-flex;
+  color: var(--ds-semantic-color-text-primary);
+  vertical-align: middle;
+}
+
+.trustedByStars > svg {
+  /* ds-exception: home-trust-caption-stars */
+  width: var(--ds-semantic-typography-caption-size);
+  height: var(--ds-semantic-typography-caption-size);
+  fill: currentColor;
 }
 
 .trustedByViewport {
@@ -477,6 +506,15 @@
   line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
 }
 
+.howItWorksHeading,
+.freeFeedbackHeading,
+.managedRecruitmentHeading h2,
+.testableProductsHeading h2 {
+  font-size: var(--ds-semantic-typography-heading-page-mobile-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  line-height: var(--ds-semantic-typography-heading-page-mobile-line-height);
+}
+
 .sectionHeading p,
 .qualityCopy p,
 .step p,
@@ -491,9 +529,6 @@
 
 .howItWorksHeading {
   max-width: var(--ds-semantic-size-content-prose);
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  font-weight: var(--ds-semantic-typography-weight-regular);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
   text-align: center;
   text-wrap: balance;
 }
@@ -586,8 +621,6 @@
 }
 
 .freeFeedbackHeading {
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
   text-align: center;
   text-wrap: balance;
 }
@@ -625,6 +658,12 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+/* A visible panel edge needs external separation in addition to its inner padding. */
+.managedRecruitment,
+.finalCta {
+  margin-block-start: var(--ds-semantic-space-inline-2xl);
+}
+
 .managedRecruitment {
   margin-inline: calc(var(--ds-semantic-space-gutter-small) * -1);
   padding-inline: var(--ds-semantic-space-gutter-small);
@@ -646,11 +685,6 @@
   justify-self: center;
   align-items: center;
   text-align: center;
-}
-
-.managedRecruitmentHeading h2 {
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
 }
 
 .managedRecruitmentHeading p,
@@ -806,11 +840,6 @@
   text-align: center;
 }
 
-.testableProductsHeading h2 {
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
-}
-
 .testableProductsHeading p,
 .testableProduct p {
   color: var(--ds-semantic-color-text-secondary);
@@ -839,7 +868,7 @@
   /* ds-exception: home-testable-products-feature-icon-sizing */
   width: calc(var(--ds-semantic-size-control-large) * 2);
   height: calc(var(--ds-semantic-size-control-large) * 2);
-  stroke-width: var(--ds-semantic-border-width-focus);
+  stroke-width: var(--ds-semantic-border-width-default);
 }
 
 .mobilePlatformMarks {
@@ -895,8 +924,24 @@
 }
 
 @media (min-width: 768px) {
-  .freeFeedbackContent {
-    gap: var(--ds-semantic-space-stack-section-large);
+  .pageSections > section {
+    padding-block: var(--ds-semantic-space-stack-2xl);
+  }
+
+  .trustedBy {
+    padding-block-end: var(--ds-semantic-space-stack-2xl);
+  }
+
+  .howItWorksContent,
+  .freeFeedbackSectionContent,
+  .testableProductsContent,
+  .managedRecruitmentContent {
+    gap: var(--ds-semantic-space-stack-2xl);
+  }
+
+  .managedRecruitment,
+  .finalCta {
+    margin-block-start: var(--ds-semantic-space-stack-2xl);
   }
 
   .feedbackMethod {
@@ -950,10 +995,6 @@
 }
 
 @media (min-width: 1024px) {
-  .howItWorksContent {
-    gap: var(--ds-semantic-space-stack-section);
-  }
-
   .howItWorksSteps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -963,36 +1004,29 @@
     line-height: var(--ds-semantic-typography-heading-display-desktop-line-height);
   }
 
-  .page,
-  .pageSections {
-    gap: var(--ds-semantic-space-zero);
+  .trustedBy {
+    padding-block-end: var(--ds-semantic-space-stack-section);
   }
 
-  /* Adjacent sections each provide half of the desktop section spacing. */
-  .trustedBy,
   .pageSections > section {
-    padding-block: var(--ds-semantic-space-stack-macro);
+    padding-block: var(--ds-semantic-space-stack-section);
   }
 
   .freeFeedbackContent {
-    gap: var(--ds-semantic-space-stack-macro);
-  }
-
-  .feedbackMethod {
     gap: var(--ds-semantic-space-stack-section-large);
   }
 
-  .testableProductsContent,
-  .managedRecruitmentContent {
+  .feedbackMethod {
     gap: var(--ds-semantic-space-stack-section);
   }
 
   .managedRecruitment {
-    padding-inline: var(--ds-semantic-space-stack-section-large);
+    padding-inline: var(--ds-semantic-space-stack-2xl);
   }
 
+  .managedRecruitment,
   .finalCta {
-    margin-block-start: var(--ds-semantic-space-stack-macro);
+    margin-block-start: var(--ds-semantic-space-stack-section);
   }
 
   .hero {
@@ -1039,15 +1073,18 @@
   }
 
   .sectionHeading h2,
-  .howItWorksHeading,
-  .trustedByHeader h2,
-  .freeFeedbackHeading,
   .feedbackMethodCopy h3,
-  .managedRecruitmentHeading h2,
   .qualityCopy h2,
-  .finalCta h2,
-  .testableProductsHeading h2 {
+  .finalCta h2 {
     font-size: var(--ds-semantic-typography-heading-section-desktop-size);
     line-height: var(--ds-semantic-typography-heading-section-desktop-line-height);
+  }
+
+  .howItWorksHeading,
+  .freeFeedbackHeading,
+  .managedRecruitmentHeading h2,
+  .testableProductsHeading h2 {
+    font-size: var(--ds-semantic-typography-heading-page-desktop-size);
+    line-height: var(--ds-semantic-typography-heading-page-desktop-line-height);
   }
 }

@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "home-trust-caption-stars",
+      "owner": "Test4Test",
+      "scope": "The five decorative Lucide stars after the Trusted by caption in src/pages/HomePage.tsx and their styling in src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested five filled black stars at the same size as the caption. This exception permits filled decorative stars at the semantic caption size instead of the standard icon scale. The stars use the semantic primary text color, remain hidden from assistive technology, and do not introduce a numerical review rating.",
+      "expires": "2027-03-10"
+    },
+    {
       "id": "home-how-it-works-screenshot-previews",
       "owner": "Test4Test",
       "scope": "The three screenshot-based previews at public/images/home-step-*-actual.webp and their decorative presentation in the homepage how-it-works section in src/pages/HomePage.tsx.",
