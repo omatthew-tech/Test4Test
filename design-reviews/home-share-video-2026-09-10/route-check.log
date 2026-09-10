@@ -1,0 +1,182 @@
+
+> test4test@0.1.0 ds:check:route
+> node scripts/check-ui-change.mjs route home
+
+
+> Check accessibility for route "home"
+
+Running 4 tests using 1 worker
+
+(node:35348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [a11y] › tests\playwright\a11y.spec.ts:57:3 › home has no automatically detectable WCAG A or AA violations (1.1s)
+(node:8568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [a11y] › tests\playwright\a11y.spec.ts:72:3 › home reflows at 320 CSS pixels (460ms)
+  ok 3 [a11y] › tests\playwright\a11y.spec.ts:82:3 › home supports 200% text enlargement (471ms)
+  ok 4 [a11y] › tests\playwright\a11y.spec.ts:95:3 › home supports forced colors and reduced motion (353ms)
+
+
+  1) [a11y] › tests\playwright\a11y.spec.ts:57:3 › home has no automatically detectable WCAG A or AA violations 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  -   1
+    + Received  + 140
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    +     "help": "Elements must meet minimum color contrast ratio thresholds",
+    +     "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=playwright",
+    +     "id": "color-contrast",
+    +     "impact": "serious",
+    +     "nodes": Array [
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#ffffff",
+    +               "contrastRatio": 3.23,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#899095",
+    +               "fontSize": "12.0pt (16px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<article class=\"_surface_1ik7j_841 _surfaceToneDefault_1ik7j_846 _surfacePaddingNone_1ik7j_859 _earnTestCard_1ik7j_1146 _trustedByCard_1e81q_128\">",
+    +                 "target": Array [
+    +                   "ol[aria-label=\"Top tests available on Earn\"] > ._trustedByItem_1e81q_121:nth-child(1) > ._surface_1ik7j_841._surfaceToneDefault_1ik7j_846._surfacePaddingNone_1ik7j_859",
+    +                 ],
+    +               },
+    +               Object {
+    +                 "html": "<div class=\"_applicationShell_1ik7j_314 _shell_e4hc6_1 _marketing_e4hc6_12\" data-route=\"/\">",
+    +                 "target": Array [
+    +                   "._applicationShell_1ik7j_314",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p>A habit-tracking app focused on gentle accountability and daily routines.</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "ol[aria-label=\"Top tests available on Earn\"] > ._trustedByItem_1e81q_121:nth-child(1) > ._surface_1ik7j_841._surfaceToneDefault_1ik7j_846._surfacePaddingNone_1ik7j_859 > ._earnTestCardContent_1ik7j_1154 > ._earnTestCardMain_1ik7j_1162 > ._earnTestCardHead_1ik7j_1197 > p",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#ffffff",
+    +               "contrastRatio": 3.23,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#899095",
+    +               "fontSize": "12.0pt (16px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<article class=\"_surface_1ik7j_841 _surfaceToneDefault_1ik7j_846 _surfacePaddingNone_1ik7j_859 _earnTestCard_1ik7j_1146 _trustedByCard_1e81q_128\">",
+    +                 "target": Array [
+    +                   "ol[aria-label=\"Top tests available on Earn\"] > ._trustedByItem_1e81q_121:nth-child(2) > ._surface_1ik7j_841._surfaceToneDefault_1ik7j_846._surfacePaddingNone_1ik7j_859",
+    +                 ],
+    +               },
+    +               Object {
+    +                 "html": "<div class=\"_applicationShell_1ik7j_314 _shell_e4hc6_1 _marketing_e4hc6_12\" data-route=\"/\">",
+    +                 "target": Array [
+    +                   "._applicationShell_1ik7j_314",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p>A trip-planning companion for stitching outdoor routes, packing lists, and weather together.</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "ol[aria-label=\"Top tests available on Earn\"] > ._trustedByItem_1e81q_121:nth-child(2) > ._surface_1ik7j_841._surfaceToneDefault_1ik7j_846._surfacePaddingNone_1ik7j_859 > ._earnTestCardContent_1ik7j_1154 > ._earnTestCardMain_1ik7j_1162 > ._earnTestCardHead_1ik7j_1197 > p",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#ffffff",
+    +               "contrastRatio": 3.23,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#899095",
+    +               "fontSize": "9.0pt (12px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<div class=\"_applicationShell_1ik7j_314 _shell_e4hc6_1 _marketing_e4hc6_12\" data-route=\"/\">",
+    +                 "target": Array [
+    +                   "._applicationShell_1ik7j_314",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.23 (foreground color: #899095, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<h2 class=\"_trustedByCaption_1e81q_66\" id=\"home-trusted-by-title\">",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "#home-trusted-by-title",
+    +         ],
+    +       },
+    +     ],
+    +     "tags": Array [
+    +       "cat.color",
+    +       "wcag2aa",
+    +       "wcag143",
+    +       "TTv5",
+    +       "TT13.c",
+    +       "EN-301-549",
+    +       "EN-9.1.4.3",
+    +       "ACT",
+    +       "RGAAv4",
+    +       "RGAA-3.2.1",
+    +     ],
+    +   },
+    + ]
+
+      65 |       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      66 |       .analyze();
+    > 67 |     expect(results.violations).toEqual([]);
+         |                                ^
+      68 |   });
+      69 | }
+      70 |
+        at C:\Projects\Test4Test-Redesign\tests\playwright\a11y.spec.ts:67:32
+
+    Error Context: test-results\a11y-home-has-no-automatic-8729e-ble-WCAG-A-or-AA-violations-a11y\error-context.md
+
+  1 failed
+    [a11y] › tests\playwright\a11y.spec.ts:57:3 › home has no automatically detectable WCAG A or AA violations 
+  3 passed (4.5s)

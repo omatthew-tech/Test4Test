@@ -639,7 +639,7 @@
 }
 
 .freeFeedbackContent {
-  gap: var(--ds-semantic-space-stack-section);
+  gap: var(--ds-semantic-space-stack-2xl);
 }
 
 .freeFeedbackHeading {
@@ -666,8 +666,38 @@
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
   border-radius: var(--ds-semantic-radius-surface);
-  background: var(--ds-semantic-color-background-subtle);
+  background: var(--ds-semantic-color-action-tint);
+}
+
+.feedbackMethodCopy > :last-child {
+  margin-block-start: var(--ds-semantic-space-inline-sm);
+}
+
+.feedbackVideoFrame {
+  position: relative;
+  overflow: hidden;
+}
+
+.feedbackVideo,
+.feedbackVideoPoster {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.feedbackVideo:not([data-ready="true"]) {
+  visibility: hidden;
+}
+
+.feedbackMethodAction {
+  font-size: var(--ds-semantic-typography-body-size);
+  line-height: var(--ds-semantic-typography-body-line-height);
 }
 
 .feedbackMethodCopy h3 {
@@ -1037,11 +1067,17 @@
   }
 
   .freeFeedbackContent {
-    gap: var(--ds-semantic-space-stack-section-large);
+    gap: var(--ds-semantic-space-inline-2xl);
+    padding-inline: var(--ds-semantic-space-inline-2xl);
   }
 
   .feedbackMethod {
     gap: var(--ds-semantic-space-stack-section);
+  }
+
+  .feedbackMethodCopy p {
+    font-size: var(--ds-semantic-typography-lead-desktop-size);
+    line-height: var(--ds-semantic-typography-lead-desktop-line-height);
   }
 
   .managedRecruitment {

@@ -1,0 +1,21 @@
+
+> test4test@0.1.0 ds:check:fast
+> node scripts/check-ui-change.mjs fast src/pages/HomePage.tsx src/pages/HomePage.module.css design-system/exceptions.json tests/playwright/home-share-video-journeys.spec.ts
+
+
+> Check formatting in changed files
+Checking formatting...
+All matched files use Prettier code style!
+
+> Lint changed code files
+
+> Type-check the application
+
+> test4test@0.1.0 typecheck
+> tsc
+
+
+> Validate design-system invariants
+Validated 274 tokens, 51 components and Storybook coverage contracts, 58 UI files, 30 route states, schemas, documentation, static brand artifacts, exceptions, and public imports.
+
+Fast-checked 4 changed file(s).

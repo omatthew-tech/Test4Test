@@ -301,9 +301,11 @@ const freeFeedbackMethods = [
     actionLabel: "Earn credits",
     actionPath: "/earn",
     id: "home-test-other-founders-title",
-    illustration: "/images/home-feedback-earn-credit.webp",
-    width: 1419,
-    height: 1109,
+    poster: "/videos/home-earn-credit-poster.webp",
+    staticPoster: "/videos/home-earn-credit-static.webp",
+    sources: [{ src: "/videos/home-earn-credit.mp4", type: "video/mp4" }],
+    width: 1620,
+    height: 1080,
   },
   {
     title: "Bring your own testers",
@@ -311,11 +313,124 @@ const freeFeedbackMethods = [
     actionLabel: "Get started",
     actionPath: "/submit",
     id: "home-bring-your-own-testers-title",
-    illustration: "/images/home-feedback-share-test.webp",
-    width: 1420,
-    height: 1108,
+    poster: "/videos/home-share-test-poster.webp",
+    staticPoster: "/videos/home-share-test-poster.webp",
+    sources: [
+      { src: "/videos/home-share-test.av1.mp4", type: 'video/mp4; codecs="av01.0.08M.08"' },
+      { src: "/videos/home-share-test.mp4", type: "video/mp4" },
+    ],
+    width: 1440,
+    height: 960,
   },
 ] as const;
+
+function HomeFeedbackPreview({ method }: { method: (typeof freeFeedbackMethods)[number] }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [inView, setInView] = useState(false);
+  const [pageVisible, setPageVisible] = useState(false);
+  const [allowAutoplay, setAllowAutoplay] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (
+      navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }
+    ).connection;
+    const updatePreferences = () => {
+      setAllowAutoplay(!motion.matches && !connection?.saveData);
+    };
+    const updateVisibility = () => setPageVisible(!document.hidden);
+    updatePreferences();
+    updateVisibility();
+    motion.addEventListener("change", updatePreferences);
+    connection?.addEventListener("change", updatePreferences);
+    document.addEventListener("visibilitychange", updateVisibility);
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    observer.observe(frame);
+    return () => {
+      observer.disconnect();
+      motion.removeEventListener("change", updatePreferences);
+      connection?.removeEventListener("change", updatePreferences);
+      document.removeEventListener("visibilitychange", updateVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || failed) return;
+    const shouldPlay = inView && pageVisible && allowAutoplay;
+    if (!shouldPlay) {
+      video.pause();
+      return;
+    }
+    if (!loaded) {
+      setLoaded(true);
+      return;
+    }
+    // Source URLs are only attached on first playback, so preload cannot start early.
+    if (!video.currentSrc) video.load();
+    void video.play().catch(() => {
+      // Autoplay restrictions leave a static preview in place.
+    });
+  }, [allowAutoplay, failed, inView, loaded, pageVisible]);
+
+  return (
+    <div className={`${styles.feedbackPreview} ${styles.feedbackVideoFrame}`} ref={frameRef}>
+      {/* ds-exception: home-feedback-demo-media */}
+      <img
+        alt=""
+        aria-hidden="true"
+        className={styles.feedbackVideoPoster}
+        decoding="async"
+        height={method.height}
+        loading="lazy"
+        src={allowAutoplay && !failed ? method.poster : method.staticPoster}
+        width={method.width}
+      />
+      {!failed ? (
+        <>
+          {/* ds-exception: home-feedback-demo-media */}
+          <video
+            aria-hidden="true"
+            className={styles.feedbackVideo}
+            data-ready={ready && allowAutoplay}
+            height={method.height}
+            loop
+            muted
+            playsInline
+            preload="none"
+            ref={videoRef}
+            tabIndex={-1}
+            width={method.width}
+            onError={(event) => {
+              // A failed source must still let the browser try the next codec.
+              if (event.target === event.currentTarget) setFailed(true);
+            }}
+            onLoadedData={() => setReady(true)}
+          >
+            {loaded
+              ? method.sources.map((source, index) => (
+                  <source
+                    key={source.src}
+                    src={source.src}
+                    type={source.type}
+                    onError={() => {
+                      if (index === method.sources.length - 1) setFailed(true);
+                    }}
+                  />
+                ))
+              : null}
+          </video>
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 function FreeFeedbackShowcase() {
   const navigate = useNavigate();
@@ -329,22 +444,18 @@ function FreeFeedbackShowcase() {
           className={styles.feedbackMethod}
           key={method.id}
         >
-          {/* ds-exception: home-feedback-supplied-illustrations */}
-          <img
-            alt=""
-            aria-hidden="true"
-            className={styles.feedbackPreview}
-            decoding="async"
-            height={method.height}
-            loading="lazy"
-            src={method.illustration}
-            width={method.width}
-          />
+          <HomeFeedbackPreview method={method} />
           <Stack className={styles.feedbackMethodCopy} gap="md">
             <h3 id={method.id}>{method.title}</h3>
             <p>{method.description}</p>
             <Cluster>
-              <Button onClick={() => navigate(method.actionPath)}>{method.actionLabel}</Button>
+              <Button
+                className={styles.feedbackMethodAction}
+                size="large"
+                onClick={() => navigate(method.actionPath)}
+              >
+                {method.actionLabel}
+              </Button>
             </Cluster>
           </Stack>
         </Grid>
@@ -1032,7 +1143,10 @@ export function HomePage() {
               <Stack className={styles.testableProductsContent} gap="xl">
                 <Stack className={styles.testableProductsHeading} gap="sm">
                   <h2 id="home-testable-products-title">If you can link to it, you can test it</h2>
-                  <p>Founders, students, UX designers, product managers, or researchers — Test4Test makes getting valuable insights free and easy</p>
+                  <p>
+                    Founders, students, UX designers, product managers, or researchers — Test4Test
+                    makes getting valuable insights free and easy
+                  </p>
                 </Stack>
                 <Grid className={styles.testableProductsGrid} gap="xl">
                   <HomeTestableProduct

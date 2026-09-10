@@ -1,0 +1,29 @@
+Mode: Built-in ImageGen. Preview mockup only; no implementation.
+
+Use case: precise-object-edit.
+Asset type: realistic full-length desktop homepage screenshot mockup, single very tall image.
+
+Image 1 is the EXACT full homepage screenshot and the edit target, 1425 wide by 5326 tall. Image 2 is the approved option-3 section color treatment reference ONLY.
+Primary request: Show the entire unchanged Test4Test homepage, from navigation at the very top through footer at the very bottom, applying option 3 ONLY to the existing "2 paid free ways to get feedback" section. This is a precise localized screenshot edit, not a redesign.
+
+STRICT PROTECTION: Preserve ALL pixels and all content outside that feedback section as faithfully as possible. Preserve hero savanna photo, its current height and crop, large centered headline, input and buttons, navigation, scrolling trust cards, How it works three-column screenshots, product category icons and text, Go Wild blue comparison panel with two ORIGINAL monkey images, final CTA and footer. Do not omit, merge, compress, enlarge, regenerate, reorder, repeat or reinterpret any section. Keep exact desktop layout, column arrangements, section heights, all whitespace, current alignment, margins, typography, text wrapping, buttons and source proportions. Do not invent a generic website. No device frame or perspective. No option labels or annotation.
+
+ONLY PERMITTED EDITS inside the feedback section, approximately vertical y=1907 through y=3096 in image 1:
+1. Add the uniform soft neutral gray section background #F4F7F9 spanning the full page width, bounded exactly by that section's existing top and bottom edges. It includes existing heading and both rows with no change to their positions or spacing.
+2. Make the outer background of BOTH feedback illustration rectangles the same pale blue #E1F6FF. Remove the dark navy background from the Bring your own testers illustration. Keep all foreground panels, UI details, icons, shadows, illustration size/crop/proportion, exact text, and their current overlapping arrangement. Use image 2 for neutral gray section and pale blue illustration tones, not for changing geometry.
+3. Retain surrounding sections on white; leave Go Wild's blue background and footer gray unchanged.
+The rows stay alternating: Earn illustration LEFT, Earn text RIGHT; Bring your own testers text LEFT, Share illustration RIGHT.
+
+Text in edited region is verbatim:
+"2 paid free ways to get feedback" with only "paid" struck through, "free" in blue.
+"Earn 1:1 credits"
+"Earn credits 1:1 (we don't take a cut)"
+"Earn credits"
+"Bring your own testers"
+"There are no limits - bring as many as you want"
+"Get started"
+Illustration labels: "Test completed", "You earned", "1 credit", "Your test", "Responses", "Great onboarding flow!", "The value prop is clear.", "Share test link", "test4test.io/t/your-test", "Copy link".
+
+Read and preserve all other homepage copy from the original screenshot without rewriting. The exact hero headline is "Get FREE user testing on your web or mobile app". No extra captions, no removed content, no additional text. No decorations, no new gradients, no new illustrations.
+
+Output exactly ONE very tall full-page desktop screenshot, preserving the source 1425:5326 aspect ratio and ALL content from top navigation to complete footer. Use high enough resolution for the original text to remain readable; this is a realistic webpage screenshot with one localized color edit.

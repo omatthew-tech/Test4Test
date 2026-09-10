@@ -94,10 +94,17 @@
       "expires": "2026-10-23"
     },
     {
+      "id": "home-feedback-demo-media",
+      "owner": "Test4Test",
+      "scope": "The route-local credit and sharing demos in src/pages/HomePage.tsx, their CSS in src/pages/HomePage.module.css, and video/poster assets under public/videos/home-earn-credit* and public/videos/home-share-test*.",
+      "rationale": "The design owner approved the short credit and sharing demos and explicitly requested replacing their corresponding homepage images with the optimized videos. On 2026-09-10 the owner explicitly requested removal of the visible playback control. This permits the recorded cursor timing and silent repeating playback without overlay controls as a limited exception to the motion foundation. Both videos retain the existing 3:2 media frames, semantic action-tint background, and token-controlled radius. Each downloads only on visible playback and pauses outside the viewport or a visible tab. Reduced motion and data-saving preferences disable automatic loading/playback and leave static posters; the credit demo uses its earned-credit confirmation as its static fallback. Pre-rendered internal pixels use repository token colors and Geist, but cannot bind to runtime CSS variables.",
+      "expires": "2027-03-10"
+    },
+    {
       "id": "home-feedback-supplied-illustrations",
       "owner": "Test4Test",
-      "scope": "The two user-supplied UI illustrations, prepared as public/images/home-feedback-earn-credit.webp and public/images/home-feedback-share-test.webp, in the homepage free-feedback section.",
-      "rationale": "The design owner requested these exact illustrated concepts, including the credit star, overlapping UI cards, and dark background inside the sharing artwork. This exception covers only the decorative raster artwork. Surrounding layout, colors, typography, spacing, image radius, and responsive behavior consume design-system tokens; adjacent existing copy conveys the meaning and images are hidden from assistive technology.",
+      "scope": "The two user-supplied UI illustrations, prepared as public/images/home-feedback-earn-credit.webp and public/images/home-feedback-share-test.webp, plus the approved light variant public/images/home-feedback-share-test-light.webp, in the homepage free-feedback section.",
+      "rationale": "The design owner requested these exact illustrated concepts, including the credit star and overlapping UI cards. On 2026-09-10 the owner selected the compact alternating mockup, replacing the sharing artwork's dark backdrop with the semantic action tint and adding blue card outlines while retaining all illustration content. This exception covers only the decorative raster artwork, whose internal pixels cannot bind to runtime tokens. Surrounding layout, colors, typography, spacing, image radius, and responsive behavior consume design-system tokens; adjacent existing copy conveys the meaning and images are hidden from assistive technology.",
       "expires": "2027-03-09"
     }
   ]

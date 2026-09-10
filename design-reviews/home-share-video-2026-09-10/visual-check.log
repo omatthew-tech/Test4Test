@@ -1,0 +1,190 @@
+
+Running 4 tests using 1 worker
+
+(node:29688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile (2.2s)
+(node:36844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet (3.3s)
+(node:6028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop (3.0s)
+(node:36548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop (3.9s)
+
+
+  1) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 390px by 4674px, received 390px by 6761px. 189578 pixels (ratio 0.08 of all image pixels) are different.
+
+      Snapshot: home-mobile.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-mobile.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 390px by 4674px, received 390px by 6761px. 189825 pixels (ratio 0.08 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 390px by 4674px, received 390px by 6761px. 189578 pixels (ratio 0.08 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-mobile (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-mobile-visual-win32.png
+    Received: test-results\visual-home-route-at-mobile-visual\home-mobile-actual.png
+    Diff:     test-results\visual-home-route-at-mobile-visual\home-mobile-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-mobile-visual\error-context.md
+
+  2) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 768px by 4126px, received 768px by 7218px. 356486 pixels (ratio 0.07 of all image pixels) are different.
+
+      Snapshot: home-tablet.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-tablet.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 768px by 4126px, received 768px by 7218px. 358678 pixels (ratio 0.07 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 768px by 4126px, received 768px by 7218px. 356486 pixels (ratio 0.07 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-tablet (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-tablet-visual-win32.png
+    Received: test-results\visual-home-route-at-tablet-visual\home-tablet-actual.png
+    Diff:     test-results\visual-home-route-at-tablet-visual\home-tablet-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-tablet-visual\error-context.md
+
+  3) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop ───────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1024px by 3142px, received 1024px by 4835px. 250278 pixels (ratio 0.06 of all image pixels) are different.
+
+      Snapshot: home-laptop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-laptop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1024px by 3142px, received 1024px by 4835px. 251117 pixels (ratio 0.06 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1024px by 3142px, received 1024px by 4835px. 250278 pixels (ratio 0.06 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-laptop (image/png) ─────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-laptop-visual-win32.png
+    Received: test-results\visual-home-route-at-laptop-visual\home-laptop-actual.png
+    Diff:     test-results\visual-home-route-at-laptop-visual\home-laptop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-laptop-visual\error-context.md
+
+  4) [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop ──────────────────────
+
+    Error: expect(page).toHaveScreenshot(expected) failed
+
+      Expected an image 1440px by 3220px, received 1440px by 5106px. 283984 pixels (ratio 0.04 of all image pixels) are different.
+
+      Snapshot: home-desktop.png
+
+    Call log:
+      - Expect "toHaveScreenshot(home-desktop.png)" with timeout 5000ms
+        - verifying given screenshot expectation
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - Expected an image 1440px by 3220px, received 1440px by 5106px. 285525 pixels (ratio 0.04 of all image pixels) are different.
+      - waiting 100ms before taking screenshot
+      - taking page screenshot
+        - disabled all CSS animations
+      - waiting for fonts to load...
+      - fonts loaded
+      - captured a stable screenshot
+      - Expected an image 1440px by 3220px, received 1440px by 5106px. 283984 pixels (ratio 0.04 of all image pixels) are different.
+
+
+      176 |       await expect(page.locator("main")).toBeVisible();
+      177 |       await settleRouteImages(page);
+    > 178 |       await expect(page).toHaveScreenshot(`${route.name}-${viewport.name}.png`, {
+          |                          ^
+      179 |         animations: "disabled",
+      180 |         fullPage: true,
+      181 |       });
+        at C:\Projects\Test4Test-Redesign\tests\playwright\visual.spec.ts:178:26
+
+    attachment #1: home-desktop (image/png) ────────────────────────────────────────────────────────
+    Expected: tests\playwright\visual.spec.ts-snapshots\home-desktop-visual-win32.png
+    Received: test-results\visual-home-route-at-desktop-visual\home-desktop-actual.png
+    Diff:     test-results\visual-home-route-at-desktop-visual\home-desktop-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\visual-home-route-at-desktop-visual\error-context.md
+
+  4 failed
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at mobile ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at tablet ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at laptop ────────────────────────
+    [visual] › tests\playwright\visual.spec.ts:172:5 › home route at desktop ───────────────────────
