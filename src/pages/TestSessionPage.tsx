@@ -1,4 +1,12 @@
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createMicrophoneMeter } from "../lib/microphoneMeter";
 import {
   CheckCircle2,
   ChevronDown,
@@ -615,6 +623,26 @@ function ScreenRecordingMenuIllustration({
   );
 }
 
+function MicrophoneBars({
+  meter,
+  active,
+}: {
+  meter: ReturnType<typeof createMicrophoneMeter>;
+  active: boolean;
+}) {
+  const level = useSyncExternalStore(meter.subscribe, meter.getSnapshot, () => 0);
+  const responsiveLevel = Math.pow(active ? Math.max(0, Math.min(1, level)) : 0, 0.58);
+  const weights = [0.6, 0.82, 1, 0.82, 0.6];
+  return [10, 14, 18, 14, 10].map((baseHeight, index) => {
+    const height = Math.min(
+      34,
+      Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index]))),
+    );
+    // ds-exception: runtime-measurements — measured waveform height.
+    return <span key={index} style={{ height: `${height}px` }} />;
+  });
+}
+
 export function TestSessionPage() {
   const { submissionId: testRef = "" } = useParams();
   const navigate = useNavigate();
@@ -747,8 +775,14 @@ export function TestSessionPage() {
     "idle" | "requesting" | "ready" | "error"
   >("idle");
   const [microphoneError, setMicrophoneError] = useState("");
-  const [microphoneLevel, setMicrophoneLevel] = useState(0);
+  const [microphoneMeter] = useState(createMicrophoneMeter);
+  const setMicrophoneLevel = microphoneMeter.set;
   const [microphoneTestPassed, setMicrophoneTestPassed] = useState(false);
+  const microphoneThresholdReached = useSyncExternalStore(
+    microphoneMeter.subscribe,
+    () => !microphoneTestPassed && microphoneMeter.getSnapshot() >= MICROPHONE_TEST_THRESHOLD,
+    () => false,
+  );
   const [recordingPipDeleteConfirm, setRecordingPipDeleteConfirm] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState<TestReportReason>("app_unavailable");
@@ -867,31 +901,11 @@ export function TestSessionPage() {
     () => createGeneratedRecordingFileName(recordingSessionId, nativeRecordingMimeType),
     [nativeRecordingMimeType, recordingSessionId],
   );
-  const microphoneBarHeights = useMemo(() => {
-    const baseHeights = [10, 14, 18, 14, 10];
-
-    const weightedLevel =
-      microphoneStatus === "ready" ? Math.max(0, Math.min(1, microphoneLevel)) : 0;
-    const responsiveLevel = Math.pow(weightedLevel, 0.58);
-    const weights = [0.6, 0.82, 1, 0.82, 0.6];
-
-    return baseHeights.map((baseHeight, index) =>
-      Math.min(
-        34,
-        Math.max(6, Math.round(baseHeight * (0.55 + responsiveLevel * 1.45 * weights[index]))),
-      ),
-    );
-  }, [microphoneLevel, microphoneStatus]);
-
   useEffect(() => {
-    if (
-      !microphoneTestPassed &&
-      microphoneStatus === "ready" &&
-      microphoneLevel >= MICROPHONE_TEST_THRESHOLD
-    ) {
+    if (!microphoneTestPassed && microphoneStatus === "ready" && microphoneThresholdReached) {
       setMicrophoneTestPassed(true);
     }
-  }, [microphoneLevel, microphoneStatus, microphoneTestPassed]);
+  }, [microphoneThresholdReached, microphoneStatus, microphoneTestPassed]);
 
   useEffect(() => {
     if (!submission) {
@@ -3615,15 +3629,12 @@ export function TestSessionPage() {
                                           : "Voice activity level for the selected microphone"
                                       }
                                     >
-                                      {!microphoneTestPassed
-                                        ? microphoneBarHeights.map((height, index) => (
-                                            /* ds-exception: runtime-measurements — measured waveform height. */
-                                            <span
-                                              key={`mic-bar-${index}`}
-                                              style={{ height: `${height}px` }}
-                                            />
-                                          ))
-                                        : null}
+                                      {!microphoneTestPassed ? (
+                                        <MicrophoneBars
+                                          meter={microphoneMeter}
+                                          active={microphoneStatus === "ready"}
+                                        />
+                                      ) : null}
                                       {microphoneTestPassed ? (
                                         <CheckCircle2
                                           className="recording-mic-indicator__check"
@@ -3672,13 +3683,7 @@ export function TestSessionPage() {
                                       role="img"
                                       aria-label="Microphone activity is inactive until microphone access is enabled"
                                     >
-                                      {microphoneBarHeights.map((height, index) => (
-                                        /* ds-exception: runtime-measurements — measured waveform height. */
-                                        <span
-                                          key={`inactive-mic-bar-${index}`}
-                                          style={{ height: `${height}px` }}
-                                        />
-                                      ))}
+                                      <MicrophoneBars meter={microphoneMeter} active={false} />
                                     </div>
                                   ) : null}
                                   {microphoneError ? (

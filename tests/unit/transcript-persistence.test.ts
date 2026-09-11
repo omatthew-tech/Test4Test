@@ -59,6 +59,15 @@ describe("durable transcript migration", () => {
         "utf8",
       ),
     );
+    await db.exec(
+      await readFile(
+        new URL(
+          "../../supabase/migrations/20260910210807_transcript_report_deltas.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
   }, 30_000);
   afterAll(async () => {
     await db?.close();
@@ -216,6 +225,57 @@ describe("durable transcript migration", () => {
     ]);
     expect((await claim()).rows).toHaveLength(1);
     expect((await claim()).rows).toHaveLength(0);
+  });
+
+  it("delta reads preserve full results, refresh changed sources and enforce owner access", async () => {
+    await addRecording(20);
+    await addRecording(21, 12);
+    await addLegacy(20);
+    await reuseLegacy();
+    const delta = async (known = {}) =>
+      (
+        await db.query<{
+          report: { apps: unknown[]; app: unknown; recordings: Array<Record<string, unknown>> };
+        }>(
+          "select public.get_transcript_report_page_delta($1,$2,now(),null,null,$3::jsonb) as report",
+          [id(1), id(11), JSON.stringify(known)],
+        )
+      ).rows[0].report;
+    const first = await delta();
+    const old = (
+      await db.query<{ report: typeof first }>(
+        "select public.get_transcript_report_page($1,$2) as report",
+        [id(1), id(11)],
+      )
+    ).rows[0].report;
+    expect({
+      ...first,
+      recordings: first.recordings.map((row) => {
+        const copy = { ...row };
+        delete copy.revision;
+        delete copy.unchanged;
+        return copy;
+      }),
+    }).toEqual(old);
+    const known = { [id(20)]: first.recordings[0].revision };
+    expect((await delta(known)).recordings[0]).toMatchObject({
+      unchanged: true,
+      fullText: "",
+      segments: [],
+    });
+    await db.exec(
+      "update public.recording_transcripts set updated_at=now()+interval '1 second',full_text='Changed' where status='ready'",
+    );
+    expect((await delta(known)).recordings[0]).toMatchObject({
+      unchanged: false,
+      fullText: "Changed",
+    });
+    await db.query("update public.test_responses set recording_deleted_at=now() where id=$1", [
+      id(20),
+    ]);
+    expect((await delta(known)).recordings).toEqual([]);
+    for (const role of ["anon", "authenticated"])
+      await forbidden(role, `select public.get_transcript_report_page_delta('${id(1)}')`);
   });
 
   it("persists text and ordered words transactionally and ignores duplicate completions", async () => {

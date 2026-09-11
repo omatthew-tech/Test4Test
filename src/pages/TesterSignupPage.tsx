@@ -113,8 +113,7 @@ function validateEmail(email: string) {
 export function TesterSignupPage() {
   const navigate = useNavigate();
   const { completeTesterSignup, requestOtp, signOut, verifyOtp } = useAppState();
-  const initialRef = useRef(loadTesterSignupDraft());
-  const initial = initialRef.current;
+  const [initial] = useState(loadTesterSignupDraft);
   const [draft, setDraft] = useState<TesterProfileDraft>(
     initial?.draft ?? EMPTY_TESTER_PROFILE_DRAFT,
   );

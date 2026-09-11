@@ -20,7 +20,11 @@ import {
   type TranscriptReportApp,
   type TranscriptReportData,
 } from "../lib/transcriptReport";
-import { requestTranscriptReport, retryRecordingTranscript } from "../lib/transcriptReports";
+import {
+  requestTranscriptReport,
+  retryRecordingTranscript,
+  sameTranscriptReport,
+} from "../lib/transcriptReports";
 import { buildTranscriptReportFixtures } from "../testing/transcriptReportFixtures";
 import styles from "./AnalyticsPage.module.css";
 
@@ -62,6 +66,7 @@ export function AnalyticsTranscriptReport() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let inFlight = false;
     let appId = selectedAppId;
+    let previousReport: TranscriptReportData | null = null;
 
     async function refresh() {
       if (!userId || controller.signal.aborted || inFlight || document.visibilityState === "hidden")
@@ -76,7 +81,7 @@ export function AnalyticsTranscriptReport() {
                 (appId ? fixtureReports.get(appId) : [...fixtureReports.values()][0]) ?? null,
               ),
             }
-          : await requestTranscriptReport(userId, appId, controller.signal);
+          : await requestTranscriptReport(userId, appId, controller.signal, previousReport);
         if (controller.signal.aborted) return;
         appId ??= result.report?.app.id ?? null;
         if (fixtureReports && result.report) {
@@ -89,9 +94,10 @@ export function AnalyticsTranscriptReport() {
         setApps(result.apps);
         setError(null);
         const report = result.report;
+        previousReport = report;
         setSnapshot((current) => {
           if (!report) return null;
-          if (JSON.stringify(current?.data) === JSON.stringify(report)) return current;
+          if (sameTranscriptReport(current?.data, report)) return current;
           return {
             data: report,
             exportedAt: fixtureMode ? "2026-09-08T12:00:00.000Z" : new Date().toISOString(),

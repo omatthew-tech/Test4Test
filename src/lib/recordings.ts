@@ -1,5 +1,6 @@
 import { ProductType, ResponseRecording } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
+import { mapConcurrent } from "./concurrent";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
@@ -69,6 +70,8 @@ interface RecordingUploadR2Response {
   uploadUrl?: string;
   uploadId?: string;
   partSizeBytes?: number;
+  supportsBatchSigning?: boolean;
+  signedParts?: Array<{ partNumber: number; uploadUrl: string }>;
   expiresInSeconds?: number;
   error?: string;
   message?: string;
@@ -76,6 +79,7 @@ interface RecordingUploadR2Response {
 
 interface MultipartUploadCacheEntry {
   uploadId: string;
+  supportsBatchSigning?: boolean;
   partSizeBytes: number;
   completedParts: Array<{ partNumber: number; etag: string }>;
 }
@@ -604,6 +608,7 @@ async function uploadRecordingObjectMultipart(
 
     cacheEntry = {
       uploadId: initiateResult.uploadId,
+      supportsBatchSigning: initiateResult.supportsBatchSigning,
       partSizeBytes: initiateResult.partSizeBytes ?? RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES,
       completedParts: [],
     };
@@ -622,11 +627,20 @@ async function uploadRecordingObjectMultipart(
     buildUploadProgress(uploadedBytes, file.size, uploadedBytes > 0 ? "retrying" : "uploading"),
   );
 
-  for (let partNumber = 1; partNumber <= totalParts; partNumber += 1) {
-    if (completedPartNumbers.has(partNumber)) {
-      continue;
-    }
-
+  const pendingParts = Array.from({ length: totalParts }, (_, index) => index + 1).filter(
+    (partNumber) => !completedPartNumbers.has(partNumber),
+  );
+  const partProgress = new Map<number, number>();
+  const signingBatches = new Map<number, Promise<RecordingUploadR2Response>>();
+  const reportProgress = (state: RecordingUploadProgress["state"]) =>
+    onProgress?.(
+      buildUploadProgress(
+        uploadedBytes + [...partProgress.values()].reduce((sum, bytes) => sum + bytes, 0),
+        file.size,
+        state,
+      ),
+    );
+  await mapConcurrent(pendingParts, 3, async (partNumber, index) => {
     const partStart = (partNumber - 1) * cacheEntry.partSizeBytes;
     const partEnd = Math.min(file.size, partStart + cacheEntry.partSizeBytes);
     const partBlob = file.slice(partStart, partEnd);
@@ -634,38 +648,56 @@ async function uploadRecordingObjectMultipart(
     let maxPartBytesUploaded = 0;
 
     for (let attempt = 0; attempt <= RECORDING_UPLOAD_RETRY_DELAYS_MS.length; attempt += 1) {
-      const signedPart = await callRecordingUploadR2(
-        {
-          action: "sign_part",
-          path,
-          fileName: file.name,
-          mimeType: contentType,
-          fileSizeBytes: file.size,
-          uploadId: cacheEntry.uploadId,
-          partNumber,
-        },
-        options,
-      );
+      const signingRequest = {
+        path,
+        fileName: file.name,
+        mimeType: contentType,
+        fileSizeBytes: file.size,
+        uploadId: cacheEntry.uploadId,
+        partNumber,
+      };
+      let uploadUrl: string | undefined;
+      if (attempt === 0 && cacheEntry.supportsBatchSigning) {
+        const batch = Math.floor(index / 3);
+        let request = signingBatches.get(batch);
+        if (!request) {
+          request = callRecordingUploadR2(
+            {
+              ...signingRequest,
+              action: "sign_parts",
+              partNumbers: pendingParts.slice(batch * 3, batch * 3 + 3),
+            },
+            options,
+          );
+          signingBatches.set(batch, request);
+        }
+        uploadUrl = (await request).signedParts?.find(
+          (part) => part.partNumber === partNumber,
+        )?.uploadUrl;
+      } else {
+        uploadUrl = (
+          await callRecordingUploadR2({ ...signingRequest, action: "sign_part" }, options)
+        ).uploadUrl;
+      }
 
-      if (!signedPart.uploadUrl) {
+      if (!uploadUrl) {
         throw new Error("The recording upload part URL could not be created.");
       }
 
       try {
         if (attempt > 0) {
-          onProgress?.(buildUploadProgress(uploadedBytes, file.size, "retrying"));
+          reportProgress("retrying");
         }
 
-        partResponse = await uploadFileToSignedUrl(signedPart.uploadUrl, partBlob, {
+        partResponse = await uploadFileToSignedUrl(uploadUrl, partBlob, {
           retryLabel: `Recording upload part ${partNumber}`,
           onUploadProgress: (partBytesUploaded) => {
             maxPartBytesUploaded = Math.max(
               maxPartBytesUploaded,
               Math.min(partBlob.size, partBytesUploaded),
             );
-            onProgress?.(
-              buildUploadProgress(uploadedBytes + maxPartBytesUploaded, file.size, "uploading"),
-            );
+            partProgress.set(partNumber, maxPartBytesUploaded);
+            reportProgress("uploading");
           },
         });
         break;
@@ -684,11 +716,12 @@ async function uploadRecordingObjectMultipart(
       );
     }
 
-    cacheEntry.completedParts = [...cacheEntry.completedParts, { partNumber, etag }];
+    cacheEntry!.completedParts = [...cacheEntry!.completedParts, { partNumber, etag }];
     completedPartNumbers.add(partNumber);
     uploadedBytes += partBlob.size;
-    onProgress?.(buildUploadProgress(uploadedBytes, file.size, "uploading"));
-  }
+    partProgress.delete(partNumber);
+    reportProgress("uploading");
+  });
 
   await callRecordingUploadR2(
     {
@@ -698,7 +731,9 @@ async function uploadRecordingObjectMultipart(
       mimeType: contentType,
       fileSizeBytes: file.size,
       uploadId: cacheEntry.uploadId,
-      parts: cacheEntry.completedParts,
+      parts: [...cacheEntry.completedParts].sort(
+        (first, second) => first.partNumber - second.partNumber,
+      ),
     },
     options,
   );

@@ -12,6 +12,11 @@ export interface TranscriptReportPage {
   nextCursor: string | null;
 }
 
+export type VersionedTranscriptRecording = TranscriptReportRecording & {
+  revision?: string;
+  unchanged?: boolean;
+};
+
 async function callTranscriptEndpoint<T>(
   endpoint: string,
   body: object,
@@ -46,17 +51,32 @@ async function callTranscriptEndpoint<T>(
 /** Read every page before offering export. Failed pagination never produces a partial dataset. */
 export async function loadTranscriptReportPages(
   loadPage: (cursor: string | null) => Promise<TranscriptReportPage>,
+  previous?: TranscriptReportData | null,
 ) {
   let cursor: string | null = null;
   let first: TranscriptReportPage | undefined;
   const recordings = new Map<string, TranscriptReportRecording>();
   const cursors = new Set<string>();
+  const previousById = new Map(previous?.recordings.map((row) => [row.responseId, row]) ?? []);
   do {
     const page = await loadPage(cursor);
     first ??= page;
     if (page.app?.id !== first.app?.id)
       throw new Error("The selected app changed. Reload the report.");
-    for (const recording of page.recordings) recordings.set(recording.responseId, recording);
+    for (const recording of page.recordings as VersionedTranscriptRecording[]) {
+      if (recording.unchanged) {
+        const cached = previousById.get(recording.responseId) as
+          VersionedTranscriptRecording | undefined;
+        if (
+          previous?.app.id !== page.app?.id ||
+          !cached ||
+          !recording.revision ||
+          cached.revision !== recording.revision
+        )
+          throw new Error("The report changed. Reload the report.");
+        recordings.set(recording.responseId, cached);
+      } else recordings.set(recording.responseId, recording);
+    }
     cursor = page.nextCursor;
     if (cursor && cursors.has(cursor))
       throw new Error("Report pagination could not finish. Try again.");
@@ -70,14 +90,49 @@ export async function loadTranscriptReportPages(
   };
 }
 
-export function requestTranscriptReport(userId: string, appId: string | null, signal: AbortSignal) {
-  return loadTranscriptReportPages((cursor) =>
-    callTranscriptEndpoint<TranscriptReportPage>(
-      "get-transcript-report",
-      { appId, cursor },
-      userId,
-      signal,
-    ),
+export function requestTranscriptReport(
+  userId: string,
+  appId: string | null,
+  signal: AbortSignal,
+  previous?: TranscriptReportData | null,
+) {
+  const knownVersions = Object.fromEntries(
+    (previous?.recordings ?? [])
+      .filter((row: VersionedTranscriptRecording) => Boolean(row.revision))
+      .slice(0, 1000)
+      .map((row: VersionedTranscriptRecording) => [row.responseId, row.revision]),
+  );
+  return loadTranscriptReportPages(
+    (cursor) =>
+      callTranscriptEndpoint<TranscriptReportPage>(
+        "get-transcript-report",
+        { appId, cursor, knownVersions },
+        userId,
+        signal,
+      ),
+    previous,
+  );
+}
+
+export function sameTranscriptReport(
+  first: TranscriptReportData | undefined,
+  second: TranscriptReportData,
+) {
+  return Boolean(
+    first &&
+    JSON.stringify(first.app) === JSON.stringify(second.app) &&
+    first.recordings.length === second.recordings.length &&
+    first.recordings.every((row, index) => {
+      const other = second.recordings[index];
+      if (row === other) return true;
+      const visible = (recording: VersionedTranscriptRecording) => {
+        const copy = { ...recording };
+        delete copy.revision;
+        delete copy.unchanged;
+        return copy;
+      };
+      return JSON.stringify(visible(row)) === JSON.stringify(visible(other));
+    }),
   );
 }
 

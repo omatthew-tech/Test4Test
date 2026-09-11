@@ -7,7 +7,7 @@ import {
   transcriptReportFilename,
   type TranscriptReportData,
 } from "../../src/lib/transcriptReport";
-import { loadTranscriptReportPages } from "../../src/lib/transcriptReports";
+import { loadTranscriptReportPages, sameTranscriptReport } from "../../src/lib/transcriptReports";
 import {
   decodeTranscriptCursor,
   validTranscriptResult,
@@ -124,6 +124,48 @@ describe("transcript report format", () => {
 });
 
 describe("complete transcript retrieval", () => {
+  it("reuses unchanged transcripts while replacing changed rows and removing deleted rows", async () => {
+    const cached = { ...data.recordings[0], revision: "v1" };
+    const previous = { ...data, recordings: [cached, { ...cached, responseId: "deleted" }] };
+    const result = await loadTranscriptReportPages(
+      async () => ({
+        apps: [data.app],
+        app: data.app,
+        recordings: [
+          { ...cached, unchanged: true, fullText: "", segments: [] },
+          { ...cached, responseId: "new", revision: "v2", fullText: "New source." },
+        ],
+        nextCursor: null,
+      }),
+      previous,
+    );
+    expect(result.report?.recordings[0]).toBe(cached);
+    expect(result.report?.recordings.map((row) => row.responseId)).toEqual([
+      cached.responseId,
+      "new",
+    ]);
+    expect(build(result.report!)).toContain("New source.");
+  });
+  it("rejects missing or mismatched cached revisions instead of dropping source text", async () => {
+    const page = {
+      apps: [data.app],
+      app: data.app,
+      recordings: [{ ...data.recordings[0], revision: "new", unchanged: true }],
+      nextCursor: null,
+    };
+    await expect(loadTranscriptReportPages(async () => page, data)).rejects.toThrow(
+      "report changed",
+    );
+  });
+  it("preserves export time for identical legacy responses and notices changed text", () => {
+    expect(sameTranscriptReport(data, structuredClone(data))).toBe(true);
+    expect(
+      sameTranscriptReport(data, {
+        ...data,
+        recordings: [{ ...data.recordings[0], fullText: "Changed" }],
+      }),
+    ).toBe(false);
+  });
   it("loads every page beyond the preview limit", async () => {
     const result = await loadTranscriptReportPages(async (cursor) => {
       const index = Number(cursor ?? 0);

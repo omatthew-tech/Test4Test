@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { preload } from "react-dom";
 import {
   Button,
   Card,
@@ -278,18 +279,19 @@ function HomeTrustedBySection({
 const homeHowItWorksSteps = [
   {
     title: "Create your test",
-    description: "Create your first test in seconds",
+    description: "Create your first test in seconds. Answer a few questions or use AI",
     image: "/images/home-step-create-test-actual.webp",
   },
   {
     title: "Get testers",
-    description: "Share your test to as many users as you want or earn 1:1 credits",
+    description:
+      "Share your test to unlimited users or earn credits by testing other founder's tests",
     image: "/images/home-step-get-testers-actual.webp",
   },
   {
     title: "Gain insights",
     description:
-      "Manage everything from one dashboard. Watch your tests, clip or export them to your favorite LLM",
+      "Manage every insight from one dashboard. Watch your tests, clip or export it to your favorite LLM",
     image: "/images/home-step-gain-insights-actual.webp",
   },
 ] as const;
@@ -298,8 +300,6 @@ const freeFeedbackMethods = [
   {
     title: "Earn 1:1 credits",
     description: "Earn credits 1:1 (we don't take a cut)",
-    actionLabel: "Earn credits",
-    actionPath: "/earn",
     id: "home-test-other-founders-title",
     poster: "/videos/home-earn-credit-poster.webp",
     staticPoster: "/videos/home-earn-credit-static.webp",
@@ -310,8 +310,6 @@ const freeFeedbackMethods = [
   {
     title: "Bring your own testers",
     description: "There are no limits - bring as many as you want",
-    actionLabel: "Get started",
-    actionPath: "/submit",
     id: "home-bring-your-own-testers-title",
     poster: "/videos/home-share-test-poster.webp",
     staticPoster: "/videos/home-share-test-poster.webp",
@@ -433,8 +431,6 @@ function HomeFeedbackPreview({ method }: { method: (typeof freeFeedbackMethods)[
 }
 
 function FreeFeedbackShowcase() {
-  const navigate = useNavigate();
-
   return (
     <Stack className={styles.freeFeedbackContent}>
       {freeFeedbackMethods.map((method) => (
@@ -448,15 +444,6 @@ function FreeFeedbackShowcase() {
           <Stack className={styles.feedbackMethodCopy} gap="md">
             <h3 id={method.id}>{method.title}</h3>
             <p>{method.description}</p>
-            <Cluster>
-              <Button
-                className={styles.feedbackMethodAction}
-                size="large"
-                onClick={() => navigate(method.actionPath)}
-              >
-                {method.actionLabel}
-              </Button>
-            </Cluster>
           </Stack>
         </Grid>
       ))}
@@ -622,6 +609,7 @@ function chooseHomeFeedbackQuoteIndex(previousIndex: number | null) {
 }
 
 export function HomePage() {
+  preload("/images/home-hero-savanna.webp", { as: "image", fetchPriority: "high" });
   usePageMetadata({
     canonicalPath: "/",
     image: defaultImage,

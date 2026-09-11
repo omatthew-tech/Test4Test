@@ -117,6 +117,7 @@ export class RecordingThumbnailQueue {
     try {
       const response = await fetch(config.thumbnails.completionWebhookUrl, {
         method: "POST",
+        signal: AbortSignal.timeout(30_000),
         headers: {
           "Content-Type": "application/json",
           ...(config.http.sharedSecret ? { "x-worker-secret": config.http.sharedSecret } : {}),

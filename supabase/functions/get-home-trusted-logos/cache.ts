@@ -34,6 +34,24 @@ export interface CacheStore {
   publicUrl(path: string): string;
 }
 
+/** Batch the first lookup only; lease-recovery reads must still see fresh rows. */
+export function primeCacheReads(store: CacheStore, ids: string[], rows: CacheRow[]): CacheStore {
+  const initial = new Map<string, CacheRow | null>(ids.map((id) => [id, null]));
+  for (const row of rows) initial.set(row.submission_id, row);
+  return {
+    claim: (...args) => store.claim(...args),
+    upload: (...args) => store.upload(...args),
+    finish: (...args) => store.finish(...args),
+    publicUrl: (...args) => store.publicUrl(...args),
+    read(id) {
+      if (!initial.has(id)) return store.read(id);
+      const row = initial.get(id) ?? null;
+      initial.delete(id);
+      return Promise.resolve(row);
+    },
+  };
+}
+
 export function selectDestination(
   submission: SubmissionSource,
 ): { url: string; appStoreOnly: boolean } | null {

@@ -91,7 +91,7 @@ test("home sharing demo falls back to the poster when media cannot load", async 
   await expect(article.locator("video")).toHaveCount(0);
   await expect(article.locator("img")).toBeVisible();
   await expect(article.locator("img")).toHaveJSProperty("complete", true);
-  await expect(article.getByRole("button", { name: "Get started" })).toBeEnabled();
+  await expect(article.getByRole("button")).toHaveCount(0);
 });
 
 test("home sharing demo plays the H.264 fallback if the AV1 source fails", async ({ page }) => {

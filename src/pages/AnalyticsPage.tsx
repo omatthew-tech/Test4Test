@@ -241,7 +241,10 @@ export function AnalyticsPage() {
 
       pollingAttemptsRef.current += 1;
       try {
-        const updates = await requestRecordingPreviews({ force: true });
+        const updates = await requestRecordingPreviews({
+          force: true,
+          responseIds: pendingResponseIds.split(","),
+        });
         if (!cancelled) {
           setPreviews((current) => mergeRecordingPreviews(current, updates));
         }

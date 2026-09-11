@@ -121,6 +121,7 @@ async function notifyCompletion(
   try {
     await fetch(config.completionWebhookUrl, {
       method: "POST",
+      signal: AbortSignal.timeout(30_000),
       headers: {
         "Content-Type": "application/json",
         ...(config.http.sharedSecret ? { "x-worker-secret": config.http.sharedSecret } : {}),

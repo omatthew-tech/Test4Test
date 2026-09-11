@@ -4,6 +4,7 @@ import {
   SUCCESS_TTL_MS,
   FAILURE_TTL_MS,
   selectDestination,
+  primeCacheReads,
   type CacheRow,
   type CacheStore,
   type SubmissionSource,
@@ -22,6 +23,17 @@ const asset: LogoAsset = {
   extension: "png",
   sourceImageUrl: "https://example.com/icon.png",
 };
+
+Deno.test(
+  "batch reads keep missing rows and lease recovery fresh, including prototype methods",
+  async () => {
+    const store = new MemoryStore();
+    const primed = primeCacheReads(store, [source.id], []);
+    await primed.claim(source.id, "source-key");
+    equal(await primed.read(source.id), null);
+    equal((await primed.read(source.id))?.source_key, "source-key");
+  },
+);
 class MemoryStore implements CacheStore {
   row: CacheRow | null = null;
   claims = 0;

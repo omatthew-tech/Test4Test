@@ -1,12 +1,21 @@
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement } from "react";
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  MemoryRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { Container, Skeleton, Stack } from "@test4test/design-system";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
 import { trackEventOncePerSession } from "./lib/analytics";
 import { founderWorkspaceRedirect } from "./lib/accountAccess";
-import { HomePage } from "./pages/HomePage";
+import { useRouteNavigation } from "./lib/routeNavigation";
 import styles from "./Application.module.css";
+
+const HomePage = lazy(() => import("./pages/HomePage").then((m) => ({ default: m.HomePage })));
 
 const AdminPage = lazy(() => import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })));
 const AnalyticsPage = lazy(() =>
@@ -60,6 +69,15 @@ const TestSuccessPage = lazy(() =>
 const VerifyPage = lazy(() =>
   import("./pages/VerifyPage").then((m) => ({ default: m.VerifyPage })),
 );
+
+const NotFoundPage = lazy(() =>
+  import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
+);
+
+function RouteNavigation() {
+  useRouteNavigation();
+  return null;
+}
 
 function RouteLoading() {
   return (
@@ -172,7 +190,16 @@ function LegacyResultsRedirect() {
   return <Navigate to={`${destination}${search ? `?${search}` : ""}`} replace />;
 }
 
-export default function App() {
+export default function App({
+  prerenderPath,
+  blogPages,
+}: {
+  prerenderPath?: string;
+  blogPages?: { index: ComponentType; post: ComponentType };
+} = {}) {
+  const Router = prerenderPath ? MemoryRouter : BrowserRouter;
+  const BlogIndex = blogPages?.index ?? BlogPage;
+  const BlogPost = blogPages?.post ?? BlogPostPage;
   useEffect(() => {
     if (!(import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1")) {
       trackEventOncePerSession("site_visited");
@@ -181,7 +208,8 @@ export default function App() {
 
   return (
     <div className={styles.application}>
-      <BrowserRouter>
+      <Router {...(prerenderPath ? { initialEntries: [prerenderPath] } : {})}>
+        <RouteNavigation />
         <AppStateProvider>
           <Suspense fallback={<RouteLoading />}>
             <Routes>
@@ -226,8 +254,8 @@ export default function App() {
                   </BanRedirectRoute>
                 }
               />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/blog" element={<BlogIndex />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route
                 path="/earn"
                 element={
@@ -338,14 +366,14 @@ export default function App() {
                 path="*"
                 element={
                   <BanRedirectRoute>
-                    <HomePage />
+                    <NotFoundPage />
                   </BanRedirectRoute>
                 }
               />
             </Routes>
           </Suspense>
         </AppStateProvider>
-      </BrowserRouter>
+      </Router>
     </div>
   );
 }

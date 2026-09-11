@@ -105,6 +105,9 @@ const vite = await createServer({
 
 try {
   const template = readFileSync(templatePath, "utf8");
+  const staticAssets = JSON.parse(
+    readFileSync(join(distDir, "assets/static-asset-manifest.json"), "utf8"),
+  );
   const { getPrerenderBlogRoutes, renderBlogRoute } = await vite.ssrLoadModule(
     "/src/entry-prerender.tsx",
   );
@@ -113,6 +116,9 @@ try {
   for (const route of routes) {
     const outputPath = getOutputPath(route);
     const renderedRoute = renderBlogRoute(route);
+    for (const [source, target] of Object.entries(staticAssets)) {
+      renderedRoute.appHtml = renderedRoute.appHtml.replaceAll(`"${source}"`, `"${target}"`);
+    }
     const html = injectPrerenderedRoute(template, route, renderedRoute);
 
     mkdirSync(dirname(outputPath), { recursive: true });

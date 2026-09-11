@@ -4,6 +4,7 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "600",
 };
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -15,6 +16,7 @@ interface Dependencies {
   eligibleIds(): Promise<string[]>;
   sources(ids: string[]): Promise<SubmissionSource[]>;
   resolve(source: SubmissionSource): Promise<string | null>;
+  prepare?(sources: SubmissionSource[]): Promise<Dependencies["resolve"]>;
 }
 
 export function createHandler(deps: Dependencies) {
@@ -64,13 +66,14 @@ export function createHandler(deps: Dependencies) {
       if (ids.some((id) => !eligible.has(id)))
         return json({ error: "Submission is not in the public homepage feed" }, 403);
       const sources = new Map((await deps.sources(ids)).map((source) => [source.id, source]));
+      const resolve = deps.prepare ? await deps.prepare([...sources.values()]) : deps.resolve;
       const logos = await Promise.all(
         ids.map(async (submissionId) => {
           const source = sources.get(submissionId);
           let logoUrl: string | null = null;
           if (source) {
             try {
-              logoUrl = await deps.resolve(source);
+              logoUrl = await resolve(source);
             } catch {
               console.error(JSON.stringify({ event: "home_logo_cache_error", submissionId }));
             }

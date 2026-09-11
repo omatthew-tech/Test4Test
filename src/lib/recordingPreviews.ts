@@ -15,6 +15,7 @@ interface PreviewCacheEntry {
 }
 
 const previewCache = new Map<string, PreviewCacheEntry>();
+const previewRequests = new Map<string, Promise<RecordingPreviewSummary[]>>();
 const CACHE_EXPIRY_SAFETY_MS = 60 * 1000;
 const PENDING_REFRESH_MS = 5 * 1000;
 
@@ -110,32 +111,42 @@ export async function requestRecordingPreviews(
     return cached.recordings;
   }
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/get-recording-previews`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: supabasePublishableKey,
-    },
-    body: JSON.stringify(responseIds.length > 0 ? { responseIds } : {}),
-  });
-  const payload = (await response.json().catch(() => null)) as PreviewEndpointResponse | null;
-  if (!response.ok || !Array.isArray(payload?.recordings)) {
-    throw new Error(
-      payload?.error ?? payload?.message ?? "Recording previews are not available right now.",
-    );
-  }
+  const pending = previewRequests.get(key);
+  if (pending) return pending;
+  const request = (async () => {
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-recording-previews`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: supabasePublishableKey,
+      },
+      body: JSON.stringify(responseIds.length > 0 ? { responseIds } : {}),
+    });
+    const payload = (await response.json().catch(() => null)) as PreviewEndpointResponse | null;
+    if (!response.ok || !Array.isArray(payload?.recordings)) {
+      throw new Error(
+        payload?.error ?? payload?.message ?? "Recording previews are not available right now.",
+      );
+    }
 
-  const recordings = payload.recordings
-    .map(parsePreview)
-    .filter((preview): preview is RecordingPreviewSummary => preview !== null);
-  const signedUrlLifetimeMs = Math.max(0, (payload.expiresInSeconds ?? 3600) * 1000);
-  const hasPending = recordings.some((recording) => recording.thumbnailStatus === "pending");
-  const refreshAfterMs = hasPending
-    ? PENDING_REFRESH_MS
-    : Math.max(PENDING_REFRESH_MS, signedUrlLifetimeMs - CACHE_EXPIRY_SAFETY_MS);
-  previewCache.set(key, { recordings, refreshAt: Date.now() + refreshAfterMs });
-  return recordings;
+    const recordings = payload.recordings
+      .map(parsePreview)
+      .filter((preview): preview is RecordingPreviewSummary => preview !== null);
+    const signedUrlLifetimeMs = Math.max(0, (payload.expiresInSeconds ?? 3600) * 1000);
+    const hasPending = recordings.some((recording) => recording.thumbnailStatus === "pending");
+    const refreshAfterMs = hasPending
+      ? PENDING_REFRESH_MS
+      : Math.max(PENDING_REFRESH_MS, signedUrlLifetimeMs - CACHE_EXPIRY_SAFETY_MS);
+    previewCache.set(key, { recordings, refreshAt: Date.now() + refreshAfterMs });
+    return recordings;
+  })();
+  previewRequests.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (previewRequests.get(key) === request) previewRequests.delete(key);
+  }
 }
 
 export function buildFixtureRecordingPreviews(

@@ -14,7 +14,7 @@ export function BannedPage() {
             <h1>Your account can&apos;t access Test4Test right now.</h1>
             <p>
               We have temporarily restricted access to your account. This could be for a number of
-              reasons, including suspicious behavior, low quality reviews, innapropiate test
+              reasons, including suspicious behavior, low quality reviews, inappropriate test
               submissions, etc. If you believe this is a mistake, email{" "}
               <a href="mailto:support@test4test.io">support@test4test.io</a>
             </p>

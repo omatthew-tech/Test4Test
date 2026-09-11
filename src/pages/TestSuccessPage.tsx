@@ -27,8 +27,8 @@ export function TestSuccessPage() {
             {isSharedResponse ? (
               <p>
                 Thanks for sharing feedback with{" "}
-                <strong>{submission?.productName ?? "this app"}</strong>. Your notes were sent to
-                the app owner.
+                <strong>{submission?.productName ?? "this app"}</strong>. Your recording was
+                submitted.
               </p>
             ) : isTester ? (
               <p>

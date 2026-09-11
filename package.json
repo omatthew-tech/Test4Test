@@ -14,6 +14,8 @@
     "format:check": "prettier --check \"design-system/**/*.{ts,tsx,css,json,md}\" \"src/**/*.{ts,tsx,css}\" \".storybook/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx,json}\" \"scripts/**/*.{mjs,ts}\"",
     "lint": "eslint src design-system .storybook tests scripts",
     "typecheck": "tsc",
+    "perf:check": "node scripts/check-performance.mjs",
+    "test:production": "node scripts/run-production-tests.mjs",
     "test": "vitest run --project unit",
     "test:home-logos:backend": "npm exec --yes --package=deno@2.9.6 -- deno test --config supabase/functions/get-home-trusted-logos/deno.json --allow-env --allow-read supabase/functions/get-home-trusted-logos/",
     "test:components": "vitest run --project storybook",

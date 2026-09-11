@@ -2,8 +2,10 @@ import { createClient } from "npm:@supabase/supabase-js@2.100.1";
 
 export const recordingCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-recording-cleanup-secret",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-recording-cleanup-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "600",
 };
 
 export function recordingJson(body: unknown, status = 200) {

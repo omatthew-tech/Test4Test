@@ -4,6 +4,8 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useEffectEvent,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -28,7 +30,7 @@ import {
 } from "../lib/pendingSubmission";
 import { trackAuthenticatedVisit, trackEvent } from "../lib/analytics";
 import { calculateTesterEarnAccess } from "../lib/testerEligibility";
-import { estimateSubmissionMinutes } from "../lib/questions";
+import { estimateSubmissionMinutes } from "../lib/estimateMinutes";
 import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/instructions";
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
@@ -326,6 +328,13 @@ const emptyState: AppState = {
 };
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
+type AppActions = Omit<
+  AppStateContextValue,
+  "state" | "currentUser" | "isLoading" | "isConfigured"
+>;
+type AccountState = Pick<AppStateContextValue, "currentUser" | "isLoading" | "isConfigured">;
+const AppActionsContext = createContext<AppActions | null>(null);
+const AccountStateContext = createContext<AccountState | null>(null);
 
 function createId(prefix: string) {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -627,6 +636,7 @@ function shouldLoadFullStateForPath(pathname: string, currentUserId: string | nu
     normalizedPathname === "/" ||
     normalizedPathname === "/earn" ||
     normalizedPathname === "/analytics" ||
+    normalizedPathname === "/profile" ||
     normalizedPathname === "/sign-in" ||
     normalizedPathname === "/verify" ||
     normalizedPathname === "/get-paid-to-test" ||
@@ -824,6 +834,9 @@ function isMissingProfilePaymentSchemaError(message: string) {
   const normalized = message.toLowerCase();
 
   return (
+    /column profiles\.(paypal_handle|venmo_handle|cash_app_handle) does not exist/.test(
+      normalized,
+    ) ||
     normalized.includes('column "paypal_handle" of relation "profiles" does not exist') ||
     normalized.includes('column "venmo_handle" of relation "profiles" does not exist') ||
     normalized.includes('column "cash_app_handle" of relation "profiles" does not exist')
@@ -916,6 +929,28 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
     email,
     display_name: displayName,
   };
+  // Navigation is a read. Retain the previous synchronization behavior when
+  // authentication metadata changes, and the upsert/retries for new accounts.
+  let existing = await supabase
+    .from("profiles")
+    .select(profilePaymentSelectClause)
+    .eq("id", authUser.id)
+    .maybeSingle();
+  if (existing.error && isMissingProfilePaymentSchemaError(existing.error.message)) {
+    existing = await supabase
+      .from("profiles")
+      .select(profileBaseSelectClause)
+      .eq("id", authUser.id)
+      .maybeSingle();
+  }
+  if (existing.error) throw new Error(existing.error.message);
+  if (
+    existing.data &&
+    existing.data.email === email &&
+    existing.data.display_name === displayName
+  ) {
+    return hydrateProfile(supabase, existing.data as ProfileRow);
+  }
   let lastError: Error | null = null;
 
   for (const delay of retryDelays) {
@@ -970,9 +1005,21 @@ async function ensureProfile(authUser: SupabaseAuthUser) {
 
   throw lastError ?? new Error("We could not finish setting up your profile. Please try again.");
 }
+async function loadOwnedSubmissions(userId: string, signal: AbortSignal) {
+  const { data, error } = await requireSupabase()
+    .from("submissions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .abortSignal(signal);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as SubmissionRow[]).map(mapSubmission);
+}
+
 async function loadVisibleSubmissions(
   currentUserId: string | null,
   publicTestReference: string | null,
+  signal: AbortSignal,
 ) {
   const supabase = requireSupabase();
   const { data: liveRows, error: liveError } = await supabase
@@ -980,7 +1027,8 @@ async function loadVisibleSubmissions(
     .select("*")
     .eq("status", "live")
     .eq("is_open_for_more_tests", true)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .abortSignal(signal);
 
   if (liveError) {
     throw new Error(liveError.message);
@@ -994,7 +1042,8 @@ async function loadVisibleSubmissions(
       .from("submissions")
       .select("*")
       .eq("user_id", currentUserId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .abortSignal(signal);
 
     if (error) {
       throw new Error(error.message);
@@ -1013,7 +1062,8 @@ async function loadVisibleSubmissions(
       .select("*")
       .eq("status", "live")
       .eq(isUuid ? "id" : "public_share_slug", publicTestReference)
-      .limit(1);
+      .limit(1)
+      .abortSignal(signal);
 
     if (error) {
       throw new Error(error.message);
@@ -1033,7 +1083,7 @@ async function loadVisibleSubmissions(
     );
 }
 
-async function loadVisibleSubmissionVersions(submissionIds: string[]) {
+async function loadVisibleSubmissionVersions(submissionIds: string[], signal: AbortSignal) {
   if (submissionIds.length === 0) {
     return [];
   }
@@ -1043,7 +1093,8 @@ async function loadVisibleSubmissionVersions(submissionIds: string[]) {
     .from("submission_versions")
     .select("*")
     .in("submission_id", submissionIds)
-    .order("version_number", { ascending: false });
+    .order("version_number", { ascending: false })
+    .abortSignal(signal);
 
   if (error) {
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -1056,7 +1107,7 @@ async function loadVisibleSubmissionVersions(submissionIds: string[]) {
   return ((data ?? []) as SubmissionVersionRow[]).map(mapSubmissionVersion);
 }
 
-async function loadVisibleQuestionSets(submissionIds: string[]) {
+async function loadVisibleQuestionSets(submissionIds: string[], signal: AbortSignal) {
   if (submissionIds.length === 0) {
     return [];
   }
@@ -1066,7 +1117,8 @@ async function loadVisibleQuestionSets(submissionIds: string[]) {
     .from("question_set_versions")
     .select("*")
     .in("submission_id", submissionIds)
-    .order("version_number", { ascending: false });
+    .order("version_number", { ascending: false })
+    .abortSignal(signal);
 
   if (error) {
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -1079,17 +1131,25 @@ async function loadVisibleQuestionSets(submissionIds: string[]) {
   return ((data ?? []) as QuestionSetVersionRow[]).map(mapQuestionSetVersion);
 }
 
-async function loadResponses(currentUserId: string | null, ownedSubmissionIds: string[]) {
+async function loadResponses(
+  currentUserId: string | null,
+  ownedSubmissionIds: string[],
+  signal: AbortSignal,
+  includeAuthored = true,
+) {
   if (!currentUserId) {
     return [];
   }
 
   const supabase = requireSupabase();
-  const { data: authoredRows, error: authoredError } = await supabase
-    .from("test_responses")
-    .select("*")
-    .eq("tester_user_id", currentUserId)
-    .order("submitted_at", { ascending: false });
+  const { data: authoredRows, error: authoredError } = includeAuthored
+    ? await supabase
+        .from("test_responses")
+        .select("*")
+        .eq("tester_user_id", currentUserId)
+        .order("submitted_at", { ascending: false })
+        .abortSignal(signal)
+    : { data: [], error: null };
 
   if (authoredError) {
     throw new Error(authoredError.message);
@@ -1102,7 +1162,8 @@ async function loadResponses(currentUserId: string | null, ownedSubmissionIds: s
       .from("test_responses")
       .select("*")
       .in("submission_id", ownedSubmissionIds)
-      .order("submitted_at", { ascending: false });
+      .order("submitted_at", { ascending: false })
+      .abortSignal(signal);
 
     if (error) {
       throw new Error(error.message);
@@ -1119,7 +1180,7 @@ async function loadResponses(currentUserId: string | null, ownedSubmissionIds: s
     );
 }
 
-async function loadFeedbackRatings(currentUserId: string | null) {
+async function loadFeedbackRatings(currentUserId: string | null, signal: AbortSignal) {
   if (!currentUserId) {
     return [];
   }
@@ -1128,7 +1189,8 @@ async function loadFeedbackRatings(currentUserId: string | null) {
   const { data, error } = await supabase
     .from("feedback_ratings")
     .select("*")
-    .eq("rated_by_user_id", currentUserId);
+    .eq("rated_by_user_id", currentUserId)
+    .abortSignal(signal);
 
   if (error) {
     throw new Error(error.message);
@@ -1137,7 +1199,7 @@ async function loadFeedbackRatings(currentUserId: string | null) {
   return ((data ?? []) as FeedbackRatingRow[]).map(mapFeedbackRating);
 }
 
-async function loadCreditTransactions(currentUserId: string | null) {
+async function loadCreditTransactions(currentUserId: string | null, signal: AbortSignal) {
   if (!currentUserId) {
     return [];
   }
@@ -1147,7 +1209,8 @@ async function loadCreditTransactions(currentUserId: string | null) {
     .from("credit_transactions")
     .select("*")
     .eq("user_id", currentUserId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .abortSignal(signal);
 
   if (error) {
     throw new Error(error.message);
@@ -1156,7 +1219,10 @@ async function loadCreditTransactions(currentUserId: string | null) {
   return ((data ?? []) as CreditTransactionRow[]).map(mapCreditTransaction);
 }
 
-async function loadGooglePlayClosedTestParticipations(currentUserId: string | null) {
+async function loadGooglePlayClosedTestParticipations(
+  currentUserId: string | null,
+  signal: AbortSignal,
+) {
   if (!currentUserId) {
     return [];
   }
@@ -1166,7 +1232,8 @@ async function loadGooglePlayClosedTestParticipations(currentUserId: string | nu
     .from("google_play_closed_test_participations")
     .select("*")
     .or(`tester_user_id.eq.${currentUserId},founder_user_id.eq.${currentUserId}`)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .abortSignal(signal);
 
   if (error) {
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -1181,7 +1248,7 @@ async function loadGooglePlayClosedTestParticipations(currentUserId: string | nu
   );
 }
 
-async function loadGooglePlayClosedTestCheckIns(participationIds: string[]) {
+async function loadGooglePlayClosedTestCheckIns(participationIds: string[], signal: AbortSignal) {
   if (participationIds.length === 0) {
     return [];
   }
@@ -1191,7 +1258,8 @@ async function loadGooglePlayClosedTestCheckIns(participationIds: string[]) {
     .from("google_play_closed_test_check_ins")
     .select("*")
     .in("participation_id", participationIds)
-    .order("check_in_date", { ascending: true });
+    .order("check_in_date", { ascending: true })
+    .abortSignal(signal);
 
   if (error) {
     if (isMissingSubmissionSchemaError(error.message)) {
@@ -1423,13 +1491,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation();
   const designSystemFixturesEnabled =
     import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
-  const [state, setState] = useState<AppState>({
+  const [state, setState] = useState<AppState>(() => ({
     ...emptyState,
     otpChallenge: getStoredOtpChallenge(),
-  });
+  }));
   const [isLoading, setIsLoading] = useState(true);
   const loadIdRef = useRef(0);
-  const loadedStateModeRef = useRef<"none" | "light" | "full">("none");
+  const loadedStateModeRef = useRef<"none" | "light" | "credits" | "recordings" | "full">("none");
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const fixtureSearch = designSystemFixturesEnabled ? search : "";
   const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
   const recentOtpRequestsRef = useRef<Map<string, { challenge: OTPChallenge; sentAt: number }>>(
     new Map(),
@@ -1438,16 +1508,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const refreshState = useCallback(
     async (authUserOverride?: SupabaseAuthUser | null) => {
       const loadId = ++loadIdRef.current;
-      let attemptedStateMode: "light" | "full" = shouldLoadFullStateForPath(pathname, null)
-        ? "full"
-        : "light";
+      loadControllerRef.current?.abort();
+      const controller = new AbortController();
+      loadControllerRef.current = controller;
+      const signal = controller.signal;
+      let attemptedStateMode: "light" | "credits" | "recordings" | "full" =
+        shouldLoadFullStateForPath(pathname, null) ? "full" : "light";
 
       if (designSystemFixturesEnabled) {
         const { createDesignSystemFixtureState } = await import("../testing/designSystemFixtures");
         if (loadId !== loadIdRef.current) {
           return;
         }
-        setState(createDesignSystemFixtureState(search));
+        setState(createDesignSystemFixtureState(fixtureSearch));
         loadedStateModeRef.current = "full";
         setIsLoading(false);
         return;
@@ -1470,13 +1543,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             ? authUserOverride
             : (await supabase.auth.getUser()).data.user;
         const currentUserId = authUser?.id ?? null;
+        signal.throwIfAborted();
         const currentProfile = authUser ? await ensureProfile(authUser) : null;
+        signal.throwIfAborted();
         const shouldLoadFullState = shouldLoadFullStateForPath(pathname, currentUserId);
-        const nextStateMode = shouldLoadFullState ? "full" : "light";
+        const narrowMode =
+          normalizePathname(pathname) === "/credits"
+            ? "credits"
+            : normalizePathname(pathname) === "/recordings"
+              ? "recordings"
+              : "full";
+        const nextStateMode = shouldLoadFullState ? narrowMode : "light";
         attemptedStateMode = nextStateMode;
         const shouldShowLoading =
           loadedStateModeRef.current === "none" ||
-          (nextStateMode === "full" && loadedStateModeRef.current !== "full");
+          (nextStateMode !== "light" &&
+            loadedStateModeRef.current !== "full" &&
+            loadedStateModeRef.current !== nextStateMode);
 
         if (shouldShowLoading) {
           setIsLoading(true);
@@ -1534,16 +1617,49 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const submissions = await loadVisibleSubmissions(
-          currentUserId,
-          getTestReferenceForPath(pathname),
-        );
+        if (nextStateMode === "credits") {
+          const creditTransactions = await loadCreditTransactions(currentUserId, signal);
+          signal.throwIfAborted();
+          setState({
+            ...emptyState,
+            currentUserId,
+            users: currentProfile ? [currentProfile] : [],
+            creditTransactions,
+            otpChallenge: getStoredOtpChallenge(),
+          });
+          loadedStateModeRef.current = "credits";
+          return;
+        }
+
+        const submissions =
+          nextStateMode === "recordings"
+            ? await loadOwnedSubmissions(currentUserId!, signal)
+            : await loadVisibleSubmissions(
+                currentUserId,
+                getTestReferenceForPath(pathname),
+                signal,
+              );
+        signal.throwIfAborted();
         const submissionIds = submissions.map((submission) => submission.id);
         const ownedSubmissionIds = currentUserId
           ? submissions
               .filter((submission) => submission.userId === currentUserId)
               .map((submission) => submission.id)
           : [];
+        if (nextStateMode === "recordings") {
+          const responses = await loadResponses(currentUserId, ownedSubmissionIds, signal, false);
+          signal.throwIfAborted();
+          setState({
+            ...emptyState,
+            currentUserId,
+            users: currentProfile ? [currentProfile] : [],
+            submissions,
+            responses,
+            otpChallenge: getStoredOtpChallenge(),
+          });
+          loadedStateModeRef.current = "recordings";
+          return;
+        }
         const [
           submissionVersions,
           questionSetVersions,
@@ -1552,15 +1668,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           creditTransactions,
           googlePlayClosedTestParticipations,
         ] = await Promise.all([
-          loadVisibleSubmissionVersions(submissionIds),
-          loadVisibleQuestionSets(submissionIds),
-          loadResponses(currentUserId, ownedSubmissionIds),
-          loadFeedbackRatings(currentUserId),
-          loadCreditTransactions(currentUserId),
-          loadGooglePlayClosedTestParticipations(currentUserId),
+          loadVisibleSubmissionVersions(submissionIds, signal),
+          loadVisibleQuestionSets(submissionIds, signal),
+          loadResponses(currentUserId, ownedSubmissionIds, signal),
+          loadFeedbackRatings(currentUserId, signal),
+          loadCreditTransactions(currentUserId, signal),
+          loadGooglePlayClosedTestParticipations(currentUserId, signal),
         ]);
         const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
           googlePlayClosedTestParticipations.map((participation) => participation.id),
+          signal,
         );
 
         if (loadId !== loadIdRef.current) {
@@ -1584,6 +1701,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         });
         loadedStateModeRef.current = "full";
       } catch (error) {
+        if (signal.aborted) return;
         if (loadId !== loadIdRef.current) {
           return;
         }
@@ -1600,12 +1718,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [designSystemFixturesEnabled, pathname, search],
+    [designSystemFixturesEnabled, pathname, fixtureSearch],
   );
 
   useEffect(() => {
     void refreshState();
+    return () => {
+      loadControllerRef.current?.abort();
+    };
+  }, [refreshState]);
 
+  const handleAuthChange = useEffectEvent((session: Session | null) => {
+    void refreshState(session?.user ?? null);
+  });
+
+  useEffect(() => {
     if (!hasSupabaseConfig) {
       return undefined;
     }
@@ -1613,20 +1740,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const supabase = requireSupabase();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      void refreshState(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // The explicit initial getUser() above remains the authoritative initial
+      // check. INITIAL_SESSION must not start a second copy of every query.
+      if (event !== "INITIAL_SESSION") handleAuthChange(session);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [refreshState]);
+  }, []);
 
   const value = useMemo<AppStateContextValue>(() => {
     const currentUser = getCurrentUser(state);
     const shouldWaitForFullState = shouldLoadFullStateForPath(pathname, currentUser?.id ?? null);
     const effectiveIsLoading =
-      isLoading || (shouldWaitForFullState && loadedStateModeRef.current !== "full");
+      isLoading ||
+      (shouldWaitForFullState &&
+        loadedStateModeRef.current !== "full" &&
+        loadedStateModeRef.current !==
+          (normalizePathname(pathname) === "/credits"
+            ? "credits"
+            : normalizePathname(pathname) === "/recordings"
+              ? "recordings"
+              : "full"));
 
     return {
       state,
@@ -2692,7 +2829,55 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, [designSystemFixturesEnabled, isLoading, pathname, refreshState, state]);
 
-  return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
+  // Dispatch through the latest committed state without changing action identity
+  // when data, loading state, or the current route changes.
+  const latestValue = useRef(value);
+  useLayoutEffect(() => {
+    latestValue.current = value;
+  }, [value]);
+  const [actions] = useState(
+    () =>
+      Object.fromEntries(
+        Object.entries(value)
+          .filter(([, entry]) => typeof entry === "function")
+          .map(([key]) => [
+            key,
+            (...args: never[]) =>
+              (latestValue.current[key as keyof AppActions] as (...args: never[]) => unknown)(
+                ...args,
+              ),
+          ]),
+      ) as AppActions,
+  );
+  const stableValue = useMemo(() => ({ ...value, ...actions }), [value, actions]);
+  const accountValue = useMemo(
+    () => ({
+      currentUser: value.currentUser,
+      isLoading: value.isLoading,
+      isConfigured: value.isConfigured,
+    }),
+    [value.currentUser, value.isLoading, value.isConfigured],
+  );
+
+  return (
+    <AppActionsContext.Provider value={actions}>
+      <AccountStateContext.Provider value={accountValue}>
+        <AppStateContext.Provider value={stableValue}>{children}</AppStateContext.Provider>
+      </AccountStateContext.Provider>
+    </AppActionsContext.Provider>
+  );
+}
+
+export function useAppActions() {
+  const actions = useContext(AppActionsContext);
+  if (!actions) throw new Error("useAppActions must be used within AppStateProvider");
+  return actions;
+}
+
+export function useAccountState() {
+  const account = useContext(AccountStateContext);
+  if (!account) throw new Error("useAccountState must be used within AppStateProvider");
+  return account;
 }
 
 export function useAppState() {

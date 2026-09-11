@@ -9,7 +9,10 @@ const account = vi.hoisted(() => ({
   signOut: vi.fn<() => Promise<void>>(),
 }));
 
-vi.mock("../../src/context/AppStateContext", () => ({ useAppState: () => account }));
+vi.mock("../../src/context/AppStateContext", () => ({
+  useAccountState: () => account,
+  useAppActions: () => account,
+}));
 
 function Location() {
   const location = useLocation();

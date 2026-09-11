@@ -7,6 +7,13 @@
   justify-content: center;
 }
 
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ds-semantic-space-stack-lg);
+}
+
 .copy {
   max-width: var(--ds-semantic-size-content-prose);
 }

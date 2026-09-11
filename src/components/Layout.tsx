@@ -15,7 +15,8 @@ import {
   Toast,
   TopNavigation,
 } from "@test4test/design-system";
-import { useAppState } from "../context/AppStateContext";
+import { useAccountState, useAppActions } from "../context/AppStateContext";
+import { useRouteTitle } from "../lib/routeTitle";
 import styles from "./Layout.module.css";
 
 const supportEmail = "support@test4test.io";
@@ -82,8 +83,10 @@ export function AppShell({
   children: ReactNode;
 }) {
   const location = useLocation();
+  useRouteTitle(location.pathname);
   const navigate = useNavigate();
-  const { currentUser, signOut } = useAppState();
+  const { currentUser } = useAccountState();
+  const { signOut } = useAppActions();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const showMemberNav = Boolean(currentUser) && !hideMemberChrome;

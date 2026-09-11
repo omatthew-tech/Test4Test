@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, Stack, TextField } from "@test4test/design-system";
@@ -21,6 +21,7 @@ export function VerifyPage() {
   const [message, setMessage] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const codeInputRef = useRef<HTMLInputElement>(null);
   const email = searchParams.get("email") ?? storedChallenge?.email ?? storedResume?.email ?? "";
   const submissionId =
     searchParams.get("submissionId") ??
@@ -30,6 +31,10 @@ export function VerifyPage() {
   const isTestAccountChallenge = isTestAccountEmail(email);
   const navigate = useNavigate();
   const { currentUser, requestOtp, verifyOtp } = useAppState();
+
+  useEffect(() => {
+    codeInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
@@ -52,6 +57,7 @@ export function VerifyPage() {
   }, [email, storedResume, submissionId]);
 
   const resend = async () => {
+    if (isSendingCode || isVerifying) return;
     if (!email) {
       setMessage("Add an email in the submit flow before requesting a code.");
       return;
@@ -69,6 +75,7 @@ export function VerifyPage() {
           ? "Enter the configured test account passcode."
           : "New code sent. Check your email for the latest code.",
       );
+      codeInputRef.current?.focus();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not resend that code.");
     } finally {
@@ -77,6 +84,7 @@ export function VerifyPage() {
   };
 
   const handleVerify = async () => {
+    if (isVerifying || isSendingCode || !code.trim()) return;
     setIsVerifying(true);
 
     try {
@@ -110,62 +118,71 @@ export function VerifyPage() {
   return (
     <AppShell eyebrowLabel={null}>
       <VerificationFlowShell title="Verify your email" cardClassName="verify-panel">
-        <Button
-          type="button"
-          className={styles.back}
-          variant="quiet"
-          disabled={isSendingCode || isVerifying}
-          onClick={handleChangeEmail}
+        <form
+          className={styles.form}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleVerify();
+          }}
         >
-          <ArrowLeft aria-hidden="true" size={16} />
-          Change email
-        </Button>
-        <Stack className={styles.copy} gap="sm">
-          <h2>{isTestAccountChallenge ? "Enter test passcode" : "Enter the six-digit code"}</h2>
-          {isTestAccountChallenge ? (
-            <p>
-              Enter the configured test account passcode for{" "}
-              <strong>{email || "your email"}</strong>.
-            </p>
-          ) : (
-            <p>
-              We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish
-              verifying your account.
-            </p>
-          )}
-        </Stack>
-        <TextField
-          autoComplete="one-time-code"
-          className={styles.codeInput}
-          inputMode="numeric"
-          label={isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}
-          onChange={(event) => setCode(event.target.value)}
-          placeholder="123456"
-          value={code}
-        />
-        {message ? <Alert>{message}</Alert> : null}
-        <div className={styles.actions}>
           <Button
             type="button"
-            onClick={handleVerify}
-            disabled={isVerifying || isSendingCode || !code.trim()}
-            loading={isVerifying}
-            loadingLabel="Verifying"
-          >
-            Verify and continue
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => void resend()}
+            className={styles.back}
+            variant="quiet"
             disabled={isSendingCode || isVerifying}
-            loading={isSendingCode}
-            loadingLabel={isTestAccountChallenge ? "Resetting" : "Sending"}
+            onClick={handleChangeEmail}
           >
-            <RefreshCcw aria-hidden="true" size={16} />
-            {isTestAccountChallenge ? "Restart" : "Resend code"}
+            <ArrowLeft aria-hidden="true" size={16} />
+            Change email
           </Button>
-        </div>
+          <Stack className={styles.copy} gap="sm">
+            <h2>{isTestAccountChallenge ? "Enter test passcode" : "Enter the six-digit code"}</h2>
+            {isTestAccountChallenge ? (
+              <p>
+                Enter the configured test account passcode for{" "}
+                <strong>{email || "your email"}</strong>.
+              </p>
+            ) : (
+              <p>
+                We sent a code to <strong>{email || "your email"}</strong>. Enter it here to finish
+                verifying your account.
+              </p>
+            )}
+          </Stack>
+          <TextField
+            ref={codeInputRef}
+            required
+            autoComplete="one-time-code"
+            className={styles.codeInput}
+            inputMode="numeric"
+            label={isTestAccountChallenge ? "Test account passcode" : "One-time passcode"}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="123456"
+            value={code}
+          />
+          {message ? <Alert>{message}</Alert> : null}
+          <div className={styles.actions}>
+            <Button
+              type="submit"
+              disabled={isVerifying || isSendingCode || !code.trim()}
+              loading={isVerifying}
+              loadingLabel="Verifying"
+            >
+              Verify and continue
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void resend()}
+              disabled={isSendingCode || isVerifying}
+              loading={isSendingCode}
+              loadingLabel={isTestAccountChallenge ? "Resetting" : "Sending"}
+            >
+              <RefreshCcw aria-hidden="true" size={16} />
+              {isTestAccountChallenge ? "Restart" : "Resend code"}
+            </Button>
+          </div>
+        </form>
       </VerificationFlowShell>
     </AppShell>
   );

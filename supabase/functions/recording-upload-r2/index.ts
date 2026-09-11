@@ -24,6 +24,7 @@ type RecordingUploadAction =
   | "complete_single"
   | "initiate_multipart"
   | "sign_part"
+  | "sign_parts"
   | "complete_multipart"
   | "create_thumbnail"
   | "complete_thumbnail"
@@ -39,6 +40,7 @@ interface RecordingUploadRequest {
   fileSizeBytes?: number;
   uploadId?: string;
   partNumber?: number;
+  partNumbers?: number[];
   parts?: R2CompletedPart[];
   thumbnailPath?: string;
   thumbnailContentType?: string;
@@ -462,15 +464,23 @@ Deno.serve(async (request) => {
         path: objectKey,
         uploadId,
         partSizeBytes: MULTIPART_PART_SIZE_BYTES,
+        supportsBatchSigning: true,
       });
     }
 
-    if (action === "sign_part") {
+    if (action === "sign_part" || action === "sign_parts") {
       const uploadId = normalizeText(payload.uploadId);
       const partNumber =
         typeof payload.partNumber === "number" ? Math.round(payload.partNumber) : 0;
 
-      if (!uploadId || partNumber < 1 || partNumber > 10000) {
+      const partNumbers = action === "sign_parts" ? payload.partNumbers : [partNumber];
+      if (
+        !uploadId ||
+        !Array.isArray(partNumbers) ||
+        partNumbers.length < 1 ||
+        partNumbers.length > 3 ||
+        partNumbers.some((part) => !Number.isInteger(part) || part < 1 || part > 10000)
+      ) {
         throw new Error("Invalid multipart upload part.");
       }
 
@@ -496,17 +506,22 @@ Deno.serve(async (request) => {
         throw new Error(uploadError?.message ?? "Multipart upload session not found.");
       }
 
-      const uploadUrl = await createR2PresignedUrl(env, "PUT", objectKey, {
-        expiresInSeconds: PRESIGNED_UPLOAD_EXPIRES_SECONDS,
-        query: {
-          partNumber: String(partNumber),
-          uploadId,
-        },
-      });
+      const signedParts = await Promise.all(
+        partNumbers.map(async (partNumber) => ({
+          partNumber,
+          uploadUrl: await createR2PresignedUrl(env, "PUT", objectKey, {
+            expiresInSeconds: PRESIGNED_UPLOAD_EXPIRES_SECONDS,
+            query: {
+              partNumber: String(partNumber),
+              uploadId,
+            },
+          }),
+        })),
+      );
 
       return recordingJson({
         ok: true,
-        uploadUrl,
+        ...(action === "sign_parts" ? { signedParts } : { uploadUrl: signedParts[0].uploadUrl }),
         expiresInSeconds: PRESIGNED_UPLOAD_EXPIRES_SECONDS,
       });
     }

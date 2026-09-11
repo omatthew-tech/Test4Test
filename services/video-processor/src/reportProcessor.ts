@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { config } from "./config.js";
 import { extractUniqueFrames } from "./frameExtractor.js";
 import { logger } from "./logger.js";
+import { orderedWork } from "./orderedWork.js";
 import {
   downloadObjectToFile,
   downloadUrlToFile,
@@ -64,52 +65,49 @@ async function processSource(
   await downloadSource(source, localPath);
 
   const candidates = await extractUniqueFrames(localPath);
-  const frames: ExtractedFrame[] = [];
+  const frames = await orderedWork(
+    candidates,
+    3,
+    async (candidate, frameIndex) => {
+      const storageKey = buildFrameKey(
+        reportId,
+        source.responseId,
+        frameIndex,
+        candidate.timestampMs,
+      );
 
-  for (let frameIndex = 0; frameIndex < candidates.length; frameIndex += 1) {
-    const candidate = candidates[frameIndex];
-    if (!candidate) {
-      continue;
-    }
+      await uploadFrame({
+        key: storageKey,
+        body: candidate.buffer,
+        contentType: "image/webp",
+        // The exact timestamp travels WITH the object as R2 metadata, in addition
+        // to being recorded in the manifest / returned result.
+        metadata: {
+          "report-id": reportId,
+          "response-id": source.responseId,
+          "frame-index": String(frameIndex),
+          "timestamp-ms": String(candidate.timestampMs),
+          "perceptual-hash": candidate.perceptualHash,
+        },
+      });
 
-    const storageKey = buildFrameKey(
-      reportId,
-      source.responseId,
-      frameIndex,
-      candidate.timestampMs,
-    );
+      const frame: ExtractedFrame = {
+        responseId: source.responseId,
+        frameIndex,
+        timestampMs: candidate.timestampMs,
+        storageBucket: config.r2.bucketName,
+        storageKey,
+        width: candidate.width,
+        height: candidate.height,
+        contentType: "image/webp",
+        sizeBytes: candidate.buffer.byteLength,
+        perceptualHash: candidate.perceptualHash,
+      };
 
-    await uploadFrame({
-      key: storageKey,
-      body: candidate.buffer,
-      contentType: "image/webp",
-      // The exact timestamp travels WITH the object as R2 metadata, in addition
-      // to being recorded in the manifest / returned result.
-      metadata: {
-        "report-id": reportId,
-        "response-id": source.responseId,
-        "frame-index": String(frameIndex),
-        "timestamp-ms": String(candidate.timestampMs),
-        "perceptual-hash": candidate.perceptualHash,
-      },
-    });
-
-    const frame: ExtractedFrame = {
-      responseId: source.responseId,
-      frameIndex,
-      timestampMs: candidate.timestampMs,
-      storageBucket: config.r2.bucketName,
-      storageKey,
-      width: candidate.width,
-      height: candidate.height,
-      contentType: "image/webp",
-      sizeBytes: candidate.buffer.byteLength,
-      perceptualHash: candidate.perceptualHash,
-    };
-
-    frames.push(frame);
-    await hooks.onFrame?.(frame);
-  }
+      return frame;
+    },
+    (frame) => hooks.onFrame?.(frame),
+  );
 
   const transcript = source.transcriptCached
     ? null

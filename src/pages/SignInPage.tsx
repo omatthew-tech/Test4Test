@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Mail, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, Link, Stack, Test4TestBrand, TextField } from "@test4test/design-system";
@@ -31,6 +31,11 @@ export function SignInPage() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [hasRequestedCode, setHasRequestedCode] = useState(Boolean(activeChallenge?.email));
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (hasRequestedCode) codeInputRef.current?.focus();
+  }, [hasRequestedCode]);
 
   useEffect(() => {
     if (currentUser) {
@@ -48,6 +53,7 @@ export function SignInPage() {
   }, [activeChallenge?.email]);
 
   const handleRequestCode = async () => {
+    if (isSendingCode || isVerifying) return;
     const nextEmail = email.trim().toLowerCase();
     if (!nextEmail) {
       setMessage("Add your email address to get a sign-in code.");
@@ -76,6 +82,7 @@ export function SignInPage() {
   };
 
   const handleVerify = async () => {
+    if (isVerifying || isSendingCode || !code.trim()) return;
     setIsVerifying(true);
     try {
       const result = await verifyOtp(code);
@@ -114,7 +121,13 @@ export function SignInPage() {
         }
       >
         {hasRequestedCode ? (
-          <>
+          <form
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleVerify();
+            }}
+          >
             <Button
               type="button"
               className={styles.back}
@@ -140,6 +153,8 @@ export function SignInPage() {
               )}
             </Stack>
             <TextField
+              ref={codeInputRef}
+              required
               autoComplete="one-time-code"
               className={styles.codeInput}
               inputMode="numeric"
@@ -162,8 +177,7 @@ export function SignInPage() {
                 {isCurrentEmailTestAccount ? "Restart" : "Resend code"}
               </Button>
               <Button
-                type="button"
-                onClick={() => void handleVerify()}
+                type="submit"
                 disabled={isVerifying || isSendingCode || !code.trim()}
                 loading={isVerifying}
                 loadingLabel="Verifying"
@@ -171,9 +185,15 @@ export function SignInPage() {
                 Verify and continue
               </Button>
             </div>
-          </>
+          </form>
         ) : (
-          <>
+          <form
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleRequestCode();
+            }}
+          >
             <Stack className={styles.copy} gap="sm">
               <h1>Sign in with email</h1>
               <p>
@@ -188,13 +208,13 @@ export function SignInPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               type="email"
+              required
               value={email}
             />
             {message ? <Alert>{message}</Alert> : null}
             <div className={styles.actions}>
               <Button
-                type="button"
-                onClick={() => void handleRequestCode()}
+                type="submit"
                 disabled={isSendingCode || !email.trim()}
                 loading={isSendingCode}
                 loadingLabel={isCurrentEmailTestAccount ? "Opening" : "Sending"}
@@ -203,7 +223,7 @@ export function SignInPage() {
                 {isCurrentEmailTestAccount ? "Continue" : "Send one-time code"}
               </Button>
             </div>
-          </>
+          </form>
         )}
       </VerificationFlowShell>
     </AppShell>

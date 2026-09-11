@@ -32,8 +32,7 @@ for (const viewport of [
     await expect(video).toHaveJSProperty("videoWidth", 1620);
     await expect(video).toHaveJSProperty("videoHeight", 1080);
     await expect(video).toHaveJSProperty("controls", false);
-    await expect(article.getByRole("button")).toHaveCount(1);
-    await expect(article.getByRole("button", { name: "Earn credits", exact: true })).toBeVisible();
+    await expect(article.getByRole("button")).toHaveCount(0);
     const after = await video.boundingBox();
     expect(after?.width).toBe(before?.width);
     expect(after?.height).toBe(before?.height);
@@ -95,5 +94,5 @@ test("home credit demo falls back to its confirmation when the video cannot load
     "/videos/home-earn-credit-static.webp",
   );
   await expect(article.locator("img")).toHaveJSProperty("complete", true);
-  await expect(article.getByRole("button", { name: "Earn credits", exact: true })).toBeEnabled();
+  await expect(article.getByRole("button")).toHaveCount(0);
 });

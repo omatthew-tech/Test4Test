@@ -23,7 +23,11 @@ const GENERAL_MULTIPLE_QUESTION_COUNT = 3;
 const GENERAL_PARAGRAPH_QUESTION_COUNT = 2;
 const GENERAL_QUESTION_COUNT = GENERAL_MULTIPLE_QUESTION_COUNT + GENERAL_PARAGRAPH_QUESTION_COUNT;
 const GENERAL_DEFAULT_PERSONALIZED_TEMPLATE_ID = "q025";
-export const RECORDING_TEST_MINUTES_OVERHEAD = 4;
+export {
+  estimateMinutes,
+  estimateSubmissionMinutes,
+  RECORDING_TEST_MINUTES_OVERHEAD,
+} from "./estimateMinutes";
 const GENERAL_PLACEHOLDER_QUESTION_ID = "general-placeholder";
 const GENERAL_STARTER_PARAGRAPH_QUESTION_ID = "general-starter-paragraph";
 const GENERAL_PERSONALIZED_QUESTION_ID_PREFIX = "general-featured-";
@@ -355,17 +359,6 @@ export function buildAiQuestions(draft: SubmissionDraft) {
     createQuestion(`${productName}-ai-4`, "Where did you hesitate or slow down?", "paragraph", 4),
     createQuestion(`${productName}-ai-5`, "What would make it easier right away?", "paragraph", 5),
   ];
-}
-
-export function estimateMinutes(questions: Question[]) {
-  const paragraphCount = questions.filter((question) => question.type === "paragraph").length;
-  const multipleCount = questions.length - paragraphCount;
-  return Math.max(3, Math.round(paragraphCount * 1.2 + multipleCount * 0.35 + 1));
-}
-
-export function estimateSubmissionMinutes(questions: Question[], requiresRecording = false) {
-  const baseMinutes = estimateMinutes(questions);
-  return requiresRecording ? baseMinutes + RECORDING_TEST_MINUTES_OVERHEAD : baseMinutes;
 }
 
 export function validateAccessLink(url: string, productType: AccessLinkKind) {

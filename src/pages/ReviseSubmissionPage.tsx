@@ -393,7 +393,7 @@ export function ReviseSubmissionPage() {
           <h1>{`Revise feedback for ${submission?.productName ?? "this app"}`}</h1>
           <div className="revise-response-page__subheader-row">
             <p>
-              Submitting a revision replaces your previous answers and let's the reviewer send you a
+              Submitting a revision replaces your previous answers and lets the reviewer send you a
               new rating.
             </p>
             {canReport ? (

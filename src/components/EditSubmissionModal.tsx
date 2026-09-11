@@ -28,7 +28,8 @@ import styles from "./EditSubmissionModal.module.css";
 
 const additionalLinkKinds = ["ios", "android", "figma", "other"] as const;
 type AdditionalLinkKind = (typeof additionalLinkKinds)[number];
-type PendingNavigation = { type: "select"; submissionId: string } | { type: "add" };
+type PendingNavigation =
+  { type: "select"; submissionId: string } | { type: "add" } | { type: "close" };
 
 const additionalLinkLabels: Record<AdditionalLinkKind, string> = {
   ios: "iOS app",
@@ -107,6 +108,7 @@ export function EditSubmissionModal({
   const [activationError, setActivationError] = useState("");
   const [isActivating, setIsActivating] = useState(false);
   const confirmationHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const appNameRef = useRef<HTMLInputElement | null>(null);
   const editedSubmissionIdRef = useRef(submission.id);
   const isLegacyWithoutWebsite = !submission.accessLinks.website?.trim();
   const canManageExistingClosedTest = submission.needsGooglePlayClosedTesters;
@@ -156,17 +158,27 @@ export function EditSubmissionModal({
     }
   }, [availableAdditionalKinds, selectedAdditionalKind]);
 
+  const keepEditing = () => {
+    setPendingNavigation(null);
+    window.requestAnimationFrame(() => appNameRef.current?.focus());
+  };
+
   const closeEditTest = () => {
     if (isSavingEdit || isActivating) return;
 
     if (pendingNavigation) {
-      setPendingNavigation(null);
+      keepEditing();
       return;
     }
 
     if (activationTarget) {
       setActivationTargetId(null);
       setActivationError("");
+      return;
+    }
+
+    if (isDirty) {
+      setPendingNavigation({ type: "close" });
       return;
     }
 
@@ -361,6 +373,11 @@ export function EditSubmissionModal({
       return;
     }
 
+    if (nextNavigation.type === "close") {
+      onClose();
+      return;
+    }
+
     onAdd();
   };
 
@@ -398,11 +415,11 @@ export function EditSubmissionModal({
             <p>Your unsaved changes will be lost.</p>
           </div>
           <div className={styles.confirmationActions}>
-            <Button type="button" variant="secondary" onClick={() => setPendingNavigation(null)}>
+            <Button type="button" variant="secondary" onClick={keepEditing}>
               Keep editing
             </Button>
             <Button type="button" onClick={discardAndContinue}>
-              Discard and continue
+              {pendingNavigation.type === "close" ? "Discard changes" : "Discard and continue"}
             </Button>
           </div>
         </div>
@@ -489,6 +506,7 @@ export function EditSubmissionModal({
                 <h2>App details</h2>
               </div>
               <TextField
+                ref={appNameRef}
                 label="App name"
                 value={editDraft.productName}
                 onChange={(event) => updateEditDraft({ productName: event.target.value })}

@@ -1,6 +1,5 @@
 import { renderToString } from "react-dom/server";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { AppStateProvider } from "./context/AppStateContext";
+import App from "./App";
 import { getPublishedBlogPostBySlug, getPublishedBlogPosts } from "./data/blogPosts";
 import { getBlogIndexPageMetadata, getBlogPostPageMetadata } from "./lib/blogSeo";
 import { resolvePageMetadata } from "./lib/pageMetadata";
@@ -30,14 +29,7 @@ export function renderBlogRoute(path: string) {
   const pathname = getPathname(path);
   const metadata = getBlogRouteMetadata(pathname);
   const appHtml = renderToString(
-    <MemoryRouter initialEntries={[pathname]}>
-      <AppStateProvider>
-        <Routes>
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
-        </Routes>
-      </AppStateProvider>
-    </MemoryRouter>,
+    <App prerenderPath={pathname} blogPages={{ index: BlogPage, post: BlogPostPage }} />,
   );
 
   return {

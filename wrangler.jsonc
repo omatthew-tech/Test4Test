@@ -1,6 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "test4test",
+  "name": "test4test-redesign",
+  "routes": [
+    {
+      "pattern": "test4test.io",
+      "custom_domain": true
+    }
+  ],
   "compatibility_date": "2026-03-27",
   "observability": {
     "enabled": true

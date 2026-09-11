@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   resolveCachedLogo,
+  primeCacheReads,
   type CacheRow,
   type CacheStore,
   type SubmissionSource,
@@ -39,13 +40,11 @@ const cache: CacheStore = {
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("");
     const path = `${id}/${hash}.${asset.extension}`;
-    const { error } = await admin.storage
-      .from(bucket)
-      .upload(path, asset.bytes, {
-        contentType: asset.contentType,
-        cacheControl: "604800",
-        upsert: true,
-      });
+    const { error } = await admin.storage.from(bucket).upload(path, asset.bytes, {
+      contentType: asset.contentType,
+      cacheControl: "604800",
+      upsert: true,
+    });
     if (error) throw error;
     return path;
   },
@@ -90,6 +89,19 @@ Deno.serve(
     },
     resolve(source) {
       return resolveCachedLogo(source, cache, (task) => EdgeRuntime.waitUntil(task));
+    },
+    async prepare(sources) {
+      const ids = sources.map((source) => source.id);
+      const { data, error } = ids.length
+        ? await admin
+            .from("home_trusted_logo_cache")
+            .select("submission_id,source_key,logo_path,source_image_url,refresh_after,claim_token")
+            .in("submission_id", ids)
+        : { data: [], error: null };
+      // Preserve the individual fallback behavior during a failed batch read.
+      const requestCache = error ? cache : primeCacheReads(cache, ids, (data ?? []) as CacheRow[]);
+      return (source) =>
+        resolveCachedLogo(source, requestCache, (task) => EdgeRuntime.waitUntil(task));
     },
   }),
 );

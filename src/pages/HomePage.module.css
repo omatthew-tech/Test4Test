@@ -457,7 +457,7 @@
 .freeHighlight::after {
   position: absolute;
   z-index: -1;
-  background: var(--ds-semantic-color-action-tint);
+  background: none;
   content: "";
 }
 
@@ -672,10 +672,6 @@
   background: var(--ds-semantic-color-action-tint);
 }
 
-.feedbackMethodCopy > :last-child {
-  margin-block-start: var(--ds-semantic-space-inline-sm);
-}
-
 .feedbackVideoFrame {
   position: relative;
   overflow: hidden;
@@ -693,11 +689,6 @@
 
 .feedbackVideo:not([data-ready="true"]) {
   visibility: hidden;
-}
-
-.feedbackMethodAction {
-  font-size: var(--ds-semantic-typography-body-size);
-  line-height: var(--ds-semantic-typography-body-line-height);
 }
 
 .feedbackMethodCopy h3 {
