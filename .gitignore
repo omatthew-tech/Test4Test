@@ -10,3 +10,4 @@ debug.log
 .codex-*.log
 .wrangler
 /local-design-archive/
+/output/imagegen/monkey-animations/
