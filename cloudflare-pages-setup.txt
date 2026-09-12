@@ -1,6 +1,40 @@
-Test4Test preview, promotion, and production cutover
+Test4Test production deployment
 
-This is a future release runbook. It does not state that the current redesign branch is production and does not authorize a Test4Test.io cutover.
+Current production target
+
+- Repository: omatthew-tech/Test4Test
+- Production branch: ReDesign (case-sensitive)
+- Cloudflare Worker: test4test-redesign
+- Custom domain: test4test.io
+- Build command: npm run build
+- Deploy command: npx wrangler deploy
+- Root directory: /
+- Static assets: dist, as configured in wrangler.jsonc
+- Build variables: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, using the existing production project's browser-safe values.
+
+Pushes to ReDesign must be connected to Builds on test4test-redesign. The older
+test4test Worker is a separate application; its GitHub build status does not
+describe the deployment serving test4test.io. A versions upload creates a
+preview and does not publish the production website.
+
+Normal update workflow
+
+1. Run the repository checks required for the change and confirm npm run build succeeds.
+2. Commit the intended changes on ReDesign and run git push origin ReDesign.
+3. Open test4test-redesign in Cloudflare, then Deployments, and confirm the build
+   for the pushed commit succeeds and becomes the active deployment.
+4. Verify the changed page at https://test4test.io.
+
+Local .codex-* worktrees and browser profiles are ignored. Never force-add them
+to the parent repository: Git records nested worktrees as submodules without
+the configuration Cloudflare needs to clone them. To diagnose a recurrence,
+inspect git ls-files --stage for mode 160000. Remove accidental local worktree
+entries with git rm --cached -- <path>, which preserves the local directory.
+
+Historical preview, promotion, and production cutover runbook
+
+The guidance below describes the original cutover process and future environment
+changes. Routine frontend updates use the production configuration above.
 
 1. Preview deployment
 

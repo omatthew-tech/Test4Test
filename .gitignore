@@ -8,6 +8,8 @@ debug.log
 .env.*
 !.env.example
 .codex-*.log
+# Local Codex worktrees and browser profiles must never become Git submodules.
+/.codex-*/
 .wrangler
 .tmp/
 /local-design-archive/
