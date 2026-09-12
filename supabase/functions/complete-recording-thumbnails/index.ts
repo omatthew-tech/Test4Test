@@ -217,6 +217,10 @@ Deno.serve(async (request) => {
 
     if (!updatedRow) {
       if (!result.responseId || result.responseId !== result.recordingUploadId) {
+        await admin.from("recording_version_deletions").upsert(
+          { bucket: result.storageBucket, path: result.storageKey },
+          { onConflict: "bucket,path" },
+        );
         rejectedResults.push({
           recordingUploadId: result.recordingUploadId,
           error: "Recording upload was not found.",
@@ -224,7 +228,27 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      const { data: legacyResponse, error: legacyError } = await admin
+      const { data: legacyVersion, error: versionError } = await admin
+        .from("test_response_versions")
+        .update({ thumbnail_bucket: result.storageBucket, thumbnail_path: result.storageKey })
+        .eq("response_id", result.responseId)
+        .eq("recording_path", result.recordingObjectKey)
+        .select("id")
+        .maybeSingle();
+      if (versionError || !legacyVersion) {
+        if (!versionError) {
+          await admin.from("recording_version_deletions").upsert(
+            { bucket: result.storageBucket, path: result.storageKey },
+            { onConflict: "bucket,path" },
+          );
+        }
+        rejectedResults.push({
+          recordingUploadId: result.recordingUploadId,
+          error: versionError?.message ?? "Legacy recording version was not found.",
+        });
+        continue;
+      }
+      const { error: legacyError } = await admin
         .from("test_responses")
         .update({
           recording_thumbnail_bucket: result.storageBucket,
@@ -244,7 +268,7 @@ Deno.serve(async (request) => {
         .select("id")
         .maybeSingle();
 
-      if (legacyError || !legacyResponse) {
+      if (legacyError) {
         rejectedResults.push({
           recordingUploadId: result.recordingUploadId,
           error: legacyError?.message ?? "Legacy recording response was not found.",
@@ -330,7 +354,9 @@ Deno.serve(async (request) => {
       await admin
         .from("test_responses")
         .update(copyRecordingThumbnailToResponse(uploadRow))
-        .eq("id", uploadRow.attached_response_id);
+        .eq("id", uploadRow.attached_response_id)
+        .eq("recording_bucket", uploadRow.storage_bucket)
+        .eq("recording_path", uploadRow.object_key);
     }
     failedIds.push(recordingUploadId);
   }

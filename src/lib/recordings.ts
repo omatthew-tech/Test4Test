@@ -111,8 +111,9 @@ const recordingAccessCache = new Map<
 >();
 
 export function invalidateResponseRecordingUrl(responseId: string) {
-  recordingAccessCache.delete(`${responseId}:play`);
-  recordingAccessCache.delete(`${responseId}:download`);
+  for (const key of recordingAccessCache.keys()) {
+    if (key.startsWith(`${responseId}:`)) recordingAccessCache.delete(key);
+  }
 }
 
 function buildRecordingSessionStorageKey(submissionId: string) {
@@ -869,8 +870,12 @@ export function downloadRecordingBackup(blob: Blob, fileName: string) {
   window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
 }
 
-export async function requestResponseRecordingUrl(responseId: string, download = false) {
-  const cacheKey = `${responseId}:${download ? "download" : "play"}`;
+export async function requestResponseRecordingUrl(
+  responseId: string,
+  download = false,
+  versionId?: string,
+) {
+  const cacheKey = `${responseId}:${versionId ?? "latest"}:${download ? "download" : "play"}`;
   const cached = recordingAccessCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now() + 30 * 1000) {
     return cached.value;
@@ -912,6 +917,7 @@ export async function requestResponseRecordingUrl(responseId: string, download =
     },
     body: JSON.stringify({
       responseId,
+      versionId,
       download,
     }),
   });

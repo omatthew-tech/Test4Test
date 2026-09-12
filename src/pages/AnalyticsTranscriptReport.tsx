@@ -199,16 +199,16 @@ export function AnalyticsTranscriptReport() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function retry(responseId: string) {
+  async function retry(responseId: string, versionId?: string) {
     if (!userId || retrying) return;
     const version = selectionVersion.current;
     const controller = new AbortController();
     retryController.current = controller;
-    setRetrying(responseId);
+    setRetrying(versionId ?? responseId);
     setNotice("");
     try {
       if (fixtureMode) retriedFixtures.current.add(responseId);
-      else await retryRecordingTranscript(userId, responseId, controller.signal);
+      else await retryRecordingTranscript(userId, responseId, controller.signal, versionId);
       if (version !== selectionVersion.current) return;
       setNotice("Transcription retry requested.");
       setRevision((value) => value + 1);
@@ -284,16 +284,16 @@ export function AnalyticsTranscriptReport() {
               <Stack gap="sm">
                 {recordings.map((recording, index) =>
                   recording.status === "failed" ? (
-                    <Cluster key={recording.responseId} gap="md">
+                    <Cluster key={recording.versionId ?? recording.responseId} gap="md">
                       <span>Recording {index + 1}: transcription failed.</span>
                       <Button
                         variant="secondary"
                         disabled={retrying !== null}
                         onClick={() => {
-                          void retry(recording.responseId);
+                          void retry(recording.responseId, recording.versionId);
                         }}
                       >
-                        {retrying === recording.responseId
+                        {retrying === (recording.versionId ?? recording.responseId)
                           ? "Retrying…"
                           : `Retry transcript ${index + 1}`}
                       </Button>

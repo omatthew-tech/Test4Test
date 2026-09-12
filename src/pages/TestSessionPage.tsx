@@ -1,5 +1,6 @@
 import {
   type ChangeEvent,
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -63,19 +64,10 @@ import styles from "./TestSessionPage.module.css";
 import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
 import { trackEventOncePerSession } from "../lib/analytics";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
-import {
-  clearLocalTestResponseDraft,
-  clearTestResponseDraft,
-  loadTestResponseDraft,
-  saveLocalTestResponseDraft,
-  saveTestResponseDraft,
-} from "../lib/testResponseDrafts";
 import { reportTest } from "../lib/testReports";
-import { ProductType, Question, ResponseRecording, TestAnswer, TestReportReason } from "../types";
+import { ProductType, ResponseRecording, TestReportReason } from "../types";
 
 type NativeStopReason = "user-finished" | "share-ended" | "unmounted";
-type DraftSaveStatus =
-  "idle" | "loading" | "restored" | "restored_local" | "saving" | "saved" | "saved_local";
 type DesignSystemRecordingUploadControl = {
   fail: () => void;
   setProgress: (percentage: number, state?: RecordingUploadProgress["state"]) => void;
@@ -116,71 +108,6 @@ interface DocumentPictureInPictureController {
 
 interface WindowWithDocumentPictureInPicture extends Window {
   documentPictureInPicture?: DocumentPictureInPictureController;
-}
-
-function buildAnswer(question: Question, value: string): TestAnswer {
-  return question.type === "multiple"
-    ? {
-        questionId: question.id,
-        questionTitle: question.title,
-        type: question.type,
-        selectedOption: value,
-      }
-    : {
-        questionId: question.id,
-        questionTitle: question.title,
-        type: question.type,
-        textAnswer: value,
-      };
-}
-
-function pruneAnswerValues(answers: Record<string, string>, questions: Question[]) {
-  return Object.fromEntries(
-    questions
-      .map((question) => [question.id, answers[question.id]] as const)
-      .filter(
-        (entry): entry is readonly [string, string] =>
-          typeof entry[1] === "string" && entry[1].length > 0,
-      ),
-  );
-}
-
-function hasSavedAnswerValues(answerValues: Record<string, string>) {
-  return Object.values(answerValues).some((value) => value.trim().length > 0);
-}
-
-function parseDraftStartedAt(startedAt: string) {
-  const timestamp = Date.parse(startedAt);
-
-  return Number.isNaN(timestamp) ? Date.now() : timestamp;
-}
-
-function getDraftStatusCopy(status: DraftSaveStatus) {
-  if (status === "loading") {
-    return "Checking for saved answers...";
-  }
-
-  if (status === "restored") {
-    return "Saved answers restored.";
-  }
-
-  if (status === "restored_local") {
-    return "Saved answers restored from this device.";
-  }
-
-  if (status === "saving") {
-    return "Saving answers...";
-  }
-
-  if (status === "saved") {
-    return "Answers saved.";
-  }
-
-  if (status === "saved_local") {
-    return "Answers saved on this device.";
-  }
-
-  return "";
 }
 
 function formatElapsedDuration(totalSeconds: number) {
@@ -273,7 +200,7 @@ function getRecordingInstructions(productType: ProductType) {
           "Install or update the app from the link below before you start recording.",
           "Start iOS Screen Recording, then long-press the control to turn the microphone on.",
           "Narrate what you expect, what feels smooth, and where you get stuck.",
-          "Return to this tab after testing so you can stop recording, upload the video, and submit your answers.",
+          "Return to this tab after testing so you can stop recording, upload the video, and submit your recording.",
         ],
         launchTitle: "Open the iOS app when you are ready",
         launchBody:
@@ -289,11 +216,11 @@ function getRecordingInstructions(productType: ProductType) {
           "Install or update the app from Google Play before you begin the session.",
           "Start your Android screen recorder and confirm microphone capture is enabled.",
           "Think out loud while moving through the task so the app owner can understand your decisions.",
-          "Return to this page after testing to stop recording, upload the file, and submit your answers.",
+          "Return to this page after testing to stop recording, upload the file, and submit your recording.",
         ],
         launchTitle: "Open the Android app when you are ready",
         launchBody:
-          "Tap the app link below, complete the session in the Android app, then come back here to upload your recording and finish the questionnaire.",
+          "Tap the app link below, complete the session in the Android app, then come back here to upload your recording and submit your recording.",
         launchButtonLabel: "Open Android app link",
       };
     default:
@@ -305,11 +232,11 @@ function getRecordingInstructions(productType: ProductType) {
           "Close extra tabs and confirm you have enough disk space before you begin.",
           "Start recording your full screen or browser window with microphone audio enabled.",
           "Describe what you expect to happen, what surprises you, and why you click each next step.",
-          "The site will open in a new tab. When you're done testing, return here to stop recording, upload the video, and submit your answers.",
+          "The site will open in a new tab. When you're done testing, return here to stop recording, upload the video, and submit your recording.",
         ],
         launchTitle: "The website opens in a new tab",
         launchBody:
-          "Keep this Test4Test tab open. Test in the new tab, then come back here when you are finished so you can upload the recording and submit your answers.",
+          "Keep this Test4Test tab open. Test in the new tab, then come back here when you are finished so you can upload the recording and submit your recording.",
         launchButtonLabel: "Open website again",
       };
   }
@@ -643,8 +570,21 @@ function MicrophoneBars({
   });
 }
 
-export function TestSessionPage() {
-  const { submissionId: testRef = "" } = useParams();
+export interface RecordingRevision {
+  responseId: string;
+  submissionId: string;
+  expectedVersionNumber: number;
+}
+
+export function TestSessionPage({
+  revision,
+  revisionActions,
+}: { revision?: RecordingRevision; revisionActions?: ReactNode } = {}) {
+  const { submissionId: routeTestRef = "" } = useParams();
+  const testRef = revision?.submissionId ?? routeTestRef;
+  const sessionKey = revision
+    ? `revision:${revision.responseId}:${revision.expectedVersionNumber}`
+    : testRef;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const useControlledRecordingUploadFixture =
@@ -656,6 +596,7 @@ export function TestSessionPage() {
     state,
     currentUser,
     completeTest,
+    reviseTestResponse,
     startGooglePlayClosedTestParticipation,
     recordGooglePlayClosedTestCheckIn,
   } = useAppState();
@@ -678,7 +619,7 @@ export function TestSessionPage() {
     : {};
   const sharedCustomMessage =
     submission?.publicShareMessage?.trim() || searchParams.get("message")?.trim() || "";
-  const initialRecordingSessionRef = useRef(loadRecordingTestSession(testRef));
+  const initialRecordingSessionRef = useRef(loadRecordingTestSession(sessionKey));
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
   const microphoneAudioContextRef = useRef<AudioContext | null>(null);
@@ -703,10 +644,6 @@ export function TestSessionPage() {
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingPausedAtRef = useRef<number | null>(null);
   const nativeStopReasonRef = useRef<NativeStopReason>("user-finished");
-  const draftSaveTimerRef = useRef<number | null>(null);
-  const draftSaveSequenceRef = useRef(0);
-  const draftServerUnavailableRef = useRef(false);
-  const draftEditedKeyRef = useRef("");
   const questionSet = submission ? getActiveQuestionSet(state, submission.id) : null;
   const activeSubmissionVersion = submission
     ? getActiveSubmissionVersion(state, submission.id)
@@ -716,13 +653,15 @@ export function TestSessionPage() {
       submission ? getOrderedAccessLinks(submission.accessLinks, submission.productTypes) : [],
     [submission],
   );
-  const isRecordingTest = submission?.requiresRecording === true;
+  const isRecordingTest = true;
   const recordingSessionStorageIds = useMemo(
-    () => Array.from(new Set([resolvedSubmissionId, testRef].filter(Boolean))),
-    [resolvedSubmissionId, testRef],
+    () =>
+      revision
+        ? [sessionKey]
+        : Array.from(new Set([resolvedSubmissionId, testRef].filter(Boolean))),
+    [resolvedSubmissionId, testRef, revision, sessionKey],
   );
   const defaultProductType = accessLinks.length === 1 ? accessLinks[0].productType : null;
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingRecording, setIsUploadingRecording] = useState(false);
@@ -746,9 +685,7 @@ export function TestSessionPage() {
   const [recordingSessionId] = useState(
     () => initialRecordingSessionRef.current?.sessionId ?? createRecordingSessionId(),
   );
-  const [startedAt, setStartedAt] = useState(() => Date.now());
-  const [loadedDraftKey, setLoadedDraftKey] = useState("");
-  const [draftSaveStatus, setDraftSaveStatus] = useState<DraftSaveStatus>("idle");
+  const [startedAt] = useState(() => Date.now());
   const [liveRecordingStartedAt, setLiveRecordingStartedAt] = useState<number | null>(null);
   const [liveElapsedSeconds, setLiveElapsedSeconds] = useState(0);
   const [nativeRecordingBlob, setNativeRecordingBlob] = useState<Blob | null>(null);
@@ -884,19 +821,6 @@ export function TestSessionPage() {
     googlePlayClosedTestStatus === "completed"
       ? "14 / 14 days complete"
       : `${Math.min(googlePlayClosedTestCheckInCount, 14)} / 14 days checked in`;
-  const hasQuestions = (questionSet?.questions.length ?? 0) > 0;
-  const draftIdentity =
-    currentUser && submission && activeSubmissionVersion && questionSet
-      ? {
-          userId: currentUser.id,
-          submissionId: submission.id,
-          submissionVersionId: activeSubmissionVersion.id,
-          questionSetVersionId: questionSet.id,
-        }
-      : null;
-  const draftIdentityKey = draftIdentity
-    ? `${draftIdentity.userId}:${draftIdentity.submissionId}:${draftIdentity.submissionVersionId}:${draftIdentity.questionSetVersionId}`
-    : "";
   const nativeBackupFileName = useMemo(
     () => createGeneratedRecordingFileName(recordingSessionId, nativeRecordingMimeType),
     [nativeRecordingMimeType, recordingSessionId],
@@ -919,41 +843,10 @@ export function TestSessionPage() {
     );
   }, [submission?.id]);
 
-  const completion = useMemo(() => {
-    if (!questionSet) {
-      return { answered: 0, total: 0, canSubmit: false, shortParagraphs: 0 };
-    }
-
-    if (questionSet.questions.length === 0) {
-      return {
-        answered: 0,
-        total: 0,
-        canSubmit: isRecordingTest,
-        shortParagraphs: 0,
-      };
-    }
-
-    const answered = questionSet.questions.filter((question) => {
-      const value = answers[question.id]?.trim();
-      return Boolean(value);
-    }).length;
-    const shortParagraphs = questionSet.questions.filter(
-      (question) =>
-        question.type === "paragraph" && (answers[question.id]?.trim().length ?? 0) < 40,
-    ).length;
-
-    return {
-      answered,
-      total: questionSet.questions.length,
-      canSubmit: answered === questionSet.questions.length && shortParagraphs === 0,
-      shortParagraphs,
-    };
-  }, [answers, isRecordingTest, questionSet]);
-
   const submitDisabled =
     isSubmitting ||
     isDeletingRecording ||
-    !completion.canSubmit ||
+    isUploadingRecording ||
     (isRecordingTest && !uploadedRecording);
 
   const stopMicrophoneMeter = () => {
@@ -1120,7 +1013,11 @@ export function TestSessionPage() {
     const submitDisabledAttribute = submitDisabled ? " disabled" : "";
     const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
     const downloadDisabledAttribute = nativeRecordingBlob ? "" : " disabled";
-    const submitLabel = isSubmitting ? "Submitting..." : "Submit test";
+    const submitLabel = isSubmitting
+      ? "Submitting..."
+      : revision
+        ? "Submit revised recording"
+        : "Submit test";
     const deleteLabel = isDeletingRecording ? "Deleting..." : "Delete and re-record";
     const trashIcon = `
       <svg class="recording-pip__button-icon" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
@@ -2479,88 +2376,17 @@ export function TestSessionPage() {
     recorder.stop();
   };
 
-  const buildDraftInput = (nextAnswers: Record<string, string>) => {
-    if (!draftIdentity || !questionSet) {
-      return null;
-    }
-
-    const answerValues = pruneAnswerValues(nextAnswers, questionSet.questions);
-
-    if (!hasSavedAnswerValues(answerValues)) {
-      return null;
-    }
-
-    return {
-      ...draftIdentity,
-      answerValues,
-      startedAt: new Date(startedAt).toISOString(),
-    };
-  };
-
-  const saveAnswersLocally = (nextAnswers: Record<string, string>) => {
-    if (!draftIdentity) {
-      return;
-    }
-
-    const input = buildDraftInput(nextAnswers);
-
-    if (!input) {
-      clearLocalTestResponseDraft(
-        draftIdentity.userId,
-        draftIdentity.submissionId,
-        draftIdentity.questionSetVersionId,
-      );
-      return;
-    }
-
-    saveLocalTestResponseDraft(input);
-  };
-
-  const updateAnswer = (questionId: string, value: string) => {
-    draftEditedKeyRef.current = draftIdentityKey;
-    setAnswers((current) => {
-      const nextAnswers = { ...current, [questionId]: value };
-      saveAnswersLocally(nextAnswers);
-      return nextAnswers;
-    });
-  };
-
-  const persistDraftNow = async (nextAnswers = answers) => {
-    if (!draftIdentity) {
-      return;
-    }
-
-    const input = buildDraftInput(nextAnswers);
-
-    if (!input) {
-      setDraftSaveStatus("idle");
-      await clearTestResponseDraft(
-        draftIdentity.userId,
-        draftIdentity.submissionId,
-        draftIdentity.questionSetVersionId,
-      );
-      return;
-    }
-
-    const result = await saveTestResponseDraft(input, {
-      skipServer: draftServerUnavailableRef.current,
-    });
-
-    if (result.persistedTo === "server") {
-      setDraftSaveStatus("saved");
-      return;
-    }
-
-    draftServerUnavailableRef.current = true;
-    setDraftSaveStatus("saved_local");
-  };
-
   const handleBackToEarn = () => {
-    void persistDraftNow();
-    navigate("/earn");
+    navigate(revision ? "/submissions" : "/earn");
   };
 
   const navigateAfterSuccessfulSubmit = (creditAwarded: boolean) => {
+    if (revision) {
+      returnToTestSessionWindow();
+      closeRecordingPipWindow();
+      navigate("/submissions", { replace: true });
+      return;
+    }
     if (!currentUser) {
       navigate(`/test/${submission?.id ?? resolvedSubmissionId}/success?shared=1`);
       return;
@@ -2578,109 +2404,6 @@ export function TestSessionPage() {
         : undefined,
     });
   };
-
-  useEffect(() => {
-    if (!draftIdentity || !questionSet) {
-      setLoadedDraftKey("");
-      setDraftSaveStatus("idle");
-      return undefined;
-    }
-
-    let isCancelled = false;
-    const key = draftIdentityKey;
-    draftEditedKeyRef.current = "";
-    setLoadedDraftKey("");
-    setDraftSaveStatus("loading");
-
-    const loadDraft = async () => {
-      const draft = await loadTestResponseDraft(
-        draftIdentity.userId,
-        draftIdentity.submissionId,
-        draftIdentity.questionSetVersionId,
-      );
-
-      if (isCancelled) {
-        return;
-      }
-
-      const userEditedDuringLoad = draftEditedKeyRef.current === key;
-
-      if (draft && !userEditedDuringLoad) {
-        const nextAnswers = pruneAnswerValues(draft.answerValues, questionSet.questions);
-        const hasAnswers = hasSavedAnswerValues(nextAnswers);
-        setAnswers(nextAnswers);
-        setStartedAt(parseDraftStartedAt(draft.startedAt));
-        setDraftSaveStatus(
-          hasAnswers ? (draft.source === "server" ? "restored" : "restored_local") : "idle",
-        );
-      } else if (!userEditedDuringLoad) {
-        setAnswers({});
-        setStartedAt(Date.now());
-        setDraftSaveStatus("idle");
-      }
-
-      setLoadedDraftKey(key);
-    };
-
-    void loadDraft();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [draftIdentityKey, questionSet?.id]);
-
-  useEffect(() => {
-    if (!draftIdentity || !questionSet || loadedDraftKey !== draftIdentityKey) {
-      return undefined;
-    }
-
-    if (draftSaveTimerRef.current !== null) {
-      window.clearTimeout(draftSaveTimerRef.current);
-      draftSaveTimerRef.current = null;
-    }
-
-    const input = buildDraftInput(answers);
-
-    if (!input) {
-      setDraftSaveStatus("idle");
-      void clearTestResponseDraft(
-        draftIdentity.userId,
-        draftIdentity.submissionId,
-        draftIdentity.questionSetVersionId,
-      );
-      return undefined;
-    }
-
-    saveLocalTestResponseDraft(input);
-    setDraftSaveStatus("saving");
-
-    const saveSequence = draftSaveSequenceRef.current + 1;
-    draftSaveSequenceRef.current = saveSequence;
-    draftSaveTimerRef.current = window.setTimeout(() => {
-      void saveTestResponseDraft(input, {
-        skipServer: draftServerUnavailableRef.current,
-      }).then((result) => {
-        if (draftSaveSequenceRef.current !== saveSequence) {
-          return;
-        }
-
-        if (result.persistedTo === "server") {
-          setDraftSaveStatus("saved");
-          return;
-        }
-
-        draftServerUnavailableRef.current = true;
-        setDraftSaveStatus("saved_local");
-      });
-    }, 800);
-
-    return () => {
-      if (draftSaveTimerRef.current !== null) {
-        window.clearTimeout(draftSaveTimerRef.current);
-        draftSaveTimerRef.current = null;
-      }
-    };
-  }, [answers, draftIdentityKey, loadedDraftKey, questionSet?.id, startedAt]);
 
   useEffect(() => {
     if (!isRecordingTest) {
@@ -2971,37 +2694,45 @@ export function TestSessionPage() {
   };
 
   const submit = async () => {
+    if (isSubmitting || isUploadingRecording || isDeletingRecording) return;
     if (isRecordingTest && !uploadedRecording) {
       setMessage("Upload your screen recording before submitting this test.");
       return;
     }
 
-    const payload = questionSet.questions.map((question) =>
-      buildAnswer(question, answers[question.id]?.trim() ?? ""),
-    );
-
     setIsSubmitting(true);
     setMessage("");
 
     try {
-      const result = await completeTest(
-        submission.id,
-        payload,
-        Math.round((Date.now() - startedAt) / 1000),
-        uploadedRecording,
-        questionSet.id,
-        activeSubmissionVersion.id,
-      );
+      const result =
+        revision && uploadedRecording
+          ? await reviseTestResponse(
+              revision.responseId,
+              uploadedRecording,
+              Math.round((Date.now() - startedAt) / 1000),
+              revision.expectedVersionNumber,
+            )
+          : await completeTest(
+              submission.id,
+              [],
+              Math.round((Date.now() - startedAt) / 1000),
+              uploadedRecording,
+              questionSet.id,
+              activeSubmissionVersion.id,
+            );
       setMessage(result.message);
       if (result.ok) {
         if (isRecordingTest) {
           recordingSessionStorageIds.forEach(clearRecordingTestSession);
         }
-        if (currentUser) {
-          await clearTestResponseDraft(currentUser.id, submission.id);
-        }
-        navigateAfterSuccessfulSubmit(result.creditAwarded);
+        navigateAfterSuccessfulSubmit("creditAwarded" in result && result.creditAwarded === true);
       }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Your recording could not be submitted. Try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -3402,17 +3133,6 @@ export function TestSessionPage() {
   };
 
   const showReturnAndSubmit = !isRecordingTest || recordingPhase === "return_and_submit";
-  const progressLabel = hasQuestions
-    ? `${completion.answered} / ${completion.total} answered`
-    : isRecordingTest
-      ? "Recording-only test"
-      : "Ready to submit";
-  const recordingStatusCopy = uploadedRecording
-    ? "Recording uploaded and ready."
-    : isNativeDesktopRecording
-      ? "Finish the browser recording and let it upload to unlock submit."
-      : "Upload the recording to unlock final submit.";
-  const draftStatusCopy = getDraftStatusCopy(draftSaveStatus);
   const manualRecordingDevice = getManualRecordingDevice(
     selectedProductType,
     recordingExperience.mobileOs,
@@ -3458,11 +3178,13 @@ export function TestSessionPage() {
     isNativeDesktopRecording && nativeRecoveryUploadEnabled && !uploadedRecording;
   const testSessionHeaderCopy =
     !isSharedPublicVisit && !isRecordingTest && isPublicTester
-      ? "No sign up required. Open the app, answer the questions, and your feedback will go straight to the app owner."
+      ? "No sign up required. Open the app, record your feedback, and it will go straight to the app owner."
       : "";
-  const testSessionTitle = isSharedPublicVisit
-    ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
-    : "";
+  const testSessionTitle = revision
+    ? `Revise feedback for ${submission.productName}`
+    : isSharedPublicVisit
+      ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
+      : "";
   const backToTestsLabel = currentUser ? "Go back" : "Browse tests";
   const shouldShowBackToTests = !isSharedPublicVisit;
 
@@ -3475,6 +3197,10 @@ export function TestSessionPage() {
               {testSessionTitle || "Test session"}
             </h1>
             {testSessionHeaderCopy ? <p>{testSessionHeaderCopy}</p> : null}
+            {revision ? (
+              <p>Record new feedback. Your previous recordings remain in the history.</p>
+            ) : null}
+            {revisionActions}
           </div>
         ) : (
           <h1 className="ds-sr-only">Test session</h1>
@@ -4028,7 +3754,7 @@ export function TestSessionPage() {
                         } else {
                           setRecordingPhase("return_and_submit");
                           setMessage(
-                            "Stop your recording, upload the video, then finish the questionnaire.",
+                            "Stop your recording, upload the video, then submit your recording.",
                           );
                         }
                       }}
@@ -4108,7 +3834,7 @@ export function TestSessionPage() {
                       <p>
                         {isNativeDesktopRecording
                           ? "Once the recording is uploaded, final submit unlocks here. If the automatic upload fails, retry it or download a backup copy."
-                          : "Upload the recording from your computer or phone, then complete the questionnaire below. Final submit stays locked until the video upload succeeds."}
+                          : "Upload the recording from your computer or phone, then submit it below. Final submit stays locked until the video upload succeeds."}
                       </p>
                     </div>
                   )}
@@ -4199,76 +3925,17 @@ export function TestSessionPage() {
 
           {showReturnAndSubmit ? (
             <>
-              {hasQuestions ? (
-                <div className="question-list test-session__questions">
-                  {questionSet.questions.map((question) => (
-                    <article key={question.id} className="question-card question-card--spacious">
-                      <div className="test-session__question-body">
-                        {question.type === "multiple" ? (
-                          <fieldset className={styles.choiceFieldset} role="radiogroup">
-                            <legend className={styles.questionLegend}>
-                              {question.sortOrder}. {question.title}
-                            </legend>
-                            <div className="radio-list">
-                              {(question.options ?? []).map((option) => (
-                                <Radio
-                                  key={option}
-                                  className={styles.choiceOption}
-                                  name={question.id}
-                                  checked={answers[question.id] === option}
-                                  onChange={() => updateAnswer(question.id, option)}
-                                  label={option}
-                                />
-                              ))}
-                            </div>
-                          </fieldset>
-                        ) : (
-                          <Textarea
-                            label={`${question.sortOrder}. ${question.title}`}
-                            rows={5}
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) => updateAnswer(question.id, event.target.value)}
-                            placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
-                            helpText={`${answers[question.id]?.trim().length ?? 0} / 40 recommended minimum characters`}
-                          />
-                        )}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : isRecordingTest ? (
-                <div className="recording-questionless-note">
-                  <strong>No written questionnaire for this test.</strong>
-                  <p>
-                    Once the recording is ready, you can submit this test from the footer below.
-                  </p>
-                </div>
-              ) : null}
-
               {message ? (
                 <Alert tone={nativeUploadError ? "danger" : "info"}>{message}</Alert>
               ) : null}
 
               <div className="wizard-actions wizard-actions--sticky test-session__footer">
-                {isRecordingTest && !hasQuestions ? (
-                  shouldShowBackToTests ? (
-                    <Button type="button" variant="secondary" onClick={handleBackToEarn}>
-                      {backToTestsLabel}
-                    </Button>
-                  ) : null
-                ) : (
-                  <div className="test-session__progress">
-                    <strong>{progressLabel}</strong>
-                    {isRecordingTest ? <span>{recordingStatusCopy}</span> : null}
-                    {draftStatusCopy ? <span>{draftStatusCopy}</span> : null}
-                  </div>
-                )}
+                {shouldShowBackToTests ? (
+                  <Button type="button" variant="secondary" onClick={handleBackToEarn}>
+                    {backToTestsLabel}
+                  </Button>
+                ) : null}
                 <div className="inline-actions">
-                  {shouldShowBackToTests && !(isRecordingTest && !hasQuestions) ? (
-                    <Button type="button" variant="secondary" onClick={handleBackToEarn}>
-                      {backToTestsLabel}
-                    </Button>
-                  ) : null}
                   <Button
                     type="button"
                     loading={isSubmitting}
@@ -4276,7 +3943,7 @@ export function TestSessionPage() {
                     onClick={() => void submit()}
                     disabled={submitDisabled}
                   >
-                    Submit test
+                    {revision ? "Submit revised recording" : "Submit test"}
                   </Button>
                 </div>
               </div>

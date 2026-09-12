@@ -16,6 +16,12 @@ Deno.serve((request) =>
     ) {
       throw new TranscriptHttpError("Invalid transcript callback.");
     }
+    if (
+      body.versionId != null &&
+      (typeof body.versionId !== "string" || !UUID_PATTERN.test(body.versionId))
+    ) {
+      throw new TranscriptHttpError("Invalid recording version.");
+    }
     if (body.event === "completed" && !validTranscriptResult(body.result)) {
       throw new TranscriptHttpError("Invalid transcript result.");
     }
@@ -24,6 +30,7 @@ Deno.serve((request) =>
       p_attempt_id: body.attemptId,
       p_event: body.event,
       p_result: body.event === "completed" ? body.result : null,
+      p_version_id: body.versionId ?? null,
     });
     if (error) throw new Error("Transcript completion failed");
     return transcriptJson({ ok: true, accepted: data === true });

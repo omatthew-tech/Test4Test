@@ -26,6 +26,15 @@ const sourceUrl =
 test("transcript jobs accept only the configured bucket or the project's signed storage URLs", async () => {
   const { parseTranscriptJob } = await import("./transcriptProcessor.js");
   const job = { responseId, attemptId };
+  const versionId = "91000000-0000-0000-0000-000000000003";
+  assert.equal(
+    parseTranscriptJob({ ...job, versionId, source: { url: sourceUrl } })?.versionId,
+    versionId,
+  );
+  assert.equal(
+    parseTranscriptJob({ ...job, versionId: "invalid", source: { url: sourceUrl } }),
+    null,
+  );
   assert.ok(parseTranscriptJob({ ...job, source: { url: sourceUrl } }));
   assert.ok(
     parseTranscriptJob({ ...job, source: { bucket: "test-recordings", objectKey: "test.wav" } }),

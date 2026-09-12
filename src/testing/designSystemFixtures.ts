@@ -267,7 +267,11 @@ export function createDesignSystemFixtureState(search: string): AppState {
     ],
     responses,
     feedbackRatings: [
-      ...structuredClone(seededState.feedbackRatings),
+      ...structuredClone(seededState.feedbackRatings).map((rating) =>
+        parameters.get("ds-revision") === "1" && rating.testResponseId === "response-palette-1"
+          ? { ...rating, ratingValue: "neutral" as const }
+          : rating,
+      ),
       ...testerProgress.feedbackRatings,
     ],
     users: fixtureUsers.map((user) =>

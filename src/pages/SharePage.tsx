@@ -5,7 +5,6 @@ import {
   Button,
   EmptyState,
   Link,
-  Radio,
   Stack,
   Surface,
   Textarea,
@@ -14,7 +13,7 @@ import {
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getOrderedAccessLinks } from "../lib/format";
-import { getActiveQuestionSet, getMySubmissions } from "../lib/selectors";
+import { getMySubmissions } from "../lib/selectors";
 import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
 import styles from "./SharePage.module.css";
 
@@ -63,7 +62,6 @@ export function SharePage() {
       ) ?? null,
     [state],
   );
-  const questionSet = liveSubmission ? getActiveQuestionSet(state, liveSubmission.id) : null;
   const sharedTestTitle = liveSubmission
     ? `Congrats! You've been selected to try ${liveSubmission.productName}`
     : "";
@@ -151,9 +149,6 @@ export function SharePage() {
   const accessLinks = getOrderedAccessLinks(
     liveSubmission.accessLinks,
     liveSubmission.productTypes,
-  );
-  const previewQuestions = [...(questionSet?.questions ?? [])].sort(
-    (first, second) => first.sortOrder - second.sortOrder,
   );
   const testerInstructionSteps =
     liveSubmission.instructionSteps.length > 0
@@ -331,7 +326,7 @@ export function SharePage() {
                   </div>
                 </div>
 
-                {liveSubmission.requiresRecording ? (
+                {
                   <div
                     className={`callout callout--soft recording-test-callout ${styles.recordingCallout}`}
                   >
@@ -341,58 +336,13 @@ export function SharePage() {
                       </span>
                       <strong>This session needs a screen and voice recording.</strong>
                       <p>
-                        Open the app, think out loud, and upload the recording with your feedback.
+                        Open the app, think out loud, then upload your recording and submit the
+                        test.
                       </p>
                     </div>
                     <Mic size={20} aria-hidden="true" />
                   </div>
-                ) : null}
-
-                {previewQuestions.length > 0 ? (
-                  <div className="question-list test-session__questions">
-                    {previewQuestions.map((question) => (
-                      <article key={question.id} className={`question-card ${styles.questionCard}`}>
-                        <div className="test-session__question-body">
-                          <h4 className={styles.questionTitle}>
-                            {question.sortOrder}. {question.title}
-                          </h4>
-                          {question.type === "multiple" ? (
-                            <fieldset className="radio-list" disabled>
-                              <legend className="ds-sr-only">
-                                Preview answer options for {question.title}
-                              </legend>
-                              {(question.options ?? []).map((option) => (
-                                <Radio
-                                  key={option}
-                                  name={`preview-${question.id}`}
-                                  tabIndex={-1}
-                                  disabled
-                                  label={option}
-                                />
-                              ))}
-                            </fieldset>
-                          ) : (
-                            <Textarea
-                              label="Preview answer"
-                              rows={5}
-                              tabIndex={-1}
-                              disabled
-                              placeholder="Add a thoughtful answer with enough detail to be genuinely useful."
-                              helpText="0 / 40 recommended minimum characters"
-                            />
-                          )}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ) : liveSubmission.requiresRecording ? (
-                  <div className="recording-questionless-note">
-                    <strong>No written questionnaire for this test.</strong>
-                    <p>
-                      Once the recording is ready, you can submit this test from the footer below.
-                    </p>
-                  </div>
-                ) : null}
+                }
               </Surface>
             </div>
           </div>

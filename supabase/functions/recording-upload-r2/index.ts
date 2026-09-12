@@ -627,18 +627,23 @@ Deno.serve(async (request) => {
         throw new Error("Submitted recordings cannot be deleted from this page.");
       }
 
-      await r2Fetch(env, objectKey, { method: "DELETE" }).catch(() => null);
-      if (uploadRow?.thumbnail_path) {
-        await r2Fetch(env, uploadRow.thumbnail_path, { method: "DELETE" }).catch(() => null);
-      }
-
-      await admin
+      const { data: claimed, error: claimError } = await admin
         .from("test_response_recording_uploads")
         .update({ status: "deleted", updated_at: new Date().toISOString() })
         .eq("storage_bucket", env.providerBucket)
         .eq("object_key", objectKey)
         .eq(uploadOwnerColumn, uploadOwnerKey)
-        .is("attached_response_id", null);
+        .is("attached_response_id", null)
+        .select("id")
+        .maybeSingle();
+      if (claimError || !claimed) {
+        throw new Error("The recording is submitted or no longer available as a draft.");
+      }
+
+      await r2Fetch(env, objectKey, { method: "DELETE" }).catch(() => null);
+      if (uploadRow?.thumbnail_path) {
+        await r2Fetch(env, uploadRow.thumbnail_path, { method: "DELETE" }).catch(() => null);
+      }
 
       return recordingJson({ ok: true });
     }

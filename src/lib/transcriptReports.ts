@@ -57,7 +57,9 @@ export async function loadTranscriptReportPages(
   let first: TranscriptReportPage | undefined;
   const recordings = new Map<string, TranscriptReportRecording>();
   const cursors = new Set<string>();
-  const previousById = new Map(previous?.recordings.map((row) => [row.responseId, row]) ?? []);
+  const previousById = new Map(
+    previous?.recordings.map((row) => [row.versionId ?? row.responseId, row]) ?? [],
+  );
   do {
     const page = await loadPage(cursor);
     first ??= page;
@@ -65,7 +67,7 @@ export async function loadTranscriptReportPages(
       throw new Error("The selected app changed. Reload the report.");
     for (const recording of page.recordings as VersionedTranscriptRecording[]) {
       if (recording.unchanged) {
-        const cached = previousById.get(recording.responseId) as
+        const cached = previousById.get(recording.versionId ?? recording.responseId) as
           VersionedTranscriptRecording | undefined;
         if (
           previous?.app.id !== page.app?.id ||
@@ -74,8 +76,8 @@ export async function loadTranscriptReportPages(
           cached.revision !== recording.revision
         )
           throw new Error("The report changed. Reload the report.");
-        recordings.set(recording.responseId, cached);
-      } else recordings.set(recording.responseId, recording);
+        recordings.set(recording.versionId ?? recording.responseId, cached);
+      } else recordings.set(recording.versionId ?? recording.responseId, recording);
     }
     cursor = page.nextCursor;
     if (cursor && cursors.has(cursor))
@@ -100,7 +102,7 @@ export function requestTranscriptReport(
     (previous?.recordings ?? [])
       .filter((row: VersionedTranscriptRecording) => Boolean(row.revision))
       .slice(0, 1000)
-      .map((row: VersionedTranscriptRecording) => [row.responseId, row.revision]),
+      .map((row: VersionedTranscriptRecording) => [row.versionId ?? row.responseId, row.revision]),
   );
   return loadTranscriptReportPages(
     (cursor) =>
@@ -136,10 +138,15 @@ export function sameTranscriptReport(
   );
 }
 
-export function retryRecordingTranscript(userId: string, responseId: string, signal: AbortSignal) {
+export function retryRecordingTranscript(
+  userId: string,
+  responseId: string,
+  signal: AbortSignal,
+  versionId?: string,
+) {
   return callTranscriptEndpoint<{ ok: true }>(
     "retry-recording-transcript",
-    { responseId },
+    { responseId, versionId },
     userId,
     signal,
   );

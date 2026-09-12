@@ -61,7 +61,7 @@ Deno.serve((request) =>
               appId: data.app.id,
               asOf,
               afterTime: last.submittedAt,
-              afterId: last.responseId,
+              afterId: last.versionId ?? last.responseId,
             }),
           )
         : null;

@@ -13,6 +13,7 @@ import {
 
 interface RecordingAccessRequest {
   responseId?: string;
+  versionId?: string;
   download?: boolean;
 }
 
@@ -87,15 +88,7 @@ Deno.serve(async (request) => {
     return recordingJson({ error: responseError?.message ?? "Test response not found." }, 404);
   }
 
-  const responseRecord = responseRow as ResponseRow;
-
-  if (!responseRecord.recording_bucket || !responseRecord.recording_path) {
-    return recordingJson({ error: "Recording not available for this response." }, 404);
-  }
-
-  if (responseRecord.recording_deleted_at) {
-    return recordingJson({ error: "Recording has been deleted." }, 410);
-  }
+  let responseRecord = responseRow as ResponseRow;
 
   const { data: submissionRow, error: submissionError } = await admin
     .from("submissions")
@@ -113,6 +106,25 @@ Deno.serve(async (request) => {
 
   if (!isAllowed) {
     return recordingJson({ error: "You do not have permission to access this recording." }, 403);
+  }
+
+  if (payload.versionId !== undefined) {
+    if (typeof payload.versionId !== "string" || !/^[0-9a-f-]{36}$/i.test(payload.versionId)) {
+      return recordingJson({ error: "Invalid recording version." }, 400);
+    }
+    const { data: version, error } = await admin
+      .from("test_response_versions")
+      .select("recording_bucket, recording_path, recording_file_name, recording_deleted_at")
+      .eq("id", payload.versionId)
+      .eq("response_id", responseId)
+      .maybeSingle();
+    if (error || !version) return recordingJson({ error: "Recording version not found." }, 404);
+    responseRecord = { ...responseRecord, ...version };
+  }
+  if (responseRecord.recording_deleted_at)
+    return recordingJson({ error: "Recording has been deleted." }, 410);
+  if (!responseRecord.recording_bucket || !responseRecord.recording_path) {
+    return recordingJson({ error: "Recording not available for this response." }, 404);
   }
 
   let signedUrl = "";

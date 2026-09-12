@@ -285,8 +285,9 @@ interface AppStateContextValue {
   ) => Promise<{ ok: boolean; message: string; creditAwarded: boolean }>;
   reviseTestResponse: (
     responseId: string,
-    answers: TestAnswer[],
+    recording: ResponseRecording,
     durationSeconds: number,
+    expectedVersionNumber: number,
   ) => Promise<{ ok: boolean; message: string }>;
   addModerationAction: (
     responseId: string,
@@ -1324,7 +1325,7 @@ async function persistLegacySubmission(draft: SubmissionDraft, questions: Questi
     p_target_audience: draft.targetAudience,
     p_instructions: draft.instructions,
     p_access_links: accessLinks,
-    p_requires_recording: draft.requiresRecording,
+    p_requires_recording: true,
     p_needs_google_play_closed_testers: draft.needsGooglePlayClosedTesters,
     p_google_play_closed_test_instructions: draft.needsGooglePlayClosedTesters
       ? draft.googlePlayClosedTestInstructions
@@ -1440,7 +1441,7 @@ async function persistSubmissionDetails(
         : "",
       access_url: primaryAccessLink.url,
       access_links: accessLinks,
-      requires_recording: draft.requiresRecording,
+      requires_recording: true,
       needs_google_play_closed_testers: draft.needsGooglePlayClosedTesters,
       estimated_minutes: estimatedMinutes,
       ...(nextStatus ? { status: nextStatus } : {}),
@@ -2495,16 +2496,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           creditAwarded: result.creditAwarded === true,
         };
       },
-      async reviseTestResponse(responseId, answers, durationSeconds) {
+      async reviseTestResponse(responseId, recording, durationSeconds, expectedVersionNumber) {
         if (!currentUser) {
           return { ok: false, message: "Verify your email before revising feedback." };
         }
 
         const supabase = requireSupabase();
-        const { data, error } = await supabase.rpc("revise_test_response", {
+        const { data, error } = await supabase.rpc("revise_test_recording", {
           p_response_id: responseId,
-          p_answers: answers,
+          p_recording_bucket: recording.bucket,
+          p_recording_path: recording.path,
           p_duration_seconds: durationSeconds,
+          p_expected_version_number: expectedVersionNumber,
         });
 
         if (error) {

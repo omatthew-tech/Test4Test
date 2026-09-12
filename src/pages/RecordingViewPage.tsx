@@ -8,6 +8,7 @@ import {
   IconButton,
   Link,
   Skeleton,
+  Select,
   Stack,
   Surface,
 } from "@test4test/design-system";
@@ -16,6 +17,11 @@ import { useAppState } from "../context/AppStateContext";
 import { formatDateTime } from "../lib/format";
 import { requestResponseRecordingUrl } from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
+import {
+  loadResponseVersions,
+  recordingVersionLabel,
+  type TestResponseVersion,
+} from "../lib/responseVersions";
 import styles from "./RecordingViewPage.module.css";
 
 type PlaybackState =
@@ -42,6 +48,33 @@ export function RecordingViewPage() {
     : 0;
   const selectedRecordingIndex = requestedRecordingIndex >= 0 ? requestedRecordingIndex : 0;
   const selectedRecording = availableRecordings[selectedRecordingIndex] ?? null;
+  const [history, setHistory] = useState<{
+    responseId: string;
+    versions: TestResponseVersion[];
+  } | null>(null);
+  const [historyError, setHistoryError] = useState("");
+  const versions =
+    history?.responseId === selectedRecording?.response.id ? (history?.versions ?? []) : [];
+  const requestedVersionId = searchParams.get("version");
+  const selectedVersion = requestedVersionId
+    ? versions.find((item) => item.id === requestedVersionId)
+    : versions[0];
+  useEffect(() => {
+    if (!selectedRecording) return;
+    let cancelled = false;
+    setHistory(null);
+    setHistoryError("");
+    void loadResponseVersions(selectedRecording.response)
+      .then((versions) => {
+        if (!cancelled) setHistory({ responseId: selectedRecording.response.id, versions });
+      })
+      .catch((error) => {
+        if (!cancelled) setHistoryError(error.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRecording, retryKey]);
   const useDesignSystemFixture = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
   const usePlaybackErrorFixture =
     useDesignSystemFixture && searchParams.get("ds-recording-error") === "1";
@@ -53,11 +86,12 @@ export function RecordingViewPage() {
 
     const nextSearchParams = new URLSearchParams(searchParams);
     nextSearchParams.delete("response");
+    nextSearchParams.delete("version");
     setSearchParams(nextSearchParams, { replace: true });
   }, [requestedRecordingIndex, requestedResponseId, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!selectedRecording) {
+    if (!selectedRecording || !selectedVersion?.recording || selectedVersion.recording.deletedAt) {
       setPlaybackState(initialPlaybackState);
       return;
     }
@@ -77,14 +111,14 @@ export function RecordingViewPage() {
           : {
               status: "ready",
               url: "",
-              fileName: selectedRecording.recording.fileName,
+              fileName: selectedVersion.recording?.fileName ?? "",
               error: "",
             },
       );
       return;
     }
 
-    void requestResponseRecordingUrl(selectedRecording.response.id)
+    void requestResponseRecordingUrl(selectedRecording.response.id, false, selectedVersion.id)
       .then((recordingUrl) => {
         if (cancelled) {
           return;
@@ -114,7 +148,13 @@ export function RecordingViewPage() {
     return () => {
       cancelled = true;
     };
-  }, [retryKey, selectedRecording, useDesignSystemFixture, usePlaybackErrorFixture]);
+  }, [
+    retryKey,
+    selectedRecording,
+    selectedVersion,
+    useDesignSystemFixture,
+    usePlaybackErrorFixture,
+  ]);
 
   const selectRecording = useCallback(
     (nextIndex: number) => {
@@ -126,6 +166,7 @@ export function RecordingViewPage() {
 
       const nextSearchParams = new URLSearchParams(searchParams);
       nextSearchParams.set("response", nextRecording.response.id);
+      nextSearchParams.delete("version");
       setSearchParams(nextSearchParams);
     },
     [availableRecordings, searchParams, setSearchParams],
@@ -156,10 +197,39 @@ export function RecordingViewPage() {
             <p className={styles.position}>{positionLabel}</p>
             <h1>{selectedRecording.submission.productName}</h1>
             <p className={styles.submittedAt}>
-              {formatDateTime(selectedRecording.response.submittedAt)}
+              {formatDateTime(
+                selectedVersion?.submittedAt ?? selectedRecording.response.submittedAt,
+              )}
             </p>
           </header>
 
+          {versions.length > 1 ? (
+            <Select
+              label="Recording version"
+              value={selectedVersion?.id ?? ""}
+              onChange={(event) => {
+                const next = new URLSearchParams(searchParams);
+                next.set("version", event.target.value);
+                setSearchParams(next);
+              }}
+            >
+              {versions.map((version) => (
+                <option key={version.id} value={version.id}>
+                  {recordingVersionLabel(version.versionNumber)} —{" "}
+                  {formatDateTime(version.submittedAt)}
+                </option>
+              ))}
+            </Select>
+          ) : null}
+          {historyError ? (
+            <Alert tone="danger">
+              {historyError}
+              <Button onClick={() => setRetryKey((key) => key + 1)}>Try again</Button>
+            </Alert>
+          ) : null}
+          {history?.responseId === selectedRecording.response.id && !selectedVersion ? (
+            <Alert tone="danger">This recording version is unavailable.</Alert>
+          ) : null}
           <div className={styles.playerNavigation}>
             <IconButton
               className={styles.previousButton}
@@ -174,7 +244,23 @@ export function RecordingViewPage() {
             </IconButton>
 
             <Surface className={styles.playerSurface} padding="none" tone="raised">
-              {playbackState.status === "loading" ? (
+              {historyError ||
+              (history?.responseId === selectedRecording.response.id && !selectedVersion) ||
+              selectedVersion?.recording?.deletedAt ? (
+                <div className={styles.playerStatus}>
+                  <p>This recording version is unavailable.</p>
+                </div>
+              ) : selectedVersion && !selectedVersion.recording ? (
+                <Stack gap="md">
+                  <p>This original feedback contains written answers.</p>
+                  {selectedVersion.answers.map((answer) => (
+                    <div key={answer.questionId}>
+                      <h3>{answer.questionTitle}</h3>
+                      <p>{answer.textAnswer ?? answer.selectedOption}</p>
+                    </div>
+                  ))}
+                </Stack>
+              ) : playbackState.status === "loading" ? (
                 <div
                   className={styles.playerStatus}
                   aria-busy="true"
@@ -206,7 +292,7 @@ export function RecordingViewPage() {
                   aria-label={`${positionLabel}: ${selectedRecording.submission.productName}`}
                   className={styles.video}
                   controls
-                  key={`${selectedRecording.response.id}-${playbackState.url}`}
+                  key={`${selectedVersion?.id}-${playbackState.url}`}
                   playsInline
                   preload="metadata"
                   src={playbackState.url || undefined}

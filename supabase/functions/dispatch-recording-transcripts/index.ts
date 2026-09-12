@@ -30,6 +30,7 @@ Deno.serve((request) =>
           signal: AbortSignal.timeout(10000),
           body: JSON.stringify({
             responseId: job.response_id,
+            versionId: job.version_id,
             attemptId: job.attempt_id,
             source: isR2
               ? { bucket: job.source_bucket.slice(3), objectKey: job.source_path }
@@ -46,6 +47,7 @@ Deno.serve((request) =>
       }
       const { error: finishError } = await admin.rpc("finish_recording_transcript", {
         p_response_id: job.response_id,
+        p_version_id: job.version_id,
         p_attempt_id: job.attempt_id,
         p_event: event,
       });

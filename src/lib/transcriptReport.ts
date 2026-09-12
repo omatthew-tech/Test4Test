@@ -17,6 +17,8 @@ export interface TranscriptReportApp {
 
 export interface TranscriptReportRecording {
   responseId: string;
+  versionId?: string;
+  versionNumber?: number;
   submittedAt: string;
   durationMs: number | null;
   status: TranscriptStatus;
@@ -30,7 +32,7 @@ export interface TranscriptReportData {
   recordings: TranscriptReportRecording[];
 }
 
-export const TRANSCRIPT_REPORT_VERSION = "1";
+export const TRANSCRIPT_REPORT_VERSION = "2";
 
 /** Source content can contain Markdown, including its own fences. */
 export function fenceReportSource(text: string) {
@@ -48,7 +50,8 @@ export function formatTranscriptTime(milliseconds: number) {
 export function orderReportRecordings(recordings: TranscriptReportRecording[]) {
   return [...recordings].sort(
     (a, b) =>
-      b.submittedAt.localeCompare(a.submittedAt) || a.responseId.localeCompare(b.responseId),
+      b.submittedAt.localeCompare(a.submittedAt) ||
+      (a.versionId ?? a.responseId).localeCompare(b.versionId ?? b.responseId),
   );
 }
 
@@ -106,9 +109,10 @@ export function buildTranscriptReport(
   const recordings = orderReportRecordings(data.recordings);
   const coverage = transcriptCoverage(recordings);
   const reference = (index: number) => `R${String(index + 1).padStart(3, "0")}`;
-  const recordingUrl = (id: string) => {
+  const recordingUrl = (id: string, versionId?: string) => {
     const url = new URL("/recordings", new URL(origin).origin);
     url.searchParams.set("response", id);
+    if (versionId) url.searchParams.set("version", versionId);
     return url.href;
   };
   const sections = [
@@ -135,7 +139,7 @@ export function buildTranscriptReport(
     ...recordings.flatMap((recording, index) => [
       `### ${reference(index)}`,
       fenceReportSource(
-        `Recording identifier: ${recording.responseId}\nSubmitted at: ${recording.submittedAt}\nDuration: ${recording.durationMs === null ? "Unknown" : formatTranscriptTime(recording.durationMs)}\nLanguage: ${recording.language || "Unknown"}\nTranscript status: ${recording.status}\nRecording: ${recordingUrl(recording.responseId)}`,
+        `Recording identifier: ${recording.versionId ?? recording.responseId}\nTest response: ${recording.responseId}\nVersion: ${(recording.versionNumber ?? 1) === 1 ? "Original" : `Revision ${(recording.versionNumber ?? 1) - 1}`}\nSubmitted at: ${recording.submittedAt}\nDuration: ${recording.durationMs === null ? "Unknown" : formatTranscriptTime(recording.durationMs)}\nLanguage: ${recording.language || "Unknown"}\nTranscript status: ${recording.status}\nRecording: ${recordingUrl(recording.responseId, recording.versionId)}`,
       ),
     ]),
     "## Transcripts",

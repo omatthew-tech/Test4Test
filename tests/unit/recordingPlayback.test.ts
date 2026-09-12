@@ -9,6 +9,21 @@ vi.mock("../../src/lib/supabase", () => ({
 }));
 
 describe("recording playback URL loading", () => {
+  it("requests and caches each recording version independently", async () => {
+    const { requestResponseRecordingUrl, invalidateResponseRecordingUrl } =
+      await import("../../src/lib/recordings");
+    await requestResponseRecordingUrl("versioned-response", false, "original-version");
+    await requestResponseRecordingUrl("versioned-response", false, "revised-version");
+    await requestResponseRecordingUrl("versioned-response", false, "original-version");
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String(vi.mocked(fetch).mock.calls[1][1]?.body))).toMatchObject({
+      responseId: "versioned-response",
+      versionId: "revised-version",
+    });
+    invalidateResponseRecordingUrl("versioned-response");
+    await requestResponseRecordingUrl("versioned-response", false, "original-version");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
   beforeEach(() => {
     getSession.mockResolvedValue({
       data: {

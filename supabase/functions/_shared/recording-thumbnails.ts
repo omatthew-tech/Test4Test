@@ -166,9 +166,9 @@ export async function enqueueRecordingThumbnailBatch(
   const durationByResponseId = new Map<string, number>();
   if (responseIds.length > 0) {
     const { data: responseDurations, error: durationError } = await admin
-      .from("test_responses")
-      .select("id, duration_seconds")
-      .in("id", responseIds);
+      .from("test_response_versions")
+      .select("recording_path, duration_seconds")
+      .in("response_id", responseIds);
     if (durationError) {
       console.error("Could not load trusted recording durations; worker will probe instead", {
         error: durationError.message,
@@ -177,7 +177,7 @@ export async function enqueueRecordingThumbnailBatch(
       for (const response of responseDurations ?? []) {
         const durationSeconds = Number(response.duration_seconds);
         if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
-          durationByResponseId.set(response.id as string, durationSeconds);
+          durationByResponseId.set(response.recording_path as string, durationSeconds);
         }
       }
     }
@@ -185,7 +185,7 @@ export async function enqueueRecordingThumbnailBatch(
 
   const sources: RecordingThumbnailWorkerSource[] = queuedRows.map((row) => {
     const durationSeconds = row.attached_response_id
-      ? durationByResponseId.get(row.attached_response_id)
+      ? durationByResponseId.get(row.object_key)
       : undefined;
     return {
       recordingUploadId: row.id,

@@ -2,6 +2,7 @@ import type { ResponseTranscript } from "./types.js";
 
 export interface TranscriptJobInput {
   responseId: string;
+  versionId?: string;
   attemptId: string;
   source:
     | { bucket: string; objectKey: string; url?: never }
@@ -109,6 +110,7 @@ export function createTranscriptNotifier(url: string, secret: string): Transcrip
       signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         responseId: job.responseId,
+        ...(job.versionId ? { versionId: job.versionId } : {}),
         attemptId: job.attemptId,
         event,
         ...(result ? { result } : {}),

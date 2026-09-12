@@ -41,7 +41,7 @@ const build = (report = data) =>
 describe("transcript report format", () => {
   it("exports context and source transcripts without an analysis task or duplicated text", () => {
     const text = build();
-    expect(text).toContain("Format version: 1");
+    expect(text).toContain("Format version: 2");
     expect(text).toContain("Transcripts ready: 1 of 1");
     expect(text).toContain("Current information at export time");
     expect(text).toContain("#### Task 2");
@@ -124,6 +124,41 @@ describe("transcript report format", () => {
 });
 
 describe("complete transcript retrieval", () => {
+  it("keeps multiple versions of one tester's feedback across pages and delta refreshes", async () => {
+    const original = {
+      ...data.recordings[0],
+      versionId: "original",
+      versionNumber: 1,
+      revision: "original-hash",
+    };
+    const revised = {
+      ...original,
+      versionId: "revised",
+      versionNumber: 2,
+      revision: "revised-hash",
+      fullText: "Revised words",
+      segments: [],
+    };
+    const result = await loadTranscriptReportPages(
+      async (cursor) => ({
+        apps: [data.app],
+        app: data.app,
+        recordings: cursor
+          ? [{ ...original, unchanged: true, fullText: "", segments: [] }]
+          : [revised],
+        nextCursor: cursor ? null : "next",
+      }),
+      { ...data, recordings: [original] },
+    );
+    expect(result.report?.recordings).toEqual([revised, original]);
+    const text = build(result.report!);
+    expect(text).toContain("Version: Revision 1");
+    expect(text).toContain("Version: Original");
+    expect(text).toContain("response=recording-1&version=revised");
+    expect(text).toContain("response=recording-1&version=original");
+    expect(text).toContain("Revised words");
+    expect(text).toContain("Bonjour");
+  });
   it("reuses unchanged transcripts while replacing changed rows and removing deleted rows", async () => {
     const cached = { ...data.recordings[0], revision: "v1" };
     const previous = { ...data, recordings: [cached, { ...cached, responseId: "deleted" }] };

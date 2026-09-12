@@ -235,6 +235,49 @@ async function startAndFinishNativeRecording(page: Page) {
   await expect.poll(() => page.evaluate(() => window.__testMediaRecorderStopCount)).toBe(1);
 }
 
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+]) {
+  for (const revision of [false, true]) {
+    test(`recording-only ${revision ? "revision" : "legacy test"} unlocks submit without answers at ${viewport.width}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await installMicrophoneFixture(page);
+      const path = revision
+        ? "/submissions/response-palette-1/revise?ds-revision=1"
+        : "/test/submission-palette?legacy=1";
+      await page.goto(`${path}&ds-user=user-avery&ds-recording-upload=controlled`);
+      await startAndFinishNativeRecording(page);
+      await expect
+        .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+        .toBe(true);
+      await page.evaluate(() => window.__testRecordingUploadControl?.succeed());
+      const label = revision ? "Submit revised recording" : "Submit test";
+      await expect(page.getByRole("button", { name: label, exact: true })).toBeEnabled();
+      await expect(
+        page.getByPlaceholder("Add a thoughtful answer with enough detail to be genuinely useful."),
+      ).toHaveCount(0);
+      await expect(page.locator(".test-session__questions")).toHaveCount(0);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              (
+                window.__testRecordingPipDocument?.getElementById(
+                  "recording-pip-submit",
+                ) as HTMLButtonElement
+              )?.disabled,
+          ),
+        )
+        .toBe(false);
+      await page.reload();
+      await expect(page.getByRole("button", { name: label, exact: true })).toBeEnabled();
+    });
+  }
+}
+
 test("floating recorder starts, pauses, resumes, and finalizes capture", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installMicrophoneFixture(page);

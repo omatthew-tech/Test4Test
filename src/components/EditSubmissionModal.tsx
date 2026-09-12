@@ -58,7 +58,7 @@ function buildEditDraft(submission: Submission): SubmissionDraft {
     instructionSteps: instructionSteps.length > 0 ? instructionSteps : [""],
     googlePlayClosedTestInstructions: submission.googlePlayClosedTestInstructions,
     accessLinks: { ...submission.accessLinks },
-    requiresRecording: submission.requiresRecording,
+    requiresRecording: true,
     needsGooglePlayClosedTesters: submission.needsGooglePlayClosedTesters,
     questionMode: submission.questionMode,
   };
@@ -327,7 +327,7 @@ export function EditSubmissionModal({
       ),
       instructions: serializeInstructionSteps(instructionSteps),
       instructionSteps,
-      requiresRecording: submission.requiresRecording,
+      requiresRecording: true,
     };
 
     setIsSavingEdit(true);

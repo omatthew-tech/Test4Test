@@ -1,5 +1,10 @@
 # Analytics transcript reports
 
+Recording revisions now use report format version 2 and preserve a separate transcript for
+every recording version. See [recording-only tests and revisions](recording-only-revisions.md)
+for the updated data model and rollout order. The original release evidence below records
+the earlier response-based implementation.
+
 Analytics exports one app's current context and full recording transcripts as a
 UTF-8 `.txt` document with Markdown headings. Copy, download, and the read-only
 preview share one deterministic formatter. An app is the existing submission ID;

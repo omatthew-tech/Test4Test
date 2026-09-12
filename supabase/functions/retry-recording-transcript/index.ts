@@ -10,9 +10,15 @@ Deno.serve((request) =>
     if (typeof body.responseId !== "string" || !UUID_PATTERN.test(body.responseId)) {
       throw new TranscriptHttpError("Invalid recording.");
     }
+    if (
+      body.versionId != null &&
+      (typeof body.versionId !== "string" || !UUID_PATTERN.test(body.versionId))
+    )
+      throw new TranscriptHttpError("Invalid recording version.");
     const { data, error } = await admin.rpc("retry_recording_transcript", {
       p_owner: userId,
       p_response_id: body.responseId,
+      p_version_id: body.versionId ?? null,
     });
     if (error) throw new Error("Transcript retry failed");
     if (!data)

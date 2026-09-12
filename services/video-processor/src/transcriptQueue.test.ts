@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   TranscriptQueue,
+  createTranscriptNotifier,
   type TranscriptJobInput,
   type TranscriptNotifier,
 } from "./transcriptQueue.js";
@@ -45,6 +46,35 @@ test("transcript queue deduplicates a live attempt", async () => {
   assert.equal(queue.size, 1);
   release?.();
   await drained(queue);
+});
+
+test("versions of one response complete independently with their source identities", async () => {
+  const callbacks: { responseId: string; versionId: string; event: string }[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    callbacks.push(JSON.parse(String(init?.body)));
+    return Response.json({ accepted: true });
+  };
+  try {
+    const queue = new TranscriptQueue(
+      async () => result,
+      createTranscriptNotifier("https://example.invalid/callback", "test-secret"),
+    );
+    queue.enqueue({ ...input, versionId: "original" });
+    queue.enqueue({ ...input, versionId: "revision", attemptId: "attempt-2" });
+    await drained(queue);
+    assert.deepEqual(
+      callbacks
+        .filter((row) => row.event === "completed")
+        .map((row) => [row.responseId, row.versionId]),
+      [
+        [input.responseId, "original"],
+        [input.responseId, "revision"],
+      ],
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("a stale or deleted-source lease prevents reading media", async () => {

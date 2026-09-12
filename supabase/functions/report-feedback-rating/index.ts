@@ -114,11 +114,13 @@ function normalizeAnswers(value: unknown) {
       return [] as NormalizedAnswer[];
     }
 
-    return [{
-      questionId,
-      questionTitle,
-      value,
-    } satisfies NormalizedAnswer];
+    return [
+      {
+        questionId,
+        questionTitle,
+        value,
+      } satisfies NormalizedAnswer,
+    ];
   });
 }
 
@@ -294,7 +296,11 @@ Deno.serve(async (request) => {
   }
 
   if (existingReport?.status === "pending") {
-    return json({ ok: true, message: "This report is already in progress.", reportStatus: "pending" });
+    return json({
+      ok: true,
+      message: "This report is already in progress.",
+      reportStatus: "pending",
+    });
   }
 
   const { data: questionSetVersion, error: questionSetError } = await admin
@@ -313,7 +319,8 @@ Deno.serve(async (request) => {
     .eq("id", user.id)
     .maybeSingle();
 
-  const reporterDisplayName = reporterProfile?.display_name?.trim() || user.email?.trim() || user.id;
+  const reporterDisplayName =
+    reporterProfile?.display_name?.trim() || user.email?.trim() || user.id;
   const questionAnswerPairs = buildQuestionAnswerPairs(
     questionSetVersion.questions,
     responseRow.answers,
@@ -323,11 +330,11 @@ Deno.serve(async (request) => {
   const safeProductName = escapeHtml(submission.product_name);
   const safeReporterDisplayName = escapeHtml(reporterDisplayName);
   const safeReporterEmail = escapeHtml(user.email?.trim() || "No email on account");
-  const safeReporterMessage = reporterMessage ? escapeHtmlWithBreaks(reporterMessage) : "None provided.";
+  const safeReporterMessage = reporterMessage
+    ? escapeHtmlWithBreaks(reporterMessage)
+    : "None provided.";
   const questionAnswerText = questionAnswerPairs
-    .map(
-      (item, index) => `${index + 1}. ${item.question}\nAnswer: ${item.answer}`,
-    )
+    .map((item, index) => `${index + 1}. ${item.question}\nAnswer: ${item.answer}`)
     .join("\n\n");
   const questionAnswerHtml = questionAnswerPairs
     .map(
@@ -411,21 +418,26 @@ Deno.serve(async (request) => {
   }
 
   if (reportTableAvailable) {
-    const { error: upsertError } = await admin
-      .from("feedback_rating_reports")
-      .upsert(
-        {
-          test_response_id: responseRow.id,
-          reporter_user_id: user.id,
-          status: "pending",
-          message: reporterMessage,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "test_response_id,reporter_user_id" },
-      );
+    const { error: upsertError } = await admin.from("feedback_rating_reports").upsert(
+      {
+        test_response_id: responseRow.id,
+        reporter_user_id: user.id,
+        status: "pending",
+        message: reporterMessage,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "test_response_id,reporter_user_id" },
+    );
 
     if (upsertError && !isMissingReportsTableError(upsertError.message)) {
       console.error("Failed to persist feedback report state.", upsertError.message);
+      return json(
+        {
+          error:
+            "The rating changed while your report was being sent. Reload your submitted feedback.",
+        },
+        409,
+      );
     }
   }
 

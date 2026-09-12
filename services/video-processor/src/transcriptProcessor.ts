@@ -15,6 +15,7 @@ export function parseTranscriptJob(value: unknown): TranscriptJobInput | null {
   if (!value || typeof value !== "object") return null;
   const job = value as TranscriptJobInput;
   if (!uuid.test(job.responseId) || !uuid.test(job.attemptId) || !job.source) return null;
+  if (job.versionId !== undefined && !uuid.test(job.versionId)) return null;
   if (typeof job.source.url === "string") {
     try {
       const url = new URL(job.source.url);
@@ -27,7 +28,12 @@ export function parseTranscriptJob(value: unknown): TranscriptJobInput | null {
         (url.protocol !== "https:" && url.hostname !== "127.0.0.1" && url.hostname !== "localhost")
       )
         return null;
-      return { responseId: job.responseId, attemptId: job.attemptId, source: { url: url.href } };
+      return {
+        ...(job.versionId ? { versionId: job.versionId } : {}),
+        responseId: job.responseId,
+        attemptId: job.attemptId,
+        source: { url: url.href },
+      };
     } catch {
       return null;
     }
@@ -40,6 +46,7 @@ export function parseTranscriptJob(value: unknown): TranscriptJobInput | null {
     return null;
   return {
     responseId: job.responseId,
+    ...(job.versionId ? { versionId: job.versionId } : {}),
     attemptId: job.attemptId,
     source: { bucket: job.source.bucket, objectKey: job.source.objectKey },
   };

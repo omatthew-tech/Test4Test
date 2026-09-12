@@ -119,7 +119,7 @@
   {
     "name": "revise-response",
     "routePattern": "/submissions/:responseId/revise",
-    "path": "/submissions/response-palette-1/revise?ds-user=user-avery"
+    "path": "/submissions/response-palette-1/revise?ds-user=user-avery&ds-revision=1"
   },
   {
     "name": "credits",
