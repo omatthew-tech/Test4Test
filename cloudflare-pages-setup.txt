@@ -10,6 +10,7 @@ Current production target
 - Deploy command: npx wrangler deploy
 - Root directory: /
 - Static assets: dist, as configured in wrangler.jsonc
+- Non-production builds: disabled on the live Worker; only ReDesign publishes here.
 - Build variables: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, using the existing production project's browser-safe values.
 
 Pushes to ReDesign must be connected to Builds on test4test-redesign. The older
