@@ -23,6 +23,7 @@ import {
   Section,
   Stack,
   TextField,
+  tokens,
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
@@ -296,6 +297,94 @@ const homeHowItWorksSteps = [
   },
 ] as const;
 
+// ds-exception: home-how-it-works-mobile-autoplay
+const homeHowItWorksHoldMs = 5000;
+const homeHowItWorksFadeMs = tokens["semantic.motion.interaction.duration"].dtcgValue.value * 3;
+
+function HomeHowItWorksSection() {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const desktop = window.matchMedia(
+      `(min-width: ${tokens["primitive.breakpoint.medium"].value})`,
+    );
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let inView = false;
+    let timer: number | undefined;
+    const shouldPlay = () =>
+      inView && !document.hidden && !desktop.matches && !reducedMotion.matches;
+    const advance = () => {
+      if (!shouldPlay()) return;
+      setActiveStep((current) => (current + 1) % homeHowItWorksSteps.length);
+      // Each incoming card gets a full reading interval after its fade finishes.
+      timer = window.setTimeout(advance, homeHowItWorksFadeMs + homeHowItWorksHoldMs);
+    };
+    const updatePlayback = () => {
+      window.clearTimeout(timer);
+      if (shouldPlay()) timer = window.setTimeout(advance, homeHowItWorksHoldMs);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (inView === entry.isIntersecting) return;
+      inView = entry.isIntersecting;
+      updatePlayback();
+    });
+
+    observer.observe(viewport);
+    desktop.addEventListener("change", updatePlayback);
+    reducedMotion.addEventListener("change", updatePlayback);
+    document.addEventListener("visibilitychange", updatePlayback);
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+      desktop.removeEventListener("change", updatePlayback);
+      reducedMotion.removeEventListener("change", updatePlayback);
+      document.removeEventListener("visibilitychange", updatePlayback);
+    };
+  }, []);
+
+  return (
+    <Section aria-labelledby="home-how-it-works-title" data-testid="home-how-it-works-section">
+      <Stack className={styles.howItWorksContent} gap="xl">
+        <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
+          How it works
+        </h2>
+        <div className={styles.howItWorksViewport} ref={viewportRef}>
+          <Grid as="ol" className={styles.howItWorksSteps} gap="lg" role="list">
+            {homeHowItWorksSteps.map((step, index) => (
+              <Stack
+                as="li"
+                className={styles.howItWorksStep}
+                data-active={index === activeStep}
+                gap="lg"
+                key={step.title}
+              >
+                {/* ds-exception: home-how-it-works-screenshot-previews */}
+                <img
+                  alt=""
+                  className={styles.howItWorksImage}
+                  decoding="async"
+                  height={1086}
+                  loading="lazy"
+                  src={step.image}
+                  width={1448}
+                />
+                <Stack className={styles.howItWorksCopy} gap="sm">
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </Stack>
+              </Stack>
+            ))}
+          </Grid>
+        </div>
+      </Stack>
+    </Section>
+  );
+}
+
 const freeFeedbackMethods = [
   {
     title: "Earn 1:1 credits",
@@ -531,7 +620,7 @@ function HomeManagedRecruitmentSection() {
                 size="large"
                 type="button"
               >
-                Explore managed testing
+                Try Test4Test Premium
                 <ArrowRight aria-hidden="true" size={20} />
               </Button>
             </div>
@@ -1048,36 +1137,7 @@ export function HomePage() {
 
         <Container>
           <div className={styles.pageSections}>
-            <Section
-              aria-labelledby="home-how-it-works-title"
-              data-testid="home-how-it-works-section"
-            >
-              <Stack className={styles.howItWorksContent} gap="xl">
-                <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
-                  How it works
-                </h2>
-                <Grid as="ol" className={styles.howItWorksSteps} gap="lg" role="list">
-                  {homeHowItWorksSteps.map((step) => (
-                    <Stack as="li" className={styles.howItWorksStep} gap="lg" key={step.title}>
-                      {/* ds-exception: home-how-it-works-screenshot-previews */}
-                      <img
-                        alt=""
-                        className={styles.howItWorksImage}
-                        decoding="async"
-                        height={1086}
-                        loading="lazy"
-                        src={step.image}
-                        width={1448}
-                      />
-                      <Stack className={styles.howItWorksCopy} gap="sm">
-                        <h3>{step.title}</h3>
-                        <p>{step.description}</p>
-                      </Stack>
-                    </Stack>
-                  ))}
-                </Grid>
-              </Stack>
-            </Section>
+            <HomeHowItWorksSection />
 
             {showRetiredHomeSections ? (
               <Section className={styles.process} aria-labelledby="home-process-title">

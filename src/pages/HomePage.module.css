@@ -570,6 +570,10 @@
   font-weight: var(--ds-semantic-typography-weight-semibold);
 }
 
+.howItWorksViewport {
+  width: 100%;
+}
+
 .howItWorksSteps {
   width: 100%;
   grid-template-columns: minmax(0, 1fr);
@@ -603,6 +607,23 @@
 .howItWorksCopy p {
   color: var(--ds-semantic-color-text-secondary);
   text-wrap: pretty;
+}
+
+/* ds-exception: home-how-it-works-mobile-autoplay */
+@media (width < 768px) and (prefers-reduced-motion: no-preference) {
+  .howItWorksStep {
+    /* Keep every card in layout and the accessibility tree, reserving the tallest height. */
+    grid-area: 1 / 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity calc(var(--ds-semantic-motion-interaction-duration) * 3)
+      var(--ds-semantic-motion-interaction-easing);
+  }
+
+  .howItWorksStep[data-active="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .processGrid {
@@ -701,6 +722,13 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+@media (width < 768px) {
+  .feedbackMethodCopy {
+    align-items: center;
+    text-align: center;
+  }
+}
+
 /* A visible panel edge needs external separation in addition to its inner padding. */
 .managedRecruitment,
 .finalCta {
@@ -708,8 +736,8 @@
 }
 
 .managedRecruitment {
-  margin-inline: calc(var(--ds-semantic-space-gutter-small) * -1);
-  padding-inline: var(--ds-semantic-space-gutter-small);
+  margin-inline: calc(var(--ds-semantic-space-inline-sm) * -1);
+  padding-inline: var(--ds-semantic-space-inline-sm);
   border-radius: var(--ds-semantic-radius-feature);
   background: var(--ds-semantic-color-action-tint);
 }

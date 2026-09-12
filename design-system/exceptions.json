@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "home-how-it-works-mobile-autoplay",
+      "owner": "Test4Test",
+      "scope": "The mobile-only How it works card sequence in src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
+      "rationale": "The design owner explicitly requested a repeating image-and-text crossfade with a five-second hold and no dots, navigation arrows, or pause control. This route-local exception permits autoplay without a visible stop control and the user-specified 5000 ms reading interval. The fade duration derives from the semantic interaction duration (3 times). Playback suspends offscreen and in hidden tabs. Reduced motion restores the static list; all step text remains in the accessibility tree without live announcements. Tablet and desktop layouts remain static.",
+      "expires": "2027-03-11"
+    },
+    {
       "id": "home-trusted-by-faded",
       "owner": "Test4Test",
       "scope": "The Trusted by cards, caption, and nested decorative stars in src/pages/HomePage.module.css.",

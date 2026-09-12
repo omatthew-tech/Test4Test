@@ -117,9 +117,7 @@ test("home managed recruitment follows the free-feedback showcase and uses anima
     }),
   ).toBeVisible();
   await expect(managedSection.getByRole("heading", { level: 3 })).toHaveCount(2);
-  await expect(
-    managedSection.getByRole("button", { name: "Explore managed testing" }),
-  ).toBeVisible();
+  await expect(managedSection.getByRole("button", { name: "Try Test4Test Premium" })).toBeVisible();
   await expect(managedSection.getByText("Pause animations", { exact: true })).toHaveCount(0);
   await expect(images.nth(0)).toHaveAttribute("src", "/images/animations/monkey-typing-loop.webp");
   await expect(images.nth(1)).toHaveAttribute("src", "/images/animations/monkey-vine-loop.webp");
