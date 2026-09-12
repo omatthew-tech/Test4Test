@@ -319,6 +319,15 @@ describe("recording-only submissions and versioned revisions", () => {
     );
     expect((await db.query("select * from public.recording_transcripts")).rows).toHaveLength(0);
   });
+  it("does not import a response-only transcript completed after a revision into the original", async () => {
+    await revise();
+    await db.exec("update public.recording_transcripts set status='pending', attempt_count=0");
+    await db.exec(`insert into public.test_response_transcripts(id,test_response_id,provider,model,status,full_text,completed_at)
+      values('${id(81)}','${id(41)}','test','test','completed','Unknown legacy source',now()+interval '1 second')`);
+    expect(
+      (await db.query("select public.reuse_existing_recording_transcripts() imported")).rows[0],
+    ).toEqual({ imported: 0 });
+  });
   it("lets deletion or revision claim an upload only once", async () => {
     await db.exec("update public.test_response_recording_uploads set status='deleted'");
     await db.exec("savepoint deleted_upload");

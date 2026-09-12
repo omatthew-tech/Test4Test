@@ -1146,7 +1146,8 @@ test("Share page saves, resets, copies, and previews the current live test", asy
   await expect(
     preview.getByText("Create a board and inspect how easy it is to add references."),
   ).toBeVisible();
-  await expect(preview.getByRole("heading", { name: /How easy was it/ }).first()).toBeVisible();
+  await expect(preview.getByRole("heading", { name: /How easy was it/ })).toHaveCount(0);
+  await expect(preview.getByText("This session needs a screen and voice recording.")).toBeVisible();
 
   const message = page.getByRole("textbox", { name: "Add a custom message (optional)" });
   await message.fill("Please review the board-building flow");

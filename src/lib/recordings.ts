@@ -876,7 +876,8 @@ export async function requestResponseRecordingUrl(
   versionId?: string,
 ) {
   const cacheKey = `${responseId}:${versionId ?? "latest"}:${download ? "download" : "play"}`;
-  const cached = recordingAccessCache.get(cacheKey);
+  // A response-only request must resolve the latest version again after a revision.
+  const cached = versionId ? recordingAccessCache.get(cacheKey) : undefined;
   if (cached && cached.expiresAt > Date.now() + 30 * 1000) {
     return cached.value;
   }

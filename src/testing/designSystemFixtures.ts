@@ -238,6 +238,9 @@ export function createDesignSystemFixtureState(search: string): AppState {
           submission.id === "submission-palette"
             ? {
                 ...structuredClone(submission),
+                ...(parameters.get("ds-public-link") === "1"
+                  ? { publicShareSlug: "palette-pilot" }
+                  : {}),
                 requiresRecording:
                   recording || availableRecordingCount > 0 || submission.requiresRecording,
                 ...(useMultipleInstructions

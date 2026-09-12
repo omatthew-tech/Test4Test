@@ -76,3 +76,31 @@ npm run ds:check
 Inspect recording, revision, history, and share layouts at 390 × 844 and 1440 × 900. Preserve
 visual references until the design-system owner accepts changed layouts. Record release-gate
 results before promotion; a failed full gate must not be labeled Release-validated.
+
+### Local validation on September 11, 2026
+
+- Application type checking, changed-file formatting/lint, and design-system invariants passed.
+  The latest interface batch is **Fast-checked**.
+- The final unit run passed all 124 tests. The final production build and blog prerender passed.
+- All 20 video-worker tests passed, including independent callbacks for two versions of one
+  response. Worker type checking and Deno checking of the nine changed Edge Functions passed.
+- Capture and revision journeys passed at 390 × 844 and 1440 × 900, including failed upload
+  recovery and restored sessions. Authenticated and anonymous public-link file uploads passed.
+  Version selection/reload, unavailable-version handling, revision eligibility, report exports,
+  and independent revision retries passed. The updated Share journey passed.
+- The required `npm run ds:check` passed formatting, lint (14 existing warnings), type checking,
+  design-system validation, 122 then-current unit tests, and 71 component tests. It stopped in
+  the broad browser suite: 205 passed and 10 failed. The questionnaire-related Share expectation
+  was corrected and its journey passed on rerun. The other failures concern existing home-page
+  contrast/content, Analytics navigation/link labels, and profile navigation expectations.
+- Targeted visual comparisons passed for all four recording-view sizes. Sixteen comparisons
+  differ on the changed Share, test-session, and revision routes. The shorter recording-only
+  layouts were inspected at both required sizes; no visual baselines were updated. Share's
+  callout was then aligned using the existing Surface and Stack components and inspected again.
+- Temporary scripts and downloaded checker caches were removed and `.tmp/` is ignored.
+  No hosted migration, function, worker, or frontend deployment was performed by this task.
+
+The full release remains **not Release-validated**. Baseline updates require owner acceptance
+under the [design-system skill](../.agents/skills/test4test-design-system/SKILL.md): “Update
+affected baselines only after the design-system owner accepts the visual change.” Keep the
+rollout staged until release review and hosted smoke checks are complete.

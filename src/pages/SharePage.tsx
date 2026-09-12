@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, Mic, Share2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Share2 } from "lucide-react";
 import {
   Alert,
   Button,
@@ -326,23 +326,14 @@ export function SharePage() {
                   </div>
                 </div>
 
-                {
-                  <div
-                    className={`callout callout--soft recording-test-callout ${styles.recordingCallout}`}
-                  >
-                    <div className="recording-test-callout__copy">
-                      <span className="recording-test-callout__eyebrow">
-                        Screen + voice recording
-                      </span>
-                      <strong>This session needs a screen and voice recording.</strong>
-                      <p>
-                        Open the app, think out loud, then upload your recording and submit the
-                        test.
-                      </p>
-                    </div>
-                    <Mic size={20} aria-hidden="true" />
-                  </div>
-                }
+                <Surface tone="subtle">
+                  <Stack gap="sm">
+                    <strong>This session needs a screen and voice recording.</strong>
+                    <p>
+                      Open the app, think out loud, then upload your recording and submit the test.
+                    </p>
+                  </Stack>
+                </Surface>
               </Surface>
             </div>
           </div>

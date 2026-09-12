@@ -86,7 +86,7 @@ export function AnalyticsTranscriptReport() {
         appId ??= result.report?.app.id ?? null;
         if (fixtureReports && result.report) {
           result.report.recordings = result.report.recordings.map((recording) =>
-            retriedFixtures.current.has(recording.responseId)
+            retriedFixtures.current.has(recording.versionId ?? recording.responseId)
               ? { ...recording, status: "ready" }
               : recording,
           );
@@ -207,7 +207,7 @@ export function AnalyticsTranscriptReport() {
     setRetrying(versionId ?? responseId);
     setNotice("");
     try {
-      if (fixtureMode) retriedFixtures.current.add(responseId);
+      if (fixtureMode) retriedFixtures.current.add(versionId ?? responseId);
       else await retryRecordingTranscript(userId, responseId, controller.signal, versionId);
       if (version !== selectionVersion.current) return;
       setNotice("Transcription retry requested.");

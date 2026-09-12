@@ -379,6 +379,9 @@ begin
     where old.status = 'completed' and old.full_text is not null
       and nullif(old.provider, '') is not null and nullif(old.model, '') is not null
       and old.completed_at >= coalesce(r.recording_uploaded_at, r.submitted_at)
+      and not exists (select 1 from public.test_response_versions newer
+        where newer.response_id = r.response_id and newer.version_number > 1
+          and newer.submitted_at <= old.completed_at)
       and r.recording_deleted_at is null and r.recording_bucket is not null and r.recording_path is not null
       and (p_owner is null or s.user_id = p_owner)
       and (current.id is null or (current.status = 'pending' and current.attempt_count = 0))

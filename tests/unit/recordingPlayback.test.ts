@@ -53,18 +53,29 @@ describe("recording playback URL loading", () => {
     const fetchMock = vi.mocked(fetch);
 
     expect(fetchMock).not.toHaveBeenCalled();
-    const first = await requestResponseRecordingUrl("response-playback-test");
+    const first = await requestResponseRecordingUrl("response-playback-test", false, "version-1");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://project.supabase.co/functions/v1/get-response-recording-access",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ responseId: "response-playback-test", download: false }),
+        body: JSON.stringify({
+          responseId: "response-playback-test",
+          versionId: "version-1",
+          download: false,
+        }),
       }),
     );
 
-    const second = await requestResponseRecordingUrl("response-playback-test");
+    const second = await requestResponseRecordingUrl("response-playback-test", false, "version-1");
     expect(second.url).toBe(first.url);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves response-only links afresh so they open the latest revision", async () => {
+    const { requestResponseRecordingUrl } = await import("../../src/lib/recordings");
+    await requestResponseRecordingUrl("response-latest");
+    await requestResponseRecordingUrl("response-latest");
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

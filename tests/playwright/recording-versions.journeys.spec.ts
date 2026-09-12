@@ -7,16 +7,14 @@ for (const anonymous of [false, true]) {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(
-      `/test/palette-pilot?shared=1&ds-recording-upload=controlled${anonymous ? "" : "&ds-user=user-avery"}`,
+      `/test/palette-pilot?shared=1&ds-public-link=1&ds-recording-upload=controlled${anonymous ? "" : "&ds-user=user-avery"}`,
     );
     await page.getByText("Already recorded?", { exact: true }).click();
-    await page
-      .getByLabel("Upload saved recording")
-      .setInputFiles({
-        name: "phone-recording.mp4",
-        mimeType: "video/mp4",
-        buffer: Buffer.from("phone recording fixture"),
-      });
+    await page.getByLabel("Upload saved recording").setInputFiles({
+      name: "phone-recording.mp4",
+      mimeType: "video/mp4",
+      buffer: Buffer.from("phone recording fixture"),
+    });
     await expect
       .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
       .toBe(true);

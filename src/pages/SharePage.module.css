@@ -91,20 +91,6 @@
   pointer-events: none;
 }
 
-.recordingCallout {
-  align-items: center;
-}
-
-.questionCard {
-  padding: var(--ds-semantic-space-stack-lg);
-}
-
-.questionTitle {
-  margin-block-end: var(--ds-semantic-space-stack-md);
-  font-size: var(--ds-semantic-typography-lead-mobile-size);
-  line-height: var(--ds-semantic-typography-lead-mobile-line-height);
-}
-
 @media (max-width: 767px) {
   .linkRow {
     grid-template-columns: minmax(0, 1fr);

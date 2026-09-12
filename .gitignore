@@ -9,5 +9,6 @@ debug.log
 !.env.example
 .codex-*.log
 .wrangler
+.tmp/
 /local-design-archive/
 /output/imagegen/monkey-animations/

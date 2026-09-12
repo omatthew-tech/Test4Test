@@ -3,6 +3,27 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const path = "/analytics?ds-user=user-mateo&ds-recordings=2";
+
+test("Transcript report exports every revision and retries versions independently", async ({
+  page,
+}) => {
+  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1&ds-transcripts=versions");
+  await page.getByRole("button", { name: "Preview report", exact: true }).click();
+  const preview = page.getByRole("textbox", { name: "Report preview" });
+  const text = await preview.inputValue();
+  expect(text).toContain("Recordings: 3");
+  expect(text).toContain("Version: Original");
+  expect(text).toContain("Version: Revision 1");
+  expect(text).toContain("Version: Revision 2");
+  expect(text.match(/Test response: response-palette-1/g)).toHaveLength(3);
+  expect(text).toContain("version=response-palette-1-revision-2");
+  await page.getByRole("button", { name: "Retry transcript 1", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Retry transcript 1", exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("button", { name: "Retry transcript 2", exact: true })).toBeEnabled();
+  await expect(preview).toContainText("Transcripts ready: 2 of 3");
+});
 test.beforeEach(async ({ page }) => {
   await page.route(/https:\/\/[^/]*\.supabase\.co\//, (route) => {
     throw new Error(`Fixture contacted Supabase: ${route.request().url()}`);

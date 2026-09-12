@@ -50,6 +50,22 @@ export function buildTranscriptReportFixtures(state: AppState, scenario: string 
         : [{ startMs: 12340, endMs: 18720, text }],
     });
   }
+  if (scenario === "versions") {
+    for (const report of reports.values()) {
+      report.recordings = report.recordings.flatMap((original) => [
+        { ...original, versionId: `${original.responseId}-original`, versionNumber: 1 },
+        ...[2, 3].map((versionNumber) => ({
+          ...original,
+          versionId: `${original.responseId}-revision-${versionNumber - 1}`,
+          versionNumber,
+          submittedAt: new Date(
+            Date.parse(original.submittedAt) + versionNumber * 86_400_000,
+          ).toISOString(),
+          status: "failed" as const,
+        })),
+      ]);
+    }
+  }
   if (scenario === "multi" && reports.size) {
     const other = structuredClone([...reports.values()][0]);
     other.app = {
