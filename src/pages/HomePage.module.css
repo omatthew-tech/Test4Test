@@ -713,8 +713,8 @@
 }
 
 .feedbackMethodCopy h3 {
-  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
-  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
 }
 
 .feedbackMethodCopy p {
@@ -1152,7 +1152,6 @@
   }
 
   .sectionHeading h2,
-  .feedbackMethodCopy h3,
   .qualityCopy h2,
   .finalCta h2 {
     font-size: var(--ds-semantic-typography-heading-section-desktop-size);
