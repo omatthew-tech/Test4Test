@@ -1351,29 +1351,62 @@ test("Analytics redirects guests to sign in and stays out of guest navigation", 
   ).toHaveCount(0);
 });
 
-test("Earn platform preferences expose named checkbox choices and save accessibly", async ({
-  page,
-}) => {
-  await page.goto("/earn?ds-user=user-avery");
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`Earn platform preferences stay saved across visits at ${viewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/earn?ds-user=user-avery");
 
-  const dialog = page.getByRole("dialog", {
-    name: "What platforms can you reliably access?",
+    const dialog = page.getByRole("dialog", {
+      name: "What platforms can you reliably access?",
+    });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("checkbox")).toHaveCount(3);
+    await page.screenshot({ path: testInfo.outputPath("platform-preferences.png") });
+
+    const websites = dialog.getByRole("checkbox", { name: "Websites" });
+    await websites.focus();
+    await page.keyboard.press("Space");
+    await expect(websites).not.toBeChecked();
+
+    await dialog.getByRole("button", { name: "Save preferences" }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByText("Sort by", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Filters", exact: true }).press("Enter");
+    await expect(page.getByRole("group", { name: "Choose platforms you can test" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Web", exact: true })).not.toBeChecked();
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
+    await expect(dialog).not.toBeVisible();
+
+    if (viewport.width === 390) {
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      await page
+        .getByRole("navigation", { name: "Account" })
+        .getByRole("button", { name: "Sign out" })
+        .click();
+    } else {
+      await page.getByRole("button", { name: "Profile menu" }).click();
+      await page.getByRole("menuitem", { name: "Sign out" }).click();
+    }
+    if (viewport.width === 390) {
+      await page.getByRole("button", { name: "Open navigation" }).click();
+    }
+    await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toBeVisible();
+    await page.goto("/");
+    await page.goto("/earn?ds-user=user-avery");
+    await expect(page.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
+    await expect(dialog).not.toBeVisible();
+    await page.getByRole("button", { name: "Filters", exact: true }).click();
+    await expect(page.getByRole("checkbox", { name: "Web", exact: true })).not.toBeChecked();
+    await page.screenshot({ path: testInfo.outputPath("saved-preferences-return-visit.png") });
   });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("checkbox")).toHaveCount(3);
-
-  const websites = dialog.getByRole("checkbox", { name: "Websites" });
-  await websites.focus();
-  await page.keyboard.press("Space");
-  await expect(websites).not.toBeChecked();
-
-  await dialog.getByRole("button", { name: "Save preferences" }).click();
-  await expect(dialog).not.toBeVisible();
-  await expect(page.getByText("Sort by", { exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Filters", exact: true }).press("Enter");
-  await expect(page.getByRole("group", { name: "Choose platforms you can test" })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: "Web", exact: true })).not.toBeChecked();
-});
+}
 
 test("legacy My Feedback URLs redirect to supported destinations and preserve queries", async ({
   page,

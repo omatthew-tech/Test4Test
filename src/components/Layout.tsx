@@ -1,6 +1,16 @@
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import { useState } from "react";
-import { UserRound } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  Coins,
+  HandCoins,
+  ListChecks,
+  LogOut,
+  Newspaper,
+  Plus,
+  Share2,
+  UserRound,
+} from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ApplicationShell as DesignSystemApplicationShell,
@@ -93,15 +103,15 @@ export function AppShell({
 
   const memberItems =
     currentUser?.accountType === "tester"
-      ? [{ to: "/earn", label: "Earn" }]
+      ? [{ to: "/earn", label: "Earn", icon: <Coins /> }]
       : [
-          { to: "/earn", label: "Earn" },
-          { to: "/share", label: "Share" },
-          { to: "/analytics", label: "Analyze" },
+          { to: "/earn", label: "Earn", icon: <Coins /> },
+          { to: "/share", label: "Share", icon: <Share2 /> },
+          { to: "/analytics", label: "Analyze", icon: <ChartNoAxesCombined /> },
         ];
   const guestItems = [
-    { to: "/blog", label: "Blog" },
-    { to: "/get-paid-to-test", label: "Get paid to test" },
+    { to: "/blog", label: "Blog", icon: <Newspaper /> },
+    { to: "/get-paid-to-test", label: "Get paid to test", icon: <HandCoins /> },
   ];
   const handleSelectedTesterLandingClick: MouseEventHandler<HTMLDivElement> = (event) => {
     if (location.pathname !== "/get-paid-to-test" || !(event.target instanceof Element)) return;
@@ -128,51 +138,66 @@ export function AppShell({
     }
   };
 
-  const renderProfileMenu = (closeNavigation?: () => void) => (
+  const accountHref = (to: string) => {
+    const fixtureSearch = new URLSearchParams();
+    // Keep fixture identity across local preview routes; production URLs stay unchanged.
+    if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
+      const currentSearch = new URLSearchParams(location.search);
+      for (const name of ["ds-user", "ds-tester"]) {
+        const value = currentSearch.get(name);
+        if (value) fixtureSearch.set(name, value);
+      }
+    }
+    const search = fixtureSearch.toString();
+    return search ? `${to}?${search}` : to;
+  };
+  const accountDestinations = [
+    { id: "profile", label: "Profile", to: accountHref("/profile"), icon: <UserRound /> },
+    ...(currentUser?.accountType === "tester"
+      ? []
+      : [
+          {
+            id: "new-app",
+            label: "New app",
+            to: accountHref("/submit"),
+            icon: <Plus />,
+            separatorBefore: true,
+          },
+          {
+            id: "my-reviews",
+            label: "My reviews",
+            to: accountHref("/submissions"),
+            icon: <ListChecks />,
+          },
+        ]),
+  ];
+  const signOutItem = {
+    id: "sign-out",
+    label: isSigningOut ? "Signing out..." : "Sign out",
+    icon: <LogOut />,
+    separatorBefore: true,
+    disabled: isSigningOut,
+    onSelect: () => {
+      void handleSignOut();
+    },
+  };
+
+  const renderProfileMenu = () => (
     <Menu
       key={`${location.key}-${currentUser?.id}`}
       label="Profile menu"
-      align={closeNavigation ? "start" : "end"}
+      align="end"
       trigger={
         <IconButton className={styles.profileTrigger} label="Profile menu">
           <UserRound aria-hidden="true" size={24} />
         </IconButton>
       }
       items={[
-        ...[
-          { id: "profile", label: "Profile", to: "/profile" },
-          ...(currentUser?.accountType === "tester"
-            ? []
-            : [
-                { id: "new-app", label: "New app", to: "/submit", separatorBefore: true },
-                { id: "my-reviews", label: "My reviews", to: "/submissions" },
-              ]),
-        ].map(({ to, ...item }) => ({
+        ...accountDestinations.map(({ to, ...item }) => ({
           ...item,
-          onSelect: () => {
-            closeNavigation?.();
-            const fixtureSearch = new URLSearchParams();
-            // Keep fixture identity across local preview routes; production URLs stay unchanged.
-            if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
-              const currentSearch = new URLSearchParams(location.search);
-              for (const name of ["ds-user", "ds-tester"]) {
-                const value = currentSearch.get(name);
-                if (value) fixtureSearch.set(name, value);
-              }
-            }
-            navigate({ pathname: to, search: fixtureSearch.toString() });
-          },
+          onSelect: () => navigate(to),
         })),
-        {
-          id: "sign-out",
-          label: isSigningOut ? "Signing out..." : "Sign out",
-          separatorBefore: true,
-          disabled: isSigningOut,
-          onSelect: () => {
-            closeNavigation?.();
-            void handleSignOut();
-          },
-        },
+        signOutItem,
       ]}
     />
   );
@@ -222,9 +247,7 @@ export function AppShell({
             <TopNavigation
               items={showMemberNav ? memberItems : guestItems}
               actions={navigationActions}
-              mobileActions={
-                showMemberNav ? (closeNavigation) => renderProfileMenu(closeNavigation) : undefined
-              }
+              mobileAccountItems={showMemberNav ? [...accountDestinations, signOutItem] : undefined}
             />
           </div>
         ) : undefined

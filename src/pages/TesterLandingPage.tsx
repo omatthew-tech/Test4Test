@@ -1,16 +1,8 @@
-import {
-  ArrowRight,
-  CheckCircle,
-  ClipboardCheck,
-  Lock,
-  ShieldCheck,
-  Star,
-  UserPlus,
-} from "lucide-react";
+import { ArrowRight, ClipboardCheck, ShieldCheck, UserPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card, Test4TestMark } from "@test4test/design-system";
+import { Button, Card } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import styles from "./TesterLandingPage.module.css";
 
@@ -28,10 +20,6 @@ function TesterStep({ children, icon: Icon, number }: TesterStepProps) {
       <span className={styles.stepNumber}>{number}</span>
       <div className={styles.stepIcon} aria-hidden="true">
         <Icon size={24} />
-        {number === "1" ? <CheckCircle className={styles.stepAccent} size={24} /> : null}
-        {number === "3" ? (
-          <Star className={styles.stepAccent} size={24} fill="currentColor" />
-        ) : null}
       </div>
       <div className={styles.stepCopy}>{children}</div>
     </article>
@@ -55,10 +43,6 @@ export function TesterLandingPage() {
 
           <div className={styles.heroVisual}>
             <div className={styles.visualStack}>
-              <div className={styles.brandComposition} aria-hidden="true">
-                <Test4TestMark className={styles.brandMark} />
-              </div>
-
               <Card
                 as="article"
                 className={styles.earningsCard}
@@ -105,12 +89,6 @@ export function TesterLandingPage() {
                     <span>Next payout</span>
                     <strong>$75.00</strong>
                   </div>
-                  <div className={styles.payoutProgress}>
-                    <span>Threshold: $25.00</span>
-                    <div aria-hidden="true">
-                      <span />
-                    </div>
-                  </div>
                   <span className={styles.paypalMark} aria-hidden="true">
                     <img
                       src={paypalSymbolPath}
@@ -144,15 +122,6 @@ export function TesterLandingPage() {
               </p>
             </TesterStep>
           </div>
-
-          <p className={styles.legal}>
-            <Lock size={16} aria-hidden="true" />
-            <span>Your data is secure and never shared. By signing up, you agree to our</span>
-            <span className={styles.legalLink}>Terms of Service</span>
-            <span>and</span>
-            <span className={styles.legalLink}>Privacy Policy</span>
-            <span>.</span>
-          </p>
         </section>
       </div>
     </AppShell>

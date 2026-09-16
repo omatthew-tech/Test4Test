@@ -30,13 +30,27 @@ function renderShell() {
 }
 
 beforeEach(() => {
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   account.currentUser.accountType = "founder";
   account.signOut.mockReset();
   account.signOut.mockResolvedValue(undefined);
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
-describe("profile menu sign out", () => {
+describe.each([false, true])("profile menu sign out (mobile: %s)", (mobile) => {
+  const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(
+      screen.getByRole("button", { name: mobile ? "Open navigation" : "Profile menu" }),
+    );
+  };
+  const signOut = () => screen.getByRole(mobile ? "button" : "menuitem", { name: "Sign out" });
   it.each([
     ["founder", "/"],
     ["tester", "/get-paid-to-test"],
@@ -46,8 +60,8 @@ describe("profile menu sign out", () => {
       account.currentUser.accountType = accountType;
       const user = userEvent.setup();
       renderShell();
-      await user.click(screen.getByRole("button", { name: "Profile menu" }));
-      await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+      await openMenu(user);
+      await user.click(signOut());
       await waitFor(() =>
         expect(screen.getByLabelText("Current path").textContent).toBe(destination),
       );
@@ -66,10 +80,10 @@ describe("profile menu sign out", () => {
     );
     const user = userEvent.setup();
     renderShell();
-    await user.click(screen.getByRole("button", { name: "Profile menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
-    await user.click(screen.getByRole("button", { name: "Profile menu" }));
-    const pending = screen.getByRole("menuitem", { name: "Signing out..." });
+    await openMenu(user);
+    await user.click(signOut());
+    await openMenu(user);
+    const pending = screen.getByRole(mobile ? "button" : "menuitem", { name: "Signing out..." });
     expect(pending.hasAttribute("disabled")).toBe(true);
     await user.click(pending);
     expect(account.signOut).toHaveBeenCalledTimes(1);
@@ -81,14 +95,14 @@ describe("profile menu sign out", () => {
     account.signOut.mockRejectedValueOnce(new Error("Network unavailable"));
     const user = userEvent.setup();
     renderShell();
-    await user.click(screen.getByRole("button", { name: "Profile menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    await openMenu(user);
+    await user.click(signOut());
     expect((await screen.findByRole("alert")).textContent).toContain(
       "We couldn't sign you out. Please try again.",
     );
     expect(screen.getByLabelText("Current path").textContent).toBe("/profile");
-    await user.click(screen.getByRole("button", { name: "Profile menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    await openMenu(user);
+    await user.click(signOut());
     await waitFor(() => expect(screen.getByLabelText("Current path").textContent).toBe("/"));
     expect(account.signOut).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).toBeNull();

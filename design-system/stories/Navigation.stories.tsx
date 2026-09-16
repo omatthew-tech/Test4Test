@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { UserRound } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  Coins,
+  HandCoins,
+  LogOut,
+  Newspaper,
+  Share2,
+  UserRound,
+} from "lucide-react";
 import { expect, userEvent, within } from "storybook/test";
 import {
   Breadcrumb,
@@ -128,6 +136,61 @@ export const TopNavigationPublicState: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(canvas.queryByRole("button", { name: "Submit a test" })).not.toBeInTheDocument();
+  },
+};
+
+export const CompactVisitorNavigation: Story = {
+  render: () => (
+    <TopNavigation
+      items={[
+        { label: "Blog", to: "/blog", icon: <Newspaper /> },
+        { label: "Get paid to test", to: "/get-paid-to-test", icon: <HandCoins /> },
+      ]}
+      actions={
+        <div>
+          <Button variant="secondary">Sign in</Button>
+          <Button>Get started</Button>
+        </div>
+      }
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.queryByRole("button", { name: "Open navigation" });
+    if (!trigger) return;
+    await userEvent.click(trigger);
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(canvas.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect(trigger).toHaveFocus();
+  },
+};
+
+export const CompactMemberNavigation: Story = {
+  parameters: { test4test: { initialEntries: ["/earn"] } },
+  render: () => (
+    <TopNavigation
+      items={[
+        { label: "Earn", to: "/earn", icon: <Coins /> },
+        { label: "Share", to: "/share", icon: <Share2 /> },
+        { label: "Analyze", to: "/analytics", icon: <ChartNoAxesCombined /> },
+      ]}
+      mobileAccountItems={[
+        { id: "profile", label: "Profile", to: "/profile", icon: <UserRound /> },
+        { id: "sign-out", label: "Sign out", onSelect: () => undefined, icon: <LogOut /> },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.queryByRole("button", { name: "Open navigation" });
+    if (!trigger) return;
+    trigger.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    await expect(canvas.getByRole("link", { name: /^Earn$/ })).toHaveFocus();
+    await expect(canvas.getByRole("navigation", { name: "Account" })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect(trigger).toHaveFocus();
   },
 };
 

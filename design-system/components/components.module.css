@@ -428,6 +428,7 @@
 }
 
 .navBar {
+  position: relative;
   display: flex;
   max-width: var(--ds-semantic-size-content-data);
   margin-inline: auto;
@@ -475,6 +476,92 @@
   display: grid;
   gap: var(--ds-semantic-space-stack-sm);
   padding: var(--ds-semantic-space-stack-md);
+}
+
+.mobileNavigationDropdown {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + var(--ds-semantic-space-stack-xs));
+  max-height: calc(
+    var(--ds-semantic-size-viewport-full-height) - var(--ds-semantic-space-stack-section-large) -
+      var(--ds-semantic-space-stack-xl) - env(safe-area-inset-bottom)
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ds-semantic-space-stack-md);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-panel);
+  background: var(--ds-semantic-color-surface-raised);
+  box-shadow: var(--ds-semantic-shadow-overlay);
+}
+
+.mobileNavigationGroup,
+.mobileNavigationAccount {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+}
+
+.mobileNavigationLink {
+  display: flex;
+  width: 100%;
+  min-height: var(--ds-semantic-size-control-large);
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--ds-semantic-space-inline-md);
+  border-radius: var(--ds-semantic-radius-control);
+  padding: var(--ds-semantic-space-stack-md) var(--ds-semantic-space-inline-md);
+  color: var(--ds-semantic-color-text-primary);
+  font-size: var(--ds-semantic-typography-body-size);
+  font-weight: var(--ds-semantic-typography-weight-medium);
+  line-height: var(--ds-semantic-typography-body-line-height);
+  text-align: start;
+  text-decoration: none;
+}
+
+.mobileNavigationLink:hover:not(:disabled),
+.mobileNavigationLink.navLinkCurrent {
+  background: var(--ds-semantic-color-action-tint);
+  color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.mobileNavigationLabel {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mobileNavigationIcon,
+.mobileNavigationIcon svg {
+  width: var(--ds-semantic-size-icon-large);
+  height: var(--ds-semantic-size-icon-large);
+  flex-shrink: 0;
+}
+
+.mobileNavigationChevron {
+  width: var(--ds-semantic-size-icon-medium);
+  height: var(--ds-semantic-size-icon-medium);
+  flex-shrink: 0;
+  color: var(--ds-semantic-color-text-tertiary);
+}
+
+.mobileNavigationAccount,
+.mobileNavigationActions {
+  margin-block-start: var(--ds-semantic-space-stack-md);
+  border-block-start: var(--ds-semantic-border-width-default) solid
+    var(--ds-semantic-color-border-subtle);
+  padding-block-start: var(--ds-semantic-space-stack-md);
+}
+
+.mobileNavigationActions > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.mobileNavigationActions a {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
 }
 
 .tabs {
@@ -1346,7 +1433,8 @@
     display: flex;
   }
 
-  .mobileNavButton {
+  .mobileNavButton,
+  .mobileNavigationDropdown {
     display: none;
   }
 

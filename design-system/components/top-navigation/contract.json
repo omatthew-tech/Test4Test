@@ -6,18 +6,24 @@
   "lifecycle": "stable",
   "source": "design-system/components/navigation.tsx",
   "story": "design-system/stories/Navigation.stories.tsx",
-  "description": "Desktop application and marketing navigation with an optional mobile-actions renderer that receives a drawer-close callback.",
+  "description": "Desktop navigation with a compact mobile disclosure below the header. Optional icons and mobile account items keep primary navigation, account destinations, and guest actions grouped without a nested menu.",
   "semantics": [
-    "Header and named navigation landmark",
-    "Current page uses aria-current"
+    "Header and named Primary and Account navigation landmarks",
+    "Current page uses aria-current",
+    "Disclosure trigger exposes aria-expanded and aria-controls",
+    "Non-modal content follows the trigger in document order"
   ],
   "keyboard": [
-    "Tab follows document order"
+    "Enter or Space toggles the disclosure",
+    "ArrowDown opens and focuses the first link",
+    "Tab follows document order and closes when focus leaves the header",
+    "Escape closes and restores trigger focus",
+    "Outside pointer, route changes, and desktop resizing dismiss the disclosure"
   ],
   "targetSize": 44,
   "dependencies": [
     "icon-button",
-    "mobile-navigation-drawer"
+    "button"
   ],
   "exportName": "TopNavigation",
   "sizes": [
@@ -36,7 +42,9 @@
   "controlMode": "uncontrolled",
   "storyExport": "TopNavigationContract",
   "examples": [
-    "design-system/stories/Navigation.stories.tsx#TopNavigationContract"
+    "design-system/stories/Navigation.stories.tsx#TopNavigationContract",
+    "design-system/stories/Navigation.stories.tsx#CompactVisitorNavigation",
+    "design-system/stories/Navigation.stories.tsx#CompactMemberNavigation"
   ],
   "$schema": "../../contracts/component.schema.json"
 }

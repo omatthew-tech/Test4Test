@@ -35,6 +35,10 @@ import {
   saveEarnPlacementSnapshot,
 } from "../lib/earnPlacementCelebration";
 import { loadEarnSubmissionReputations } from "../lib/earnReputation";
+import {
+  loadEarnPlatformPreferences,
+  saveEarnPlatformPreferences,
+} from "../lib/earnPlatformPreferences";
 import { loadEarnVisibilitySubmission, loadEarnVisibilitySummary } from "../lib/earnVisibility";
 import { normalizeProductTypes, PRODUCT_TYPE_ORDER, productTypesBadges } from "../lib/format";
 import { getAvailableSubmissions } from "../lib/selectors";
@@ -348,6 +352,10 @@ export function EarnPage() {
   const [pendingProductTypes, setPendingProductTypes] =
     useState<ProductType[]>(selectedProductTypes);
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
+  const [isSavingPlatformPreferences, setIsSavingPlatformPreferences] = useState(false);
+  const [platformSaveError, setPlatformSaveError] = useState("");
+  const platformSelectionVersion = useRef(0);
+  const platformSaveInFlight = useRef(false);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [suppressedPlatformHoverType, setSuppressedPlatformHoverType] =
     useState<ProductType | null>(null);
@@ -732,18 +740,53 @@ export function EarnPage() {
       return;
     }
 
+    if (platformSaveInFlight.current) return;
+
     const storedProductTypes = readStoredProductTypes(currentUser.id);
     const isConfirmed = readStoredPlatformConfirmation(currentUser.id);
     const nextSelectedProductTypes = storedProductTypes ?? defaultSelectedProductTypes;
 
     setSelectedProductTypes(nextSelectedProductTypes);
     setPendingProductTypes(nextSelectedProductTypes);
-    setIsPlatformModalOpen(!isConfirmed);
+    setPlatformSaveError("");
+    setIsPlatformModalOpen(!isConfigured && !isConfirmed);
+
+    if (!isConfigured) return;
+
+    let cancelled = false;
+    const version = platformSelectionVersion.current;
+    const userId = currentUser.id;
+    void loadEarnPlatformPreferences(userId)
+      .then(async (preferences) => {
+        if (cancelled || version !== platformSelectionVersion.current) return;
+
+        const next = preferences.productTypes ?? nextSelectedProductTypes;
+        setSelectedProductTypes(next);
+        setPendingProductTypes(next);
+        setIsPlatformModalOpen(!preferences.confirmed && !isConfirmed);
+
+        if (preferences.confirmed) {
+          saveStoredProductTypes(userId, next);
+          saveStoredPlatformConfirmation(userId);
+        } else if (isConfirmed) {
+          // Carry confirmations made before account persistence forward without prompting again.
+          await saveEarnPlatformPreferences(userId, next);
+        }
+      })
+      .catch((error: unknown) => {
+        // An unavailable account check must not re-prompt someone who already saved.
+        if (!cancelled) console.error(error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     currentUser?.accountType,
     currentUser?.id,
     currentUser?.testerProfile?.devices,
     defaultSelectedProductTypesKey,
+    isConfigured,
   ]);
 
   useEffect(() => {
@@ -846,41 +889,60 @@ export function EarnPage() {
   };
 
   const closePlatformModal = () => {
+    if (platformSaveInFlight.current) return;
     setPendingProductTypes(selectedProductTypes);
+    setPlatformSaveError("");
     setIsPlatformModalOpen(false);
   };
 
   const savePlatformSelection = async (productTypes: ProductType[], closeModal = false) => {
+    if (platformSaveInFlight.current) return;
+    platformSaveInFlight.current = true;
+    platformSelectionVersion.current += 1;
+    setIsSavingPlatformPreferences(true);
+    setPlatformSaveError("");
     const next = normalizeProductTypes(productTypes);
 
-    if (isTester && currentUser?.testerProfile) {
-      const profile = currentUser.testerProfile;
-      const result = await updateTesterProfile({
-        firstName: profile.firstName,
-        countryCode: profile.countryCode,
-        region: profile.region ?? "",
-        technologyProficiency: profile.technologyProficiency,
-        devices: productTypesToDevices(next),
-        employmentStatus: profile.employmentStatus,
-        workArea: profile.workArea ?? "",
-        paidTestEmailEnabled: profile.paidTestEmailEnabled,
-      });
+    try {
+      if (isTester && currentUser?.testerProfile) {
+        const profile = currentUser.testerProfile;
+        const result = await updateTesterProfile({
+          firstName: profile.firstName,
+          countryCode: profile.countryCode,
+          region: profile.region ?? "",
+          technologyProficiency: profile.technologyProficiency,
+          devices: productTypesToDevices(next),
+          employmentStatus: profile.employmentStatus,
+          workArea: profile.workArea ?? "",
+          paidTestEmailEnabled: profile.paidTestEmailEnabled,
+        });
 
-      if (!result.ok) {
-        setServerEarnError(result.message);
-        return;
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+      } else if (currentUser) {
+        if (isConfigured) {
+          await saveEarnPlatformPreferences(currentUser.id, next);
+        }
+        saveStoredProductTypes(currentUser.id, next);
+        saveStoredPlatformConfirmation(currentUser.id);
       }
-    } else if (currentUser) {
-      saveStoredProductTypes(currentUser.id, next);
-      saveStoredPlatformConfirmation(currentUser.id);
-    }
 
-    setSelectedProductTypes(next);
-    setPendingProductTypes(next);
-    if (closeModal) {
-      setIsPlatformModalOpen(false);
+      setSelectedProductTypes(next);
+      setPendingProductTypes(next);
+      if (closeModal) {
+        setIsPlatformModalOpen(false);
+      }
+      setServerEarnError("");
+    } catch {
+      const message = "We could not save your preferences. Please try again.";
+      if (closeModal) setPlatformSaveError(message);
+      else setServerEarnError(message);
+    } finally {
+      platformSelectionVersion.current += 1;
+      platformSaveInFlight.current = false;
+      setIsSavingPlatformPreferences(false);
     }
-    setServerEarnError("");
   };
 
   const toggleSelectedProductType = (productType: ProductType) => {
@@ -1326,6 +1388,7 @@ export function EarnPage() {
                       : ""
                   }`}
                   checked={selectedProductTypes.includes(productType)}
+                  disabled={isSavingPlatformPreferences}
                   onClick={(event) => {
                     if (event.detail > 0) {
                       if (selectedProductTypes.includes(productType)) {
@@ -1458,6 +1521,8 @@ export function EarnPage() {
       {isPlatformModalOpen ? (
         <EarnPlatformModal
           selectedProductTypes={pendingProductTypes}
+          isSaving={isSavingPlatformPreferences}
+          error={platformSaveError}
           onToggle={togglePendingProductType}
           onClose={closePlatformModal}
           onConfirm={confirmPlatformSelection}
@@ -1871,11 +1936,15 @@ function EarnPlatformModalBackground() {
 
 function EarnPlatformModal({
   selectedProductTypes,
+  isSaving,
+  error,
   onToggle,
   onClose,
   onConfirm,
 }: {
   selectedProductTypes: ProductType[];
+  isSaving: boolean;
+  error: string;
   onToggle: (productType: ProductType) => void;
   onClose: () => void;
   onConfirm: () => void;
@@ -1901,6 +1970,7 @@ function EarnPlatformModal({
       }
       footer={
         <div className="earn-platform-modal__footer">
+          {error ? <Alert tone="danger">{error}</Alert> : null}
           <p className="earn-platform-modal__helper">
             <Info aria-hidden="true" size={16} />
             <span>You can update this anytime.</span>
@@ -1909,6 +1979,8 @@ function EarnPlatformModal({
             className="earn-platform-modal__button"
             size="compact"
             fullWidth
+            loading={isSaving}
+            loadingLabel="Saving preferences"
             onClick={onConfirm}
           >
             Save preferences
@@ -1927,6 +1999,7 @@ function EarnPlatformModal({
               key={productType}
               className="earn-platform-choice"
               checked={isSelected}
+              disabled={isSaving}
               label={
                 <span className="earn-platform-choice__content">
                   <PlatformMark productType={productType} />

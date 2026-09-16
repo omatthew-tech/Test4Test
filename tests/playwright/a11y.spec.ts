@@ -117,11 +117,12 @@ test("home preserves visible keyboard focus", async ({ page }) => {
 test("mobile navigation closes with Escape and restores focus", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const trigger = page.getByRole("button", { name: "Open navigation" });
+  const trigger = page.getByRole("button", { name: /^(Open|Close) navigation$/ });
   await trigger.click();
-  await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("navigation", { name: "Primary", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Navigation" })).not.toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(trigger).toBeFocused();
 });
 

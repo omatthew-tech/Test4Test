@@ -1,5 +1,7 @@
 ﻿import { createClient } from "@supabase/supabase-js";
 
+import { createAuthFetch } from "./authTransport";
+
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
 export const supabasePublishableKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ??
@@ -15,6 +17,7 @@ export function isTestAccountEmail(email: string | null | undefined) {
 
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl, supabasePublishableKey, {
+      global: { fetch: createAuthFetch(supabaseUrl) },
       auth: {
         persistSession: true,
         autoRefreshToken: true,

@@ -4,6 +4,8 @@ This guide distinguishes the current repository from the recording-first target 
 
 ## Authoritative setup path
 
+For login outages and recovery checks, see [authentication availability](../docs/auth-availability.md).
+
 Timestamped SQL files in [`migrations/`](migrations/) are the only authoritative database setup path. Apply them in filename order with the Supabase CLI or the repository’s approved deployment workflow, review the migration plan, and record the applied version.
 
 Do not paste a monolithic schema into the SQL editor. The retired `.txt` bootstrap files were snapshots of earlier procedures and could omit later constraints, policies, grants, functions, or cleanup behavior.

@@ -35,6 +35,7 @@ import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/ins
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
+import { getAuthErrorMessage } from "../lib/authTransport";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
 import { slugifyShareName } from "../lib/shareLinks";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
@@ -1816,7 +1817,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             });
 
             if (error) {
-              throw new Error(error.message);
+              throw new Error(getAuthErrorMessage(error));
             }
           }
 
@@ -1887,7 +1888,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               return { ok: false, message: latestSubmissionSchemaMessage };
             }
 
-            return { ok: false, message: error.message };
+            return { ok: false, message: getAuthErrorMessage(error) };
           }
 
           if (data.session?.access_token && data.session.refresh_token) {

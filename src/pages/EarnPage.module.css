@@ -306,7 +306,6 @@
   }
 
   .page :global(.earn-visibility__app-bar) {
-    align-items: flex-start;
     padding: var(--ds-semantic-space-stack-md);
   }
 

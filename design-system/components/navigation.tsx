@@ -10,9 +10,10 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { ChevronRight, Menu as MenuIcon } from "lucide-react";
-import { NavLink } from "react-router-dom";
-import { IconButton } from "./actions";
+import { ChevronRight, Menu as MenuIcon, X } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { tokens } from "../tokens/generated/tokens";
+import { Button, IconButton } from "./actions";
 import { Test4TestBrand } from "./brand";
 import { Container, Divider } from "./layout";
 import { Drawer } from "./overlays";
@@ -21,13 +22,20 @@ import styles from "./components.module.css";
 export interface NavigationItem {
   label: string;
   to: string;
+  icon?: ReactNode;
 }
+
+export type MobileAccountItem = { id: string; label: string; icon?: ReactNode } & (
+  | { to: string; onSelect?: never; disabled?: never }
+  | { to?: never; onSelect: () => void; disabled?: boolean }
+);
 
 export interface TopNavigationProps {
   items: NavigationItem[];
   actions?: ReactNode;
   homeTo?: string;
   mobileActions?: (closeNavigation: () => void) => ReactNode;
+  mobileAccountItems?: MobileAccountItem[];
 }
 
 export interface MobileNavigationDrawerProps {
@@ -66,8 +74,57 @@ export function MobileNavigationDrawer({
   );
 }
 
-export function TopNavigation({ items, actions, homeTo = "/", mobileActions }: TopNavigationProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+export function TopNavigation({
+  items,
+  actions,
+  homeTo = "/",
+  mobileActions,
+  mobileAccountItems = [],
+}: TopNavigationProps) {
+  const location = useLocation();
+  const [openLocation, setOpenLocation] = useState<typeof location | null>(null);
+  const open = openLocation === location;
+  const navigationId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const closeNavigation = () => setOpenLocation(null);
+  const focusTrigger = () => triggerRef.current?.querySelector("button")?.focus();
+
+  useEffect(() => {
+    if (!open) return;
+    const dismissOutside = (event: PointerEvent | FocusEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpenLocation(null);
+    };
+    const desktop = window.matchMedia(`(min-width: ${tokens["primitive.breakpoint.large"].value})`);
+    const dismissOnDesktop = () => {
+      if (!desktop.matches) return;
+      if (panelRef.current?.contains(document.activeElement)) {
+        rootRef.current?.querySelector<HTMLElement>(`.${styles.navLinks} a`)?.focus();
+      }
+      setOpenLocation(null);
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("focusin", dismissOutside);
+    desktop.addEventListener("change", dismissOnDesktop);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("focusin", dismissOutside);
+      desktop.removeEventListener("change", dismissOnDesktop);
+    };
+  }, [open]);
+
+  const mobileLabel = (label: string, icon?: ReactNode, chevron = true) => (
+    <>
+      {icon && (
+        <span className={styles.mobileNavigationIcon} aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      <span className={styles.mobileNavigationLabel}>{label}</span>
+      {chevron && <ChevronRight className={styles.mobileNavigationChevron} aria-hidden="true" />}
+    </>
+  );
   const links = items.map((item) => (
     <NavLink
       key={item.to}
@@ -75,7 +132,7 @@ export function TopNavigation({ items, actions, homeTo = "/", mobileActions }: T
         `${styles.navLink} ${isActive ? styles.navLinkCurrent : ""}`.trim()
       }
       to={item.to}
-      onClick={() => setDrawerOpen(false)}
+      onClick={closeNavigation}
     >
       {item.label}
     </NavLink>
@@ -87,25 +144,107 @@ export function TopNavigation({ items, actions, homeTo = "/", mobileActions }: T
         Skip to content
       </a>
       <Container>
-        <div className={styles.navBar}>
+        <div
+          ref={rootRef}
+          className={styles.navBar}
+          onKeyDown={(event) => {
+            if (open && event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              closeNavigation();
+              focusTrigger();
+            }
+          }}
+        >
           <Test4TestBrand to={homeTo} />
           <nav className={styles.navLinks} aria-label="Primary">
             {links}
           </nav>
           <div className={styles.navActions}>{actions}</div>
-          <div className={styles.mobileNavButton}>
-            <IconButton label="Open navigation" onClick={() => setDrawerOpen(true)}>
-              <MenuIcon aria-hidden="true" size={20} />
+          <div ref={triggerRef} className={styles.mobileNavButton}>
+            <IconButton
+              label={open ? "Close navigation" : "Open navigation"}
+              aria-expanded={open}
+              aria-controls={navigationId}
+              onClick={() => setOpenLocation(open ? null : location)}
+              onKeyDown={(event) => {
+                if (event.key !== "ArrowDown") return;
+                event.preventDefault();
+                setOpenLocation(location);
+                requestAnimationFrame(() =>
+                  panelRef.current?.querySelector<HTMLElement>("a, button")?.focus(),
+                );
+              }}
+            >
+              {open ? (
+                <X aria-hidden="true" size={20} />
+              ) : (
+                <MenuIcon aria-hidden="true" size={20} />
+              )}
             </IconButton>
           </div>
+          {open && (
+            <div ref={panelRef} id={navigationId} className={styles.mobileNavigationDropdown}>
+              <nav className={styles.mobileNavigationGroup} aria-label="Primary">
+                {items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `${styles.mobileNavigationLink} ${isActive ? styles.navLinkCurrent : ""}`.trim()
+                    }
+                    onClick={closeNavigation}
+                  >
+                    {mobileLabel(item.label, item.icon)}
+                  </NavLink>
+                ))}
+              </nav>
+              {mobileAccountItems.length > 0 ? (
+                <nav className={styles.mobileNavigationAccount} aria-label="Account">
+                  {mobileAccountItems.map((item) =>
+                    item.to !== undefined ? (
+                      <NavLink
+                        key={item.id}
+                        to={item.to}
+                        className={({ isActive }) =>
+                          `${styles.mobileNavigationLink} ${isActive ? styles.navLinkCurrent : ""}`.trim()
+                        }
+                        onClick={closeNavigation}
+                      >
+                        {mobileLabel(item.label, item.icon)}
+                      </NavLink>
+                    ) : (
+                      <Button
+                        key={item.id}
+                        variant="quiet"
+                        className={styles.mobileNavigationLink}
+                        disabled={item.disabled}
+                        onClick={() => {
+                          closeNavigation();
+                          item.onSelect();
+                        }}
+                      >
+                        {mobileLabel(item.label, item.icon, false)}
+                      </Button>
+                    ),
+                  )}
+                </nav>
+              ) : (
+                (actions || mobileActions) && (
+                  <div
+                    className={styles.mobileNavigationActions}
+                    onClick={(event) => {
+                      if ((event.target as Element).closest("a[href]")) closeNavigation();
+                    }}
+                  >
+                    {mobileActions ? mobileActions(closeNavigation) : actions}
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       </Container>
-      <MobileNavigationDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        items={items}
-        actions={mobileActions ? drawerOpen && mobileActions(() => setDrawerOpen(false)) : actions}
-      />
     </header>
   );
 }
