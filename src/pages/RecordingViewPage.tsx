@@ -24,6 +24,7 @@ import {
   type TestResponseVersion,
 } from "../lib/responseVersions";
 import styles from "./RecordingViewPage.module.css";
+import { RecordingTranscript } from "./RecordingTranscript";
 
 type PlaybackState = { key: string } & (
   | { status: "loading"; url: ""; fileName: ""; error: "" }
@@ -45,6 +46,7 @@ export function RecordingViewPage() {
   const [playbackState, setPlaybackState] = useState<PlaybackState>(initialPlaybackState);
   const [playbackRetryKey, setPlaybackRetryKey] = useState(0);
   const [historyRetryKey, setHistoryRetryKey] = useState(0);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const availableRecordings = useMemo(() => getAvailableRecordingsForCurrentUser(state), [state]);
   const requestedResponseId = searchParams.get("response")?.trim() ?? "";
   const requestedRecordingIndex = requestedResponseId
@@ -331,6 +333,7 @@ export function RecordingViewPage() {
                 </div>
               ) : (
                 <video
+                  ref={setVideoElement}
                   aria-label={`${positionLabel}: ${selectedRecording.submission.productName}`}
                   className={styles.video}
                   controls
@@ -359,21 +362,16 @@ export function RecordingViewPage() {
             </IconButton>
           </div>
 
-          <Surface
-            as="section"
-            aria-labelledby="recording-transcript-heading"
-            className={styles.transcript}
-            tone="subtle"
-          >
-            <Stack gap="sm">
-              <h2 id="recording-transcript-heading">Transcript</h2>
-              <p className={styles.transcriptState}>Transcript unavailable</p>
-              <p>
-                A transcript has not been added for this recording. Video playback is still
-                available above.
-              </p>
-            </Stack>
-          </Surface>
+          <RecordingTranscript
+            key={`${state.currentUserId}:${playbackKey}`}
+            userId={state.currentUserId ?? ""}
+            responseId={selectedRecording.response.id}
+            versionId={requestedVersionId}
+            source={canPlay ? (playbackRecording ?? undefined) : undefined}
+            video={videoElement}
+            fixtureMode={useDesignSystemFixture}
+            fixtureScenario={searchParams.get("ds-recording-transcript")}
+          />
         </Stack>
       ) : (
         <EmptyState

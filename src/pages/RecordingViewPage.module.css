@@ -79,24 +79,6 @@
   object-fit: contain;
 }
 
-.transcript {
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
-}
-
-.transcript h2 {
-  font-size: var(--ds-semantic-typography-heading-small-size);
-  line-height: var(--ds-semantic-typography-heading-small-line-height);
-}
-
-.transcript p {
-  max-width: var(--ds-semantic-size-content-prose);
-}
-
-.transcriptState {
-  color: var(--ds-semantic-color-text-primary);
-  font-weight: var(--ds-semantic-typography-weight-semibold);
-}
-
 @media (min-width: 768px) {
   .playerNavigation {
     grid-template-areas: "previous player next";

@@ -1,4 +1,5 @@
 import { UUID_PATTERN } from "../_shared/transcript-contract.ts";
+import { retryCompatibleTranscript } from "../_shared/recording-transcript.ts";
 import {
   TranscriptHttpError,
   transcriptHandler,
@@ -15,12 +16,12 @@ Deno.serve((request) =>
       (typeof body.versionId !== "string" || !UUID_PATTERN.test(body.versionId))
     )
       throw new TranscriptHttpError("Invalid recording version.");
-    const { data, error } = await admin.rpc("retry_recording_transcript", {
-      p_owner: userId,
-      p_response_id: body.responseId,
-      p_version_id: body.versionId ?? null,
-    });
-    if (error) throw new Error("Transcript retry failed");
+    const data = await retryCompatibleTranscript(
+      admin,
+      userId,
+      body.responseId,
+      body.versionId as string | undefined,
+    );
     if (!data)
       throw new TranscriptHttpError(
         "This transcript is not available for retry. Refresh the report.",

@@ -17,7 +17,16 @@ export type VersionedTranscriptRecording = TranscriptReportRecording & {
   unchanged?: boolean;
 };
 
-async function callTranscriptEndpoint<T>(
+export class TranscriptRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+export async function callTranscriptEndpoint<T>(
   endpoint: string,
   body: object,
   userId: string,
@@ -43,7 +52,10 @@ async function callTranscriptEndpoint<T>(
   });
   const payload = await response.json();
   if (!response.ok || payload.error) {
-    throw new Error(payload.error || "Transcripts could not be loaded. Try again.");
+    throw new TranscriptRequestError(
+      payload.error || "Transcripts could not be loaded. Try again.",
+      response.status,
+    );
   }
   return payload as T;
 }

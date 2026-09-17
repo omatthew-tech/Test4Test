@@ -425,6 +425,11 @@ verify_jwt = true
 
 [functions.retry-recording-transcript]
 verify_jwt = true
+import_map = "./functions/retry-recording-transcript/deno.json"
+
+[functions.get-recording-transcript]
+verify_jwt = true
+import_map = "./functions/get-recording-transcript/deno.json"
 
 [functions.complete-recording-transcript]
 verify_jwt = false

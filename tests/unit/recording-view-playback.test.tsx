@@ -8,6 +8,10 @@ import { RecordingViewPage } from "../../src/pages/RecordingViewPage";
 import type { AppState, ResponseRecording } from "../../src/types";
 
 const backend = vi.hoisted(() => ({ history: vi.fn(), state: null as AppState | null }));
+vi.mock("../../src/lib/recordingTranscript", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../src/lib/recordingTranscript")>()),
+  requestRecordingTranscript: vi.fn().mockResolvedValue({ transcript: null }),
+}));
 vi.mock("../../src/context/AppStateContext", () => ({
   useAppState: () => ({ state: backend.state }),
 }));
