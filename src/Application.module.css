@@ -2399,6 +2399,10 @@
   .application [class~="test-success-panel"] {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .application :is([class~="test-success-mark"], [class~="test-success-chip"]) {
+    display: none;
+  }
 }
 
 @media (min-width: 1024px) {

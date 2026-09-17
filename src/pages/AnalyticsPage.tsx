@@ -328,6 +328,13 @@ export function AnalyticsPage() {
               </h2>
             ) : null}
 
+            {!previewLoading && !previewError && previews.length === 0 ? (
+              <p className={styles.emptyRecordings}>
+                You have no recordings. <Link to="/share">Share your test</Link> or{" "}
+                <Link to="/earn">earn credits</Link>
+              </p>
+            ) : null}
+
             {previewError ? (
               <Alert title="Recordings could not be loaded" tone="danger">
                 <Stack gap="sm">

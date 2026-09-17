@@ -28,6 +28,7 @@ import {
 import { EditSubmissionModal } from "../components/EditSubmissionModal";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
+import { isDesktopEarnDevice } from "../lib/earnDevice";
 import {
   EARN_CREDIT_CELEBRATION_COPY,
   EarnPlacementSnapshot,
@@ -317,6 +318,13 @@ function canReviseSubmittedFeedback(card: SubmittedFeedbackCard) {
 }
 
 export function EarnPage() {
+  const { currentUser } = useAppState();
+
+  // A different account starts a new visit before any requests use its filters.
+  return <EarnPageContent key={currentUser?.id ?? "guest"} />;
+}
+
+function EarnPageContent() {
   const {
     state,
     currentUser,
@@ -337,7 +345,10 @@ export function EarnPage() {
   const editSubmissionId = searchParams.get("edit")?.trim() ?? "";
   const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const privatePlacementRowRef = useRef<HTMLDivElement | null>(null);
+  const [defaultToWebsites] = useState(() => isDesktopEarnDevice());
   const [selectedProductTypes, setSelectedProductTypes] = useState<ProductType[]>(() => {
+    if (defaultToWebsites) return ["website"];
+
     if (!currentUser) {
       return getDefaultSelectedProductTypes(state.submissions, null);
     }
@@ -726,16 +737,20 @@ export function EarnPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      setSelectedProductTypes(defaultSelectedProductTypes);
-      setPendingProductTypes(defaultSelectedProductTypes);
+      if (!defaultToWebsites) {
+        setSelectedProductTypes(defaultSelectedProductTypes);
+        setPendingProductTypes(defaultSelectedProductTypes);
+      }
       setIsPlatformModalOpen(false);
       return;
     }
 
     if (currentUser.accountType === "tester" && currentUser.testerProfile) {
-      const nextProductTypes = devicesToProductTypes(currentUser.testerProfile.devices);
-      setSelectedProductTypes(nextProductTypes);
-      setPendingProductTypes(nextProductTypes);
+      if (!defaultToWebsites) {
+        const nextProductTypes = devicesToProductTypes(currentUser.testerProfile.devices);
+        setSelectedProductTypes(nextProductTypes);
+        setPendingProductTypes(nextProductTypes);
+      }
       setIsPlatformModalOpen(false);
       return;
     }
@@ -746,8 +761,10 @@ export function EarnPage() {
     const isConfirmed = readStoredPlatformConfirmation(currentUser.id);
     const nextSelectedProductTypes = storedProductTypes ?? defaultSelectedProductTypes;
 
-    setSelectedProductTypes(nextSelectedProductTypes);
-    setPendingProductTypes(nextSelectedProductTypes);
+    if (!defaultToWebsites) {
+      setSelectedProductTypes(nextSelectedProductTypes);
+      setPendingProductTypes(nextSelectedProductTypes);
+    }
     setPlatformSaveError("");
     setIsPlatformModalOpen(!isConfigured && !isConfirmed);
 
@@ -761,8 +778,12 @@ export function EarnPage() {
         if (cancelled || version !== platformSelectionVersion.current) return;
 
         const next = preferences.productTypes ?? nextSelectedProductTypes;
-        setSelectedProductTypes(next);
-        setPendingProductTypes(next);
+        // Desktop filters belong to this visit. Only explicit edits change them;
+        // account hydration still caches/migrates the original saved preferences.
+        if (!defaultToWebsites) {
+          setSelectedProductTypes(next);
+          setPendingProductTypes(next);
+        }
         setIsPlatformModalOpen(!preferences.confirmed && !isConfirmed);
 
         if (preferences.confirmed) {
@@ -786,6 +807,7 @@ export function EarnPage() {
     currentUser?.id,
     currentUser?.testerProfile?.devices,
     defaultSelectedProductTypesKey,
+    defaultToWebsites,
     isConfigured,
   ]);
 

@@ -3155,7 +3155,7 @@ export function TestSessionPage({
         : "";
   const manualRecordingSteps = isPhoneManualRecording
     ? [
-        "Find a quiet place, close any unwanted tabs and get ready to think out loud. Share your honest thoughts. There are no right or wrong answers.",
+        "Find a quiet place, close any unwanted tabs and get ready to think out loud. Refer back here for the test's instructions.",
         "The app will open in a new tab. Refer back here for instructions. When you're finished, stop the recording and upload it.",
         "Start recording your screen and microphone.",
       ]
@@ -3206,7 +3206,7 @@ export function TestSessionPage({
           <h1 className="ds-sr-only">Test session</h1>
         )}
 
-        <Surface className="test-questions test-questions--full">
+        <Surface className={`${styles.sessionSurface} test-questions test-questions--full`}>
           <Card className={styles.introCard}>
             <div className="test-session__intro-card-header">
               <div className="test-session__resource">
@@ -3225,7 +3225,7 @@ export function TestSessionPage({
                         className="test-session__link"
                       >
                         <span>{link.displayUrl}</span>
-                        <ExternalLink size={16} />
+                        <ExternalLink size={16} aria-hidden="true" />
                       </Link>
                     ))}
                   </div>
@@ -3238,18 +3238,20 @@ export function TestSessionPage({
                   type="button"
                   variant="secondary"
                   size="compact"
+                  className={styles.reportButton}
+                  aria-label={hasSubmittedReport ? "Report submitted" : "Report"}
                   onClick={() => {
                     setReportError("");
                     setIsReportModalOpen(true);
                   }}
                   disabled={hasSubmittedReport}
                 >
-                  <Flag size={16} />
-                  {hasSubmittedReport ? "Report submitted" : "Report"}
+                  <Flag size={16} aria-hidden="true" />
+                  <span>{hasSubmittedReport ? "Report submitted" : "Report"}</span>
                 </Button>
               ) : null}
             </div>
-            <div className="test-session__resource">
+            <div className={`${styles.testerInstructions} test-session__resource`}>
               <span className="test-session__label">Tester instructions</span>
               <ol className="test-session__instruction-list">
                 {testerInstructionSteps.map((instruction, index) => (
@@ -3955,6 +3957,7 @@ export function TestSessionPage({
       </div>
 
       <Dialog
+        className={styles.reportDialog}
         open={isReportModalOpen}
         onOpenChange={(open) => {
           if (!open) closeReportModal();
@@ -3962,7 +3965,7 @@ export function TestSessionPage({
         title={hasSubmittedReport ? "Report submitted" : <>Report {submission.productName}</>}
         description={
           hasSubmittedReport
-            ? "Thanks for submitting a report. We will investigate it and issue a free credit if the app has a problem."
+            ? "Thanks for submitting a report. We will investigate the issue and you'll receive a free credit for flagging this down.."
             : "Tell us what went wrong. We will review the app before asking you to test it."
         }
         footer={
@@ -3998,12 +4001,7 @@ export function TestSessionPage({
         }
       >
         {hasSubmittedReport ? (
-          <Alert tone="success" title="Your report is with the review team">
-            <span className={styles.reportSuccess}>
-              <CheckCircle2 size={20} aria-hidden="true" />
-              You can return to the Earn page while we investigate.
-            </span>
-          </Alert>
+          <Alert tone="success" title="Your report is with the review team" />
         ) : (
           <Stack gap="md">
             <fieldset className={styles.choiceFieldset} role="radiogroup">

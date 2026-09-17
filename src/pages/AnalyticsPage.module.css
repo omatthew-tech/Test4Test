@@ -44,6 +44,11 @@
   line-height: var(--ds-semantic-typography-heading-small-line-height);
 }
 
+.emptyRecordings {
+  margin: var(--ds-semantic-space-zero);
+  color: var(--ds-semantic-color-text-secondary);
+}
+
 .sectionHeadingLink {
   display: inline-flex;
   max-width: 100%;

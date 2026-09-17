@@ -155,6 +155,29 @@
   background: var(--ds-semantic-color-action-tint);
 }
 
+.choiceOption {
+  position: relative;
+}
+
+.choiceOption > input[type="radio"] {
+  position: absolute;
+  inset: var(--ds-semantic-space-zero);
+  width: 100%;
+  height: 100%;
+  margin: var(--ds-semantic-space-zero);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.choiceOption:has(input:focus-visible) {
+  outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-focus-ring);
+  outline-offset: var(--ds-semantic-border-offset-focus);
+}
+
+.choiceOption:has(input:checked) label {
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
 .actionLink {
   min-height: var(--ds-semantic-size-control-default);
   justify-content: center;
@@ -198,10 +221,8 @@ button.taskFinishButton:active:not(:disabled) {
   line-height: var(--ds-semantic-typography-lead-mobile-line-height);
 }
 
-.reportSuccess {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ds-semantic-space-inline-sm);
+.reportDialog button[aria-label="Close"] {
+  flex-shrink: 0;
 }
 
 .page :global(.test-session__label) {
@@ -211,11 +232,8 @@ button.taskFinishButton:active:not(:disabled) {
 }
 
 .page :global(.test-session__link) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: block;
   min-height: var(--ds-semantic-space-zero);
-  align-items: center;
-  gap: var(--ds-semantic-space-inline-sm);
   color: var(--ds-semantic-color-text-secondary);
   overflow-wrap: anywhere;
   text-decoration: none;
@@ -224,6 +242,12 @@ button.taskFinishButton:active:not(:disabled) {
 .page :global(.test-session__link) > span:last-of-type {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.page :global(.test-session__link) > svg {
+  display: inline-block;
+  margin-inline-start: var(--ds-semantic-space-inline-sm);
+  vertical-align: middle;
 }
 
 .page :global(.google-play-session-panel),
@@ -390,9 +414,85 @@ button.taskFinishButton:active:not(:disabled) {
 }
 
 @media (max-width: 767px) {
+  .page .sessionSurface {
+    gap: var(--ds-semantic-space-stack-lg);
+    border: 0;
+    padding: var(--ds-semantic-space-zero);
+    background: transparent;
+  }
+
+  .page .introCard {
+    padding: var(--ds-semantic-space-stack-lg);
+  }
+
+  .introCard :global(.test-session__label) {
+    color: var(--ds-semantic-color-text-primary);
+    font-size: var(--ds-semantic-typography-body-size);
+    line-height: var(--ds-semantic-typography-body-line-height);
+  }
+
+  .page .reportButton {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-height: var(--ds-semantic-size-control-target);
+    gap: var(--ds-semantic-space-inline-xs);
+    border-color: var(--ds-semantic-color-border-default);
+    padding-inline: var(--ds-semantic-space-inline-sm);
+    background: var(--ds-semantic-color-surface-default);
+    color: var(--ds-semantic-color-text-secondary);
+    font-size: var(--ds-semantic-typography-caption-size);
+    line-height: var(--ds-semantic-typography-caption-line-height);
+  }
+
+  .page .reportButton:is(:hover, :active):not(:disabled) {
+    border-color: var(--ds-semantic-color-border-accent);
+    background: var(--ds-semantic-color-action-tint);
+    color: var(--ds-semantic-color-text-primary);
+  }
+
+  .page .testerInstructions {
+    gap: var(--ds-semantic-space-stack-md);
+    padding-block-start: var(--ds-semantic-space-stack-lg);
+  }
+
+  .testerInstructions :global(.test-session__instruction-list) {
+    padding-inline-start: var(--ds-semantic-space-stack-lg);
+    color: var(--ds-semantic-color-text-primary);
+  }
+
   .page :global(.test-session__intro-card-header),
   .page :global(.test-session__footer) {
     display: grid;
+  }
+
+  .page :global(.test-session__intro-card-header):has(.reportButton) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--ds-semantic-space-stack-md);
+  }
+
+  .page
+    :global(.test-session__intro-card-header):has(.reportButton)
+    > :global(.test-session__resource) {
+    display: contents;
+  }
+
+  .page
+    :global(.test-session__intro-card-header):has(.reportButton)
+    > :global(.test-session__resource)
+    > :global(.test-session__label) {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .page
+    :global(.test-session__intro-card-header):has(.reportButton)
+    > :global(.test-session__resource)
+    > :not(:global(.test-session__label)) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
   }
 
   .page :global(.wizard-actions),
