@@ -11,6 +11,13 @@ export interface TestResponseVersion {
   recording: ResponseRecording | null;
 }
 
+export class RecordingHistoryError extends Error {
+  constructor(public readonly code: string) {
+    super("Recording history could not be loaded. Try again.");
+    this.name = "RecordingHistoryError";
+  }
+}
+
 export function recordingVersionLabel(versionNumber: number) {
   return versionNumber === 1 ? "Original" : `Revision ${versionNumber - 1}`;
 }
@@ -39,7 +46,7 @@ export async function loadResponseVersions(response: TestResponse): Promise<Test
     .select("*")
     .eq("response_id", response.id)
     .order("version_number", { ascending: false });
-  if (error) throw new Error("Recording history could not be loaded. Try again.");
+  if (error) throw new RecordingHistoryError(error.code);
   return (data ?? []).map((row) => ({
     id: row.id,
     responseId: row.response_id,

@@ -15,21 +15,24 @@ import {
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { formatDateTime } from "../lib/format";
-import { requestResponseRecordingUrl } from "../lib/recordings";
+import { invalidateResponseRecordingUrl, requestResponseRecordingUrl } from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
 import {
   loadResponseVersions,
+  RecordingHistoryError,
   recordingVersionLabel,
   type TestResponseVersion,
 } from "../lib/responseVersions";
 import styles from "./RecordingViewPage.module.css";
 
-type PlaybackState =
+type PlaybackState = { key: string } & (
   | { status: "loading"; url: ""; fileName: ""; error: "" }
   | { status: "ready"; url: string; fileName: string; error: "" }
-  | { status: "error"; url: ""; fileName: ""; error: string };
+  | { status: "error"; url: ""; fileName: ""; error: string }
+);
 
 const initialPlaybackState: PlaybackState = {
+  key: "",
   status: "loading",
   url: "",
   fileName: "",
@@ -40,7 +43,8 @@ export function RecordingViewPage() {
   const { state } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
   const [playbackState, setPlaybackState] = useState<PlaybackState>(initialPlaybackState);
-  const [retryKey, setRetryKey] = useState(0);
+  const [playbackRetryKey, setPlaybackRetryKey] = useState(0);
+  const [historyRetryKey, setHistoryRetryKey] = useState(0);
   const availableRecordings = useMemo(() => getAvailableRecordingsForCurrentUser(state), [state]);
   const requestedResponseId = searchParams.get("response")?.trim() ?? "";
   const requestedRecordingIndex = requestedResponseId
@@ -55,10 +59,20 @@ export function RecordingViewPage() {
   const [historyError, setHistoryError] = useState("");
   const versions =
     history?.responseId === selectedRecording?.response.id ? (history?.versions ?? []) : [];
-  const requestedVersionId = searchParams.get("version");
+  const requestedVersionId = searchParams.get("version")?.trim() || undefined;
   const selectedVersion = requestedVersionId
     ? versions.find((item) => item.id === requestedVersionId)
     : versions[0];
+  // Current playback uses the same response-only endpoint as Analyze. History is
+  // optional metadata, and must never gate access to an existing recording.
+  const playbackRecording = requestedVersionId
+    ? selectedVersion?.recording
+    : selectedRecording?.recording;
+  const responseId = selectedRecording?.response.id;
+  const playbackKey = `${responseId}:${requestedVersionId ?? "latest"}:${playbackRecording?.bucket}:${playbackRecording?.path}`;
+  const currentPlayback = playbackState.key === playbackKey ? playbackState : initialPlaybackState;
+  const playbackFileName = playbackRecording?.fileName;
+  const canPlay = Boolean(playbackRecording && !playbackRecording.deletedAt);
   useEffect(() => {
     if (!selectedRecording) return;
     let cancelled = false;
@@ -69,12 +83,26 @@ export function RecordingViewPage() {
         if (!cancelled) setHistory({ responseId: selectedRecording.response.id, versions });
       })
       .catch((error) => {
-        if (!cancelled) setHistoryError(error.message);
+        if (cancelled) return;
+        if (
+          error instanceof RecordingHistoryError &&
+          (error.code === "PGRST205" || error.code === "42P01")
+        ) {
+          // Version history has not been deployed on every backend yet. Do not
+          // fabricate a version ID: current recordings still use response IDs.
+          setHistory({ responseId: selectedRecording.response.id, versions: [] });
+          return;
+        }
+        setHistoryError(
+          error instanceof Error
+            ? error.message
+            : "Recording history could not be loaded. Try again.",
+        );
       });
     return () => {
       cancelled = true;
     };
-  }, [selectedRecording, retryKey]);
+  }, [selectedRecording, historyRetryKey]);
   const useDesignSystemFixture = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
   const usePlaybackErrorFixture =
     useDesignSystemFixture && searchParams.get("ds-recording-error") === "1";
@@ -91,40 +119,43 @@ export function RecordingViewPage() {
   }, [requestedRecordingIndex, requestedResponseId, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!selectedRecording || !selectedVersion?.recording || selectedVersion.recording.deletedAt) {
+    if (!responseId || !canPlay) {
       setPlaybackState(initialPlaybackState);
       return;
     }
 
     let cancelled = false;
-    setPlaybackState(initialPlaybackState);
+    setPlaybackState({ ...initialPlaybackState, key: playbackKey });
 
     if (useDesignSystemFixture) {
       setPlaybackState(
         usePlaybackErrorFixture
           ? {
+              key: playbackKey,
               status: "error",
               url: "",
               fileName: "",
               error: "The recording could not be loaded right now.",
             }
           : {
+              key: playbackKey,
               status: "ready",
               url: "",
-              fileName: selectedVersion.recording?.fileName ?? "",
+              fileName: playbackFileName ?? "",
               error: "",
             },
       );
       return;
     }
 
-    void requestResponseRecordingUrl(selectedRecording.response.id, false, selectedVersion.id)
+    void requestResponseRecordingUrl(responseId, false, requestedVersionId)
       .then((recordingUrl) => {
         if (cancelled) {
           return;
         }
 
         setPlaybackState({
+          key: playbackKey,
           status: "ready",
           url: recordingUrl.url,
           fileName: recordingUrl.fileName,
@@ -137,6 +168,7 @@ export function RecordingViewPage() {
         }
 
         setPlaybackState({
+          key: playbackKey,
           status: "error",
           url: "",
           fileName: "",
@@ -149,9 +181,12 @@ export function RecordingViewPage() {
       cancelled = true;
     };
   }, [
-    retryKey,
-    selectedRecording,
-    selectedVersion,
+    playbackRetryKey,
+    responseId,
+    requestedVersionId,
+    playbackKey,
+    playbackFileName,
+    canPlay,
     useDesignSystemFixture,
     usePlaybackErrorFixture,
   ]);
@@ -182,6 +217,7 @@ export function RecordingViewPage() {
 
   const handlePlaybackError = () => {
     setPlaybackState({
+      key: playbackKey,
       status: "error",
       url: "",
       fileName: "",
@@ -222,12 +258,14 @@ export function RecordingViewPage() {
             </Select>
           ) : null}
           {historyError ? (
-            <Alert tone="danger">
+            <Alert tone={requestedVersionId ? "danger" : "warning"}>
               {historyError}
-              <Button onClick={() => setRetryKey((key) => key + 1)}>Try again</Button>
+              <Button onClick={() => setHistoryRetryKey((key) => key + 1)}>Try again</Button>
             </Alert>
           ) : null}
-          {history?.responseId === selectedRecording.response.id && !selectedVersion ? (
+          {requestedVersionId &&
+          history?.responseId === selectedRecording.response.id &&
+          !selectedVersion ? (
             <Alert tone="danger">This recording version is unavailable.</Alert>
           ) : null}
           <div className={styles.playerNavigation}>
@@ -244,13 +282,14 @@ export function RecordingViewPage() {
             </IconButton>
 
             <Surface className={styles.playerSurface} padding="none" tone="raised">
-              {historyError ||
-              (history?.responseId === selectedRecording.response.id && !selectedVersion) ||
-              selectedVersion?.recording?.deletedAt ? (
+              {(requestedVersionId &&
+                (historyError ||
+                  (history?.responseId === selectedRecording.response.id && !selectedVersion))) ||
+              playbackRecording?.deletedAt ? (
                 <div className={styles.playerStatus}>
                   <p>This recording version is unavailable.</p>
                 </div>
-              ) : selectedVersion && !selectedVersion.recording ? (
+              ) : requestedVersionId && selectedVersion && !selectedVersion.recording ? (
                 <Stack gap="md">
                   <p>This original feedback contains written answers.</p>
                   {selectedVersion.answers.map((answer) => (
@@ -260,7 +299,7 @@ export function RecordingViewPage() {
                     </div>
                   ))}
                 </Stack>
-              ) : playbackState.status === "loading" ? (
+              ) : currentPlayback.status === "loading" ? (
                 <div
                   className={styles.playerStatus}
                   aria-busy="true"
@@ -270,16 +309,19 @@ export function RecordingViewPage() {
                   <span className="ds-sr-only">Loading recording</span>
                   <Skeleton className={styles.playerSkeleton} />
                 </div>
-              ) : playbackState.status === "error" ? (
+              ) : currentPlayback.status === "error" ? (
                 <div className={styles.playerStatus}>
                   <Alert tone="danger" title="Recording unavailable">
                     <Stack gap="md">
-                      <p>{playbackState.error}</p>
+                      <p>{currentPlayback.error}</p>
                       <div>
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={() => setRetryKey((key) => key + 1)}
+                          onClick={() => {
+                            invalidateResponseRecordingUrl(selectedRecording.response.id);
+                            setPlaybackRetryKey((key) => key + 1);
+                          }}
                         >
                           Reload video
                         </Button>
@@ -292,11 +334,11 @@ export function RecordingViewPage() {
                   aria-label={`${positionLabel}: ${selectedRecording.submission.productName}`}
                   className={styles.video}
                   controls
-                  key={`${selectedVersion?.id}-${playbackState.url}`}
+                  key={`${playbackKey}-${currentPlayback.url}`}
                   playsInline
                   preload="metadata"
-                  src={playbackState.url || undefined}
-                  title={playbackState.fileName || selectedRecording.recording.fileName}
+                  src={currentPlayback.url || undefined}
+                  title={currentPlayback.fileName || selectedRecording.recording.fileName}
                   onError={handlePlaybackError}
                 >
                   Your browser does not support embedded video playback.
