@@ -1,3 +1,4 @@
+import { canReviseFeedback } from "../lib/starRatings";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -310,11 +311,7 @@ function userPrefersReducedMotion() {
 }
 
 function canReviseSubmittedFeedback(card: SubmittedFeedbackCard) {
-  return (
-    card.submissionStatus === "live" &&
-    (card.ratingValue === "frowny" || card.ratingValue === "neutral") &&
-    card.reportStatus !== "pending"
-  );
+  return canReviseFeedback(card);
 }
 
 export function EarnPage() {

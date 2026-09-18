@@ -35,6 +35,12 @@
 .untimed {
   max-height: 4lh;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.text::-webkit-scrollbar,
+.untimed::-webkit-scrollbar {
+  display: none;
 }
 
 .measure {

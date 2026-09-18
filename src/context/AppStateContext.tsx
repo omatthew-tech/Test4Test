@@ -1,3 +1,4 @@
+import { readStarRating } from "../lib/starRatings";
 import {
   createContext,
   ReactNode,
@@ -43,7 +44,7 @@ import { hasSupabaseConfig, isTestAccountEmail, requireSupabase } from "../lib/s
 import {
   AppState,
   CreditTransaction,
-  FeedbackRatingValue,
+  StarRating,
   GooglePlayClosedTestCheckIn,
   GooglePlayClosedTestParticipation,
   GooglePlayClosedTestParticipationStatus,
@@ -182,8 +183,8 @@ interface FeedbackRatingRow {
   id: string;
   test_response_id: string;
   rated_by_user_id: string;
-  rating_value: FeedbackRatingValue;
-  star_rating?: number | null;
+
+  star_rating: StarRating;
   created_at: string;
   updated_at: string;
 }
@@ -565,8 +566,8 @@ function mapFeedbackRating(row: FeedbackRatingRow) {
     id: row.id,
     testResponseId: row.test_response_id,
     ratedByUserId: row.rated_by_user_id,
-    ratingValue: row.rating_value,
-    starRating: row.star_rating ?? null,
+
+    starRating: readStarRating(row.star_rating),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

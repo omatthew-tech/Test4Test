@@ -6,7 +6,7 @@
   "lifecycle": "stable",
   "source": "design-system/components/product.tsx",
   "story": "design-system/stories/Product.stories.tsx",
-  "description": "Labeled single-choice rating scale.",
+  "description": "Labeled single-choice numeric or star rating scale with optional clearing.",
   "semantics": [
     "Fieldset and legend",
     "Native radio inputs"
@@ -24,7 +24,8 @@
     "default"
   ],
   "variants": [
-    "numeric-range"
+    "numeric-range",
+    "stars"
   ],
   "states": [
     "unselected",
@@ -32,7 +33,7 @@
     "focus-visible",
     "disabled"
   ],
-  "accessibleName": "Required legend labels the radio group; numbers label options.",
+  "accessibleName": "Required legend labels the radio group; numeric values or star counts label options. Optional Clear rating action removes the selection.",
   "controlMode": "controlled",
   "storyExport": "RatingControlContract",
   "examples": [

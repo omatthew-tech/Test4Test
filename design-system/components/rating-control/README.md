@@ -1,6 +1,6 @@
 # Rating control
 
-Labeled single-choice rating scale.
+Labeled single-choice numeric or star rating scale with optional clearing.
 
 - Family: product
 - Lifecycle: stable
@@ -13,9 +13,9 @@ Labeled single-choice rating scale.
 ## Public API
 
 - Sizes: `default`
-- Variants: `numeric-range`
+- Variants: `numeric-range`, `stars`
 - States: `unselected`, `selected`, `focus-visible`, `disabled`
-- Accessible name: Required legend labels the radio group; numbers label options.
+- Accessible name: Required legend labels the radio group; numeric values or star counts label options. Optional Clear rating action removes the selection.
 
 ## Accessibility contract
 

@@ -1,5 +1,6 @@
+import { readStarRating } from "./starRatings";
 import {
-  FeedbackRatingValue,
+  StarRating,
   FeedbackReportStatus,
   ProductType,
   SubmissionStatus,
@@ -16,7 +17,7 @@ interface SubmittedFeedbackCardRpcRow {
   description: string | null;
   needs_google_play_closed_testers?: boolean | null;
   submitted_at: string;
-  rating_value: FeedbackRatingValue | null;
+  star_rating: StarRating | null;
   owner_test_back_rate_percent: number | null;
   owner_satisfaction_rate_percent: number | null;
   submission_status: SubmissionStatus;
@@ -29,10 +30,6 @@ function normalizePercent(value: number | null | undefined) {
   }
 
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function normalizeRatingValue(value: FeedbackRatingValue | null) {
-  return value === "frowny" || value === "neutral" || value === "smiley" ? value : null;
 }
 
 function normalizeReportStatus(value: FeedbackReportStatus | null | undefined) {
@@ -55,7 +52,7 @@ export async function loadSubmittedFeedbackCards() {
     description: row.description ?? "",
     needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
     submittedAt: row.submitted_at,
-    ratingValue: normalizeRatingValue(row.rating_value),
+    starRating: row.star_rating === null ? null : readStarRating(row.star_rating),
     ownerTestBackRatePercent: normalizePercent(row.owner_test_back_rate_percent),
     ownerSatisfactionRatePercent: normalizePercent(row.owner_satisfaction_rate_percent),
     ownerAvatarUrl: null,

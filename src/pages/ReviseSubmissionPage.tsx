@@ -1,3 +1,4 @@
+import { isRevisionRating } from "../lib/starRatings";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Alert, Button, Dialog, Link, Stack, Surface, Textarea } from "@test4test/design-system";
@@ -46,12 +47,12 @@ export function ReviseSubmissionPage() {
         if (!versions.length) throw new Error("Recording history is unavailable.");
         const card = cards?.find((item) => item.responseId === responseId);
         const rating = fixture
-          ? state.feedbackRatings.find((item) => item.testResponseId === responseId)?.ratingValue
-          : card?.ratingValue;
+          ? state.feedbackRatings.find((item) => item.testResponseId === responseId)?.starRating
+          : card?.starRating;
         const pending = card?.reportStatus
           ? card.reportStatus === "pending"
           : loadReportedFeedbackResponseIds(currentUser.id).includes(responseId);
-        const canReport = (rating === "neutral" || rating === "frowny") && !pending;
+        const canReport = isRevisionRating(rating) && !pending;
         setEligibility({
           version: versions[0]?.versionNumber ?? 1,
           allowed: submission.status === "live" && canReport,
@@ -108,7 +109,7 @@ export function ReviseSubmissionPage() {
                   : error ||
                     (!eligibility
                       ? "Loading feedback…"
-                      : "This feedback is not currently eligible for revision. The test must be live, rated neutral or unhelpful, and have no pending rating dispute.")}
+                      : "This feedback is not currently eligible for revision. The test must be live, rated 1–4 stars, and have no pending rating dispute.")}
               </p>
               {error ? (
                 <Button onClick={() => setRetry((value) => value + 1)}>Try again</Button>

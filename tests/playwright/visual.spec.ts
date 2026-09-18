@@ -63,6 +63,7 @@ const contractStories = [
   "patterns-product--page-header-contract",
   "patterns-product--stepper-contract",
   "patterns-product--rating-control-contract",
+  "patterns-product--star-rating-display-contract",
   "patterns-product--recording-status-contract",
   "patterns-product--test-row-contract",
   "patterns-product--earn-test-card-contract",

@@ -63,7 +63,7 @@ export function SharePage() {
     [state],
   );
   const sharedTestTitle = liveSubmission
-    ? `Congrats! You've been selected to try ${liveSubmission.productName}`
+    ? `Congrats! You've been invited to try ${liveSubmission.productName}`
     : "";
   const activeSubmissionIdRef = useRef(liveSubmission?.id ?? null);
   const lastSavedMessageRef = useRef(liveSubmission?.publicShareMessage ?? "");

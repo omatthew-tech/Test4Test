@@ -3183,7 +3183,7 @@ export function TestSessionPage({
   const testSessionTitle = revision
     ? `Revise feedback for ${submission.productName}`
     : isSharedPublicVisit
-      ? sharedCustomMessage || `Congrats! You've been selected to try ${submission.productName}`
+      ? sharedCustomMessage || `Congrats! You've been invited to try ${submission.productName}`
       : "";
   const backToTestsLabel = currentUser ? "Go back" : "Browse tests";
   const shouldShowBackToTests = !isSharedPublicVisit;

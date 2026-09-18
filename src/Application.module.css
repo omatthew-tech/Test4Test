@@ -1135,7 +1135,18 @@
   background: var(--ds-semantic-color-surface-default);
 }
 
-.application [class~="earn-platform-choice"]:focus-within {
+.application [class~="earn-platform-choice"]:has(input:not(:checked)) {
+  border-color: var(--ds-semantic-color-border-subtle);
+}
+
+.application
+  [class~="earn-platform-choice"]:has(input:not(:checked))
+  [class~="earn-platform-choice__content"] {
+  /* ds-exception: earn-platform-unselected-fade */
+  opacity: 0.65;
+}
+
+.application [class~="earn-platform-choice"]:has(input:focus-visible) {
   outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-focus-ring);
   outline-offset: var(--ds-semantic-border-width-focus);
 }
@@ -1358,7 +1369,7 @@
   flex: 1 1 auto;
 }
 
-.application [class~="submission-feedback-card__title-row"] h3 {
+.application [class~="submission-feedback-card__title-row"] h2 {
   min-width: 0;
   overflow-wrap: anywhere;
   font-size: var(--ds-semantic-typography-heading-small-size);
@@ -2436,6 +2447,12 @@
 @media (forced-colors: active) {
   .application [class~="earn-platform-modal__background"] {
     display: none;
+  }
+
+  .application
+    [class~="earn-platform-choice"]:has(input:not(:checked))
+    [class~="earn-platform-choice__content"] {
+    opacity: 1;
   }
 
   .application

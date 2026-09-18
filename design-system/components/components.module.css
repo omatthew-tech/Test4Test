@@ -1206,6 +1206,49 @@
   outline-offset: var(--ds-semantic-border-offset-focus);
 }
 
+.starRating {
+  gap: var(--ds-semantic-space-zero);
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.starRating legend {
+  margin-block-end: var(--ds-semantic-space-zero);
+  font-size: var(--ds-semantic-typography-interface-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.starRating .ratingOption label,
+.starRating .ratingOption input:checked + label {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.starRating .ratingOption label svg {
+  width: var(--ds-semantic-size-icon-medium);
+  height: var(--ds-semantic-size-icon-medium);
+}
+
+.starFilled svg {
+  fill: currentColor;
+}
+
+.starRating .ratingOption input:not(:disabled) + label:hover {
+  background: var(--ds-semantic-color-surface-inset);
+}
+
+.starRating .ratingOption input:disabled + label {
+  color: var(--ds-semantic-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.ratingClear {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+}
+
 .recordingStatus {
   display: grid;
   gap: var(--ds-semantic-space-stack-md);
@@ -1488,4 +1531,23 @@
   .switchTrack {
     forced-color-adjust: auto;
   }
+}
+.starRatingDisplay {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-xs);
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+  white-space: nowrap;
+}
+
+.starRatingDisplay svg {
+  width: var(--ds-semantic-size-icon-medium);
+  height: var(--ds-semantic-size-icon-medium);
+  flex-shrink: 0;
+}
+
+.starDisplayFilled {
+  fill: currentColor;
 }

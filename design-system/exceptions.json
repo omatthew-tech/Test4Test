@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "recording-star-pointer-density",
+      "owner": "Test4Test",
+      "scope": "Fine-pointer star-rating labels in src/pages/RecordingFeedback.module.css on the recording page.",
+      "rationale": "The design owner selected the tight star-spacing mockup. Fine-pointer devices use 24px-wide by 44px-high star targets, derived from the semantic medium icon size plus inline-xs spacing. Touch and coarse-pointer devices retain 44px targets. Native radio semantics, cumulative hover previews, keyboard focus indicators, and explicit submission remain unchanged.",
+      "expires": "2027-03-17"
+    },
+    {
       "id": "home-how-it-works-mobile-autoplay",
       "owner": "Test4Test",
       "scope": "The mobile-only How it works card sequence in src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
@@ -43,6 +50,13 @@
       "scope": "Token-derived color literals serialized into index.html theme metadata, the web app manifest, and standalone SVG brand assets.",
       "rationale": "Browser metadata, JSON manifests, and standalone SVG files cannot consume the application's CSS custom properties. Validation restricts every serialized color to an approved design token and verifies the manifest and theme metadata against their canonical semantic tokens.",
       "expires": "2027-07-23"
+    },
+    {
+      "id": "earn-platform-unselected-fade",
+      "owner": "Test4Test",
+      "scope": "Unselected platform icons and labels in the Earn platform-preferences dialog, styled in src/Application.module.css.",
+      "rationale": "The design owner explicitly requested 65% opacity for unselected platform icons and labels. No semantic opacity token exists, so this route-local exception permits 0.65 opacity on unchecked card content. Card borders use the existing subtle-border token. Selected content and keyboard focus indicators remain at full strength, forced-colors mode restores full opacity, and selection, saving, and persistence behavior remain unchanged.",
+      "expires": "2027-03-17"
     },
     {
       "id": "earn-platform-modal-mockup-treatment",

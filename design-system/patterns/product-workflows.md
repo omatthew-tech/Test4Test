@@ -29,7 +29,7 @@ All workflows use exports from `@test4test/design-system`, semantic tokens, expl
 - Color is never the only indicator: announce the annotation label and selection boundaries to assistive technology.
 - Preserve a stable return point when moving from a transcript timestamp to another recording or priority source.
 
-The current `ResponseViewer` and `RatingControl` document v1 behavior. They are not sufficient contracts for the synchronized transcript viewer or 1–5 star rating required by the recording-first product.
+`RatingControl` supports the optional 1–5 star recording rating through its `stars` variant and `onClear` action. `ResponseViewer` remains a legacy contract; the recording route composes its synchronized transcript separately.
 
 ## Improvement priorities
 
@@ -59,9 +59,10 @@ The current `ResponseViewer` and `RatingControl` document v1 behavior. They are 
 ## Rate a recording
 
 - Use an optional 1–5 star input with a clear group label and an accessible name for every value.
-- Support arrow-key navigation and an explicit way to clear an optional rating.
+- Support arrow-key navigation, cumulative hover previews, persistent draft selection, and explicit Submit. The recording page does not offer Clear rating.
 - Explain that stars inform tester reputation. Do not imply that yellow/red transcript annotations affect the tester, the credit award, or reputation.
-- Legacy face values render through the approved mapping: frowny 1, neutral 3, smiley 5.
+- Exact stars are authoritative. The data migration converts missing legacy values using frowny 1, neutral 3, smiley 5, preserving explicit stars and original audit values.
+- Use StarRatingDisplay for submitted ratings, independently of revision/report status. Unrated feedback says “Not rated.”
 
 ## Managed tester packages
 
@@ -83,7 +84,7 @@ Before implementation, evaluate and contract the smallest reusable primitives ne
 - transcript viewing and timed-word selection;
 - annotation range controls;
 - clip range editing and public clip presentation;
-- star rating input and display;
+- read-only star rating display (the input uses `RatingControl`);
 - priority groups with source evidence; and
 - AI context selection.
 

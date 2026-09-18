@@ -1,0 +1,94 @@
+.feedback {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+  min-width: 0;
+}
+
+.paymentDetails {
+  overflow-wrap: anywhere;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-stack-sm) var(--ds-semantic-space-inline-xl);
+}
+
+.rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rating fieldset {
+  align-items: center;
+  min-width: 0;
+}
+
+.rating fieldset > legend {
+  float: inline-start;
+  width: auto;
+  margin-inline-end: var(--ds-semantic-space-inline-md);
+}
+
+.feedback .rating fieldset input:not(:disabled) + label:hover {
+  background: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rating fieldset label {
+    min-width: calc(var(--ds-semantic-size-icon-medium) + var(--ds-semantic-space-inline-xs));
+  }
+}
+
+.submit {
+  min-width: var(--ds-semantic-size-control-default);
+  padding-inline: var(--ds-semantic-space-inline-xs);
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+}
+
+/* Preview the hovered score without changing the selected radio value. */
+@media (hover: hover) {
+  .rating fieldset:has(input:enabled + label:hover) label svg {
+    fill: none;
+  }
+
+  .rating fieldset:has(input:enabled + label:hover) > span:has(> label:hover) svg,
+  .rating fieldset:has(input:enabled + label:hover) > span:has(~ span > label:hover) svg {
+    fill: currentColor;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+  margin-inline-start: auto;
+}
+
+.action {
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-surface-inset);
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-weight: var(--ds-semantic-typography-weight-regular);
+}
+
+.action:hover:not(:disabled),
+.action:active:not(:disabled) {
+  border-color: transparent;
+  background: var(--ds-semantic-color-surface-track);
+  color: var(--ds-semantic-color-text-primary);
+}
+
+.action svg {
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+}

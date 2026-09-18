@@ -10,6 +10,7 @@ import {
   PageHeader,
   QuestionEditor,
   RatingControl,
+  StarRatingDisplay,
   RecordingStatus,
   ResponseViewer,
   Stack,
@@ -28,6 +29,26 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+// @test4test-coverage star-rating-display | sizes: default | variants: rated, unrated | states: rated, unrated
+export const StarRatingDisplayContract: Story = {
+  render: () => (
+    <Stack gap="md">
+      {([1, 2, 3, 4, 5, null] as const).map((value) => (
+        <StarRatingDisplay key={value ?? "unrated"} value={value} />
+      ))}
+    </Stack>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    for (const value of [1, 2, 3, 4, 5]) {
+      await expect(canvas.getByRole("img", { name: `${value} out of 5 stars` })).toBeVisible();
+    }
+    await expect(canvas.getByText("Not rated")).toBeVisible();
+    await expect(canvas.queryByRole("radio")).toBeNull();
+    await expect(canvas.queryByRole("button")).toBeNull();
+  },
+};
 
 export const WorkflowStates: Story = {
   render: function WorkflowStatesStory() {
@@ -215,10 +236,11 @@ export const StepperContract: Story = {
   },
 };
 
-// @test4test-coverage rating-control | sizes: default | variants: numeric-range | states: unselected, selected, focus-visible, disabled
+// @test4test-coverage rating-control | sizes: default | variants: numeric-range, stars | states: unselected, selected, focus-visible, disabled
 export const RatingControlContract: Story = {
   render: function RatingControlContractStory() {
     const [rating, setRating] = useState<number>();
+    const [stars, setStars] = useState<number>();
     return (
       <Stack>
         <RatingControl
@@ -234,6 +256,22 @@ export const RatingControlContract: Story = {
           value={3}
           onChange={() => undefined}
         />
+        <RatingControl
+          legend="Rate video"
+          name="contract-stars"
+          variant="stars"
+          value={stars}
+          onChange={setStars}
+          onClear={() => setStars(undefined)}
+        />
+        <RatingControl
+          legend="Unavailable star rating"
+          name="disabled-stars"
+          variant="stars"
+          value={3}
+          onChange={() => undefined}
+          disabled
+        />
       </Stack>
     );
   },
@@ -245,6 +283,13 @@ export const RatingControlContract: Story = {
     await userEvent.click(option);
     await expect(option).toBeChecked();
     await expect(canvas.getAllByRole("radio", { name: "3" })[1]).toBeDisabled();
+    const starGroup = within(canvas.getByRole("group", { name: "Rate video" }));
+    await userEvent.click(starGroup.getByRole("radio", { name: "4 stars" }));
+    await expect(starGroup.getByRole("radio", { name: "4 stars" })).toBeChecked();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect(starGroup.getByRole("radio", { name: "5 stars" })).toBeChecked();
+    await userEvent.click(starGroup.getByRole("button", { name: "Clear rating" }));
+    await expect(starGroup.getByRole("radio", { name: "5 stars" })).not.toBeChecked();
   },
 };
 

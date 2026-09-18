@@ -25,6 +25,7 @@ import {
 } from "../lib/responseVersions";
 import styles from "./RecordingViewPage.module.css";
 import { RecordingTranscript } from "./RecordingTranscript";
+import { RecordingFeedback } from "./RecordingFeedback";
 
 type PlaybackState = { key: string } & (
   | { status: "loading"; url: ""; fileName: ""; error: "" }
@@ -361,6 +362,24 @@ export function RecordingViewPage() {
               <ChevronRight aria-hidden="true" size={24} />
             </IconButton>
             <div className={styles.transcript}>
+              {(!requestedVersionId ||
+                (selectedVersion && selectedVersion.id === versions[0]?.id)) &&
+              canPlay ? (
+                <RecordingFeedback
+                  key={`${state.currentUserId}:${selectedRecording.response.id}:${selectedRecording.response.submittedAt}`}
+                  response={selectedRecording.response}
+                  userId={state.currentUserId ?? ""}
+                  productName={selectedRecording.submission.productName}
+                  fixtureMode={useDesignSystemFixture}
+                  fixtureContact={
+                    useDesignSystemFixture
+                      ? state.users.find(
+                          (user) => user.id === selectedRecording.response.testerUserId,
+                        )
+                      : undefined
+                  }
+                />
+              ) : null}
               <RecordingTranscript
                 key={`${state.currentUserId}:${playbackKey}`}
                 userId={state.currentUserId ?? ""}

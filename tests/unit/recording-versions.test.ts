@@ -41,7 +41,7 @@ describe("recording-only submissions and versioned revisions", () => {
         uploaded_at timestamptz default now(), updated_at timestamptz default now(), expires_at timestamptz,
         thumbnail_storage_bucket text, thumbnail_path text, attached_response_id uuid references public.test_responses(id) on delete set null);
       create table public.feedback_ratings(id uuid primary key default gen_random_uuid(), test_response_id uuid references public.test_responses(id) on delete cascade,
-        rated_by_user_id uuid, rating_value text);
+        rated_by_user_id uuid, rating_value text, star_rating smallint);
       create table public.feedback_rating_reports(id uuid primary key default gen_random_uuid(), test_response_id uuid references public.test_responses(id), status text);
       create table public.test_response_drafts(submission_id uuid,tester_user_id uuid);
       create table public.credit_transactions(id uuid primary key default gen_random_uuid(), user_id uuid,type text,amount integer,reason text,related_test_response_id uuid);
@@ -77,11 +77,15 @@ describe("recording-only submissions and versioned revisions", () => {
       ),
     );
     await db.exec(await migration("20260911183111_recording_only_versioned_feedback"));
+    const stars = await migration("20260918021245_exact_star_ratings");
+    await db.exec(functionSQL(stars, "revise_test_recording"));
+    const guard = stars.indexOf("create or replace function private.lock_pending_rating_report");
+    await db.exec(stars.slice(guard, stars.indexOf("$;", guard) + 3));
   }, 30_000);
   afterAll(async () => db?.close());
   beforeEach(async () => {
     await db.exec(`begin; select set_config('request.jwt.claim.sub','${id(2)}',false);
-      insert into public.feedback_ratings(test_response_id,rated_by_user_id,rating_value) values ('${id(41)}','${id(1)}','neutral');
+      insert into public.feedback_ratings(test_response_id,rated_by_user_id,rating_value,star_rating) values ('${id(41)}','${id(1)}','neutral',3);
       insert into public.test_response_recording_uploads(id,tester_user_id,storage_bucket,object_key)
       values('${id(51)}','${id(2)}','r2:test-response-recordings','draft/${id(2)}/revision.webm');`);
   });
@@ -147,11 +151,25 @@ describe("recording-only submissions and versioned revisions", () => {
       ).rows[0],
     ).toEqual({ n: 1 });
   });
+  it.each([1, 2, 3, 4])(
+    "revises %s stars and retains the exact rating in history",
+    async (stars) => {
+      await db.query("update public.feedback_ratings set star_rating=$1", [stars]);
+      await revise();
+      expect(
+        (
+          await db.query(
+            "select (rating_snapshot->0->>'star_rating')::int stars from public.test_response_versions where version_number=1",
+          )
+        ).rows[0],
+      ).toEqual({ stars });
+      expect((await db.query("select * from public.feedback_ratings")).rows).toHaveLength(0);
+    },
+  );
   it.each(["rating", "dispute", "closed", "upload", "author", "conflict"])(
     "rejects invalid revision: %s",
     async (kind) => {
-      if (kind === "rating")
-        await db.exec("update public.feedback_ratings set rating_value='smiley'");
+      if (kind === "rating") await db.exec("update public.feedback_ratings set star_rating=5");
       if (kind === "dispute")
         await db.exec(
           `insert into public.feedback_rating_reports(test_response_id,status) values('${id(41)}','pending')`,

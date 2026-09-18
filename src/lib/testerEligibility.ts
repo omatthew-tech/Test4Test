@@ -1,4 +1,4 @@
-import type { TesterEarnAccessSummary } from "../types";
+import type { StarRating, TesterEarnAccessSummary } from "../types";
 
 interface EligibilityResponse {
   id: string;
@@ -9,7 +9,7 @@ interface EligibilityResponse {
 
 interface EligibilityRating {
   testResponseId: string;
-  starRating?: number | null;
+  starRating?: StarRating | null;
 }
 
 export function calculateTesterEarnAccess(

@@ -1,0 +1,36 @@
+{
+  "id": "star-rating-display",
+  "name": "Star rating display",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "stable",
+  "source": "design-system/components/product.tsx",
+  "story": "design-system/stories/Product.stories.tsx",
+  "description": "Read-only exact 1–5 star rating or Not rated.",
+  "semantics": [
+    "Single accessible image for rated feedback",
+    "Text for unrated feedback"
+  ],
+  "keyboard": [],
+  "targetSize": 44,
+  "dependencies": [],
+  "exportName": "StarRatingDisplay",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "rated",
+    "unrated"
+  ],
+  "states": [
+    "rated",
+    "unrated"
+  ],
+  "accessibleName": "Rated values announce N out of 5 stars once. Unrated values say Not rated. Decorative stars are hidden from assistive technology.",
+  "controlMode": "not-applicable",
+  "storyExport": "StarRatingDisplayContract",
+  "examples": [
+    "design-system/stories/Product.stories.tsx#StarRatingDisplayContract"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

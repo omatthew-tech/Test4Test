@@ -1,5 +1,8 @@
+import { Link as DesignSystemLink, StarRatingDisplay } from "@test4test/design-system";
+import { createStarRatingCards } from "../testing/starRatingFixtures";
+import { isRevisionRating, canReviseFeedback, compareSubmittedRatings } from "../lib/starRatings";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Bookmark, ExternalLink, Smile } from "lucide-react";
+import { ArrowRight, Bookmark, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
@@ -15,44 +18,14 @@ import {
   syncSubmissionFavorites,
 } from "../lib/submissionFavorites";
 import { loadSubmittedFeedbackCards } from "../lib/submittedFeedback";
-import { FeedbackRatingValue, SubmittedFeedbackCard } from "../types";
+import { SubmittedFeedbackCard } from "../types";
 
-type CardTone = FeedbackRatingValue | "pending";
 type SubmissionViewMode = "all" | "favorites";
 
 const LEGACY_FAVORITES_STORAGE_PREFIX = "test4test:submission-favorites:";
 
-function getCardTone(ratingValue: FeedbackRatingValue | null): CardTone {
-  if (ratingValue === "smiley") {
-    return "pending";
-  }
-
-  return ratingValue ?? "pending";
-}
-
-function getAllSubmissionPriority(card: SubmittedFeedbackCard) {
-  switch (card.ratingValue) {
-    case "frowny":
-      return 0;
-    case "neutral":
-      return 1;
-    default:
-      return 2;
-  }
-}
-
-function compareAllSubmissionCards(first: SubmittedFeedbackCard, second: SubmittedFeedbackCard) {
-  const priorityDifference = getAllSubmissionPriority(first) - getAllSubmissionPriority(second);
-
-  if (priorityDifference !== 0) {
-    return priorityDifference;
-  }
-
-  return new Date(second.submittedAt).getTime() - new Date(first.submittedAt).getTime();
-}
-
 function canFavoriteSubmissionCard(card: SubmittedFeedbackCard) {
-  return card.ratingValue !== "frowny" && card.ratingValue !== "neutral";
+  return !isRevisionRating(card.starRating);
 }
 
 function getLegacyFavoriteStorageKey(userId: string) {
@@ -104,6 +77,10 @@ export function SubmissionsPage() {
   const [loadError, setLoadError] = useState("");
   const [favoriteError, setFavoriteError] = useState("");
   const { state, currentUser, isConfigured } = useAppState();
+  const starRatingFixture =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_DS_FIXTURES === "1" &&
+    new URLSearchParams(window.location.search).get("ds-star-ratings") === "1";
 
   useEffect(() => {
     let isCancelled = false;
@@ -164,6 +141,12 @@ export function SubmissionsPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    if (starRatingFixture) {
+      setCards(createStarRatingCards());
+      setIsLoadingCards(false);
+      return;
+    }
+
     if (!currentUser || !isConfigured) {
       setCards([]);
       setIsLoadingCards(false);
@@ -212,7 +195,7 @@ export function SubmissionsPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser, isConfigured]);
+  }, [currentUser, isConfigured, starRatingFixture]);
 
   useEffect(() => {
     if (!currentUser || cards.length === 0) {
@@ -245,7 +228,7 @@ export function SubmissionsPage() {
       );
     }
 
-    return [...cards].sort(compareAllSubmissionCards);
+    return [...cards].sort(compareSubmittedRatings);
   }, [cards, favoriteResponseIdSet, viewMode]);
   const closedTestItems = useMemo(() => {
     if (!currentUser) {
@@ -463,7 +446,7 @@ export function SubmissionsPage() {
   );
 }
 
-function SubmissionFeedbackRow({
+export function SubmissionFeedbackRow({
   card,
   isFavorite,
   isFavoritePending,
@@ -476,17 +459,16 @@ function SubmissionFeedbackRow({
   primaryAccessUrl: string | null;
   onToggleFavorite: (responseId: string) => void;
 }) {
-  const tone = getCardTone(card.ratingValue);
-  const isAttentionCard = card.ratingValue === "frowny" || card.ratingValue === "neutral";
+  const isAttentionCard = isRevisionRating(card.starRating);
   const hasPendingReport = card.reportStatus === "pending";
-  const canRevise = card.submissionStatus === "live" && isAttentionCard && !hasPendingReport;
+  const canRevise = canReviseFeedback(card);
   const showBookmark = !isAttentionCard;
 
   return (
-    <Surface className={`submission-feedback-card submission-feedback-card--${tone}`}>
+    <Surface className="submission-feedback-card">
       <div className="submission-feedback-card__header">
         <div className="submission-feedback-card__title-row">
-          <h3>{card.productName}</h3>
+          <h2>{card.productName}</h2>
           {primaryAccessUrl ? (
             <a
               href={primaryAccessUrl}
@@ -532,6 +514,7 @@ function SubmissionFeedbackRow({
           ) : null}
         </div>
         <div className="submission-feedback-card__actions">
+          <StarRatingDisplay value={card.starRating} />
           {hasPendingReport ? (
             <span className="submission-feedback-card__status-pill submission-feedback-card__status-pill--report">
               Report in progress
@@ -539,22 +522,24 @@ function SubmissionFeedbackRow({
           ) : canRevise ? (
             <Link
               to={`/submissions/${card.responseId}/revise`}
-              className={`submission-feedback-card__action-button submission-feedback-card__action-button--${tone}`}
+              className="submission-feedback-card__action-button"
             >
               Revise Feedback
               <ArrowRight size={16} />
             </Link>
-          ) : card.ratingValue === "smiley" ? (
-            <span
-              className="submission-feedback-card__status-pill submission-feedback-card__status-pill--helpful"
-              aria-label="Helpful feedback"
-            >
-              <span>Helpful</span>
-              <Smile size={20} aria-hidden="true" />
-            </span>
-          ) : card.ratingValue === null ? null : (
-            <span className="submission-feedback-card__status-pill">Test closed</span>
-          )}
+          ) : card.submissionStatus !== "live" ? (
+            <>
+              <span className="submission-feedback-card__status-pill">Test closed</span>
+              {isAttentionCard ? (
+                <DesignSystemLink
+                  to={`/submissions/${card.responseId}/revise`}
+                  className="submission-feedback-card__action-button"
+                >
+                  Report Rating
+                </DesignSystemLink>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </div>
     </Surface>

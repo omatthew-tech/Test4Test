@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added StarRatingDisplay for exact read-only 1–5 ratings and an explicit unrated state. Submitted feedback retains its rating beside revision/report status; recording ratings retain compact hover previews and explicit Submit.
+
+- Added a neutral star variant and optional clearing to RatingControl, with native radio keyboard behavior and 44px targets. The recording viewer pairs it with understated Tip and Message actions.
+
 - Made menu row highlights hover-only while retaining keyboard focus outlines, and moved Sign out from both Profile page variants to the bottom of the profile dropdown.
 - Added the signed-in profile dropdown with Profile, New app, and My reviews; tester accounts retain Profile only. Extended Menu with optional triggers, alignment, grouping, dismissal, and keyboard focus, and TopNavigation with mobile actions that can close its drawer.
 - Added a deterministic, native-Figma DTCG variable export generated from the canonical tokens, with documented conversions for font families, font weights, and durations.

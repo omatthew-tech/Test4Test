@@ -1,6 +1,6 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
-import { Link } from "./actions";
+import { Button, Link } from "./actions";
 import { Badge, Card, StatusIndicator, Surface, type StatusTone } from "./data-display";
 import { Cluster, Stack } from "./layout";
 import { Progress } from "./feedback";
@@ -73,6 +73,23 @@ export function Stepper({ steps, currentStep, variant = "labeled" }: StepperProp
   );
 }
 
+export type StarRating = 1 | 2 | 3 | 4 | 5;
+
+export function StarRatingDisplay({ value }: { value: StarRating | null }) {
+  if (value === null) return <span className={styles.starRatingDisplay}>Not rated</span>;
+  return (
+    <span className={styles.starRatingDisplay} role="img" aria-label={`${value} out of 5 stars`}>
+      {([1, 2, 3, 4, 5] as const).map((star) => (
+        <Star
+          key={star}
+          aria-hidden="true"
+          className={star <= value ? styles.starDisplayFilled : undefined}
+        />
+      ))}
+    </span>
+  );
+}
+
 export function RatingControl({
   legend,
   name,
@@ -81,6 +98,9 @@ export function RatingControl({
   min = 1,
   max = 5,
   disabled = false,
+  variant = "numeric-range",
+  onClear,
+  describedBy,
 }: {
   legend: string;
   name: string;
@@ -89,9 +109,16 @@ export function RatingControl({
   min?: number;
   max?: number;
   disabled?: boolean;
+  variant?: "numeric-range" | "stars";
+  onClear?: () => void;
+  describedBy?: string;
 }) {
   return (
-    <fieldset className={styles.rating}>
+    <fieldset
+      className={`${styles.rating} ${variant === "stars" ? styles.starRating : ""}`.trim()}
+      aria-describedby={describedBy}
+      disabled={disabled}
+    >
       <legend>{legend}</legend>
       {Array.from({ length: max - min + 1 }, (_, index) => min + index).map((option) => (
         <span className={styles.ratingOption} key={option}>
@@ -104,9 +131,36 @@ export function RatingControl({
             disabled={disabled}
             onChange={() => onChange(option)}
           />
-          <label htmlFor={`${name}-${option}`}>{option}</label>
+          <label
+            htmlFor={`${name}-${option}`}
+            className={
+              variant === "stars" && option <= (value ?? 0) ? styles.starFilled : undefined
+            }
+          >
+            {variant === "stars" ? (
+              <>
+                <Star aria-hidden="true" />
+                <span className="ds-sr-only">
+                  {option} {option === 1 ? "star" : "stars"}
+                </span>
+              </>
+            ) : (
+              option
+            )}
+          </label>
         </span>
       ))}
+      {onClear && value !== undefined ? (
+        <Button
+          className={styles.ratingClear}
+          type="button"
+          variant="quiet"
+          disabled={disabled}
+          onClick={onClear}
+        >
+          Clear rating
+        </Button>
+      ) : null}
     </fieldset>
   );
 }

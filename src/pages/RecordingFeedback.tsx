@@ -1,0 +1,318 @@
+import { readStarRating } from "../lib/starRatings";
+import { useEffect, useId, useRef, useState } from "react";
+import { Coins, MessageCircle } from "lucide-react";
+import { Alert, Button, Dialog, Link, RatingControl, Stack } from "@test4test/design-system";
+import {
+  loadRecordingContact,
+  loadRecordingRating,
+  recordingPaymentLinks,
+  requestTipPaymentMethods,
+  saveRecordingRating,
+  type RecordingContact,
+} from "../lib/recordingFeedback";
+import type { StarRating, TestResponse } from "../types";
+import styles from "./RecordingFeedback.module.css";
+
+const fixtureRatings = new Map<string, StarRating | null>();
+
+export function RecordingFeedback({
+  response,
+  userId,
+  productName,
+  fixtureMode,
+  fixtureContact,
+}: {
+  response: TestResponse;
+  userId: string;
+  productName: string;
+  fixtureMode: boolean;
+  fixtureContact?: RecordingContact;
+}) {
+  const id = useId();
+  const fixtureKey = `${userId}:${response.id}`;
+  const [rating, setRating] = useState<StarRating | null>(fixtureRatings.get(fixtureKey) ?? null);
+  const [draftRating, setDraftRating] = useState<StarRating | null>(null);
+  const ratingForm = useRef<HTMLFormElement>(null);
+  const focusAfterSubmit = useRef(false);
+  const [ratingLoading, setRatingLoading] = useState(true);
+  const [ratingLoaded, setRatingLoaded] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [ratingStatus, setRatingStatus] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [dialog, setDialog] = useState<"tip" | "message" | null>(null);
+  const [contact, setContact] = useState<RecordingContact | null>(null);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState("");
+  const [contactRetry, setContactRetry] = useState(0);
+  const [requestPending, setRequestPending] = useState(false);
+  const [requestStatus, setRequestStatus] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setRatingLoading(true);
+    setRatingError("");
+    const load = fixtureMode
+      ? Promise.resolve(fixtureRatings.get(fixtureKey) ?? null)
+      : loadRecordingRating(response.id, userId);
+    void load
+      .then((value) => {
+        if (!cancelled) {
+          setRating(value);
+          setDraftRating(null);
+          setRatingLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRatingError("Your rating could not be loaded. Try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setRatingLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [response.id, userId, fixtureMode, fixtureKey, retry]);
+
+  useEffect(() => {
+    if (!dialog || !response.testerUserId) return;
+    let cancelled = false;
+    setContactLoading(true);
+    setContactError("");
+    const load = fixtureMode
+      ? Promise.resolve(fixtureContact ?? null)
+      : loadRecordingContact(response.testerUserId);
+    void load
+      .then((value) => {
+        if (!cancelled) setContact(value);
+      })
+      .catch(() => {
+        if (!cancelled) setContactError("Tester contact details could not be loaded. Try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setContactLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dialog, response.testerUserId, fixtureMode, fixtureContact, contactRetry]);
+
+  useEffect(() => {
+    if (ratingLoading || !focusAfterSubmit.current) return;
+    focusAfterSubmit.current = false;
+    if (document.activeElement === document.body) {
+      ratingForm.current?.querySelector<HTMLInputElement>("input:checked")?.focus();
+    }
+  }, [ratingLoading, draftRating]);
+
+  const submitRating = async () => {
+    if (ratingLoading || !ratingLoaded || draftRating === null) return;
+    const value = draftRating;
+    setRatingLoading(true);
+    setRatingError("");
+    setRatingStatus("Saving rating…");
+    try {
+      if (fixtureMode) fixtureRatings.set(fixtureKey, value);
+      else await saveRecordingRating(response.id, userId, value);
+      setRating(value);
+      setDraftRating(null);
+      setRatingStatus(`${value} ${value === 1 ? "star" : "stars"} saved.`);
+      focusAfterSubmit.current = true;
+    } catch (error) {
+      setRatingError(
+        error instanceof Error ? error.message : "Your rating could not be saved. Try again.",
+      );
+      setRatingStatus("");
+    } finally {
+      setRatingLoading(false);
+    }
+  };
+
+  const paymentLinks = contact ? recordingPaymentLinks(contact) : [];
+  const savedPaymentDetails = contact
+    ? [
+        { label: "PayPal", value: contact.paypalHandle },
+        { label: "Venmo", value: contact.venmoHandle },
+        { label: "Cash App", value: contact.cashAppHandle },
+      ].filter((method) => method.value?.trim())
+    : [];
+  const openDialog = (value: "tip" | "message") => {
+    setContact(null);
+    setContactError("");
+    setRequestStatus("");
+    setDialog(value);
+  };
+
+  return (
+    <div className={styles.feedback}>
+      <div className={styles.toolbar}>
+        <form
+          className={styles.rating}
+          ref={ratingForm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submitRating();
+          }}
+        >
+          <RatingControl
+            legend="Rate video"
+            name={`${id}-rating`}
+            variant="stars"
+            value={draftRating ?? rating ?? undefined}
+            onChange={(value) => {
+              setDraftRating(readStarRating(value));
+              setRatingError("");
+              setRatingStatus("");
+            }}
+            disabled={ratingLoading || !ratingLoaded}
+            describedBy={`${id}-rating-help`}
+          />
+          {draftRating !== null ? (
+            <Button
+              type="submit"
+              variant="quiet"
+              className={styles.submit}
+              loading={ratingLoading}
+              loadingLabel="Submitting…"
+            >
+              Submit
+            </Button>
+          ) : null}
+          <p id={`${id}-rating-help`} className="ds-sr-only">
+            Optional. Stars contribute to tester reputation. This rating applies to the current
+            recording. Choose a star, then select Submit to save your rating.
+          </p>
+          <p className="ds-sr-only" role="status">
+            {ratingStatus}
+          </p>
+        </form>
+        <div className={styles.actions}>
+          <Button
+            type="button"
+            variant="quiet"
+            className={styles.action}
+            onClick={() => openDialog("tip")}
+          >
+            <Coins aria-hidden="true" />
+            Tip
+          </Button>
+          <Button
+            type="button"
+            variant="quiet"
+            className={styles.action}
+            onClick={() => openDialog("message")}
+          >
+            <MessageCircle aria-hidden="true" />
+            Message
+          </Button>
+        </div>
+      </div>
+      {ratingError ? (
+        <Alert tone="danger">
+          {ratingError}
+          {!ratingLoaded ? (
+            <Button variant="quiet" onClick={() => setRetry((value) => value + 1)}>
+              Retry rating
+            </Button>
+          ) : null}
+        </Alert>
+      ) : null}
+      <Dialog
+        open={dialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null);
+        }}
+        title={dialog === "tip" ? "Tip the tester" : "Message the tester"}
+      >
+        <Stack gap="md">
+          {!response.testerUserId ? (
+            <p>This public recording has no tester contact details.</p>
+          ) : contactLoading ? (
+            <p role="status">Loading tester details…</p>
+          ) : contactError ? (
+            <Alert tone="danger">
+              {contactError}
+              <Button variant="quiet" onClick={() => setContactRetry((value) => value + 1)}>
+                Try again
+              </Button>
+            </Alert>
+          ) : !contact ? (
+            <p>This tester’s contact details are unavailable.</p>
+          ) : dialog === "tip" ? (
+            <>
+              {paymentLinks.length ? (
+                <>
+                  <p>
+                    Choose a payment service to tip this tester. You’ll confirm the amount there.
+                  </p>
+                  {paymentLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      to={link.url}
+                      external
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open {link.label}
+                    </Link>
+                  ))}
+                </>
+              ) : savedPaymentDetails.length ? (
+                <>
+                  <p>Use these saved details in your payment app to tip the tester.</p>
+                  {savedPaymentDetails.map((method) => (
+                    <p key={method.label} className={styles.paymentDetails}>
+                      {method.label}: {method.value}
+                    </p>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <p>
+                    This tester hasn’t added a supported payment link yet. You can email them a
+                    request to add one.
+                  </p>
+                  <Button
+                    disabled={Boolean(requestStatus)}
+                    loading={requestPending}
+                    loadingLabel="Sending request…"
+                    onClick={async () => {
+                      setRequestPending(true);
+                      try {
+                        setRequestStatus(
+                          fixtureMode
+                            ? "Demo: payment-method request prepared."
+                            : await requestTipPaymentMethods(response.id),
+                        );
+                      } catch (error) {
+                        setContactError(
+                          error instanceof Error ? error.message : "The request could not be sent.",
+                        );
+                      } finally {
+                        setRequestPending(false);
+                      }
+                    }}
+                  >
+                    Request payment link
+                  </Button>
+                  <p role="status">{requestStatus}</p>
+                </>
+              )}
+            </>
+          ) : contact.email ? (
+            <>
+              <p>Open your email app to write to the tester about {productName}.</p>
+              <Link
+                external
+                to={`mailto:${encodeURIComponent(contact.email)}?subject=${encodeURIComponent(`Your ${productName} recording`)}`}
+              >
+                Write email
+              </Link>
+            </>
+          ) : (
+            <p>This tester’s email address is unavailable.</p>
+          )}
+        </Stack>
+      </Dialog>
+    </div>
+  );
+}

@@ -55,11 +55,6 @@ function normalizeMessage(value: unknown) {
   return value.trim().slice(0, 500);
 }
 
-function isMissingReportsTableError(message: string) {
-  const normalized = message.toLowerCase();
-  return normalized.includes("feedback_rating_reports") && normalized.includes("does not exist");
-}
-
 function normalizeQuestions(value: unknown) {
   if (!Array.isArray(value)) {
     return [] as NormalizedQuestion[];
@@ -124,17 +119,8 @@ function normalizeAnswers(value: unknown) {
   });
 }
 
-function getRatingLabel(ratingValue: string) {
-  switch (ratingValue) {
-    case "frowny":
-      return "Low Value";
-    case "neutral":
-      return "Okay";
-    case "smiley":
-      return "Helpful";
-    default:
-      return "Unknown";
-  }
+function getRatingLabel(stars: number) {
+  return `${stars}-star`;
 }
 
 function buildQuestionAnswerPairs(questionsRaw: unknown, answersRaw: unknown) {
@@ -179,7 +165,11 @@ function buildQuestionAnswerPairs(questionsRaw: unknown, answersRaw: unknown) {
   return pairs;
 }
 
-Deno.serve(async (request) => {
+export async function handleReport(
+  request: Request,
+  makeClient = createClient,
+  sendNotification: typeof fetch = fetch,
+) {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -211,7 +201,7 @@ Deno.serve(async (request) => {
     return json({ error: "Unauthorized." }, 401);
   }
 
-  const admin = createClient(supabaseUrl, secretKey, {
+  const admin = makeClient(supabaseUrl, secretKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -262,7 +252,7 @@ Deno.serve(async (request) => {
 
   const { data: ratingRow, error: ratingError } = await admin
     .from("feedback_ratings")
-    .select("rating_value")
+    .select("star_rating")
     .eq("test_response_id", responseRow.id)
     .eq("rated_by_user_id", submission.user_id)
     .maybeSingle();
@@ -271,15 +261,18 @@ Deno.serve(async (request) => {
     return json({ error: ratingError.message }, 500);
   }
 
-  if (!ratingRow?.rating_value) {
+  if (!ratingRow?.star_rating) {
     return json({ error: "This feedback has not been rated yet." }, 400);
   }
 
-  if (ratingRow.rating_value !== "frowny" && ratingRow.rating_value !== "neutral") {
-    return json({ error: "Only Low Value or Okay ratings can be reported." }, 400);
+  if (
+    !Number.isInteger(ratingRow.star_rating) ||
+    ratingRow.star_rating < 1 ||
+    ratingRow.star_rating > 4
+  ) {
+    return json({ error: "Only ratings of 1–4 stars can be reported." }, 400);
   }
 
-  let reportTableAvailable = true;
   const { data: existingReport, error: existingReportError } = await admin
     .from("feedback_rating_reports")
     .select("status")
@@ -287,13 +280,7 @@ Deno.serve(async (request) => {
     .eq("reporter_user_id", user.id)
     .maybeSingle();
 
-  if (existingReportError) {
-    if (isMissingReportsTableError(existingReportError.message)) {
-      reportTableAvailable = false;
-    } else {
-      return json({ error: existingReportError.message }, 500);
-    }
-  }
+  if (existingReportError) return json({ error: existingReportError.message }, 500);
 
   if (existingReport?.status === "pending") {
     return json({
@@ -326,7 +313,7 @@ Deno.serve(async (request) => {
     responseRow.answers,
   );
 
-  const ratingLabel = getRatingLabel(ratingRow.rating_value);
+  const ratingLabel = getRatingLabel(ratingRow.star_rating);
   const safeProductName = escapeHtml(submission.product_name);
   const safeReporterDisplayName = escapeHtml(reporterDisplayName);
   const safeReporterEmail = escapeHtml(user.email?.trim() || "No email on account");
@@ -387,7 +374,23 @@ Deno.serve(async (request) => {
     </div>
   `;
 
-  const smtpResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+  // Persist the report before notification; the RPC locks and rechecks stars and ownership.
+  const { data: claim, error: claimError } = await admin.rpc("claim_feedback_rating_report", {
+    p_response_id: responseRow.id,
+    p_reporter_user_id: user.id,
+    p_expected_stars: ratingRow.star_rating,
+    p_message: reporterMessage,
+  });
+  if (claimError) return json({ error: claimError.message }, 409);
+  if (!claim?.claimed) {
+    return json({
+      ok: true,
+      message: "This report is already in progress.",
+      reportStatus: "pending",
+    });
+  }
+
+  const smtpResponse = await sendNotification("https://api.smtp2go.com/v3/email/send", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -417,29 +420,7 @@ Deno.serve(async (request) => {
     return json({ error: failureMessage }, 502);
   }
 
-  if (reportTableAvailable) {
-    const { error: upsertError } = await admin.from("feedback_rating_reports").upsert(
-      {
-        test_response_id: responseRow.id,
-        reporter_user_id: user.id,
-        status: "pending",
-        message: reporterMessage,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "test_response_id,reporter_user_id" },
-    );
-
-    if (upsertError && !isMissingReportsTableError(upsertError.message)) {
-      console.error("Failed to persist feedback report state.", upsertError.message);
-      return json(
-        {
-          error:
-            "The rating changed while your report was being sent. Reload your submitted feedback.",
-        },
-        409,
-      );
-    }
-  }
-
   return json({ ok: true, message: "Report sent.", reportStatus: "pending" });
-});
+}
+
+if (import.meta.main) Deno.serve((request) => handleReport(request));

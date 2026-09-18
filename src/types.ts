@@ -1,3 +1,6 @@
+import type { StarRating } from "@test4test/design-system";
+export type { StarRating };
+
 export type ProductType = "website" | "ios" | "android";
 export type AccessLinkKind = ProductType | "figma" | "other";
 export type AccountType = "pending" | "founder" | "tester";
@@ -61,7 +64,6 @@ export type QuestionMode = "general" | "ai" | "custom";
 export type QuestionType = "multiple" | "paragraph";
 export type SubmissionStatus = "draft" | "pending_verification" | "live" | "paused" | "flagged";
 export type ResponseStatus = "approved" | "flagged" | "rejected";
-export type FeedbackRatingValue = "smiley" | "neutral" | "frowny";
 export type FeedbackReportStatus = "pending" | "resolved" | "dismissed";
 export type TestReportReason =
   "app_unavailable" | "requires_payment" | "suspicious_malware" | "other";
@@ -272,7 +274,7 @@ export interface SubmittedFeedbackCard {
   description: string;
   needsGooglePlayClosedTesters: boolean;
   submittedAt: string;
-  ratingValue: FeedbackRatingValue | null;
+  starRating: StarRating | null;
   ownerTestBackRatePercent: number;
   ownerSatisfactionRatePercent: number;
   ownerAvatarUrl?: string | null;
@@ -310,8 +312,7 @@ export interface FeedbackRating {
   id: string;
   testResponseId: string;
   ratedByUserId: string;
-  ratingValue: FeedbackRatingValue;
-  starRating: number | null;
+  starRating: StarRating;
   createdAt: string;
   updatedAt: string;
 }

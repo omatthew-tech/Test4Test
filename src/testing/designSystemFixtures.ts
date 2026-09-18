@@ -74,8 +74,7 @@ export function createDesignSystemFixtureState(search: string): AppState {
       ratedByUserId:
         seededState.submissions.find((submission) => submission.id === response.submissionId)
           ?.userId ?? "user-mateo",
-      ratingValue: "smiley" as const,
-      starRating: 5,
+      starRating: 5 as const,
       createdAt: "2026-08-18T13:00:00.000Z",
       updatedAt: "2026-08-18T13:00:00.000Z",
     }));
@@ -272,7 +271,7 @@ export function createDesignSystemFixtureState(search: string): AppState {
     feedbackRatings: [
       ...structuredClone(seededState.feedbackRatings).map((rating) =>
         parameters.get("ds-revision") === "1" && rating.testResponseId === "response-palette-1"
-          ? { ...rating, ratingValue: "neutral" as const }
+          ? { ...rating, starRating: 3 as const }
           : rating,
       ),
       ...testerProgress.feedbackRatings,
