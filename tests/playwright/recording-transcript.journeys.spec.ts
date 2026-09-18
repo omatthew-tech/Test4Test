@@ -64,8 +64,19 @@ for (const width of [390, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     await page.goto(`${route}ready`);
+    const section = page.getByRole("region", { name: "Recording transcript", exact: true });
+    await expect(page.getByRole("heading", { name: "Transcript", exact: true })).toHaveCount(0);
     const transcript = page.locator("[data-transcript-page]");
     await expect(transcript.locator("span")).not.toHaveCount(0);
+    const sectionBounds = await section.boundingBox();
+    const videoBounds = await page.locator("video").boundingBox();
+    expect(sectionBounds).not.toBeNull();
+    expect(videoBounds).not.toBeNull();
+    expect(sectionBounds!.y).toBeGreaterThan(videoBounds!.y + videoBounds!.height);
+    expect(sectionBounds!.x + sectionBounds!.width / 2).toBeCloseTo(
+      videoBounds!.x + videoBounds!.width / 2,
+      0,
+    );
     expect(
       await transcript.evaluate((element) => {
         const tops = new Set(
@@ -102,9 +113,8 @@ for (const width of [390, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
     );
-    await page
-      .locator('section[aria-labelledby="recording-transcript-heading"]')
-      .screenshot({ path: `.tmp/transcript-${width}.png` });
+    await section.screenshot({ path: `.tmp/transcript-${width}.png` });
+    await page.screenshot({ path: `.tmp/transcript-layout-${width}.png`, fullPage: true });
   });
 }
 

@@ -1289,7 +1289,9 @@ test("Recording view opens the latest video and browses available recordings", a
   ).toHaveCount(0);
   await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Recording 1 of 2: Palette Pilot")).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "Transcript" })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Recording transcript", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("Transcript unavailable", { exact: true })).toBeVisible();
 
   const previous = page.getByRole("button", { name: "Previous recording" });

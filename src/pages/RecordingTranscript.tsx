@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Button, Skeleton, Stack, Surface } from "@test4test/design-system";
+import { Alert, Button, Skeleton, Stack } from "@test4test/design-system";
 import {
   paginateTranscript,
   requestRecordingTranscript,
@@ -129,14 +129,8 @@ export function RecordingTranscript({
 
   const data = snapshot.status === "loaded" ? snapshot.data : null;
   return (
-    <Surface
-      as="section"
-      aria-labelledby="recording-transcript-heading"
-      className={styles.panel}
-      tone="subtle"
-    >
+    <section aria-label="Recording transcript" className={styles.transcript}>
       <Stack gap="sm">
-        <h2 id="recording-transcript-heading">Transcript</h2>
         {snapshot.status === "loading" ? (
           <Skeleton label="Loading transcript" className={styles.placeholder} />
         ) : null}
@@ -183,7 +177,7 @@ export function RecordingTranscript({
         ) : null}
         {data?.status === "ready" ? <TimedTranscript data={data} video={video} /> : null}
       </Stack>
-    </Surface>
+    </section>
   );
 }
 

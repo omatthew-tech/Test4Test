@@ -32,7 +32,8 @@
   align-items: center;
   grid-template-areas:
     "previous next"
-    "player player";
+    "player player"
+    "transcript transcript";
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--ds-semantic-space-stack-md) var(--ds-semantic-space-inline-md);
 }
@@ -45,6 +46,11 @@
 .nextButton {
   grid-area: next;
   justify-self: end;
+}
+
+.transcript {
+  grid-area: transcript;
+  min-width: 0;
 }
 
 .playerSurface {
@@ -81,7 +87,9 @@
 
 @media (min-width: 768px) {
   .playerNavigation {
-    grid-template-areas: "previous player next";
+    grid-template-areas:
+      "previous player next"
+      ". transcript .";
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--ds-semantic-space-inline-xl);
   }

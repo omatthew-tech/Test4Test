@@ -5,7 +5,7 @@ The recording page now loads its transcript independently of the video and optio
 ## Display and timing
 
 - The viewer displays approximately four actual wrapped lines. Hidden, inaccessible measurement text uses the same width and typography as the visible passage; resize and font-loading events recalculate the blocks.
-- Upcoming words use semantic secondary text; words become primary text at their start timestamp. Completed words remain revealed. Blocks advance at their last word's end, and the last block remains visible at the end of playback.
+- The borderless transcript is centered beneath the video, with no visible heading. Upcoming words use readable semantic tertiary text; words become primary text at their start timestamp. Completed words remain revealed. Blocks advance at their last word's end, and the last block remains visible at the end of playback.
 - The video element's `currentTime` is the only clock. Animation frames sample playback, with React updates only at transcript timing boundaries. Native media events also synchronize pauses, seeking, rate changes, buffering, replay, and replaced video elements.
 - Canonical segment punctuation is preserved. An incomplete word alignment uses the whole segment's existing timestamps. A long indivisible segment can scroll within the four-line panel. Text without timing uses a labelled, keyboard-scrollable four-line region.
 - Screen readers receive stable full transcript text, without word-by-word live announcements. Text remains selectable. Reduced motion and forced colors are supported.

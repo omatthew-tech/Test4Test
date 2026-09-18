@@ -1,10 +1,8 @@
-.panel {
-  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-subtle);
-}
-
-.panel h2 {
-  font-size: var(--ds-semantic-typography-heading-small-size);
-  line-height: var(--ds-semantic-typography-heading-small-line-height);
+.transcript {
+  width: 100%;
+  max-width: var(--ds-semantic-size-content-prose);
+  margin-inline: auto;
+  text-align: center;
 }
 
 .state {
@@ -53,7 +51,7 @@
 }
 
 .upcoming {
-  color: var(--ds-semantic-color-text-secondary);
+  color: var(--ds-semantic-color-text-tertiary);
 }
 .spoken {
   color: var(--ds-semantic-color-text-primary);

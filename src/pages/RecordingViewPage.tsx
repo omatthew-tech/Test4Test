@@ -360,18 +360,19 @@ export function RecordingViewPage() {
             >
               <ChevronRight aria-hidden="true" size={24} />
             </IconButton>
+            <div className={styles.transcript}>
+              <RecordingTranscript
+                key={`${state.currentUserId}:${playbackKey}`}
+                userId={state.currentUserId ?? ""}
+                responseId={selectedRecording.response.id}
+                versionId={requestedVersionId}
+                source={canPlay ? (playbackRecording ?? undefined) : undefined}
+                video={videoElement}
+                fixtureMode={useDesignSystemFixture}
+                fixtureScenario={searchParams.get("ds-recording-transcript")}
+              />
+            </div>
           </div>
-
-          <RecordingTranscript
-            key={`${state.currentUserId}:${playbackKey}`}
-            userId={state.currentUserId ?? ""}
-            responseId={selectedRecording.response.id}
-            versionId={requestedVersionId}
-            source={canPlay ? (playbackRecording ?? undefined) : undefined}
-            video={videoElement}
-            fixtureMode={useDesignSystemFixture}
-            fixtureScenario={searchParams.get("ds-recording-transcript")}
-          />
         </Stack>
       ) : (
         <EmptyState
