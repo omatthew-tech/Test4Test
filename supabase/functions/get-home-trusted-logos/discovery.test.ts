@@ -165,30 +165,28 @@ Deno.test(
   },
 );
 
-Deno.test(
-  "all six curated sources have validated local assets and recorded provenance",
-  async () => {
-    const names = [
-      "../../../../public/brand/test4test-mark.svg",
-      "../../../../public/images/trusted-by/vidsyndicate.png",
-      "../../../../public/images/trusted-by/pinch.png",
-      "../../../../public/images/trusted-by/akari.svg",
-      "../../../../public/images/trusted-by/mytinerary.png",
-      "../../../../public/images/trusted-by/loventro.webp",
-    ];
-    equal(verifiedSources.length, 6);
-    for (const [index, source] of verifiedSources.entries()) {
-      // Resolve from this module's directory, three levels below the repository root.
-      const file = new URL(names[index].replace("../../../../", "../../../"), import.meta.url);
-      const bytes = await Deno.readFile(file);
-      const asset = validateLogo({
-        bytes,
-        url: source.imageUrl,
-        contentType: source.imageUrl.endsWith(".svg") ? "image/svg+xml" : "",
-      });
-      ok(asset.bytes.length > 0);
-      ok(source.sourcePage.startsWith("https://"));
-      ok(source.expectedDestination.startsWith("https://"));
-    }
-  },
-);
+Deno.test("all curated sources have validated local assets and recorded provenance", async () => {
+  const names = [
+    "../../../../public/brand/test4test-mark.svg",
+    "../../../../public/images/trusted-by/vidsyndicate.png",
+    "../../../../public/images/trusted-by/pinch.png",
+    "../../../../public/images/trusted-by/akari.svg",
+    "../../../../public/images/trusted-by/mytinerary.png",
+    "../../../../public/images/trusted-by/loventro.webp",
+    "../../../../public/images/trusted-by/planfinansowy.png",
+  ];
+  equal(verifiedSources.length, names.length);
+  for (const [index, source] of verifiedSources.entries()) {
+    // Resolve from this module's directory, three levels below the repository root.
+    const file = new URL(names[index].replace("../../../../", "../../../"), import.meta.url);
+    const bytes = await Deno.readFile(file);
+    const asset = validateLogo({
+      bytes,
+      url: source.imageUrl,
+      contentType: source.imageUrl.endsWith(".svg") ? "image/svg+xml" : "",
+    });
+    ok(asset.bytes.length > 0);
+    ok(source.sourcePage.startsWith("https://"));
+    ok(source.expectedDestination.startsWith("https://"));
+  }
+});

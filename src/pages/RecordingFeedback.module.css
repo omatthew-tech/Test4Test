@@ -8,6 +8,31 @@
   overflow-wrap: anywhere;
 }
 
+.shareLink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.shareDialog button[aria-label="Close"] {
+  flex-shrink: 0;
+}
+
+.shareLink > div {
+  flex: 1 1 var(--ds-semantic-size-content-compact-form);
+  min-width: 0;
+}
+
+.shareField {
+  color: var(--ds-semantic-color-text-primary);
+  background: var(--ds-semantic-color-surface-inset);
+}
+
+.copyError {
+  color: var(--ds-semantic-color-status-danger);
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -33,6 +58,16 @@
   float: inline-start;
   width: auto;
   margin-inline-end: var(--ds-semantic-space-inline-md);
+}
+
+/* Retain the accessible group name without reserving space after saving. */
+.rating[data-rated="true"] fieldset > legend {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
 }
 
 .feedback .rating fieldset input:not(:disabled) + label:hover {

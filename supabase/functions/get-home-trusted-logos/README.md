@@ -16,6 +16,8 @@ normalized destination both match. Website redirects do not rename the card.
 - HTTPS is assumed for destinations without a scheme. Each redirect is validated.
   DNS answers must all be public; HTTP connects to the selected address directly,
   with the original Host header and TLS server name, preventing DNS rebinding.
+  A pinned Undici socket connector preserves TLS SNI and certificate verification
+  in Supabase's hosted runtime, whose `node:https` shim ignores `servername`.
 - No cookies, credentials, compression, private addresses, custom ports, or HTTPS
   downgrade redirects. Three redirects, 2MB per resource, eight image candidates,
   and a 15-second discovery deadline bound network work.
@@ -32,6 +34,8 @@ normalized destination both match. Website redirects do not rename the card.
   destination. Images use content-addressed paths in public Storage.
 - Logs contain event codes and submission IDs, not destination URLs, credentials,
   response bodies, or private test information.
+- PlanFinansowy24 uses the verified artwork from its public Google Play listing;
+  hosted requests do not consistently receive structured artwork on the listing.
 
 ## Validation
 

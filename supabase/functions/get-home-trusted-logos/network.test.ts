@@ -4,8 +4,40 @@ import {
   normalizeSourceUrl,
   resolvePublicAddress,
   followPublicRedirects,
+  createPinnedConnector,
 } from "./network.ts";
 import type { lookup } from "node:dns/promises";
+import type { buildConnector } from "undici";
+
+Deno.test(
+  "pinned HTTPS uses the validated IP while preserving the original TLS server name",
+  () => {
+    const connections: buildConnector.Options[] = [];
+    const connect: buildConnector.connector = (options, callback) => {
+      connections.push(options);
+      callback(new Error("test socket"), null);
+    };
+    let failures = 0;
+    for (const address of ["8.8.8.8", "2606:4700:4700::1111"]) {
+      const pinned = createPinnedConnector(
+        new URL("https://example.com/icon.png"),
+        address,
+        connect,
+      );
+      pinned({ hostname: "example.com", protocol: "https:", port: "443" }, (error, socket) => {
+        equal(error?.message, "test socket");
+        equal(socket, null);
+        failures++;
+      });
+      equal(connections.at(-1)?.hostname, address);
+      equal(connections.at(-1)?.servername, "example.com");
+      equal(connections.at(-1)?.port, "443");
+    }
+    equal(failures, 2);
+    throws(() => createPinnedConnector(new URL("https://example.com"), "127.0.0.1", connect));
+    equal(connections.length, 2);
+  },
+);
 
 Deno.test("public address checks cover private, encoded, mapped and IPv6 destinations", () => {
   for (const address of [

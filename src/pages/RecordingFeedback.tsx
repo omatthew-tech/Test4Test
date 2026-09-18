@@ -1,7 +1,16 @@
 import { readStarRating } from "../lib/starRatings";
 import { useEffect, useId, useRef, useState } from "react";
-import { Coins, MessageCircle } from "lucide-react";
-import { Alert, Button, Dialog, Link, RatingControl, Stack } from "@test4test/design-system";
+import { Check, Coins, Copy, MessageCircle, Share2 } from "lucide-react";
+import {
+  Alert,
+  Button,
+  Dialog,
+  Link,
+  RatingControl,
+  Stack,
+  TextField,
+} from "@test4test/design-system";
+import { createRecordingShareUrl } from "../lib/recordingShare";
 import {
   loadRecordingContact,
   loadRecordingRating,
@@ -39,7 +48,11 @@ export function RecordingFeedback({
   const [ratingError, setRatingError] = useState("");
   const [ratingStatus, setRatingStatus] = useState("");
   const [retry, setRetry] = useState(0);
-  const [dialog, setDialog] = useState<"tip" | "message" | null>(null);
+  const [dialog, setDialog] = useState<"tip" | "message" | "share" | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareError, setShareError] = useState("");
+  const [shareRetry, setShareRetry] = useState(0);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
   const [contact, setContact] = useState<RecordingContact | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactError, setContactError] = useState("");
@@ -74,7 +87,7 @@ export function RecordingFeedback({
   }, [response.id, userId, fixtureMode, fixtureKey, retry]);
 
   useEffect(() => {
-    if (!dialog || !response.testerUserId) return;
+    if (!dialog || dialog === "share" || !response.testerUserId) return;
     let cancelled = false;
     setContactLoading(true);
     setContactError("");
@@ -95,6 +108,28 @@ export function RecordingFeedback({
       cancelled = true;
     };
   }, [dialog, response.testerUserId, fixtureMode, fixtureContact, contactRetry]);
+
+  useEffect(() => {
+    if (dialog !== "share") return;
+    let cancelled = false;
+    setShareUrl("");
+    setShareError("");
+    setCopyStatus("idle");
+    void createRecordingShareUrl(response.id)
+      .then((url) => {
+        if (!cancelled) setShareUrl(url);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setShareError(
+            error instanceof Error ? error.message : "The recording link could not be created.",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dialog, response.id, shareRetry]);
 
   useEffect(() => {
     if (ratingLoading || !focusAfterSubmit.current) return;
@@ -135,7 +170,7 @@ export function RecordingFeedback({
         { label: "Cash App", value: contact.cashAppHandle },
       ].filter((method) => method.value?.trim())
     : [];
-  const openDialog = (value: "tip" | "message") => {
+  const openDialog = (value: "tip" | "message" | "share") => {
     setContact(null);
     setContactError("");
     setRequestStatus("");
@@ -147,6 +182,7 @@ export function RecordingFeedback({
       <div className={styles.toolbar}>
         <form
           className={styles.rating}
+          data-rated={rating !== null}
           ref={ratingForm}
           onSubmit={(event) => {
             event.preventDefault();
@@ -204,6 +240,15 @@ export function RecordingFeedback({
             <MessageCircle aria-hidden="true" />
             Message
           </Button>
+          <Button
+            type="button"
+            variant="quiet"
+            className={styles.action}
+            onClick={() => openDialog("share")}
+          >
+            <Share2 aria-hidden="true" />
+            Share
+          </Button>
         </div>
       </div>
       {ratingError ? (
@@ -217,7 +262,7 @@ export function RecordingFeedback({
         </Alert>
       ) : null}
       <Dialog
-        open={dialog !== null}
+        open={dialog === "tip" || dialog === "message"}
         onOpenChange={(open) => {
           if (!open) setDialog(null);
         }}
@@ -311,6 +356,67 @@ export function RecordingFeedback({
           ) : (
             <p>This tester’s email address is unavailable.</p>
           )}
+        </Stack>
+      </Dialog>
+      <Dialog
+        open={dialog === "share"}
+        className={styles.shareDialog}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null);
+        }}
+        title="Share recording"
+        description="Anyone with this link can view this recording. No sign up required."
+      >
+        <Stack gap="md">
+          {shareError ? (
+            <Alert tone="danger">
+              {shareError}
+              <Button variant="quiet" onClick={() => setShareRetry((value) => value + 1)}>
+                Try again
+              </Button>
+            </Alert>
+          ) : !shareUrl ? (
+            <p role="status">Creating recording link…</p>
+          ) : (
+            <div className={styles.shareLink}>
+              <TextField
+                className={styles.shareField}
+                label="Recording link"
+                value={shareUrl}
+                readOnly
+                onFocus={(event) => event.currentTarget.select()}
+                onClick={(event) => event.currentTarget.select()}
+              />
+              <Button
+                type="button"
+                loading={copyStatus === "copying"}
+                loadingLabel="Copying…"
+                onClick={async () => {
+                  setCopyStatus("copying");
+                  try {
+                    await navigator.clipboard.writeText(shareUrl);
+                    setCopyStatus("copied");
+                  } catch {
+                    setCopyStatus("error");
+                  }
+                }}
+              >
+                {copyStatus === "copied" ? (
+                  <Check aria-hidden="true" />
+                ) : (
+                  <Copy aria-hidden="true" />
+                )}
+                {copyStatus === "copied" ? "Copied" : "Copy link"}
+              </Button>
+            </div>
+          )}
+          <p role="status" className={copyStatus === "error" ? styles.copyError : "ds-sr-only"}>
+            {copyStatus === "copied"
+              ? "Recording link copied."
+              : copyStatus === "error"
+                ? "We couldn’t copy the link. Select the recording link and copy it manually."
+                : ""}
+          </p>
         </Stack>
       </Dialog>
     </div>

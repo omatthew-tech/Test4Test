@@ -4,7 +4,8 @@
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.100.1",
     "linkedom": "npm:linkedom@0.18.13",
     "ipaddr.js": "npm:ipaddr.js@2.5.0",
-    "image-size": "npm:image-size@2.0.2"
+    "image-size": "npm:image-size@2.0.2",
+    "undici": "npm:undici@6.28.1"
   },
   "tasks": {
     "test": "deno test --allow-env --allow-read *.test.ts",

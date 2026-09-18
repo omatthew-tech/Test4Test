@@ -11,6 +11,7 @@ const routeTitles: Record<string, string> = {
   "/share": "Share",
   "/analytics": "Analyze",
   "/recordings": "Recordings",
+  "/recordings/shared": "Shared recording",
   "/email-preview": "Email preview",
   "/submissions": "My reviews",
   "/credits": "Credits",

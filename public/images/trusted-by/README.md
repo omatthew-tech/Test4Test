@@ -15,3 +15,7 @@ fixtures and visual review. Production discovery stores validated copies in the
 Exact original image URLs, submission IDs, and expected destinations are versioned
 in `supabase/functions/get-home-trusted-logos/sources.ts`. Product names remain
 author-provided. Source logos retain their original brand colors.
+
+`planfinansowy.png` was verified on 2026-09-18 against the icon in the public
+[PlanFinansowy24 Google Play listing](https://play.google.com/store/apps/details?id=pl.planfinansowy24.mobile).
+It is an offline verification fixture; the existing design-review fixture set is unchanged.

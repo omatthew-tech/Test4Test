@@ -3,7 +3,15 @@ import { fetchPublicResource } from "./network.ts";
 import { validateLogo } from "./discovery.ts";
 import { verifiedSources } from "./sources.ts";
 
-const names = ["test4test", "vidsyndicate", "pinch", "akari", "mytinerary", "loventro"];
+const names = [
+  "test4test",
+  "vidsyndicate",
+  "pinch",
+  "akari",
+  "mytinerary",
+  "loventro",
+  "planfinansowy",
+];
 await Deno.mkdir("public/images/trusted-by", { recursive: true });
 for (const [index, source] of verifiedSources.entries()) {
   if (source.local) continue;

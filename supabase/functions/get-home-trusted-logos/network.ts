@@ -1,7 +1,6 @@
 import { lookup } from "node:dns/promises";
-import { request as httpRequest } from "node:http";
-import { request as httpsRequest } from "node:https";
 import ipaddr from "ipaddr.js";
+import { buildConnector, Client } from "undici";
 
 export const MAX_BYTES = 2 * 1024 * 1024;
 export const DISCOVERY_TIMEOUT_MS = 15_000;
@@ -65,7 +64,27 @@ interface HttpResult extends PageResource {
   location?: string;
 }
 
-// Connect to the validated IP itself. TLS still authenticates the original hostname.
+// Supabase's node:https shim uses fetch and ignores `servername`. Use an explicit
+// socket connector so pinning the IP preserves SNI and certificate verification.
+export function createPinnedConnector(
+  url: URL,
+  address: string,
+  connect = buildConnector({ timeout: DISCOVERY_TIMEOUT_MS, rejectUnauthorized: true }),
+): buildConnector.connector {
+  if (!isPublicAddress(address)) throw new LogoError("unsafe_address");
+  return (options, callback) =>
+    connect(
+      {
+        ...options,
+        hostname: address,
+        servername: url.hostname.replace(/^\[|\]$/g, ""),
+        protocol: url.protocol,
+        port: url.protocol === "https:" ? "443" : "80",
+      },
+      callback,
+    );
+}
+
 // A second, uncontrolled DNS lookup never occurs, including after redirects.
 async function requestPinned(url: URL, signal: AbortSignal): Promise<HttpResult> {
   signal.throwIfAborted();
@@ -78,76 +97,68 @@ async function requestPinned(url: URL, signal: AbortSignal): Promise<HttpResult>
     if (onAbort) signal.removeEventListener("abort", onAbort);
   });
   signal.throwIfAborted();
-  return await new Promise((resolve, reject) => {
-    const request = (url.protocol === "https:" ? httpsRequest : httpRequest)(
-      {
-        protocol: url.protocol,
-        hostname: target.address,
-        family: target.family,
-        port: url.protocol === "https:" ? 443 : 80,
-        servername: url.hostname.replace(/^\[|\]$/g, ""),
-        path: `${url.pathname}${url.search}`,
-        method: "GET",
-        agent: false,
-        signal,
-        headers: {
-          Host: url.host,
-          "User-Agent": "Test4Test-BrandIcons/1.0 (+https://test4test.io)",
-          Accept: "text/html,application/manifest+json,application/json,image/*;q=0.9,*/*;q=0.1",
-          "Accept-Encoding": "identity",
-        },
-      },
-      (response) => {
-        const status = response.statusCode ?? 500;
-        const contentType = String(response.headers["content-type"] ?? "")
-          .split(";")[0]
-          .trim();
-        if ([301, 302, 303, 307, 308].includes(status)) {
-          resolve({
-            status,
-            location: response.headers.location,
-            url: url.href,
-            contentType,
-            bytes: new Uint8Array(),
-          });
-          response.destroy();
-          return;
-        }
-        if (
-          status !== 200 ||
-          Number(response.headers["content-length"] ?? 0) > MAX_BYTES ||
-          (response.headers["content-encoding"] &&
-            response.headers["content-encoding"] !== "identity")
-        ) {
-          reject(new LogoError(status !== 200 ? "upstream_status" : "invalid_size_or_encoding"));
-          response.destroy();
-          return;
-        }
-        const chunks: Uint8Array[] = [];
-        let size = 0;
-        response.on("data", (chunk: Uint8Array) => {
-          size += chunk.byteLength;
-          if (size > MAX_BYTES) {
-            reject(new LogoError("too_large"));
-            response.destroy();
-          } else chunks.push(chunk);
-        });
-        response.on("error", reject);
-        response.on("aborted", () => reject(new LogoError("upstream_aborted")));
-        response.on("end", () => {
-          const bytes = new Uint8Array(size);
-          let offset = 0;
-          for (const chunk of chunks) {
-            bytes.set(chunk, offset);
-            offset += chunk.byteLength;
-          }
-          resolve({ status, url: url.href, contentType, bytes });
-        });
-      },
-    );
-    request.on("error", reject);
-    request.end();
+  const client = new Client(url.origin, {
+    connect: createPinnedConnector(url, target.address),
+    headersTimeout: DISCOVERY_TIMEOUT_MS,
+    bodyTimeout: DISCOVERY_TIMEOUT_MS,
+    maxResponseSize: MAX_BYTES,
+    // Keep HTTP/1.1 alive until the framed response is consumed. Some origins
+    // close without TLS close_notify when asked to close, which older hosted
+    // Deno versions surface as UnexpectedEof. The finally block closes our socket.
+    pipelining: 1,
   });
+  try {
+    const {
+      statusCode: status,
+      headers,
+      body,
+    } = await client.request({
+      path: `${url.pathname}${url.search}`,
+      method: "GET",
+      signal,
+      headers: {
+        Host: url.host,
+        "User-Agent": "Test4Test-BrandIcons/1.0 (+https://test4test.io)",
+        Accept: "text/html,application/manifest+json,application/json,image/*;q=0.9,*/*;q=0.1",
+        "Accept-Encoding": "identity",
+      },
+    });
+    const contentType = String(headers["content-type"] ?? "")
+      .split(";")[0]
+      .trim();
+    if ([301, 302, 303, 307, 308].includes(status)) {
+      return {
+        status,
+        location: typeof headers.location === "string" ? headers.location : undefined,
+        url: url.href,
+        contentType,
+        bytes: new Uint8Array(),
+      };
+    }
+    if (
+      status !== 200 ||
+      Number(headers["content-length"] ?? 0) > MAX_BYTES ||
+      (headers["content-encoding"] && headers["content-encoding"] !== "identity")
+    ) {
+      throw new LogoError(status !== 200 ? "upstream_status" : "invalid_size_or_encoding");
+    }
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    for await (const chunk of body) {
+      size += chunk.byteLength;
+      if (size > MAX_BYTES) throw new LogoError("too_large");
+      chunks.push(chunk);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { status, url: url.href, contentType, bytes };
+  } finally {
+    await client.destroy();
+  }
 }
 
 export async function followPublicRedirects(

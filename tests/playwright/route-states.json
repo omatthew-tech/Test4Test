@@ -75,6 +75,11 @@
     "path": "/recordings?ds-user=user-mateo&ds-recordings=2"
   },
   {
+    "name": "shared-recording",
+    "routePattern": "/recordings/shared",
+    "path": "/recordings/shared#demo-response-palette-1"
+  },
+  {
     "name": "email-preview",
     "routePattern": "/email-preview",
     "path": "/email-preview?ds-user=user-avery"

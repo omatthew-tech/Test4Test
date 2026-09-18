@@ -10,11 +10,20 @@ import {
   getR2RecordingEnvironment,
   r2Fetch,
 } from "../_shared/r2-recordings.ts";
+import {
+  assertSharedRecordingSource,
+  createRecordingShare,
+  resolveRecordingShare,
+  RecordingShareError,
+  type ShareSource,
+} from "../_shared/recording-share.ts";
 
 interface RecordingAccessRequest {
   responseId?: string;
   versionId?: string;
   download?: boolean;
+  action?: "share";
+  shareToken?: string;
 }
 
 interface ResponseRow {
@@ -30,6 +39,7 @@ interface ResponseRow {
 
 interface SubmissionRow {
   user_id: string;
+  product_name: string;
 }
 
 Deno.serve(async (request) => {
@@ -52,25 +62,48 @@ Deno.serve(async (request) => {
     );
   }
 
-  const authHeader = request.headers.get("Authorization") ?? "";
-  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  if (!accessToken) {
-    return recordingJson({ error: "Unauthorized." }, 401);
-  }
-
   const admin = createRecordingAdminClient(env);
-  const {
-    data: { user },
-    error: userError,
-  } = await admin.auth.getUser(accessToken);
-
-  if (userError || !user) {
-    return recordingJson({ error: userError?.message ?? "Unauthorized." }, 401);
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return recordingJson({ error: "Invalid request." }, 400);
   }
-
-  const payload = (await request.json().catch(() => ({}))) as RecordingAccessRequest;
-  const responseId = payload.responseId?.trim() ?? "";
+  const payload = body as RecordingAccessRequest;
+  let sharedSource: ShareSource | null = null;
+  let userId = "";
+  if (payload.shareToken !== undefined) {
+    // A capability grants only playback of its own source, never another ID,
+    // historical version, download operation, or creation of a new share.
+    if (
+      payload.responseId !== undefined ||
+      payload.versionId !== undefined ||
+      payload.action !== undefined ||
+      payload.download !== undefined
+    ) {
+      return recordingJson({ error: "Invalid shared recording request." }, 400);
+    }
+    try {
+      sharedSource = await resolveRecordingShare(admin, payload.shareToken);
+    } catch (error) {
+      return recordingJson(
+        { error: error instanceof Error ? error.message : "Recording unavailable." },
+        error instanceof RecordingShareError ? error.status : 500,
+      );
+    }
+  } else {
+    const accessToken = (request.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!accessToken) return recordingJson({ error: "Unauthorized." }, 401);
+    const {
+      data: { user },
+      error,
+    } = await admin.auth.getUser(accessToken);
+    if (error || !user) return recordingJson({ error: "Unauthorized." }, 401);
+    userId = user.id;
+  }
+  const responseId =
+    sharedSource?.response_id ??
+    (typeof payload.responseId === "string" ? payload.responseId.trim() : "");
 
   if (!responseId) {
     return recordingJson({ error: "Missing response id." }, 400);
@@ -92,7 +125,7 @@ Deno.serve(async (request) => {
 
   const { data: submissionRow, error: submissionError } = await admin
     .from("submissions")
-    .select("user_id")
+    .select("user_id, product_name")
     .eq("id", responseRecord.submission_id)
     .single();
 
@@ -102,10 +135,27 @@ Deno.serve(async (request) => {
 
   const submissionRecord = submissionRow as SubmissionRow;
   const isAllowed =
-    user.id === responseRecord.tester_user_id || user.id === submissionRecord.user_id;
+    sharedSource || userId === responseRecord.tester_user_id || userId === submissionRecord.user_id;
 
   if (!isAllowed) {
     return recordingJson({ error: "You do not have permission to access this recording." }, 403);
+  }
+
+  if (sharedSource) {
+    try {
+      assertSharedRecordingSource(sharedSource, responseRecord);
+    } catch (error) {
+      return recordingJson(
+        { error: error instanceof Error ? error.message : "Recording unavailable." },
+        410,
+      );
+    }
+  }
+  if (
+    payload.action !== undefined &&
+    (payload.action !== "share" || payload.versionId !== undefined)
+  ) {
+    return recordingJson({ error: "Invalid recording share request." }, 400);
   }
 
   if (payload.versionId !== undefined) {
@@ -125,6 +175,22 @@ Deno.serve(async (request) => {
     return recordingJson({ error: "Recording has been deleted." }, 410);
   if (!responseRecord.recording_bucket || !responseRecord.recording_path) {
     return recordingJson({ error: "Recording not available for this response." }, 404);
+  }
+
+  if (payload.action === "share") {
+    try {
+      const shareToken = await createRecordingShare(admin, {
+        response_id: responseId,
+        recording_bucket: responseRecord.recording_bucket,
+        recording_path: responseRecord.recording_path,
+      });
+      return recordingJson({ ok: true, shareToken });
+    } catch (error) {
+      return recordingJson(
+        { error: error instanceof Error ? error.message : "Recording sharing is unavailable." },
+        error instanceof RecordingShareError ? error.status : 500,
+      );
+    }
   }
 
   let signedUrl = "";
@@ -191,6 +257,7 @@ Deno.serve(async (request) => {
     ok: true,
     url: signedUrl,
     fileName,
+    ...(sharedSource ? { productName: submissionRecord.product_name } : {}),
     expiresInSeconds: 60 * 5,
   });
 });

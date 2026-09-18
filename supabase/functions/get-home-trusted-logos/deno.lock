@@ -4,7 +4,8 @@
     "npm:@supabase/supabase-js@2.100.1": "2.100.1",
     "npm:image-size@2.0.2": "2.0.2",
     "npm:ipaddr.js@2.5.0": "2.5.0",
-    "npm:linkedom@0.18.13": "0.18.13"
+    "npm:linkedom@0.18.13": "0.18.13",
+    "npm:undici@6.28.1": "6.28.1"
   },
   "npm": {
     "@supabase/auth-js@2.100.1": {
@@ -191,6 +192,9 @@
     "undici-types@8.9.0": {
       "integrity": "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="
     },
+    "undici@6.28.1": {
+      "integrity": "sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=="
+    },
     "ws@8.21.3": {
       "integrity": "sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw=="
     }
@@ -200,7 +204,8 @@
       "npm:@supabase/supabase-js@2.100.1",
       "npm:image-size@2.0.2",
       "npm:ipaddr.js@2.5.0",
-      "npm:linkedom@0.18.13"
+      "npm:linkedom@0.18.13",
+      "npm:undici@6.28.1"
     ]
   }
 }

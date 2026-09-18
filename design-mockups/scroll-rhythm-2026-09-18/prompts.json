@@ -1,0 +1,68 @@
+{
+  "mode": "built-in image_gen",
+  "scope": "Preview mockups only; no site implementation",
+  "reference": "C:/Users/matth/AppData/Local/Temp/codex-clipboard-7cf5a93c-66b8-4759-864c-2ef721634a59.png",
+  "base": "Use case: ui-mockup.\nAsset type: high-fidelity desktop website mockup, a single image.\nEdit target: the attached screenshot of the Test4Test homepage. Preserve ALL webpage content visible in the screenshot verbatim, with the same existing two product screenshots and the same three process text columns at the top. This is a visual styling exploration ONLY. Do not invent, add, delete, rewrite, duplicate or paraphrase content. Do not add section numbers, labels, badges, buttons, icons, navigation, headings, annotations, concept titles, logos, decoration illustrations or photos.\nFraming: render only the website portion, omit the browser chrome and Windows taskbar because they are not website content. Include the entire provided webpage area and both feedback rows; no clipping. Crisp flat front-on digital website screenshot, generous readable type, landscape 2048x1280. Keep the top three text columns as a quiet preceding section.\nPreserve these exact text strings:\n\"Create your test\"\n\"Create your first test in seconds. Answer a few questions or use AI\"\n\"Get testers\"\n\"Share your test to unlimited users or earn credits by testing other founder's tests\"\n\"Gain insights\"\n\"Manage every insight from one dashboard. Watch your tests, clip or export it to your favorite LLM\"\n\"2 paid free ways to get feedback\" with ONLY \"paid\" struck through and \"free\" in strong brand blue.\n\"Earn 1:1 credits\"\n\"Earn credits 1:1 (we don't take a cut)\"\n\"Bring your own testers\"\n\"There are no limits - bring as many as you want\"\nExisting first screenshot contains the existing green check icon and \"You earned 1 credit\" and \"Test submitted. Thanks for your feedback.\"\nExisting second screenshot is the New message email composer: \"New message\", \"To\", \"Alex\", \"Can you try Palette Pilot?\", \"Hey Alex,\", \"Can you please try out my app?\", \"test4test.io/test/palette-pilot\", \"Send\". Copy it faithfully from the image.\nDesign system: Geist/Inter sans serif; semantic canvas/surface white #FFFFFF, semantic subtle background #F4F7F9, semantic action tint #E1F6FF, semantic accent border #A0D7F4, subtle border #EBEFF2, primary text #242A31, secondary text #4A545C, primary action #007BAE, strong action #02547F. Existing success check stays green. Use only these existing surfaces/colors. Panel corners 16 or 24, existing image corners 12. No dark sections, no gradients/glows, no extra visual content. Keep polished restrained SaaS style.\nMain goal: break the long expanse of white into a coherent visual rhythm with clearly intentional surface changes. Keep every content item and the original order. ",
+  "concepts": [
+    {
+      "id": "01",
+      "name": "Full-width blue chapter",
+      "slug": "full-width-blue",
+      "idea": "Keep the preceding three process text columns on white. Put the entire feedback section (heading + both alternating image/text rows) on one uninterrupted edge-to-edge flat pale blue #E1F6FF band, with squared full-width edges at the top and bottom. Keep the existing two screenshots in their white interiors and pale-blue image frames, refined subtle borders. No surrounding inset panel. Preserve the zigzag layout from the original. Make a strong clear transition from white to pale blue, and use sensible compact section padding."
+    },
+    {
+      "id": "02",
+      "name": "Inset rounded chapter",
+      "slug": "inset-rounded-chapter",
+      "idea": "The preceding process copy stays on white. Enclose heading and both zigzag feedback rows in one large, wide, softly rounded #E1F6FF panel, inset from the left and right edges with visible white gutters. One continuous panel, 24px corners, ample inner padding. Keep both media previews inset in white surfaces, original left/right alternating content arrangement. The silhouette of the chapter should feel distinct from a full-width horizontal band."
+    },
+    {
+      "id": "03",
+      "name": "Alternating horizontal bands",
+      "slug": "alternating-horizontal-bands",
+      "idea": "Keep process copy and feedback heading on white. Use two independent edge-to-edge rectangular horizontal bands for the two feedback rows. First row with first screenshot left and Earn copy right uses #E1F6FF. Second row with Bring copy left and email screenshot right uses #F4F7F9. The two bands meet with a fine white gutter. Each background extends to both viewport edges. Keep screenshot interiors white. Avoid an outer rounded container."
+    },
+    {
+      "id": "04",
+      "name": "White cards on gray",
+      "slug": "white-cards-on-gray",
+      "idea": "Keep process copy white. Give the complete feedback chapter a flat #F4F7F9 edge-to-edge background. Heading sits directly on gray. Below it, each original image/copy row is grouped inside its own broad white rounded 16px horizontal card with subtle #EBEFF2 border. First card image left/copy right; second card copy left/image right. Medium gray gap between cards and gray outer gutters. Keep original media blue frames. Clear two-card rhythm."
+    },
+    {
+      "id": "05",
+      "name": "Two-column comparison",
+      "slug": "two-column-comparison",
+      "idea": "Rearrange only the SAME existing feedback content into a balanced two-column layout under its unchanged centered heading. Entire feedback chapter #F4F7F9. Left column is a pale-blue panel holding first screenshot at top then Earn 1:1 credits and its description below; right column is a pale-blue panel holding second email screenshot at top then Bring your own testers and its description below. Equal media heights and panel sizes. No new elements or labels. All three existing process copy columns stay above on white. This more compact side-by-side composition should preserve every word and both media screenshots."
+    },
+    {
+      "id": "06",
+      "name": "Tinted text panels",
+      "slug": "tinted-text-panels",
+      "idea": "Keep process copy white, feedback heading white. Preserve the original zigzag two-row layout. Put each feedback row inside one seamless 2-column rectangular split panel with 16px outer corners. For first row, media half uses #F4F7F9 and copy half uses #E1F6FF. For second row, copy half uses #E1F6FF and media half uses #F4F7F9. The blue behind each copy block must be substantial, not a tiny text highlight. Each row reads as one connected module. White narrow gap between rows."
+    },
+    {
+      "id": "07",
+      "name": "Stepped color fields",
+      "slug": "stepped-color-fields",
+      "idea": "Keep process copy and feedback heading white. Preserve zigzag layout. Use big flat orthogonal background fields behind the feedback rows: first row has pale blue extending from the LEFT viewport edge across about 75% of the page width, stopping after its right-hand text block; second row has cool gray extending from the RIGHT viewport edge across about 75% of width, stopping after its left-hand text. The offset outer margins create a staircase rhythm down the page. Field corners use 24px on inset ends and square at viewport edges. Both screenshots remain their original rectangles. No ornamental blobs, no new copy."
+    },
+    {
+      "id": "08",
+      "name": "Blue heading, gray body",
+      "slug": "blue-heading-gray-body",
+      "idea": "Keep the process copy in its original white section. Create one full-width pale-blue heading band behind only the existing feedback title with substantial vertical padding. Under that title band, the entire body with both zigzag image/text rows is cool gray #F4F7F9, edge to edge. Keep existing screenshot blue mats and white screenshot interiors. Add one subtle fine divider between the two rows. No enclosing cards around whole rows. Strong horizontal chapter-header rhythm using only the existing heading."
+    },
+    {
+      "id": "09",
+      "name": "Continuous blue canvas",
+      "slug": "continuous-blue-canvas",
+      "idea": "Make all the website background shown in the reference a continuous flat #E1F6FF surface, including process text above and feedback chapter. Separate the preceding 3-column process text with a subtle horizontal #A0D7F4 border. Keep the feedback heading directly on blue. Put the two existing screenshot images on white mats, and each corresponding copy block inside a generous white rounded 16px panel. Preserve original zigzag locations. Four white content islands float in a calm blue field, clean consistent spacing, no additional content or decorative shapes."
+    },
+    {
+      "id": "10",
+      "name": "Editorial title rail",
+      "slug": "editorial-title-rail",
+      "idea": "Keep the 3 original process copy columns across the top on white. Recompose the feedback chapter as an editorial two-part composition: a pale-blue vertical title panel on the LEFT, about one quarter of chapter width, containing the SAME existing '2 paid free ways to get feedback' heading broken cleanly onto multiple lines with paid struck and free blue. On the RIGHT remaining three quarters, retain both feedback image/copy rows in their original order and alternating image arrangement, stacked vertically on cool gray #F4F7F9. The title panel and right content panel align in height and form one large rectangular section, subtle outer 24px corners. Keep both media large enough to read, all text intact. No extra numbers or labels. This is a structurally different chapter layout, not a minor color variation."
+    }
+  ]
+}

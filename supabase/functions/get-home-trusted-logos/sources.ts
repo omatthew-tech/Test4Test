@@ -48,4 +48,13 @@ export const verifiedSources: SourceOverride[] = [
     imageUrl:
       "https://storage.googleapis.com/indie-hackers.appspot.com/product-avatars/loventro/200x200_loventro.webp",
   },
+  {
+    // Verified against the public Google Play listing on 2026-09-18. The listing
+    // does not consistently expose its structured artwork to hosted requests.
+    submissionId: "bc742c65-37d8-4195-b88b-33f0f10ae08a",
+    expectedDestination: "https://play.google.com/store/apps/details?id=pl.planfinansowy24.mobile",
+    sourcePage: "https://play.google.com/store/apps/details?id=pl.planfinansowy24.mobile",
+    imageUrl:
+      "https://play-lh.googleusercontent.com/FMJ7C3q2gKFoKBtF6eDehhuLzK4p5oNYDhqaJI4mYscII0IMRTgm3GPF4q-gBmX3mGF3VWVrYHgPVMJPbNm2sA",
+  },
 ];

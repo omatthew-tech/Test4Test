@@ -41,6 +41,9 @@ const ProfilePage = lazy(() =>
 const RecordingViewPage = lazy(() =>
   import("./pages/RecordingViewPage").then((m) => ({ default: m.RecordingViewPage })),
 );
+const SharedRecordingPage = lazy(() =>
+  import("./pages/SharedRecordingPage").then((m) => ({ default: m.SharedRecordingPage })),
+);
 const ReviseSubmissionPage = lazy(() =>
   import("./pages/ReviseSubmissionPage").then((m) => ({ default: m.ReviseSubmissionPage })),
 );
@@ -280,6 +283,7 @@ export default function App({
                   </AuthenticatedRoute>
                 }
               />
+              <Route path="/recordings/shared" element={<SharedRecordingPage />} />
               <Route
                 path="/recordings"
                 element={

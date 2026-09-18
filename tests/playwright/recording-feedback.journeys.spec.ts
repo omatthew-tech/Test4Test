@@ -21,6 +21,7 @@ for (const viewport of [
         );
     await expect(rating.getByRole("radio")).toHaveCount(5);
     await expect(rating.getByRole("radio", { name: "1 star", exact: true })).toBeEnabled();
+    await expect(rating.locator("legend")).toHaveCSS("opacity", "1");
     await expect(page.getByRole("button", { name: "Clear rating" })).toHaveCount(0);
     await expect(submit).toHaveCount(0);
     await rating.locator("label").nth(4).hover();
@@ -40,7 +41,8 @@ for (const viewport of [
     ).toBe(true);
     const tip = page.getByRole("button", { name: "Tip", exact: true });
     const message = page.getByRole("button", { name: "Message", exact: true });
-    for (const action of [tip, message]) {
+    const share = page.getByRole("button", { name: "Share", exact: true });
+    for (const action of [tip, message, share]) {
       const bounds = await action.boundingBox();
       expect(bounds!.height).toBeGreaterThanOrEqual(44);
     }
@@ -82,12 +84,22 @@ for (const viewport of [
     await rating.getByRole("radio", { name: "4 stars" }).check();
     await submit.click();
     await expect(page.getByRole("status").filter({ hasText: "4 stars saved." })).toBeVisible();
+    await expect(rating.locator("legend")).toHaveCSS("opacity", "0");
+    const savedStarBounds = await rating.locator("label").first().boundingBox();
+    const ratingBounds = await rating.boundingBox();
+    expect(Math.abs(savedStarBounds!.x - ratingBounds!.x)).toBeLessThanOrEqual(1);
+    await page.screenshot({
+      path: testInfo.outputPath(`recording-feedback-saved-${viewport.width}.png`),
+      fullPage: true,
+    });
     await expect(submit).toHaveCount(0);
     await expect(rating.getByRole("radio", { name: "4 stars" })).toBeFocused();
     await page.getByRole("button", { name: "Next recording" }).click();
     await expect(rating.getByRole("radio", { name: "4 stars" })).not.toBeChecked();
+    await expect(rating.locator("legend")).toHaveCSS("opacity", "1");
     await page.getByRole("button", { name: "Previous recording" }).click();
     await expect(rating.getByRole("radio", { name: "4 stars" })).toBeChecked();
+    await expect(rating.locator("legend")).toHaveCSS("opacity", "0");
     await expect(submit).toHaveCount(0);
     await rating.getByRole("radio", { name: "2 stars" }).check();
     await submit.click();
@@ -104,5 +116,45 @@ for (const viewport of [
     );
     await page.keyboard.press("Escape");
     await expect(message).toBeFocused();
+    // Dialog restores focus on the next frame after the native close event.
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    await page.keyboard.press("Tab");
+    await expect(share).toBeFocused();
+    await page.keyboard.press("Enter");
+    const shareDialog = page.getByRole("dialog", { name: "Share recording" });
+    await expect(shareDialog).toBeVisible();
+    const closeBounds = await shareDialog.getByRole("button", { name: "Close" }).boundingBox();
+    expect(closeBounds!.width).toBeGreaterThanOrEqual(44);
+    expect(closeBounds!.height).toBeGreaterThanOrEqual(44);
+    const recordingLink = shareDialog.getByRole("textbox", { name: "Recording link" });
+    await expect(recordingLink).toHaveValue(/\/recordings\/shared#demo-/);
+    const link = await recordingLink.inputValue();
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await shareDialog.getByRole("button", { name: "Copy link" }).click();
+    await expect(shareDialog.getByRole("button", { name: "Copied" })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
+    await page.screenshot({
+      path: testInfo.outputPath(`recording-share-${viewport.width}.png`),
+      fullPage: true,
+    });
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(share).toBeFocused();
+    const guest = await page.context().browser()!.newContext({ viewport });
+    const guestPage = await guest.newPage();
+    await guestPage.goto(link);
+    await expect(
+      guestPage.getByRole("heading", { name: "Palette Pilot", exact: true }),
+    ).toBeVisible();
+    await expect(guestPage.locator("video")).toBeVisible();
+    expect(guestPage.url()).toBe(link);
+    await guestPage.screenshot({
+      path: testInfo.outputPath(`shared-recording-${viewport.width}.png`),
+      fullPage: true,
+    });
+    await guest.close();
   });
 }
