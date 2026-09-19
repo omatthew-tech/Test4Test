@@ -1,4 +1,4 @@
-import { readStarRating, isStarRating } from "./starRatings";
+import { readStoredStarRating, isStarRating } from "./starRatings";
 import type { StarRating, PaymentMethods } from "../types";
 import { requireSupabase } from "./supabase";
 
@@ -9,12 +9,12 @@ export interface RecordingContact extends PaymentMethods {
 export async function loadRecordingRating(responseId: string, userId: string) {
   const { data, error } = await requireSupabase()
     .from("feedback_ratings")
-    .select("star_rating")
+    .select("star_rating, rating_value")
     .eq("test_response_id", responseId)
     .eq("rated_by_user_id", userId)
     .maybeSingle();
   if (error) throw new Error("Your rating could not be loaded. Try again.");
-  return data ? readStarRating(data.star_rating) : null;
+  return data ? readStoredStarRating(data.star_rating, data.rating_value) : null;
 }
 
 export async function saveRecordingRating(

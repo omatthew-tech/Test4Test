@@ -1,4 +1,4 @@
-import { readStarRating } from "../lib/starRatings";
+import { readStoredStarRating } from "../lib/starRatings";
 import {
   createContext,
   ReactNode,
@@ -184,7 +184,8 @@ interface FeedbackRatingRow {
   test_response_id: string;
   rated_by_user_id: string;
 
-  star_rating: StarRating;
+  star_rating: StarRating | null;
+  rating_value?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -252,6 +253,8 @@ interface AppStateContextValue {
   state: AppState;
   currentUser: User | null;
   isLoading: boolean;
+  loadError: string | null;
+  retryLoad: () => Promise<void>;
   isConfigured: boolean;
   requestOtp: (
     email: string,
@@ -333,7 +336,7 @@ const emptyState: AppState = {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 type AppActions = Omit<
   AppStateContextValue,
-  "state" | "currentUser" | "isLoading" | "isConfigured"
+  "state" | "currentUser" | "isLoading" | "isConfigured" | "loadError"
 >;
 type AccountState = Pick<AppStateContextValue, "currentUser" | "isLoading" | "isConfigured">;
 const AppActionsContext = createContext<AppActions | null>(null);
@@ -567,7 +570,7 @@ function mapFeedbackRating(row: FeedbackRatingRow) {
     testResponseId: row.test_response_id,
     ratedByUserId: row.rated_by_user_id,
 
-    starRating: readStarRating(row.star_rating),
+    starRating: readStoredStarRating(row.star_rating, row.rating_value),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -657,6 +660,17 @@ function getTestReferenceForPath(pathname: string) {
   } catch {
     return match[1];
   }
+}
+
+type LoadedStateMode = "none" | "light" | "share" | "credits" | "recordings" | "full";
+
+function getRequiredStateMode(pathname: string, currentUserId: string | null): LoadedStateMode {
+  if (!shouldLoadFullStateForPath(pathname, currentUserId)) return "light";
+  const route = normalizePathname(pathname);
+  if (route === "/share") return "share";
+  if (route === "/credits") return "credits";
+  if (route === "/recordings") return "recordings";
+  return "full";
 }
 
 function hasUsableSession(session: Session | null | undefined): session is Session {
@@ -1499,8 +1513,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     otpChallenge: getStoredOtpChallenge(),
   }));
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const loadIdRef = useRef(0);
-  const loadedStateModeRef = useRef<"none" | "light" | "credits" | "recordings" | "full">("none");
+  const loadedStateModeRef = useRef<LoadedStateMode>("none");
   const loadControllerRef = useRef<AbortController | null>(null);
   const fixtureSearch = designSystemFixturesEnabled ? search : "";
   const otpRequestInFlightRef = useRef<Map<string, Promise<OTPChallenge>>>(new Map());
@@ -1515,8 +1530,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const controller = new AbortController();
       loadControllerRef.current = controller;
       const signal = controller.signal;
-      let attemptedStateMode: "light" | "credits" | "recordings" | "full" =
-        shouldLoadFullStateForPath(pathname, null) ? "full" : "light";
+      let currentProfile: User | null = null;
+      let loadFailed = false;
+      // Clear a previous failure only after this load succeeds. Redirects must
+      // stay blocked while retrying authentication or route data.
 
       if (designSystemFixturesEnabled) {
         const { createDesignSystemFixtureState } = await import("../testing/designSystemFixtures");
@@ -1525,6 +1542,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
         setState(createDesignSystemFixtureState(fixtureSearch));
         loadedStateModeRef.current = "full";
+        setLoadError(null);
         setIsLoading(false);
         return;
       }
@@ -1535,29 +1553,34 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           otpChallenge: getStoredOtpChallenge(),
         });
         loadedStateModeRef.current = "light";
+        setLoadError(null);
         setIsLoading(false);
         return;
       }
 
       try {
         const supabase = requireSupabase();
-        const authUser =
-          authUserOverride !== undefined
-            ? authUserOverride
-            : (await supabase.auth.getUser()).data.user;
+        let authUser = authUserOverride;
+        if (authUser === undefined) {
+          const { data, error } = await supabase.auth.getUser();
+          // A missing/invalid session is signed out; a service or network error
+          // is an unknown auth state and must not cause a sign-in redirect.
+          if (
+            error &&
+            error.name !== "AuthSessionMissingError" &&
+            error.status !== 401 &&
+            error.status !== 403
+          ) {
+            throw error;
+          }
+          authUser = error ? null : data.user;
+        }
         const currentUserId = authUser?.id ?? null;
         signal.throwIfAborted();
-        const currentProfile = authUser ? await ensureProfile(authUser) : null;
+        currentProfile = authUser ? await ensureProfile(authUser) : null;
         signal.throwIfAborted();
         const shouldLoadFullState = shouldLoadFullStateForPath(pathname, currentUserId);
-        const narrowMode =
-          normalizePathname(pathname) === "/credits"
-            ? "credits"
-            : normalizePathname(pathname) === "/recordings"
-              ? "recordings"
-              : "full";
-        const nextStateMode = shouldLoadFullState ? narrowMode : "light";
-        attemptedStateMode = nextStateMode;
+        const nextStateMode = getRequiredStateMode(pathname, currentUserId);
         const shouldShowLoading =
           loadedStateModeRef.current === "none" ||
           (nextStateMode !== "light" &&
@@ -1635,7 +1658,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const submissions =
-          nextStateMode === "recordings"
+          nextStateMode === "recordings" || nextStateMode === "share"
             ? await loadOwnedSubmissions(currentUserId!, signal)
             : await loadVisibleSubmissions(
                 currentUserId,
@@ -1643,6 +1666,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 signal,
               );
         signal.throwIfAborted();
+        if (nextStateMode === "share") {
+          setState({
+            ...emptyState,
+            currentUserId,
+            users: currentProfile ? [currentProfile] : [],
+            submissions,
+            otpChallenge: getStoredOtpChallenge(),
+          });
+          loadedStateModeRef.current = "share";
+          return;
+        }
         const submissionIds = submissions.map((submission) => submission.id);
         const ownedSubmissionIds = currentUserId
           ? submissions
@@ -1710,13 +1744,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         console.error(error);
+        loadFailed = true;
+        setLoadError("We couldn't load this page. Please try again.");
         setState({
           ...emptyState,
+          currentUserId: currentProfile?.id ?? null,
+          users: currentProfile ? [currentProfile] : [],
           otpChallenge: getStoredOtpChallenge(),
         });
-        loadedStateModeRef.current = attemptedStateMode;
+        // Failed data is never marked as loaded or mistaken for a signed-out user.
+        loadedStateModeRef.current = "none";
+        return;
       } finally {
         if (loadId === loadIdRef.current) {
+          if (!signal.aborted && !loadFailed) setLoadError(null);
           setIsLoading(false);
         }
       }
@@ -1756,22 +1797,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppStateContextValue>(() => {
     const currentUser = getCurrentUser(state);
-    const shouldWaitForFullState = shouldLoadFullStateForPath(pathname, currentUser?.id ?? null);
+    const requiredStateMode = getRequiredStateMode(pathname, currentUser?.id ?? null);
     const effectiveIsLoading =
       isLoading ||
-      (shouldWaitForFullState &&
+      (!loadError &&
+        requiredStateMode !== "light" &&
         loadedStateModeRef.current !== "full" &&
-        loadedStateModeRef.current !==
-          (normalizePathname(pathname) === "/credits"
-            ? "credits"
-            : normalizePathname(pathname) === "/recordings"
-              ? "recordings"
-              : "full"));
+        loadedStateModeRef.current !== requiredStateMode);
 
     return {
       state,
       currentUser,
       isLoading: effectiveIsLoading,
+      loadError,
+      async retryLoad() {
+        setIsLoading(true);
+        await refreshState();
+      },
       isConfigured: designSystemFixturesEnabled ? false : hasSupabaseConfig,
       async requestOtp(email, options) {
         const { intent, submissionId } = options;
@@ -2832,7 +2874,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState(null);
       },
     };
-  }, [designSystemFixturesEnabled, isLoading, pathname, refreshState, state]);
+  }, [designSystemFixturesEnabled, isLoading, loadError, pathname, refreshState, state]);
 
   // Dispatch through the latest committed state without changing action identity
   // when data, loading state, or the current route changes.

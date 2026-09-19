@@ -9,6 +9,16 @@ export function readStarRating(value: unknown): StarRating {
   return value;
 }
 
+/** Read pre-migration ratings without overriding an explicitly stored score. */
+export function readStoredStarRating(value: unknown, legacyValue: unknown): StarRating {
+  if (value === null || value === undefined) {
+    if (legacyValue === "frowny") return 1;
+    if (legacyValue === "neutral") return 3;
+    if (legacyValue === "smiley") return 5;
+  }
+  return readStarRating(value);
+}
+
 export function isRevisionRating(value: unknown): value is 1 | 2 | 3 | 4 {
   return isStarRating(value) && value < 5;
 }

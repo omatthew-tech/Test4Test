@@ -8,8 +8,9 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import { Container, Skeleton, Stack } from "@test4test/design-system";
+import { Alert, Button, Container, Skeleton, Stack } from "@test4test/design-system";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
+import { AppShell } from "./components/Layout";
 import { trackEventOncePerSession } from "./lib/analytics";
 import { founderWorkspaceRedirect } from "./lib/accountAccess";
 import { useRouteNavigation } from "./lib/routeNavigation";
@@ -107,6 +108,31 @@ function RootPage() {
   }
 
   return currentUser ? <Navigate to="/earn" replace /> : <HomePage />;
+}
+
+function AppStateBoundary({ children }: { children: ReactElement }) {
+  const { loadError, isLoading, retryLoad } = useAppState();
+  const { pathname } = useLocation();
+  const isIndependentPublicRoute =
+    pathname === "/blog" || pathname.startsWith("/blog/") || pathname === "/recordings/shared";
+  if (!loadError || isIndependentPublicRoute) {
+    return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
+  }
+
+  // A failed data load must never reach an auth redirect or look like an empty
+  // account. Keep the URL and provide an explicit, user-controlled retry.
+  return (
+    <AppShell title="Unable to load this page">
+      <Stack gap="lg">
+        <Alert tone="danger">{loadError}</Alert>
+        <div>
+          <Button onClick={() => void retryLoad()} loading={isLoading} loadingLabel="Retrying">
+            Try again
+          </Button>
+        </div>
+      </Stack>
+    </AppShell>
+  );
 }
 
 function BanRedirectRoute({ children }: { children: ReactElement }) {
@@ -214,7 +240,7 @@ export default function App({
       <Router {...(prerenderPath ? { initialEntries: [prerenderPath] } : {})}>
         <RouteNavigation />
         <AppStateProvider>
-          <Suspense fallback={<RouteLoading />}>
+          <AppStateBoundary>
             <Routes>
               <Route path="/" element={<RootPage />} />
               <Route
@@ -375,7 +401,7 @@ export default function App({
                 }
               />
             </Routes>
-          </Suspense>
+          </AppStateBoundary>
         </AppStateProvider>
       </Router>
     </div>

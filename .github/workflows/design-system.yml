@@ -2,7 +2,7 @@ name: Design system
 
 on:
   push:
-    branches: ["master", "main", "codex/**"]
+    branches: ["master", "main", "ReDesign", "codex/**"]
   pull_request:
 
 jobs:

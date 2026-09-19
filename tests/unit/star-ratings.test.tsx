@@ -7,11 +7,30 @@ import {
   canReviseFeedback,
   compareSubmittedRatings,
   readStarRating,
+  readStoredStarRating,
 } from "../../src/lib/starRatings";
 import { SubmissionFeedbackRow } from "../../src/pages/SubmissionsPage";
 import type { StarRating, SubmittedFeedbackCard } from "../../src/types";
 
 afterEach(cleanup);
+
+it.each([
+  [null, "frowny", 1],
+  [null, "neutral", 3],
+  [undefined, "smiley", 5],
+  [2, "smiley", 2],
+  [4, "frowny", 4],
+] as const)("reads stored stars %s with legacy %s as %s", (stars, legacy, expected) => {
+  expect(readStoredStarRating(stars, legacy)).toBe(expected);
+});
+
+it.each([0, 6, 2.5, "3", NaN])("does not hide a corrupt explicit score %s", (stars) => {
+  expect(() => readStoredStarRating(stars, "smiley")).toThrow("1 to 5");
+});
+
+it("does not invent a score for an unrecognized legacy rating", () => {
+  expect(() => readStoredStarRating(null, "unknown")).toThrow("1 to 5");
+});
 const card = (
   starRating: StarRating | null,
   overrides: Partial<SubmittedFeedbackCard> = {},

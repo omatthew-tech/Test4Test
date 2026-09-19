@@ -50,6 +50,15 @@ it("persists exact stars without writing legacy audit values", async () => {
   expect(database.upsert.mock.calls[0][0]).not.toHaveProperty("rating_value");
 });
 
+it("loads a legacy rating while the exact-star migration is pending", async () => {
+  database.maybeSingle.mockResolvedValue({
+    data: { star_rating: null, rating_value: "neutral" },
+    error: null,
+  });
+  expect(await loadRecordingRating("response", "owner")).toBe(3);
+  expect(database.select).toHaveBeenCalledWith("star_rating, rating_value");
+});
+
 it("does not report a silently denied delete as success", async () => {
   database.select.mockResolvedValue({ data: [], error: null });
   await expect(saveRecordingRating("response", "owner", null)).rejects.toThrow(
