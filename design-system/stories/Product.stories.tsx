@@ -390,16 +390,27 @@ export const EarnTestCardContract: Story = {
       />
       <EarnTestCard
         as="section"
-        title="Private placement preview"
-        description="This card has no primary action while its placement is being calculated."
-        badges={[{ id: "private", label: "Only visible to you", tone: "success" }]}
+        title="Your listed app"
+        description="This owner card links to analytics for the selected Earn app."
+        badges={[{ id: "owner", label: "Your app", tone: "success" }]}
+        action={{ label: "View analytics", to: "/analytics", variant: "secondary" }}
+      />
+      <EarnTestCard
+        as="section"
+        title="App details loading"
+        description="A card without a navigation action while its details are unavailable."
+        badges={[]}
       />
     </Stack>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getAllByRole("article")).toHaveLength(2);
-    await expect(canvas.getByRole("heading", { name: "Private placement preview" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Your listed app" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "View analytics" })).toHaveAttribute(
+      "href",
+      "/analytics",
+    );
     await expect(canvas.getByRole("link", { name: "View test" })).toHaveAttribute(
       "href",
       "/test/palette-pilot",

@@ -15,6 +15,7 @@ interface EarnVisibilitySummaryRpcRow {
   product_name: string | null;
   has_completed_test: boolean | null;
   rank: number | null;
+  rank_after_one_credit?: number | null;
   ranked_submission_count: number | null;
   would_rank: number | null;
   would_ranked_submission_count: number | null;
@@ -181,6 +182,7 @@ export async function loadEarnVisibilitySummary() {
       productName: null,
       hasCompletedTest: false,
       rank: null,
+      rankAfterOneCredit: null,
       rankedSubmissionCount: 0,
       wouldRank: null,
       wouldRankedSubmissionCount: 0,
@@ -195,6 +197,7 @@ export async function loadEarnVisibilitySummary() {
     productName: row.product_name ?? null,
     hasCompletedTest: row.has_completed_test === true,
     rank: normalizeRank(row.rank),
+    rankAfterOneCredit: normalizeRank(row.rank_after_one_credit),
     rankedSubmissionCount: normalizeCount(row.ranked_submission_count),
     wouldRank: normalizeRank(row.would_rank),
     wouldRankedSubmissionCount: normalizeCount(row.would_ranked_submission_count),

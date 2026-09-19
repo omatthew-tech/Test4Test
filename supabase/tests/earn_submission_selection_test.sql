@@ -229,11 +229,14 @@ select throws_ok(
   'pending tests cannot be activated'
 );
 select ok(
-  not (
-    select has_completed_test
+  (
+    select not has_completed_test
+      and rank is not null
+      and would_rank = rank
+      and would_ranked_submission_count = ranked_submission_count
     from public.get_my_earn_visibility_summary()
   ),
-  'an account without a credited completion remains behind the visibility gate'
+  'an account without a credited completion is ranked immediately'
 );
 reset role;
 
@@ -254,8 +257,6 @@ values (
   '[]'
 );
 
-alter table public.test_responses
-  disable trigger prevent_locked_submission_owner_test_response_on_test_responses;
 insert into public.test_responses (
   id,
   submission_id,
@@ -282,8 +283,6 @@ values (
   '[]',
   '{}'
 );
-alter table public.test_responses
-  enable trigger prevent_locked_submission_owner_test_response_on_test_responses;
 
 delete from public.credit_transactions
 where user_id = '71000000-0000-0000-0000-000000000001';
@@ -321,23 +320,25 @@ select is(
 );
 select ok(
   public.user_has_completed_credited_test('71000000-0000-0000-0000-000000000001'),
-  'credited completion remains a lifetime account unlock after spending the credit'
+  'completion history remains available after spending the credit'
 );
 
 set local role authenticated;
 select is(
   public.activate_earn_submission('72000000-0000-0000-0000-000000000002'),
   '72000000-0000-0000-0000-000000000002'::uuid,
-  'the lifetime-unlocked account can switch to a future test'
+  'an account with completion history can switch to a future test'
 );
 select ok(
   (
     select has_completed_test
       and submission_id = '72000000-0000-0000-0000-000000000002'
       and token_balance = 0
+      and rank is not null
+      and would_rank = rank
     from public.get_my_earn_visibility_summary()
   ),
-  'the selected future test bypasses the gate while the spent balance stays zero'
+  'the selected future test has a rank while the spent balance stays zero'
 );
 reset role;
 

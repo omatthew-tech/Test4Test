@@ -10,6 +10,7 @@ import {
   Info,
   PencilLine,
   Share2,
+  X,
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -338,6 +339,9 @@ function EarnPageContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const welcomeFixtureMode = designSystemFixturesEnabled
+    ? searchParams.get("ds-earn-welcome")
+    : null;
   const searchParamsKey = searchParams.toString();
   const editSubmissionId = searchParams.get("edit")?.trim() ?? "";
   const reciprocalRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -385,6 +389,7 @@ function EarnPageContent() {
   const [visibilitySummary, setVisibilitySummary] = useState<EarnVisibilitySummary | null>(null);
   const [visibilitySubmission, setVisibilitySubmission] = useState<Submission | null>(null);
   const [visibilityError, setVisibilityError] = useState("");
+  const [welcomeDismissedForUserId, setWelcomeDismissedForUserId] = useState<string | null>(null);
   const [revisionTargetResponseId, setRevisionTargetResponseId] = useState<string | null>(null);
   const [revisionTargetError, setRevisionTargetError] = useState("");
   const [isLoadingRevisionTarget, setIsLoadingRevisionTarget] = useState(false);
@@ -593,6 +598,25 @@ function EarnPageContent() {
   useEffect(() => {
     let isCancelled = false;
 
+    if (currentUser && !isTester && welcomeFixtureMode) {
+      const hasCompletedTest = welcomeFixtureMode === "completed";
+      setVisibilitySummary({
+        submissionId: "submission-palette",
+        productName: "Palette Pilot",
+        hasCompletedTest,
+        rank: hasCompletedTest ? 1 : 3,
+        rankAfterOneCredit: hasCompletedTest ? null : 1,
+        rankedSubmissionCount: 3,
+        wouldRank: hasCompletedTest ? 1 : 3,
+        wouldRankedSubmissionCount: 3,
+        tokenBalance: hasCompletedTest ? 1 : 0,
+        testBackRatePercent: 100,
+        satisfactionRatePercent: 100,
+      });
+      setVisibilityError("");
+      return undefined;
+    }
+
     if (!currentUser || !isConfigured || isTester) {
       setVisibilitySummary(null);
       setVisibilityError("");
@@ -629,7 +653,7 @@ function EarnPageContent() {
     return () => {
       isCancelled = true;
     };
-  }, [currentUser?.id, isConfigured, isTester]);
+  }, [currentUser, isConfigured, isTester, welcomeFixtureMode]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -1171,7 +1195,6 @@ function EarnPageContent() {
     () => cards.find((card) => card.reputation?.ownerHasTestedYou === true) ?? null,
     [cards],
   );
-  const firstAvailableTestCard = cards[0] ?? null;
 
   const scrollToFirstTestBackTarget = () => {
     if (!firstTestBackCard) {
@@ -1179,21 +1202,6 @@ function EarnPageContent() {
     }
 
     const target = reciprocalRowRefs.current[firstTestBackCard.submission.id];
-
-    if (!target) {
-      return;
-    }
-
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    target.focus({ preventScroll: true });
-  };
-
-  const scrollToFirstAvailableTest = () => {
-    if (!firstAvailableTestCard) {
-      return;
-    }
-
-    const target = reciprocalRowRefs.current[firstAvailableTestCard.submission.id];
 
     if (!target) {
       return;
@@ -1330,6 +1338,17 @@ function EarnPageContent() {
   ]);
 
   const leadingCards = shouldShowPrivatePlacement ? cards.slice(0, privatePlacementIndex) : cards;
+  const firstCreditRankGain =
+    currentUser &&
+    welcomeDismissedForUserId !== currentUser.id &&
+    !isTester &&
+    !creditCelebration &&
+    visibilitySummary?.submissionId &&
+    !visibilitySummary.hasCompletedTest &&
+    visibilitySummary.rank != null &&
+    visibilitySummary.rankAfterOneCredit != null
+      ? Math.max(0, visibilitySummary.rank - visibilitySummary.rankAfterOneCredit)
+      : null;
   const trailingCards = shouldShowPrivatePlacement ? cards.slice(privatePlacementIndex) : [];
   const isShowingInitialEarnLoad =
     isLoadingServerEarnSubmissions &&
@@ -1352,6 +1371,24 @@ function EarnPageContent() {
             {editLinkError}
           </Alert>
         ) : null}
+        {firstCreditRankGain !== null ? (
+          <Surface role="status" padding="compact" className={styles.welcomeAnnouncement}>
+            <span className={styles.welcomeAnnouncementText}>
+              <strong>Welcome to Test4Test!</strong> Increase your test&apos;s rank by{" "}
+              {firstCreditRankGain} {firstCreditRankGain === 1 ? "rank" : "ranks"} when you complete
+              any test below
+            </span>
+            <IconButton
+              type="button"
+              label="Dismiss welcome announcement"
+              variant="quiet"
+              className={styles.welcomeDismiss}
+              onClick={() => setWelcomeDismissedForUserId(currentUser?.id ?? null)}
+            >
+              <X size={20} aria-hidden="true" />
+            </IconButton>
+          </Surface>
+        ) : null}
         {isTester ? (
           <TesterEarnProgress
             summary={testerAccessSummary}
@@ -1364,12 +1401,10 @@ function EarnPageContent() {
             error={visibilityError}
             isSignedIn={Boolean(currentUser)}
             hasTestBackTarget={Boolean(firstTestBackCard)}
-            hasAvailableTest={Boolean(firstAvailableTestCard)}
             revisionTargetResponseId={revisionTargetResponseId}
             revisionTargetError={revisionTargetError}
             isLoadingRevisionTarget={isLoadingRevisionTarget}
             onImproveRate={scrollToFirstTestBackTarget}
-            onCompleteTest={scrollToFirstAvailableTest}
             onEditLiveTest={openVisibilityEditModal}
             onShare={() => navigate("/share")}
           />
@@ -1658,12 +1693,10 @@ function EarnVisibilityPanel({
   error,
   isSignedIn,
   hasTestBackTarget,
-  hasAvailableTest,
   revisionTargetResponseId,
   revisionTargetError,
   isLoadingRevisionTarget,
   onImproveRate,
-  onCompleteTest,
   onEditLiveTest,
   onShare,
 }: {
@@ -1671,39 +1704,28 @@ function EarnVisibilityPanel({
   error: string;
   isSignedIn: boolean;
   hasTestBackTarget: boolean;
-  hasAvailableTest: boolean;
   revisionTargetResponseId: string | null;
   revisionTargetError: string;
   isLoadingRevisionTarget: boolean;
   onImproveRate: () => void;
-  onCompleteTest: () => void;
   onEditLiveTest: (submissionId: string) => void;
   onShare: () => void;
 }) {
   const hasLiveTest = Boolean(summary?.submissionId);
   const hasCompletedTest = summary?.hasCompletedTest === true;
-  const isListingLocked = Boolean(summary && hasLiveTest && !hasCompletedTest);
   const hideMetricValues = Boolean(summary && !hasCompletedTest);
   const showImproveRate = Boolean(summary && hasCompletedTest && summary.testBackRatePercent < 100);
   const showReviseReview = Boolean(
     summary && hasCompletedTest && summary.satisfactionRatePercent < 100,
   );
-  const rankValue = !summary
-    ? "..."
-    : isListingLocked
-      ? "Your app isn't listed yet..."
-      : hasLiveTest && summary.rank
-        ? `#${summary.rank}`
-        : "--";
+  const rankValue = !summary ? "..." : hasLiveTest && summary.rank ? `#${summary.rank}` : "--";
   const rankDetail = !summary
     ? "Loading Rank"
-    : isListingLocked
+    : hasLiveTest && summary.rank
       ? null
-      : hasLiveTest && summary.rank
-        ? null
-        : hasLiveTest
-          ? "Not visible on Earn right now"
-          : "Submit an app to earn a Rank";
+      : hasLiveTest
+        ? "Not visible on Earn right now"
+        : "Submit an app to earn a Rank";
   const appName = summary?.productName ?? (summary ? "No live test" : "Loading your visibility");
   const liveSubmissionId = summary?.submissionId ?? null;
   const testBackValue = !summary
@@ -1767,13 +1789,9 @@ function EarnVisibilityPanel({
       {error ? <div className="callout callout--warning">{error}</div> : null}
 
       <div className="earn-visibility__body" aria-label="Earn visibility metrics">
-        <div
-          className={`earn-visibility__rank-panel${isListingLocked ? " earn-visibility__rank-panel--locked" : ""}`}
-        >
+        <div className="earn-visibility__rank-panel">
           <EarnRankPanelBackground />
-          <div
-            className={`earn-visibility__rank-value${isListingLocked ? " earn-visibility__rank-value--message" : ""}`}
-          >
+          <div className="earn-visibility__rank-value">
             <strong>
               <span className="ds-sr-only">Rank </span>
               {rankValue}
@@ -1790,20 +1808,7 @@ function EarnVisibilityPanel({
               </IconButton>
             </Tooltip>
           </span>
-          {isListingLocked ? (
-            <Button
-              type="button"
-              size="compact"
-              className="earn-visibility__rank-action"
-              onClick={onCompleteTest}
-              disabled={!hasAvailableTest}
-            >
-              Complete a test
-              <ArrowRight size={16} aria-hidden="true" />
-            </Button>
-          ) : rankDetail ? (
-            <small>{rankDetail}</small>
-          ) : null}
+          {rankDetail ? <small>{rankDetail}</small> : null}
         </div>
 
         <div className="earn-visibility__details">
@@ -2049,8 +2054,7 @@ function EarnPrivatePlacementRow({
   animationOffsetPx: number;
 }) {
   const productName = submission?.productName ?? summary.productName ?? "Your test";
-  const description =
-    submission?.description || "This is your private placement preview on the Earn page.";
+  const description = submission?.description || "Your selected app on the Earn page.";
   const placementClasses = [
     "earn-row--private-placement",
     animationMode === "rise" ? "earn-row--private-placement-rise" : "",
@@ -2062,7 +2066,7 @@ function EarnPrivatePlacementRow({
     "--private-placement-offset": `${animationOffsetPx}px`,
   } as CSSProperties;
   const badges: EarnTestCardBadge[] = [
-    { id: "private", label: "Only visible to you", tone: "success" },
+    { id: "owner", label: "Your app", tone: "success" },
     ...(submission
       ? productTypesBadges(submission.productTypes).map((badge) => ({
           id: `${submission.id}-${badge}`,
@@ -2082,12 +2086,6 @@ function EarnPrivatePlacementRow({
       title={productName}
       description={description}
       badges={badges}
-      supportingNote={
-        !summary.hasCompletedTest
-          ? "Private preview of where your test will appear after you complete one credited test."
-          : undefined
-      }
-      supportingNoteTone="accent"
       action={{ label: "View analytics", to: "/analytics", variant: "secondary" }}
       className={placementClasses}
       style={placementStyle /* ds-exception: runtime-measurements */}

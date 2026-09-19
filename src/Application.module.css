@@ -1849,10 +1849,6 @@
   line-height: var(--ds-semantic-typography-interface-line-height);
 }
 
-.application [class~="earn-visibility__rank-action"] {
-  min-height: var(--ds-semantic-size-control-target);
-}
-
 .application [class~="earn-visibility__metric-label"] {
   display: inline-flex;
   min-width: 0;

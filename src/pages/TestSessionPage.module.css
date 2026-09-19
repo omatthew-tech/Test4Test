@@ -16,6 +16,15 @@
   line-height: var(--ds-semantic-typography-heading-page-mobile-line-height);
 }
 
+.page .sharedHeader {
+  max-width: none;
+}
+
+.page .sharedHeader h1 {
+  text-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
 .page :global(.test-session__header p),
 .page :global(.helper-text),
 .page :global(.test-session__progress span) {
@@ -112,6 +121,40 @@
 .recoveryUpload[open] {
   display: grid;
   gap: var(--ds-semantic-space-stack-sm);
+}
+
+.setupActions {
+  display: contents;
+}
+
+.sharedSetupActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ds-semantic-space-inline-md);
+}
+
+.sharedSetupActions > .recoveryUpload {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.sharedSetupActions .recoverySummary {
+  grid-column: 1;
+}
+
+.sharedSetupActions > .recoveryUpload::details-content {
+  grid-column: 1 / -1;
+}
+
+.page .sharedSetupActions > :global(.wizard-actions) {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: flex-end;
 }
 
 .recoverySummary {

@@ -3192,7 +3192,7 @@ export function TestSessionPage({
     <AppShell eyebrowLabel={null} hideSiteHeader={isSharedPublicVisit}>
       <div className={`${styles.page} test-layout test-layout--single`}>
         {testSessionTitle || testSessionHeaderCopy ? (
-          <div className="test-session__header">
+          <div className={`${isSharedPublicVisit ? styles.sharedHeader : ""} test-session__header`}>
             <h1 className={testSessionTitle ? undefined : "ds-sr-only"}>
               {testSessionTitle || "Test session"}
             </h1>
@@ -3588,63 +3588,73 @@ export function TestSessionPage({
                     </>
                   )}
 
-                  {isNativeDesktopRecording ? (
-                    <details
-                      className={styles.recoveryUpload}
-                      onToggle={(event) => setIsRecoveryUploadOpen(event.currentTarget.open)}
-                    >
-                      <summary className={styles.recoverySummary}>
-                        <span>Already recorded?</span>
-                        {isRecoveryUploadOpen ? (
-                          <ChevronUp size={16} aria-hidden="true" />
-                        ) : (
-                          <ChevronDown size={16} aria-hidden="true" />
-                        )}
-                      </summary>
-                      <div className={styles.recoveryBody}>
-                        <div className="recording-recovery-upload__copy">
-                          <strong>Already have a saved recording?</strong>
-                          <small className="helper-text">
-                            If you downloaded a backup after a failed upload, attach it here and
-                            submit without recording again.
-                          </small>
+                  <div
+                    className={
+                      isSharedPublicVisit && isNativeDesktopRecording
+                        ? styles.sharedSetupActions
+                        : styles.setupActions
+                    }
+                  >
+                    {isNativeDesktopRecording ? (
+                      <details
+                        className={styles.recoveryUpload}
+                        onToggle={(event) => setIsRecoveryUploadOpen(event.currentTarget.open)}
+                      >
+                        <summary className={styles.recoverySummary}>
+                          <span>Already recorded?</span>
+                          {isRecoveryUploadOpen ? (
+                            <ChevronUp size={16} aria-hidden="true" />
+                          ) : (
+                            <ChevronDown size={16} aria-hidden="true" />
+                          )}
+                        </summary>
+                        <div className={styles.recoveryBody}>
+                          <div className="recording-recovery-upload__copy">
+                            <strong>Already have a saved recording?</strong>
+                            <small className="helper-text">
+                              If you downloaded a backup after a failed upload, attach it here and
+                              submit without recording again.
+                            </small>
+                          </div>
+                          <TextField
+                            className="recording-recovery-upload__field"
+                            type="file"
+                            label="Upload saved recording"
+                            helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
+                            accept={RECORDING_ACCEPT_ATTRIBUTE}
+                            onChange={handleRecordingUpload}
+                            disabled={isUploadingRecording}
+                          />
                         </div>
-                        <TextField
-                          className="recording-recovery-upload__field"
-                          type="file"
-                          label="Upload saved recording"
-                          helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
-                          accept={RECORDING_ACCEPT_ATTRIBUTE}
-                          onChange={handleRecordingUpload}
-                          disabled={isUploadingRecording}
-                        />
-                      </div>
-                    </details>
-                  ) : null}
-
-                  <div className="wizard-actions">
-                    {shouldShowBackToTests ? (
-                      <Button type="button" variant="secondary" onClick={handleBackToEarn}>
-                        {backToTestsLabel}
-                      </Button>
+                      </details>
                     ) : null}
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        if (isNativeDesktopRecording) {
-                          handleNativeRecordingPreparation();
-                        } else {
-                          handleManualRecordingStart();
+
+                    <div className="wizard-actions">
+                      {shouldShowBackToTests ? (
+                        <Button type="button" variant="secondary" onClick={handleBackToEarn}>
+                          {backToTestsLabel}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (isNativeDesktopRecording) {
+                            handleNativeRecordingPreparation();
+                          } else {
+                            handleManualRecordingStart();
+                          }
+                        }}
+                        disabled={
+                          isNativeDesktopRecording
+                            ? !microphoneTestPassed || screenShareStatus !== "active"
+                            : !confirmedRecording
                         }
-                      }}
-                      disabled={
-                        isNativeDesktopRecording
-                          ? !microphoneTestPassed || screenShareStatus !== "active"
-                          : !confirmedRecording
-                      }
-                    >
-                      {isNativeDesktopRecording ? "Get started" : "I'm recording and ready to test"}
-                    </Button>
+                      >
+                        {isNativeDesktopRecording
+                          ? "Get started"
+                          : "I'm recording and ready to test"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : null}

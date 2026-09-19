@@ -215,6 +215,7 @@ export interface EarnVisibilitySummary {
   productName: string | null;
   hasCompletedTest: boolean;
   rank: number | null;
+  rankAfterOneCredit: number | null;
   rankedSubmissionCount: number;
   wouldRank: number | null;
   wouldRankedSubmissionCount: number;
