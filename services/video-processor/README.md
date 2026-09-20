@@ -22,7 +22,9 @@ dispatcher. Deployment and a consented staging recording must be verified before
 describing that integration as operational. See the [transcript report runbook](../../docs/transcript-reports.md).
 
 The synchronized owner transcript viewer, exact-range annotations, app-level
-priorities, clips, and AI context filtering remain outside this implementation.
+priorities, and AI context filtering remain outside this implementation.
+
+Recording clips use the separate bounded MP4 export queue documented below.
 
 Transcript integration must treat the source recording’s unlimited
 retention and explicit-deletion boundary as authoritative, use idempotent
