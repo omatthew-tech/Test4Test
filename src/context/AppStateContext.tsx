@@ -30,6 +30,8 @@ import {
   storeOtpChallenge,
 } from "../lib/pendingSubmission";
 import { trackAuthenticatedVisit, trackEvent } from "../lib/analytics";
+import { ensureEarnVisit } from "../lib/earnExperiment";
+import { markEarnAuthentication } from "../lib/earnExperimentVisits";
 import { calculateTesterEarnAccess } from "../lib/testerEligibility";
 import { estimateSubmissionMinutes } from "../lib/estimateMinutes";
 import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/instructions";
@@ -1905,6 +1907,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         let authUser: SupabaseAuthUser;
 
+        // Capture the source before SIGNED_IN callbacks can hydrate and render Earn.
+        markEarnAuthentication(challenge.intent !== "sign_in");
+
         if (isTestAccountEmail(challenge.email)) {
           try {
             const session = await signInWithTestAccountPasscode(challenge.email, code);
@@ -2480,7 +2485,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           (response) => response.testerUserId === currentUser.id && response.creditAwarded,
         );
         const supabase = requireSupabase();
-        let { data, error } = await supabase.rpc("submit_test_response", {
+        const visitId = await ensureEarnVisit(currentUser.id);
+        const responseArgs = {
           p_submission_id: submissionId,
           p_answers: answers,
           p_duration_seconds: durationSeconds,
@@ -2488,7 +2494,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           p_recording_path: recording?.path ?? null,
           p_question_set_version_id: questionSetVersionId ?? null,
           p_submission_version_id: submissionVersionId ?? null,
+        };
+        let { data, error } = await supabase.rpc("submit_test_response_with_attribution", {
+          ...responseArgs,
+          p_visit_id: visitId,
         });
+        // Older deployments can still accept feedback; the DB trigger counts it without attribution.
+        if (error?.code === "PGRST202") {
+          const retry = await supabase.rpc("submit_test_response", responseArgs);
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (
           error &&

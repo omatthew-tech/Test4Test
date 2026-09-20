@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "chat-email-platform-format",
+      "owner": "Test4Test Backend",
+      "scope": "Chat notification HTML in supabase/functions/_shared/chat-email.ts, generated chat-email-tokens.ts, and public/brand/test4test-email-mark.png.",
+      "rationale": "Email clients require inline presentation and raster brand images. All visual constants are serialized from canonical semantic or component tokens by scripts/generate-chat-email.mjs; structural table resets and image geometry support email compatibility. The visible email contains only the brand, headline, excerpt, and View message action.",
+      "expires": "2027-03-20"
+    },
+    {
       "id": "recording-star-pointer-density",
       "owner": "Test4Test",
       "scope": "Fine-pointer star-rating labels in src/pages/RecordingFeedback.module.css on the recording page.",

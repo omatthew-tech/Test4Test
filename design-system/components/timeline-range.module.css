@@ -1,0 +1,101 @@
+.root {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+  min-width: 0;
+}
+.label {
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+.timeline {
+  padding-inline: calc(var(--ds-semantic-size-control-target) / 2);
+  padding-block: var(--ds-semantic-size-control-target);
+}
+.track {
+  position: relative;
+  height: var(--ds-semantic-space-stack-md);
+  background: var(--ds-semantic-color-surface-track);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-compact);
+}
+.selection {
+  position: absolute;
+  height: 100%;
+  background: var(--ds-semantic-color-action-tint);
+  border-block: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-action-primary);
+}
+.handle {
+  position: absolute;
+  width: var(--ds-semantic-size-control-target);
+  height: var(--ds-semantic-size-control-target);
+  padding: 0;
+  transform: translateX(-50%);
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.start {
+  bottom: 100%;
+}
+.end {
+  top: 100%;
+}
+.handle::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--ds-semantic-space-stack-sm) / 2);
+  width: var(--ds-semantic-space-stack-sm);
+  height: var(--ds-semantic-space-stack-md);
+  background: var(--ds-semantic-color-action-primary-strong);
+}
+.start::after {
+  top: 100%;
+}
+.end::after {
+  bottom: 100%;
+}
+.handle span {
+  display: block;
+  margin-inline: auto;
+  width: var(--ds-semantic-space-stack-sm);
+  height: 100%;
+  border-radius: var(--ds-semantic-radius-compact);
+  background: var(--ds-semantic-color-action-primary-strong);
+}
+.handle:focus-visible {
+  outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-action-primary);
+  outline-offset: var(--ds-semantic-space-stack-xs);
+  border-radius: var(--ds-semantic-radius-control);
+}
+.handle:disabled {
+  cursor: not-allowed;
+}
+.handle:disabled span,
+.handle:disabled::after {
+  background: var(--ds-semantic-color-text-secondary);
+}
+.times {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ds-semantic-space-inline-md);
+  font-variant-numeric: tabular-nums;
+}
+.help {
+  margin: 0;
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+}
+@media (forced-colors: active) {
+  .selection {
+    border-color: Highlight;
+  }
+  .handle span,
+  .handle::after {
+    background: ButtonText;
+    forced-color-adjust: none;
+  }
+  .handle:focus-visible {
+    outline-color: Highlight;
+  }
+}

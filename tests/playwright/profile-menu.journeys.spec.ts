@@ -18,6 +18,7 @@ test.describe("desktop profile dropdown", () => {
       "Profile",
       "New app",
       "My reviews",
+      "Messages (1)",
       "Sign out",
     ]);
     await expect(menu.getByRole("separator")).toHaveCount(2);
@@ -41,6 +42,7 @@ test.describe("desktop profile dropdown", () => {
       ["Profile", "/profile"],
       ["New app", "/submit"],
       ["My reviews", "/submissions"],
+      ["Messages (1)", "/messages"],
     ]) {
       // The submission wizard intentionally hides all navigation, so start each destination
       // check from the shared shell instead of expecting a menu inside that flow.
@@ -84,7 +86,7 @@ test.describe("desktop profile dropdown", () => {
   test("preserves tester restrictions and guest navigation", async ({ page }) => {
     await page.goto("/profile?ds-tester=locked");
     const menu = await openProfileMenu(page);
-    await expect(menu.getByRole("menuitem")).toHaveText(["Profile", "Sign out"]);
+    await expect(menu.getByRole("menuitem")).toHaveText(["Profile", "Messages (1)", "Sign out"]);
     await expect(menu.getByRole("separator")).toHaveCount(1);
     await expect(
       page.getByRole("main").getByRole("button", { name: "Sign out", exact: true }),

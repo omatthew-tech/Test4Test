@@ -1,0 +1,9 @@
+.panel {
+  min-width: var(--ds-semantic-space-zero);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-semantic-space-inline-sm);
+}

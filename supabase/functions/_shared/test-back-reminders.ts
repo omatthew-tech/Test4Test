@@ -340,7 +340,7 @@ async function advanceReminderSequenceAfterSend(
         ? {
             emails_sent: nextEmailsSent,
             last_sent_at: sentAt,
-            next_send_at: null,
+            next_send_at: sentAt,
             status: "resolved",
             resolved_reason: "sequence_complete",
             resolved_at: sentAt,
@@ -380,7 +380,7 @@ async function resolveReminderSequence(
       status,
       resolved_reason: reason,
       resolved_at: now,
-      next_send_at: null,
+      next_send_at: now,
       updated_at: now,
     })
     .eq("id", reminderId);
@@ -416,6 +416,47 @@ export async function processReminderSequence(
     return { outcome: "skipped" as const };
   }
 
+  // Claim the exact due version. A feedback notification or another worker may
+  // already have advanced the sequence since this batch was loaded.
+  const now = new Date().toISOString();
+  const { data: claimed, error: claimError } = await admin
+    .from("test_back_reminder_sequences")
+    .update({ next_send_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() })
+    .eq("id", reminder.id)
+    .eq("status", "pending")
+    .eq("emails_sent", reminder.emails_sent)
+    .eq("latest_triggering_response_id", reminder.latest_triggering_response_id)
+    .eq("next_send_at", reminder.next_send_at)
+    .lte("next_send_at", now)
+    .select("id")
+    .maybeSingle();
+
+  if (claimError) throw new Error(claimError.message);
+  if (!claimed) return { outcome: "skipped" as const };
+
+  try {
+    return await processClaimedReminderSequence(admin, env, reminder, templateMap);
+  } catch (error) {
+    // Move failures behind other due work instead of retrying the oldest broken
+    // rows forever. Keep the stage unchanged so delivery logs can prevent replay.
+    const { error: retryError } = await admin
+      .from("test_back_reminder_sequences")
+      .update({ next_send_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() })
+      .eq("id", reminder.id)
+      .eq("status", "pending")
+      .eq("emails_sent", reminder.emails_sent)
+      .eq("latest_triggering_response_id", reminder.latest_triggering_response_id);
+    if (retryError) console.error("Failed to defer reminder", reminder.id, retryError.message);
+    throw error;
+  }
+}
+
+async function processClaimedReminderSequence(
+  admin: SupabaseClient,
+  env: EmailEnvironment,
+  reminder: ReminderSequenceRow,
+  templateMap?: Map<string, EmailTemplateRecord>,
+) {
   const templateKey = getReminderTemplateKey(reminder.emails_sent);
 
   if (!templateKey) {
@@ -488,8 +529,8 @@ export async function processReminderSequence(
     throw new Error(`Missing email template: ${templateKey}`);
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/analytics`;
-  const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}`;
+  const feedbackUrl = `${env.appBaseUrl}/analytics?earn_entry=test_back_email`;
+  const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}?earn_entry=test_back_email`;
   const rendered = renderEmailTemplate(template, {
     ownerDisplayName: owner.display_name,
     ownerProductName: triggeringSubmission.product_name,

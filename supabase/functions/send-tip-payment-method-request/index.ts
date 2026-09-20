@@ -185,7 +185,7 @@ Deno.serve(async (request) => {
       throw new Error(`Missing email template: ${templateKey}`);
     }
 
-    const profileUrl = `${env.appBaseUrl}/profile`;
+    const profileUrl = `${env.appBaseUrl}/profile?earn_entry=other_email`;
     const rendered = renderEmailTemplate(template, {
       appName: submission.product_name,
       profileUrl,

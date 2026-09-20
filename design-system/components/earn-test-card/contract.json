@@ -6,17 +6,20 @@
   "lifecycle": "stable",
   "source": "design-system/components/product.tsx",
   "story": "design-system/stories/Product.stories.tsx",
-  "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context.",
+  "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place.",
   "semantics": [
     "Article or section",
-    "Visible heading names the card"
+    "Visible heading names the card",
+    "Overflowing descriptions use a button with aria-expanded and aria-controls; short descriptions remain plain text"
   ],
   "keyboard": [
-    "The navigation action is a separate focus target"
+    "The navigation action is a separate focus target",
+    "Enter or Space expands the description or activates Show less while retaining focus"
   ],
   "targetSize": 44,
   "dependencies": [
     "badge",
+    "button",
     "link",
     "surface"
   ],
@@ -27,16 +30,21 @@
   "variants": [
     "with-action",
     "without-action",
-    "with-reputation"
+    "with-reputation",
+    "expandable-description"
   ],
   "states": [
     "default",
     "long-content",
     "narrow-width",
-    "supporting-note"
+    "supporting-note",
+    "collapsed",
+    "expanded",
+    "short-description",
+    "two-line-description"
   ],
-  "accessibleName": "A visible heading names the card and the action has visible link text.",
-  "controlMode": "not-applicable",
+  "accessibleName": "A visible heading names the card and the action has visible link text. Description disclosure buttons are named by their action and card heading.",
+  "controlMode": "uncontrolled",
   "storyExport": "EarnTestCardContract",
   "examples": [
     "design-system/stories/Product.stories.tsx#EarnTestCardContract"

@@ -1,0 +1,43 @@
+{
+  "id": "timeline-range",
+  "name": "Timeline range",
+  "family": "inputs",
+  "version": "1.0.0",
+  "lifecycle": "beta",
+  "source": "design-system/components/timeline-range.tsx",
+  "story": "design-system/stories/TimelineRange.stories.tsx",
+  "storyExport": "TimelineRangeContract",
+  "exportName": "TimelineRange",
+  "description": "Two time handles for selecting a media range with pointer and keyboard input.",
+  "sizes": [
+    "default"
+  ],
+  "variants": [
+    "media"
+  ],
+  "states": [
+    "enabled",
+    "focus-visible",
+    "disabled",
+    "narrow-range"
+  ],
+  "accessibleName": "Required label names the group; Clip start and Clip end name each slider.",
+  "controlMode": "controlled",
+  "examples": [
+    "design-system/stories/TimelineRange.stories.tsx#TimelineRangeContract"
+  ],
+  "semantics": [
+    "Two labeled sliders with time value text",
+    "Handles cannot cross",
+    "Opposite vertical targets keep narrow ranges operable"
+  ],
+  "keyboard": [
+    "Arrow keys adjust one step",
+    "Shift and arrows adjust ten steps",
+    "Page keys adjust ten seconds",
+    "Home and End reach the permitted limits"
+  ],
+  "targetSize": 44,
+  "dependencies": [],
+  "$schema": "../../contracts/component.schema.json"
+}

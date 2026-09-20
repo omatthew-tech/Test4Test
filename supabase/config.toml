@@ -436,3 +436,17 @@ verify_jwt = false
 
 [functions.dispatch-recording-transcripts]
 verify_jwt = false
+
+# Internal scheduler endpoint verifies CHAT_DISPATCH_SECRET in the handler.
+[functions.dispatch-chat-notifications]
+verify_jwt = false
+
+# Guest clip tokens and authenticated creator sessions are verified in the handler.
+[functions.recording-clips]
+verify_jwt = false
+
+[functions.complete-recording-clip]
+verify_jwt = false
+
+[functions.dispatch-recording-clips]
+verify_jwt = false

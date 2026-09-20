@@ -1,5 +1,20 @@
 [
   {
+    "name": "shared-clip",
+    "routePattern": "/clips/shared",
+    "path": "/clips/shared#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "name": "messages",
+    "routePattern": "/messages",
+    "path": "/messages?ds-user=user-mateo"
+  },
+  {
+    "name": "message-conversation",
+    "routePattern": "/messages/:conversationId",
+    "path": "/messages/demo-submission-palette-user-avery?ds-user=user-mateo"
+  },
+  {
     "name": "home",
     "routePattern": "/",
     "path": "/?ds-home-trusted=1"

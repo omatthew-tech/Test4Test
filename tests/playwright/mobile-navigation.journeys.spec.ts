@@ -57,6 +57,7 @@ test("founder menu groups current navigation and all existing account destinatio
     "Profile",
     "New app",
     "My reviews",
+    "Messages (1)",
   ]);
   await expect(panel.getByRole("button", { name: "Sign out" })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("header").analyze()).violations).toEqual([]);
@@ -64,6 +65,7 @@ test("founder menu groups current navigation and all existing account destinatio
     ["Profile", "/profile"],
     ["New app", "/submit"],
     ["My reviews", "/submissions"],
+    ["Messages (1)", "/messages"],
   ]) {
     await page.goto("/profile?ds-user=user-mateo");
     const accountPanel = await openNavigation(page);
@@ -76,7 +78,7 @@ test("founder menu groups current navigation and all existing account destinatio
 test("tester menu preserves account restrictions", async ({ page }) => {
   await page.goto("/profile?ds-tester=locked");
   const panel = await openNavigation(page);
-  await expect(panel.getByRole("link")).toHaveText(["Earn", "Profile"]);
+  await expect(panel.getByRole("link")).toHaveText(["Earn", "Profile", "Messages (1)"]);
   await expect(panel.getByRole("button", { name: "Sign out" })).toBeVisible();
   await panel.getByRole("link", { name: "Profile", exact: true }).click();
   await expect(panel).toHaveCount(0);

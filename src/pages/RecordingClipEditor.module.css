@@ -1,0 +1,21 @@
+.root {
+  padding: var(--ds-semantic-space-inset-card-mobile);
+  background: var(--ds-semantic-color-surface-default);
+  color: var(--ds-semantic-color-text-primary);
+}
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-md);
+}
+.heading span {
+  color: var(--ds-semantic-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+}

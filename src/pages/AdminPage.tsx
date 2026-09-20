@@ -11,6 +11,7 @@ import {
   restoreReportedSubmission,
 } from "../lib/testReports";
 import { AdminReviewSubmission, AdminTestReport } from "../types";
+import { AdminEarnExperiment } from "./AdminEarnExperiment";
 
 type AdminAction = `report:${string}:ok` | `report:${string}:not_ok` | `restore:${string}`;
 type PendingReportDecision = { reportId: string; decision: "ok" | "not_ok" } | null;
@@ -202,6 +203,14 @@ export function AdminPage() {
       eyebrowLabel={null}
     >
       <div className="page-stack admin-page">
+        <AdminEarnExperiment
+          key={currentUser.id}
+          fixture={
+            import.meta.env.DEV &&
+            import.meta.env.VITE_DS_FIXTURES === "1" &&
+            searchParams.get("ds-experiment") === "1"
+          }
+        />
         {loadError ? (
           <Surface className="callout callout--warning">
             <ShieldAlert size={20} />

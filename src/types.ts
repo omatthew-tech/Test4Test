@@ -211,6 +211,9 @@ export interface TesterEarnAccessSummary {
 }
 
 export interface EarnVisibilitySummary {
+  experimentKey?: string | null;
+  experimentVariant?: "A" | "B" | null;
+  listingLocked?: boolean;
   submissionId: string | null;
   productName: string | null;
   hasCompletedTest: boolean;

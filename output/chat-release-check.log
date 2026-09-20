@@ -1,0 +1,18 @@
+
+> test4test@0.1.0 ds:check
+> npm run ds:check:release
+
+
+> test4test@0.1.0 ds:check:release
+> npm run format:check && npm run lint && npm run typecheck && npm run ds:validate && npm run test && npm run ds:a11y && npm run ds:visual && npm run build
+
+
+> test4test@0.1.0 format:check
+> prettier --check "design-system/**/*.{ts,tsx,css,json,md}" "src/**/*.{ts,tsx,css}" ".storybook/**/*.{ts,tsx}" "tests/**/*.{ts,tsx,json}" "scripts/**/*.{mjs,ts}"
+
+Checking formatting...
+[warn] design-system/components/timeline-range.module.css
+[warn] design-system/components/timeline-range.tsx
+[warn] design-system/stories/TimelineRange.stories.tsx
+[warn] tests/unit/email-reminders.test.ts
+[warn] Code style issues found in 4 files. Run Prettier with --write to fix.

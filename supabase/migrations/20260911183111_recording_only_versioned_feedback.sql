@@ -604,3 +604,13 @@ $$;
 revoke all on function private.queue_upload_media_deletion() from public, anon, authenticated;
 create trigger queue_upload_media_deletion after update of status, thumbnail_path
 on public.test_response_recording_uploads for each row execute function private.queue_upload_media_deletion();
+
+-- A legacy deployment may have enabled clipping before recording versions.
+do $$ begin
+  if to_regclass('public.recording_clips') is not null then
+    alter table public.recording_clips add constraint recording_clips_version_id_fkey
+      foreign key (version_id) references public.test_response_versions(id) on delete cascade;
+    create trigger invalidate_version_clips after update of recording_bucket, recording_path, recording_deleted_at
+      on public.test_response_versions for each row execute function private.invalidate_recording_clips();
+  end if;
+end; $$;

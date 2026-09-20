@@ -269,7 +269,7 @@ export async function processNewFeedbackNotificationForResponse(
     return { outcome: "skipped" as const, reason: "already_sent" as const };
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/analytics`;
+  const feedbackUrl = `${env.appBaseUrl}/analytics?earn_entry=feedback_email`;
 
   await sendNewFeedbackNotification(
     admin,

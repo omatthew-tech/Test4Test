@@ -51,7 +51,7 @@
 .transcript {
   display: grid;
   grid-area: transcript;
-  gap: var(--ds-semantic-space-stack-lg);
+  gap: var(--ds-semantic-space-stack-2xl);
   min-width: 0;
 }
 

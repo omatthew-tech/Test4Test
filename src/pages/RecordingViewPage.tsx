@@ -26,6 +26,7 @@ import {
 import styles from "./RecordingViewPage.module.css";
 import { RecordingTranscript } from "./RecordingTranscript";
 import { RecordingFeedback } from "./RecordingFeedback";
+import { RecordingClipEditor } from "./RecordingClipEditor";
 
 type PlaybackState = { key: string } & (
   | { status: "loading"; url: ""; fileName: ""; error: "" }
@@ -347,6 +348,17 @@ export function RecordingViewPage() {
                 >
                   Your browser does not support embedded video playback.
                 </video>
+              )}
+              {canPlay && currentPlayback.status === "ready" && (
+                <RecordingClipEditor
+                  key={playbackKey}
+                  video={videoElement}
+                  responseId={selectedRecording.response.id}
+                  versionId={requestedVersionId}
+                  durationHint={
+                    selectedVersion?.durationSeconds ?? selectedRecording.response.durationSeconds
+                  }
+                />
               )}
             </Surface>
 

@@ -8,6 +8,7 @@ import { EarnPage } from "../../src/pages/EarnPage";
 import type { EarnSubmissionReputation, EarnVisibilitySummary, Submission } from "../../src/types";
 
 const backend = vi.hoisted(() => ({
+  guest: false,
   summary: vi.fn<() => Promise<EarnVisibilitySummary>>(),
   submissions: vi.fn<() => Promise<Submission[]>>(),
   reputations: vi.fn<() => Promise<EarnSubmissionReputation[]>>(),
@@ -16,7 +17,7 @@ const backend = vi.hoisted(() => ({
 vi.mock("../../src/context/AppStateContext", () => ({
   useAppState: () => ({
     state: seededState,
-    currentUser: seededState.users[1],
+    currentUser: backend.guest ? null : seededState.users[1],
     isConfigured: true,
     listEarnSubmissions: backend.submissions,
   }),
@@ -71,7 +72,12 @@ async function mount() {
 }
 
 beforeEach(() => {
+  backend.guest = false;
   localStorage.clear();
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => ({ matches: false })),
+  });
   backend.summary.mockReset().mockResolvedValue({ ...newOwnerSummary });
   backend.submissions.mockReset().mockResolvedValue([availableTest]);
   backend.reputations.mockReset().mockResolvedValue([]);
@@ -125,6 +131,56 @@ it("uses credit placeholders until testing history exists, even with no availabl
   expect(metric("Test-back rate")).toBe("--");
   expect(screen.getByText("#2", { exact: false })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Complete a test" })).toBeNull();
+});
+
+it("shows the original B experience and scrolls to an available test without showing the welcome message", async () => {
+  backend.summary.mockResolvedValue({
+    ...newOwnerSummary,
+    experimentKey: "earn_activation_v1",
+    experimentVariant: "B",
+    listingLocked: true,
+    rank: null,
+    rankAfterOneCredit: null,
+  });
+  await mount();
+  expect(screen.getByText("Your app isn't listed yet...")).toBeTruthy();
+  expect(screen.getByText("Only visible to you")).toBeTruthy();
+  expect(screen.getByText(/Private preview of where/)).toBeTruthy();
+  expect(screen.queryByText("Welcome to Test4Test!")).toBeNull();
+  expect(metric("Credits")).toBe("--");
+  await userEvent.setup().click(screen.getByRole("button", { name: "Complete a test" }));
+  expect(backend.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
+  expect(document.activeElement?.textContent).toContain("Pocket Pantry");
+});
+
+it("explains when B has no available tests and does not leak unfiltered local apps after a server error", async () => {
+  backend.summary.mockResolvedValue({
+    ...newOwnerSummary,
+    listingLocked: true,
+    rank: null,
+    rankAfterOneCredit: null,
+  });
+  backend.submissions.mockRejectedValue(new Error("Earn is temporarily unavailable"));
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  await mount();
+  expect(
+    (screen.getByRole("button", { name: "Complete a test" }) as HTMLButtonElement).disabled,
+  ).toBe(true);
+  expect(screen.getByText("No available tests match your filters right now.")).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "View test" })).toBeNull();
+});
+
+it("keeps unfiltered local apps hidden while a configured listing request is pending", async () => {
+  backend.submissions.mockImplementation(() => new Promise(() => {}));
+  await mount();
+  expect(screen.queryByRole("link", { name: "View test" })).toBeNull();
+});
+
+it("does not expose local apps to guests in a configured environment", async () => {
+  backend.guest = true;
+  await mount();
+  expect(screen.queryByRole("link", { name: "View test" })).toBeNull();
+  expect(backend.submissions).not.toHaveBeenCalled();
 });
 
 it("preserves Improve rate scrolling and focus for owners with testing history", async () => {

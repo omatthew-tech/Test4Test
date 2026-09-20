@@ -1,6 +1,6 @@
 import type { StarRating } from "../../src/types";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { seededState } from "../../src/data/seeds";
 import { RecordingFeedback } from "../../src/pages/RecordingFeedback";
@@ -21,9 +21,19 @@ vi.mock("../../src/lib/recordingFeedback", async (importOriginal) => ({
 vi.mock("../../src/lib/recordingShare", () => ({ createRecordingShareUrl: vi.fn() }));
 
 const response = seededState.responses[0];
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <output data-testid="location">
+      {location.pathname}
+      {location.search}
+    </output>
+  );
+}
 function mount(selected = response) {
   return render(
     <MemoryRouter>
+      <LocationProbe />
       <RecordingFeedback
         key={selected.id}
         response={selected}
@@ -128,7 +138,7 @@ it("retries a failed load before allowing a rating to overwrite unknown state", 
   );
 });
 
-it("loads contact details only on demand and offers a payment link or email draft", async () => {
+it("loads tip details on demand and opens in-app chat without loading email details", async () => {
   mount();
   await act(async () => {});
   expect(loadRecordingContact).not.toHaveBeenCalled();
@@ -137,10 +147,10 @@ it("loads contact details only on demand and offers a payment link or email draf
     "https://paypal.me/tester",
   );
   fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  vi.mocked(loadRecordingContact).mockClear();
   fireEvent.click(screen.getByRole("button", { name: "Message" }));
-  expect((await screen.findByRole("link", { name: "Write email" })).getAttribute("href")).toContain(
-    "mailto:tester%40example.com",
-  );
+  expect(screen.getByTestId("location").textContent).toBe(`/messages?response=${response.id}`);
+  expect(loadRecordingContact).not.toHaveBeenCalled();
 });
 
 it("explains missing public-tester contact details without making a request", async () => {

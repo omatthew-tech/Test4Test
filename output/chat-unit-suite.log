@@ -1,0 +1,13 @@
+
+> test4test@0.1.0 test
+> vitest run --project unit
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+
+ Test Files  47 passed (47)
+      Tests  438 passed (438)
+   Start at  14:13:36
+   Duration  20.47s (transform 7.55s, setup 0ms, import 22.34s, tests 135.23s, environment 110.13s)
+

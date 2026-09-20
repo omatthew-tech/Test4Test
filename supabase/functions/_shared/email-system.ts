@@ -143,12 +143,14 @@ export async function sendEmail(
     textBody,
     htmlBody,
     replyTo,
+    timeoutMs,
   }: {
     to: string;
     subject: string;
     textBody: string;
     htmlBody: string;
     replyTo?: string | null;
+    timeoutMs?: number;
   },
 ) {
   const customHeaders = replyTo?.trim()
@@ -157,6 +159,7 @@ export async function sendEmail(
 
   const response = await fetch("https://api.smtp2go.com/v3/email/send", {
     method: "POST",
+    ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",

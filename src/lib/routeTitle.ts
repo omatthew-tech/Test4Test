@@ -12,6 +12,7 @@ const routeTitles: Record<string, string> = {
   "/analytics": "Analyze",
   "/recordings": "Recordings",
   "/recordings/shared": "Shared recording",
+  "/messages": "Messages",
   "/email-preview": "Email preview",
   "/submissions": "My reviews",
   "/credits": "Credits",
@@ -27,6 +28,7 @@ export function getRouteTitle(pathname: string) {
   if (/^\/test\/[^/]+\/success$/i.test(path)) return "Feedback submitted";
   if (/^\/test\/[^/]+$/i.test(path)) return "Test session";
   if (/^\/submissions\/[^/]+\/revise$/i.test(path)) return "Revise feedback";
+  if (/^\/messages\/[^/]+$/i.test(path)) return "Messages";
   return routeTitles[path.toLowerCase()] ?? "Page not found";
 }
 

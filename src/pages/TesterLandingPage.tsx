@@ -6,7 +6,7 @@ import { Button, Card } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import styles from "./TesterLandingPage.module.css";
 
-const paypalSymbolPath = "/Assets/PayPal%20P.svg";
+const paypalSymbolPath = "/images/paypal-symbol.svg";
 
 interface TesterStepProps {
   children: ReactNode;

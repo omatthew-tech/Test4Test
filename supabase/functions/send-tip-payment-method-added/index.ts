@@ -202,6 +202,7 @@ Deno.serve(async (request) => {
 
     const seenResponseIds = new Set<string>();
     let notifiedCount = 0;
+    let failedCount = 0;
 
     for (const requestLog of requestLogs) {
       const responseId = requestLog.related_response_id;
@@ -227,7 +228,7 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      const reviewUrl = `${env.appBaseUrl}/analytics`;
+      const reviewUrl = `${env.appBaseUrl}/analytics?earn_entry=other_email`;
       const rendered = renderEmailTemplate(template, {
         reviewUrl,
       });
@@ -257,6 +258,7 @@ Deno.serve(async (request) => {
 
         notifiedCount += 1;
       } catch (error) {
+        failedCount += 1;
         await logEmailDelivery(admin, {
           templateKey: addedTemplateKey,
           recipientUserId: founder.id,
@@ -277,14 +279,21 @@ Deno.serve(async (request) => {
       }
     }
 
-    return json({
-      ok: true,
-      notifiedCount,
-      message:
-        notifiedCount > 0
-          ? `Notified ${notifiedCount} founder${notifiedCount === 1 ? "" : "s"}.`
-          : "No pending tip notifications needed to be sent.",
-    });
+    return json(
+      {
+        ok: failedCount === 0,
+        notifiedCount,
+        failedCount,
+        ...(failedCount > 0
+          ? { error: "Some tip notifications could not be sent. Please try again." }
+          : {}),
+        message:
+          notifiedCount > 0
+            ? `Notified ${notifiedCount} founder${notifiedCount === 1 ? "" : "s"}.`
+            : "No pending tip notifications needed to be sent.",
+      },
+      failedCount > 0 ? 502 : 200,
+    );
   } catch (error) {
     return json(
       { error: error instanceof Error ? error.message : "Failed to send tip notifications." },

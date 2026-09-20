@@ -6,7 +6,7 @@ The recording viewer places an optional 1–5 star rating below the current vide
 
 Ratings persist in the existing `feedback_ratings` table using exact stars. The recording page no longer offers Clear rating. The earlier clearing migration is not required for this submit flow. See [star-ratings-rollout.md](star-ratings-rollout.md) for the conversion, reputation, revision, and report migration. No production database changes are made by the interface implementation.
 
-Tip loads the tester profile on demand and offers supported PayPal, Venmo, or Cash App links. The user confirms the amount at the payment provider. When no supported link exists, an explicit Request payment link action uses the existing `send-tip-payment-method-request` endpoint. Message offers a mailto link to open a draft; there is no new in-app inbox. Public recordings without a registered tester explain that contact details are unavailable.
+Tip loads the tester profile on demand and offers supported PayPal, Venmo, or Cash App links. The user confirms the amount at the payment provider. When no supported link exists, an explicit Request payment link action uses the existing `send-tip-payment-method-request` endpoint. Message opens the private in-app conversation for that app and tester, creating it only on first send; see [in-app-chat.md](in-app-chat.md). Public recordings without a registered tester explain that contact details are unavailable.
 
 Design-system fixtures keep ratings in memory and use fixture contact details. They do not call production media, Supabase, payment providers, or email APIs.
 

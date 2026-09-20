@@ -109,16 +109,10 @@ for (const viewport of [
     await page.keyboard.press("Escape");
     await expect(tip).toBeFocused();
     await message.click();
-    await expect(page.getByRole("dialog", { name: "Message the tester" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Write email" })).toHaveAttribute(
-      "href",
-      /^mailto:/,
-    );
-    await page.keyboard.press("Escape");
-    await expect(message).toBeFocused();
-    // Dialog restores focus on the next frame after the native close event.
-    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
-    await page.keyboard.press("Tab");
+    await expect(page).toHaveURL(/\/messages\?response=/);
+    await expect(page.getByRole("textbox", { name: "Message", exact: true })).toBeVisible();
+    await page.goBack();
+    await share.focus();
     await expect(share).toBeFocused();
     await page.keyboard.press("Enter");
     const shareDialog = page.getByRole("dialog", { name: "Share recording" });

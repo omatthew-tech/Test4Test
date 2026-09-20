@@ -1,0 +1,10 @@
+
+> test4test@0.1.0 build
+> npm run generate:seo && tsc && vite build && npm run prerender:blog
+
+
+> test4test@0.1.0 generate:seo
+> node scripts/generate-seo-files.mjs
+
+Generated sitemap.xml and robots.txt for 1 published blog post(s).
+tests/unit/recording-clips-database.test.ts(36,131): error TS2550: Property 'replaceAll' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2021' or later.

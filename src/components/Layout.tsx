@@ -5,6 +5,7 @@ import {
   Coins,
   HandCoins,
   ListChecks,
+  MessageCircle,
   LogOut,
   Newspaper,
   Plus,
@@ -27,6 +28,7 @@ import {
 } from "@test4test/design-system";
 import { useAccountState, useAppActions } from "../context/AppStateContext";
 import { useRouteTitle } from "../lib/routeTitle";
+import { useChatUnreadCount } from "../context/ChatContext";
 import styles from "./Layout.module.css";
 
 const supportEmail = "support@test4test.io";
@@ -96,6 +98,7 @@ export function AppShell({
   useRouteTitle(location.pathname);
   const navigate = useNavigate();
   const { currentUser } = useAccountState();
+  const unreadCount = useChatUnreadCount();
   const { signOut } = useAppActions();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
@@ -170,6 +173,12 @@ export function AppShell({
             icon: <ListChecks />,
           },
         ]),
+    {
+      id: "messages",
+      label: unreadCount ? `Messages (${unreadCount})` : "Messages",
+      to: accountHref("/messages"),
+      icon: <MessageCircle />,
+    },
   ];
   const signOutItem = {
     id: "sign-out",

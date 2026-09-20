@@ -1,5 +1,5 @@
 import type { ComponentType, ReactElement } from "react";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import {
   BrowserRouter,
   MemoryRouter,
@@ -10,13 +10,18 @@ import {
 } from "react-router-dom";
 import { Alert, Button, Container, Skeleton, Stack } from "@test4test/design-system";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
+import { ChatProvider } from "./context/ChatContext";
 import { AppShell } from "./components/Layout";
 import { trackEventOncePerSession } from "./lib/analytics";
+import { installEarnVisitActivity } from "./lib/earnExperimentVisits";
 import { founderWorkspaceRedirect } from "./lib/accountAccess";
 import { useRouteNavigation } from "./lib/routeNavigation";
 import styles from "./Application.module.css";
 
 const HomePage = lazy(() => import("./pages/HomePage").then((m) => ({ default: m.HomePage })));
+const MessagesPage = lazy(() =>
+  import("./pages/MessagesPage").then((m) => ({ default: m.MessagesPage })),
+);
 
 const AdminPage = lazy(() => import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })));
 const AnalyticsPage = lazy(() =>
@@ -44,6 +49,9 @@ const RecordingViewPage = lazy(() =>
 );
 const SharedRecordingPage = lazy(() =>
   import("./pages/SharedRecordingPage").then((m) => ({ default: m.SharedRecordingPage })),
+);
+const SharedClipPage = lazy(() =>
+  import("./pages/SharedClipPage").then((m) => ({ default: m.SharedClipPage })),
 );
 const ReviseSubmissionPage = lazy(() =>
   import("./pages/ReviseSubmissionPage").then((m) => ({ default: m.ReviseSubmissionPage })),
@@ -114,7 +122,10 @@ function AppStateBoundary({ children }: { children: ReactElement }) {
   const { loadError, isLoading, retryLoad } = useAppState();
   const { pathname } = useLocation();
   const isIndependentPublicRoute =
-    pathname === "/blog" || pathname.startsWith("/blog/") || pathname === "/recordings/shared";
+    pathname === "/blog" ||
+    pathname.startsWith("/blog/") ||
+    pathname === "/recordings/shared" ||
+    pathname === "/clips/shared";
   if (!loadError || isIndependentPublicRoute) {
     return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
   }
@@ -186,7 +197,13 @@ function BannedOnlyRoute({ children }: { children: ReactElement }) {
   return children;
 }
 
-function AuthenticatedRoute({ children }: { children: ReactElement }) {
+function AuthenticatedRoute({
+  children,
+  allowTester = false,
+}: {
+  children: ReactElement;
+  allowTester?: boolean;
+}) {
   const location = useLocation();
   const { currentUser, isLoading } = useAppState();
 
@@ -203,7 +220,7 @@ function AuthenticatedRoute({ children }: { children: ReactElement }) {
     return <Navigate to={`/sign-in?returnTo=${returnTo}`} replace />;
   }
 
-  if (founderWorkspaceRedirect(currentUser.accountType)) {
+  if (!allowTester && founderWorkspaceRedirect(currentUser.accountType)) {
     return <Navigate to={{ pathname: "/earn", search: location.search }} replace />;
   }
 
@@ -229,6 +246,10 @@ export default function App({
   const Router = prerenderPath ? MemoryRouter : BrowserRouter;
   const BlogIndex = blogPages?.index ?? BlogPage;
   const BlogPost = blogPages?.post ?? BlogPostPage;
+  useLayoutEffect(() => {
+    if (prerenderPath || (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1")) return;
+    return installEarnVisitActivity();
+  }, [prerenderPath]);
   useEffect(() => {
     if (!(import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1")) {
       trackEventOncePerSession("site_visited");
@@ -240,168 +261,187 @@ export default function App({
       <Router {...(prerenderPath ? { initialEntries: [prerenderPath] } : {})}>
         <RouteNavigation />
         <AppStateProvider>
-          <AppStateBoundary>
-            <Routes>
-              <Route path="/" element={<RootPage />} />
-              <Route
-                path="/sign-in"
-                element={
-                  <BanRedirectRoute>
-                    <SignInPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/submit"
-                element={
-                  <FounderWorkspaceRoute>
-                    <SubmitFlowPage />
-                  </FounderWorkspaceRoute>
-                }
-              />
-              <Route
-                path="/verify"
-                element={
-                  <BanRedirectRoute>
-                    <VerifyPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/get-paid-to-test"
-                element={
-                  <BanRedirectRoute>
-                    <TesterLandingPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/get-paid-to-test/signup"
-                element={
-                  <BanRedirectRoute>
-                    <TesterSignupPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route path="/blog" element={<BlogIndex />} />
-              <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route
-                path="/earn"
-                element={
-                  <BanRedirectRoute>
-                    <EarnPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/share"
-                element={
-                  <AuthenticatedRoute>
-                    <SharePage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/analytics"
-                element={
-                  <AuthenticatedRoute>
-                    <AnalyticsPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route path="/recordings/shared" element={<SharedRecordingPage />} />
-              <Route
-                path="/recordings"
-                element={
-                  <AuthenticatedRoute>
-                    <RecordingViewPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/email-preview"
-                element={
-                  <FounderWorkspaceRoute>
-                    <EmailPreviewPage />
-                  </FounderWorkspaceRoute>
-                }
-              />
-              <Route
-                path="/test/:submissionId"
-                element={
-                  <BanRedirectRoute>
-                    <TestSessionPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/test/:submissionId/success"
-                element={
-                  <BanRedirectRoute>
-                    <TestSuccessPage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route path="/my-tests" element={<LegacyResultsRedirect />} />
-              <Route path="/my-tests/:submissionId" element={<LegacyResultsRedirect />} />
-              <Route
-                path="/submissions"
-                element={
-                  <AuthenticatedRoute>
-                    <SubmissionsPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/submissions/:responseId/revise"
-                element={
-                  <AuthenticatedRoute>
-                    <ReviseSubmissionPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/credits"
-                element={
-                  <AuthenticatedRoute>
-                    <CreditsPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <BanRedirectRoute>
-                    <ProfilePage />
-                  </BanRedirectRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <AuthenticatedRoute>
-                    <AdminPage />
-                  </AuthenticatedRoute>
-                }
-              />
-              <Route
-                path="/banned"
-                element={
-                  <BannedOnlyRoute>
-                    <BannedPage />
-                  </BannedOnlyRoute>
-                }
-              />
-              <Route
-                path="*"
-                element={
-                  <BanRedirectRoute>
-                    <NotFoundPage />
-                  </BanRedirectRoute>
-                }
-              />
-            </Routes>
-          </AppStateBoundary>
+          <ChatProvider>
+            <AppStateBoundary>
+              <Routes>
+                <Route
+                  path="/messages"
+                  element={
+                    <AuthenticatedRoute allowTester>
+                      <MessagesPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/messages/:conversationId"
+                  element={
+                    <AuthenticatedRoute allowTester>
+                      <MessagesPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route path="/" element={<RootPage />} />
+                <Route
+                  path="/sign-in"
+                  element={
+                    <BanRedirectRoute>
+                      <SignInPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/submit"
+                  element={
+                    <FounderWorkspaceRoute>
+                      <SubmitFlowPage />
+                    </FounderWorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/verify"
+                  element={
+                    <BanRedirectRoute>
+                      <VerifyPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/get-paid-to-test"
+                  element={
+                    <BanRedirectRoute>
+                      <TesterLandingPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/get-paid-to-test/signup"
+                  element={
+                    <BanRedirectRoute>
+                      <TesterSignupPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route path="/blog" element={<BlogIndex />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route
+                  path="/earn"
+                  element={
+                    <BanRedirectRoute>
+                      <EarnPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/share"
+                  element={
+                    <AuthenticatedRoute>
+                      <SharePage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <AuthenticatedRoute>
+                      <AnalyticsPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route path="/recordings/shared" element={<SharedRecordingPage />} />
+                <Route path="/clips/shared" element={<SharedClipPage />} />
+                <Route
+                  path="/recordings"
+                  element={
+                    <AuthenticatedRoute>
+                      <RecordingViewPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/email-preview"
+                  element={
+                    <FounderWorkspaceRoute>
+                      <EmailPreviewPage />
+                    </FounderWorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/test/:submissionId"
+                  element={
+                    <BanRedirectRoute>
+                      <TestSessionPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/test/:submissionId/success"
+                  element={
+                    <BanRedirectRoute>
+                      <TestSuccessPage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route path="/my-tests" element={<LegacyResultsRedirect />} />
+                <Route path="/my-tests/:submissionId" element={<LegacyResultsRedirect />} />
+                <Route
+                  path="/submissions"
+                  element={
+                    <AuthenticatedRoute>
+                      <SubmissionsPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/submissions/:responseId/revise"
+                  element={
+                    <AuthenticatedRoute>
+                      <ReviseSubmissionPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/credits"
+                  element={
+                    <AuthenticatedRoute>
+                      <CreditsPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <BanRedirectRoute>
+                      <ProfilePage />
+                    </BanRedirectRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <AuthenticatedRoute>
+                      <AdminPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/banned"
+                  element={
+                    <BannedOnlyRoute>
+                      <BannedPage />
+                    </BannedOnlyRoute>
+                  }
+                />
+                <Route
+                  path="*"
+                  element={
+                    <BanRedirectRoute>
+                      <NotFoundPage />
+                    </BanRedirectRoute>
+                  }
+                />
+              </Routes>
+            </AppStateBoundary>
+          </ChatProvider>
         </AppStateProvider>
       </Router>
     </div>

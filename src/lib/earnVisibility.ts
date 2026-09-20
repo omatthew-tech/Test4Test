@@ -11,6 +11,9 @@ import { normalizeInstructionSteps } from "./instructions";
 import { requireSupabase } from "./supabase";
 
 interface EarnVisibilitySummaryRpcRow {
+  experiment_key?: string | null;
+  experiment_variant?: "A" | "B" | null;
+  listing_locked?: boolean | null;
   submission_id: string | null;
   product_name: string | null;
   has_completed_test: boolean | null;
@@ -194,6 +197,9 @@ export async function loadEarnVisibilitySummary() {
 
   return {
     submissionId: row.submission_id ?? null,
+    experimentKey: row.experiment_key ?? null,
+    experimentVariant: row.experiment_variant ?? null,
+    listingLocked: row.listing_locked === true,
     productName: row.product_name ?? null,
     hasCompletedTest: row.has_completed_test === true,
     rank: normalizeRank(row.rank),

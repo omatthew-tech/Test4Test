@@ -337,6 +337,25 @@ async function logModerationEmail(
   });
 }
 
+async function hasSentModerationEmail(
+  admin: SupabaseClient,
+  reportId: string,
+  recipientUserId: string,
+  templateKey: string,
+) {
+  const { data, error } = await admin
+    .from("email_delivery_logs")
+    .select("id")
+    .eq("template_key", templateKey)
+    .eq("recipient_user_id", recipientUserId)
+    .eq("status", "sent")
+    .contains("metadata", { reportId })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
 async function sendReporterOkEmail(
   admin: SupabaseClient,
   env: ReturnType<typeof getEmailEnvironment>,
@@ -344,8 +363,10 @@ async function sendReporterOkEmail(
   submission: SubmissionRow,
   reporter: ProfileRow,
 ) {
+  if (await hasSentModerationEmail(admin, report.id, reporter.id, "test_report_reporter_ok"))
+    return;
   const supportEmail = getSupportEmail();
-  const earnUrl = `${env.appBaseUrl}/earn`;
+  const earnUrl = `${env.appBaseUrl}/earn?earn_entry=other_email`;
   const reasonLabel = reasonLabels[report.reason];
   const subject = `We reviewed your report for ${submission.product_name}`;
   const textBody = [
@@ -398,6 +419,8 @@ async function sendReporterNotOkEmail(
   submission: SubmissionRow,
   reporter: ProfileRow,
 ) {
+  if (await hasSentModerationEmail(admin, report.id, reporter.id, "test_report_reporter_not_ok"))
+    return;
   const supportEmail = getSupportEmail();
   const subject = `Thanks for reporting ${submission.product_name}`;
   const textBody = [
@@ -445,8 +468,10 @@ async function sendFounderNotOkEmail(
   submission: SubmissionRow,
   founder: ProfileRow,
 ) {
+  if (await hasSentModerationEmail(admin, report.id, founder.id, "test_report_founder_not_ok"))
+    return;
   const supportEmail = getSupportEmail();
-  const editAppUrl = `${env.appBaseUrl}/earn?edit=${encodeURIComponent(submission.id)}`;
+  const editAppUrl = `${env.appBaseUrl}/earn?edit=${encodeURIComponent(submission.id)}&earn_entry=other_email`;
   const reasonLabel = reasonLabels[report.reason];
   const customMessage = report.message.trim() || "No custom message was provided.";
   const subject = `${submission.product_name} has been paused`;
@@ -498,7 +523,7 @@ async function sendFounderNotOkEmail(
   });
 }
 
-async function decideReport(
+export async function decideReport(
   admin: SupabaseClient,
   env: ReturnType<typeof getEmailEnvironment>,
   user: User,
@@ -506,10 +531,6 @@ async function decideReport(
   decision: ReportDecision,
 ) {
   const report = await loadReport(admin, reportId);
-
-  if (report.status !== "pending") {
-    return { skipped: true, message: "This report has already been decided." };
-  }
 
   const submissionsById = await loadSubmissions(admin, [report.submission_id]);
   const submission = submissionsById.get(report.submission_id);
@@ -524,6 +545,22 @@ async function decideReport(
 
   if (!reporter || !founder) {
     throw new Error("Reporter or founder profile not found.");
+  }
+
+  // A saved decision can outlive a failed email. Retry only its missing
+  // notifications, without awarding another credit or changing the decision.
+  if (report.status !== "pending") {
+    const savedDecision = report.status === "dismissed" ? "ok" : "not_ok";
+    if (decision !== savedDecision) {
+      return { skipped: true, message: "This report has already been decided." };
+    }
+    if (savedDecision === "ok") {
+      await sendReporterOkEmail(admin, env, report, submission, reporter);
+    } else {
+      await sendReporterNotOkEmail(admin, env, report, submission, reporter);
+      await sendFounderNotOkEmail(admin, env, report, submission, founder);
+    }
+    return { skipped: false, message: "Report decision notifications are up to date." };
   }
 
   const decidedAt = new Date().toISOString();

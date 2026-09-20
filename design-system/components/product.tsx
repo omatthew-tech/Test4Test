@@ -1,5 +1,13 @@
 import { ArrowRight, Star } from "lucide-react";
-import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEventHandler,
+  type ReactNode,
+} from "react";
 import { Button, Link } from "./actions";
 import { Badge, Card, StatusIndicator, Surface, type StatusTone } from "./data-display";
 import { Cluster, Stack } from "./layout";
@@ -235,6 +243,8 @@ export interface EarnTestCardReputation {
 export interface EarnTestCardProps {
   title: ReactNode;
   description: ReactNode;
+  /** Collapse overflowing descriptions to two lines with an inline disclosure. */
+  expandableDescription?: boolean;
   badges: EarnTestCardBadge[];
   action?: EarnTestCardAction;
   supportingNote?: ReactNode;
@@ -246,9 +256,116 @@ export interface EarnTestCardProps {
   style?: CSSProperties;
 }
 
+function EarnTestCardDescription({
+  description,
+  headingId,
+}: {
+  description: ReactNode;
+  headingId: string;
+}) {
+  const contentId = useId();
+  const labelId = useId();
+  const previewId = useId();
+  const measurementRef = useRef<HTMLSpanElement>(null);
+  const fittingRef = useRef<HTMLSpanElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  const [previewText, setPreviewText] = useState("");
+  const [expandedDescription, setExpandedDescription] = useState<ReactNode>(null);
+  const expanded = overflowing && expandedDescription === description;
+
+  useLayoutEffect(() => {
+    const measurement = measurementRef.current;
+    const fitting = fittingRef.current;
+    if (!measurement || !fitting) return;
+    let active = true;
+    const measure = () => {
+      if (!active) return;
+      const overflows = measurement.scrollHeight > measurement.clientHeight + 1;
+      setOverflowing(overflows);
+      if (!overflows) return;
+
+      // Fit the suffix together with the preview so it follows the text directly.
+      const characters = Array.from(measurement.textContent ?? "");
+      let start = 0;
+      let end = characters.length;
+      while (start < end) {
+        const middle = Math.ceil((start + end) / 2);
+        fitting.textContent = `${characters.slice(0, middle).join("").trimEnd()}…\u00a0more`;
+        if (fitting.scrollHeight <= fitting.clientHeight + 1) start = middle;
+        else end = middle - 1;
+      }
+      setPreviewText(characters.slice(0, start).join("").trimEnd());
+    };
+    measure();
+    const observer =
+      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    observer?.observe(measurement);
+    window.addEventListener("resize", measure);
+    void document.fonts?.ready.then(measure);
+    document.fonts?.addEventListener("loadingdone", measure);
+    return () => {
+      active = false;
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+      document.fonts?.removeEventListener("loadingdone", measure);
+    };
+  }, [description]);
+
+  return (
+    <div className={styles.earnTestCardDescription}>
+      {/* Keep a clamped copy measurable even while the full description is expanded. */}
+      <span
+        ref={measurementRef}
+        className={`${styles.earnTestCardDescriptionClamp} ${styles.earnTestCardDescriptionMeasure}`}
+        aria-hidden="true"
+        inert
+      >
+        {description}
+      </span>
+      <span
+        ref={fittingRef}
+        className={`${styles.earnTestCardDescriptionClamp} ${styles.earnTestCardDescriptionMeasure}`}
+        aria-hidden="true"
+        inert
+      />
+      <p id={contentId} hidden={overflowing && !expanded}>
+        {description}
+      </p>
+      {overflowing ? (
+        <Button
+          type="button"
+          variant="quiet"
+          className={
+            expanded ? styles.earnTestCardDescriptionLess : styles.earnTestCardDescriptionToggle
+          }
+          aria-expanded={expanded}
+          aria-controls={contentId}
+          aria-labelledby={`${labelId} ${headingId}`}
+          aria-describedby={expanded ? undefined : previewId}
+          onClick={() => setExpandedDescription(expanded ? null : description)}
+        >
+          <span id={labelId} className={expanded ? undefined : "ds-sr-only"}>
+            {expanded ? "Show less" : "Show full description for"}
+          </span>
+          {!expanded ? (
+            <span id={previewId} className={styles.earnTestCardDescriptionClamp}>
+              {previewText}
+              <span aria-hidden="true">
+                …{"\u00a0"}
+                <span>more</span>
+              </span>
+            </span>
+          ) : null}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export function EarnTestCard({
   title,
   description,
+  expandableDescription = false,
   badges,
   action,
   supportingNote,
@@ -259,6 +376,7 @@ export function EarnTestCard({
   className = "",
   style,
 }: EarnTestCardProps) {
+  const headingId = useId();
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const actionVariantClass =
     action?.variant === "secondary" ? styles.buttonSecondary : styles.buttonPrimary;
@@ -289,8 +407,12 @@ export function EarnTestCard({
             ))}
           </div>
           <div className={styles.earnTestCardHead}>
-            <Heading>{title}</Heading>
-            <p>{description}</p>
+            <Heading id={headingId}>{title}</Heading>
+            {expandableDescription ? (
+              <EarnTestCardDescription description={description} headingId={headingId} />
+            ) : (
+              <p>{description}</p>
+            )}
             {supportingNote ? (
               <div
                 className={`${styles.earnTestCardSupportingNote} ${

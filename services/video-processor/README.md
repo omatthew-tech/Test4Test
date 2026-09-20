@@ -23,8 +23,12 @@ authorized test-account recording were verified on September 8, 2026. Overall
 release sign-off still awaits the unrelated visual baseline review and a separate
 staging-environment check. See the [transcript report runbook](../../docs/transcript-reports.md).
 
+Recording clips use a separate bounded MP4 export queue with durable Supabase
+leases and authenticated completion callbacks. See the
+[recording clips runbook](../../docs/recording-clips.md).
+
 The synchronized owner transcript viewer, exact-range annotations, app-level
-priorities, clips, and AI context filtering remain outside this implementation.
+priorities, and AI context filtering remain outside this worker implementation.
 
 Transcript integration must treat the source recording’s unlimited
 retention and explicit-deletion boundary as authoritative, use idempotent
@@ -133,6 +137,19 @@ cache lookups. If you override it here, set the same value as an Edge Function
 secret.
 
 ## API
+
+### `POST /recordings/clips/process`
+
+Requires `x-worker-secret` and `CLIP_COMPLETION_WEBHOOK_URL` pointing to the
+project's `/functions/v1/complete-recording-clip` endpoint. Accepts `clipId`,
+`attemptId`, `startMs`, `endMs`, and a `source` containing either the configured
+recording bucket/object key or a signed Supabase storage URL from the callback's
+project. Returns 202 when queued, 400 for invalid input, or 429 when full.
+
+The worker exports an accurately trimmed H.264/AAC MP4 to the private source
+recording bucket, then acknowledges completion to Supabase. Attempt IDs fence
+stale work; heartbeats and completion retries preserve durable job ownership.
+R2 credentials require GetObject, PutObject, and DeleteObject for that bucket.
 
 ### `POST /recordings/thumbnails/process`
 

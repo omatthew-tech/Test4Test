@@ -1,0 +1,124 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, var(--ds-semantic-size-content-compact-form)) minmax(0, 1fr);
+  gap: var(--ds-semantic-space-stack-lg);
+  align-items: start;
+}
+.inbox,
+.thread {
+  min-width: 0;
+  padding: var(--ds-semantic-space-inset-card-desktop);
+}
+.sectionTitle {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+  margin: 0;
+}
+.muted,
+.time {
+  color: var(--ds-semantic-color-text-tertiary);
+}
+.conversations,
+.messages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+.conversations {
+  margin-top: var(--ds-semantic-space-stack-lg);
+}
+.conversation {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+  padding: var(--ds-semantic-space-stack-md);
+  color: var(--ds-semantic-color-text-primary);
+  border-radius: var(--ds-semantic-radius-control);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.conversation:hover {
+  background: var(--ds-semantic-color-background-subtle);
+}
+.conversation[aria-current="page"] {
+  background: var(--ds-semantic-color-action-tint);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+.unread {
+  color: var(--ds-semantic-color-text-link);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+.preview {
+  color: var(--ds-semantic-color-text-tertiary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--ds-semantic-typography-interface-size);
+}
+.history {
+  max-height: var(--ds-semantic-size-content-form);
+  min-height: var(--ds-semantic-size-content-footer-column-min);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--ds-semantic-space-stack-xs);
+}
+.message {
+  max-width: var(--ds-semantic-size-content-form);
+  justify-self: start;
+  background: var(--ds-semantic-color-surface-inset);
+  border-radius: var(--ds-semantic-radius-surface);
+  padding: var(--ds-semantic-space-stack-md);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.message[data-own="true"] {
+  justify-self: end;
+  background: var(--ds-semantic-color-action-tint);
+}
+.sender {
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  font-size: var(--ds-semantic-typography-interface-size);
+}
+.body {
+  white-space: pre-wrap;
+  margin-block: var(--ds-semantic-space-stack-sm);
+}
+.time {
+  display: block;
+  font-size: var(--ds-semantic-typography-caption-size);
+  line-height: var(--ds-semantic-typography-caption-line-height);
+}
+.composer {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-md);
+}
+.send {
+  display: flex;
+  justify-content: end;
+}
+.back {
+  display: none;
+}
+@media (max-width: 767px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inbox,
+  .thread {
+    padding: var(--ds-semantic-space-inset-card-mobile);
+  }
+  .layout[data-selected="true"] .inbox,
+  .layout[data-selected="false"] .thread {
+    display: none;
+  }
+  .back {
+    display: inline-flex;
+  }
+}

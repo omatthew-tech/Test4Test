@@ -8,9 +8,34 @@ import { thumbnailQueue } from "./thumbnailQueue.js";
 import { createTranscriptNotifier, TranscriptQueue } from "./transcriptQueue.js";
 import { parseTranscriptJob, processRecordingTranscript } from "./transcriptProcessor.js";
 import type { RecordingThumbnailSource, VideoSource } from "./types.js";
+import { ClipQueue, createClipNotifier } from "./clipQueue.js";
+import { parseClipJob, processRecordingClip, deleteClipOutput } from "./clipProcessor.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+
+const clipQueue = new ClipQueue(
+  processRecordingClip,
+  createClipNotifier(config.clips.completionWebhookUrl, config.http.sharedSecret),
+  deleteClipOutput,
+);
+app.post("/recordings/clips/process", requireSecret, (req: Request, res: Response) => {
+  if (!config.clips.completionWebhookUrl) {
+    res.status(503).json({ error: "Clip worker is not configured." });
+    return;
+  }
+  const job = parseClipJob(req.body);
+  if (!job) {
+    res.status(400).json({ error: "Invalid clip job." });
+    return;
+  }
+  try {
+    clipQueue.enqueue(job);
+    res.status(202).json({ ok: true, attemptId: job.attemptId });
+  } catch {
+    res.status(429).json({ error: "Clip worker is busy." });
+  }
+});
 
 const transcriptQueue = new TranscriptQueue(
   processRecordingTranscript,
@@ -209,7 +234,8 @@ app.post("/frames/sign", requireSecret, async (req: Request, res: Response) => {
 app.post("/frames/delete", requireSecret, async (req: Request, res: Response) => {
   const frames = parseFrameSignRequests(req.body?.frames).filter(
     (frame) =>
-      frame.bucket === config.thumbnails.bucketName && frame.key.startsWith("recording-thumbnails/"),
+      frame.bucket === config.thumbnails.bucketName &&
+      frame.key.startsWith("recording-thumbnails/"),
   );
 
   if (frames.length === 0) {

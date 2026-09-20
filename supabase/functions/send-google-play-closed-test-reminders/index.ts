@@ -5,12 +5,14 @@ import {
   escapeHtml,
   getEmailEnvironment,
   json,
+  loadEmailTemplates,
   logEmailDelivery,
   sendEmail,
   type EmailEnvironment,
 } from "../_shared/email-system.ts";
 
 interface ReminderRunRequest {
+  dryRun?: boolean;
   limit?: number;
 }
 
@@ -78,7 +80,9 @@ async function loadSubmissions(admin: SupabaseClient, submissionIds: string[]) {
     throw new Error(error.message);
   }
 
-  return new Map(((data ?? []) as SubmissionRow[]).map((submission) => [submission.id, submission]));
+  return new Map(
+    ((data ?? []) as SubmissionRow[]).map((submission) => [submission.id, submission]),
+  );
 }
 
 async function hasCheckedInToday(admin: SupabaseClient, participationId: string, today: string) {
@@ -127,7 +131,7 @@ async function sendReminder(
   submission: SubmissionRow,
   checkedInDays: number,
 ) {
-  const testUrl = `${env.appBaseUrl}/test/${encodeURIComponent(participation.submission_id)}`;
+  const testUrl = `${env.appBaseUrl}/test/${encodeURIComponent(participation.submission_id)}?earn_entry=other_email`;
   const dayLabel = `${Math.min(checkedInDays + 1, participation.required_days)} of ${participation.required_days}`;
   const subject = `Check in for ${submission.product_name}'s Google Play closed test`;
   const textBody = [
@@ -217,7 +221,10 @@ Deno.serve(async (request) => {
   try {
     env = getEmailEnvironment();
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Notification setup is incomplete." }, 500);
+    return json(
+      { error: error instanceof Error ? error.message : "Notification setup is incomplete." },
+      500,
+    );
   }
 
   const payload = (await request.json().catch(() => ({}))) as ReminderRunRequest;
@@ -228,30 +235,53 @@ Deno.serve(async (request) => {
   const todayStartIso = startOfUtcDay(now).toISOString();
   const errors: string[] = [];
 
-  const { data: missedData, error: missedError } = await admin.rpc(
-    "mark_missed_google_play_closed_tests",
-    { p_reference_date: today },
-  );
+  const { data: missedData, error: missedError } =
+    payload.dryRun === true
+      ? { data: 0, error: null }
+      : await admin.rpc("mark_missed_google_play_closed_tests", { p_reference_date: today });
 
   if (missedError) {
     return json({ error: missedError.message }, 500);
   }
 
-  const { data, error } = await admin
-    .from("google_play_closed_test_participations")
-    .select("id, submission_id, tester_user_id, founder_user_id, started_on, required_days")
-    .eq("status", "active")
-    .order("started_on", { ascending: true })
-    .limit(limit);
+  // Filter checked-in/already-notified participants before applying the batch
+  // limit, so they cannot repeatedly occupy every slot in the daily job.
+  const { data, error } = await admin.rpc("list_due_google_play_reminders", {
+    p_reference_date: today,
+    p_limit: limit,
+  });
 
   if (error) {
     return json({ error: error.message }, 500);
   }
 
   const participations = (data ?? []) as ParticipationRow[];
+  if (payload.dryRun === true) {
+    await loadEmailTemplates(admin, [templateKey]);
+    return json({ ok: true, dryRun: true, remindersDue: participations.length });
+  }
+  if (participations.length === 0) {
+    return json({
+      ok: true,
+      processed: 0,
+      missedMarked: missedData ?? 0,
+      sent: 0,
+      skipped: 0,
+      errors: [],
+    });
+  }
+  // The log table requires a registered key. Verify it before contacting SMTP,
+  // otherwise a successful delivery could be reported as failed and sent again.
+  await loadEmailTemplates(admin, [templateKey]);
   const [profilesById, submissionsById] = await Promise.all([
-    loadProfiles(admin, participations.map((participation) => participation.tester_user_id)),
-    loadSubmissions(admin, participations.map((participation) => participation.submission_id)),
+    loadProfiles(
+      admin,
+      participations.map((participation) => participation.tester_user_id),
+    ),
+    loadSubmissions(
+      admin,
+      participations.map((participation) => participation.submission_id),
+    ),
   ]);
   let sent = 0;
   let skipped = 0;
@@ -285,26 +315,22 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      await sendReminder(
-        admin,
-        env,
-        participation,
-        tester,
-        submission,
-        count ?? 0,
-      );
+      await sendReminder(admin, env, participation, tester, submission, count ?? 0);
       sent += 1;
     } catch (error) {
       errors.push(error instanceof Error ? error.message : "Failed to send closed-test reminder.");
     }
   }
 
-  return json({
-    ok: errors.length === 0,
-    processed: participations.length,
-    missedMarked: typeof missedData === "number" ? missedData : 0,
-    sent,
-    skipped,
-    errors,
-  });
+  return json(
+    {
+      ok: errors.length === 0,
+      processed: participations.length,
+      missedMarked: typeof missedData === "number" ? missedData : 0,
+      sent,
+      skipped,
+      errors,
+    },
+    errors.length > 0 ? 500 : 200,
+  );
 });

@@ -255,6 +255,18 @@ export function createDesignSystemFixtureState(search: string): AppState {
               }
             : structuredClone(submission);
 
+        const descriptionMode = parameters.get("ds-earn-descriptions");
+        if (descriptionMode === "long") {
+          fixtureSubmission.description =
+            `${submission.description} Please explore the complete workflow and describe any confusing steps. `.repeat(
+              6,
+            );
+        } else if (descriptionMode === "unbroken") {
+          fixtureSubmission.description = "LongUnbrokenDescription".repeat(40);
+        } else if (descriptionMode === "responsive") {
+          fixtureSubmission.description = `${submission.description} `.repeat(2);
+        }
+
         return noLiveSubmission && fixtureSubmission.userId === currentUserId
           ? {
               ...fixtureSubmission,

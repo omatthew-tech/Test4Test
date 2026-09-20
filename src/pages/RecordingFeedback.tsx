@@ -1,6 +1,7 @@
 import { readStarRating } from "../lib/starRatings";
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, Coins, Copy, MessageCircle, Share2 } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -27,7 +28,6 @@ const fixtureRatings = new Map<string, StarRating | null>();
 export function RecordingFeedback({
   response,
   userId,
-  productName,
   fixtureMode,
   fixtureContact,
 }: {
@@ -38,6 +38,8 @@ export function RecordingFeedback({
   fixtureContact?: RecordingContact;
 }) {
   const id = useId();
+  const navigate = useNavigate();
+  const location = useLocation();
   const fixtureKey = `${userId}:${response.id}`;
   const [rating, setRating] = useState<StarRating | null>(fixtureRatings.get(fixtureKey) ?? null);
   const [draftRating, setDraftRating] = useState<StarRating | null>(null);
@@ -87,7 +89,7 @@ export function RecordingFeedback({
   }, [response.id, userId, fixtureMode, fixtureKey, retry]);
 
   useEffect(() => {
-    if (!dialog || dialog === "share" || !response.testerUserId) return;
+    if (dialog !== "tip" || !response.testerUserId) return;
     let cancelled = false;
     setContactLoading(true);
     setContactError("");
@@ -235,7 +237,21 @@ export function RecordingFeedback({
             type="button"
             variant="quiet"
             className={styles.action}
-            onClick={() => openDialog("message")}
+            onClick={() => {
+              if (!response.testerUserId) {
+                openDialog("message");
+                return;
+              }
+              const query = new URLSearchParams({ response: response.id });
+              if (fixtureMode) {
+                const current = new URLSearchParams(location.search);
+                for (const key of ["ds-user", "ds-tester"]) {
+                  const value = current.get(key);
+                  if (value) query.set(key, value);
+                }
+              }
+              navigate(`/messages?${query}`);
+            }}
           >
             <MessageCircle aria-hidden="true" />
             Message
@@ -343,19 +359,7 @@ export function RecordingFeedback({
                 </>
               )}
             </>
-          ) : contact.email ? (
-            <>
-              <p>Open your email app to write to the tester about {productName}.</p>
-              <Link
-                external
-                to={`mailto:${encodeURIComponent(contact.email)}?subject=${encodeURIComponent(`Your ${productName} recording`)}`}
-              >
-                Write email
-              </Link>
-            </>
-          ) : (
-            <p>This tester’s email address is unavailable.</p>
-          )}
+          ) : null}
         </Stack>
       </Dialog>
       <Dialog

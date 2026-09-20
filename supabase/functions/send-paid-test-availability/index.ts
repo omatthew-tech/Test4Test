@@ -165,7 +165,7 @@ export async function handlePaidTestAvailabilityRequest(request: Request) {
     const rendered = renderEmailTemplate(template, {
       firstName,
       productName,
-      earnUrl: `${env.appBaseUrl}/earn`,
+      earnUrl: `${env.appBaseUrl}/earn?earn_entry=other_email`,
     });
 
     try {

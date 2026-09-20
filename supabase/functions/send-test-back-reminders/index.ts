@@ -15,11 +15,18 @@ import {
   processReminderSequence,
   reminderTemplateKeys,
 } from "../_shared/test-back-reminders.ts";
+import {
+  loadDueReportShareReminders,
+  processReportShareReminder,
+  reportShareReminderTemplateKeys,
+} from "../_shared/report-share-reminders.ts";
 
 interface ReminderRunRequest {
+  dryRun?: boolean;
   limit?: number;
   feedbackLimit?: number;
   feedbackLookbackHours?: number;
+  reportShareLimit?: number;
 }
 
 function getSuppliedSecret(request: Request) {
@@ -59,7 +66,10 @@ Deno.serve(async (request) => {
   try {
     env = getEmailEnvironment();
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Notification setup is incomplete." }, 500);
+    return json(
+      { error: error instanceof Error ? error.message : "Notification setup is incomplete." },
+      500,
+    );
   }
 
   const payload = (await request.json().catch(() => ({}))) as ReminderRunRequest;
@@ -67,21 +77,42 @@ Deno.serve(async (request) => {
   const feedbackLimit = typeof payload.feedbackLimit === "number" ? payload.feedbackLimit : limit;
   const feedbackLookbackHours =
     typeof payload.feedbackLookbackHours === "number" ? payload.feedbackLookbackHours : 24 * 7;
+  const reportShareLimit =
+    typeof payload.reportShareLimit === "number" ? payload.reportShareLimit : limit;
 
   const admin = createAdminClient(env);
+  if (payload.dryRun === true) {
+    const [feedback, reminders, shares] = await Promise.all([
+      loadUnnotifiedNewFeedbackResponses(admin, feedbackLimit, feedbackLookbackHours),
+      loadDueReminderSequences(admin, limit),
+      loadDueReportShareReminders(admin, reportShareLimit),
+    ]);
+    await loadEmailTemplates(admin, [
+      newFeedbackTemplateKey,
+      ...reminderTemplateKeys,
+      ...reportShareReminderTemplateKeys,
+    ]);
+    return json({
+      ok: true,
+      dryRun: true,
+      feedbackDue: feedback.length,
+      remindersDue: reminders.length,
+      reportSharesDue: shares.length,
+    });
+  }
   const unnotifiedFeedbackResponses = await loadUnnotifiedNewFeedbackResponses(
     admin,
     feedbackLimit,
     feedbackLookbackHours,
   );
-  const dueReminders = await loadDueReminderSequences(admin, limit);
+  const dueReportShareReminders = await loadDueReportShareReminders(admin, reportShareLimit);
   const feedbackTemplateMap =
     unnotifiedFeedbackResponses.length > 0
       ? await loadEmailTemplates(admin, [newFeedbackTemplateKey])
       : new Map();
-  const templateMap =
-    dueReminders.length > 0
-      ? await loadEmailTemplates(admin, [...reminderTemplateKeys])
+  const reportShareTemplateMap =
+    dueReportShareReminders.length > 0
+      ? await loadEmailTemplates(admin, [...reportShareReminderTemplateKeys])
       : new Map();
 
   const errors: string[] = [];
@@ -90,6 +121,9 @@ Deno.serve(async (request) => {
   let sent = 0;
   let resolved = 0;
   let cancelled = 0;
+  let reportShareSent = 0;
+  let reportShareSkipped = 0;
+  let reportShareCancelled = 0;
 
   for (const response of unnotifiedFeedbackResponses) {
     try {
@@ -106,9 +140,18 @@ Deno.serve(async (request) => {
         feedbackSkipped += 1;
       }
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Failed to process a feedback notification.");
+      errors.push(
+        error instanceof Error ? error.message : "Failed to process a feedback notification.",
+      );
     }
   }
+
+  // Feedback delivery advances stage zero; select reminders only afterwards.
+  const dueReminders = await loadDueReminderSequences(admin, limit);
+  const templateMap =
+    dueReminders.length > 0
+      ? await loadEmailTemplates(admin, [...reminderTemplateKeys])
+      : new Map();
 
   for (const reminder of dueReminders) {
     try {
@@ -122,20 +165,48 @@ Deno.serve(async (request) => {
         cancelled += 1;
       }
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Failed to process a reminder sequence.");
+      errors.push(
+        error instanceof Error ? error.message : "Failed to process a reminder sequence.",
+      );
     }
   }
 
-  return json({
-    ok: errors.length === 0,
-    processed: dueReminders.length + unnotifiedFeedbackResponses.length,
-    feedbackProcessed: unnotifiedFeedbackResponses.length,
-    feedbackSent,
-    feedbackSkipped,
-    remindersProcessed: dueReminders.length,
-    sent,
-    resolved,
-    cancelled,
-    errors,
-  });
+  for (const reminder of dueReportShareReminders) {
+    try {
+      const result = await processReportShareReminder(admin, env, reminder, reportShareTemplateMap);
+
+      if (result.outcome === "sent") {
+        reportShareSent += 1;
+      } else if (result.outcome === "cancelled") {
+        reportShareCancelled += 1;
+      } else {
+        reportShareSkipped += 1;
+      }
+    } catch (error) {
+      errors.push(
+        error instanceof Error ? error.message : "Failed to process a report invitation reminder.",
+      );
+    }
+  }
+
+  return json(
+    {
+      ok: errors.length === 0,
+      processed:
+        dueReminders.length + dueReportShareReminders.length + unnotifiedFeedbackResponses.length,
+      feedbackProcessed: unnotifiedFeedbackResponses.length,
+      feedbackSent,
+      feedbackSkipped,
+      remindersProcessed: dueReminders.length,
+      sent,
+      resolved,
+      cancelled,
+      reportSharesProcessed: dueReportShareReminders.length,
+      reportShareSent,
+      reportShareSkipped,
+      reportShareCancelled,
+      errors,
+    },
+    errors.length > 0 ? 500 : 200,
+  );
 });

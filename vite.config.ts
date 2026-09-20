@@ -5,6 +5,10 @@ import { versionStaticAssets } from "./scripts/version-static-assets.mjs";
 
 export default defineConfig({
   plugins: [versionStaticAssets(), react()],
+  build: {
+    // Keep fresh URLs after the Windows asset-directory casing correction.
+    assetsDir: "assets/earn-activation-v1",
+  },
   resolve: {
     alias: {
       "@test4test/design-system": fileURLToPath(

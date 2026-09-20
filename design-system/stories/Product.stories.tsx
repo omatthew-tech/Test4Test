@@ -362,7 +362,7 @@ export const TestRowContract: Story = {
   },
 };
 
-// @test4test-coverage earn-test-card | sizes: responsive | variants: with-action, without-action, with-reputation | states: default, long-content, narrow-width, supporting-note
+// @test4test-coverage earn-test-card | sizes: responsive | variants: with-action, without-action, with-reputation, expandable-description | states: default, long-content, narrow-width, supporting-note, collapsed, expanded, short-description, two-line-description
 export const EarnTestCardContract: Story = {
   render: () => (
     <Stack>
@@ -378,7 +378,10 @@ export const EarnTestCardContract: Story = {
       />
       <EarnTestCard
         title="A deliberately long mobile research study name that wraps without covering its action"
-        description="Review a focused onboarding journey, complete the primary task, and share detailed usability feedback about every point where the next step was unclear."
+        expandableDescription
+        description={"Review a focused onboarding journey, complete the primary task, and share detailed usability feedback about every point where the next step was unclear. ".repeat(
+          4,
+        )}
         badges={[
           { id: "paid", label: "Paid test", tone: "success" },
           { id: "ios", label: "iOS", tone: "info" },
@@ -391,21 +394,43 @@ export const EarnTestCardContract: Story = {
       <EarnTestCard
         as="section"
         title="Your listed app"
-        description="This owner card links to analytics for the selected Earn app."
+        expandableDescription
+        description={"This owner card links to analytics for the selected Earn app. Read the complete study description before deciding what to review. ".repeat(
+          4,
+        )}
         badges={[{ id: "owner", label: "Your app", tone: "success" }]}
         action={{ label: "View analytics", to: "/analytics", variant: "secondary" }}
       />
       <EarnTestCard
         as="section"
         title="App details loading"
-        description="A card without a navigation action while its details are unavailable."
+        expandableDescription
+        description="Details unavailable."
+        badges={[]}
+      />
+      <EarnTestCard
+        title="Exactly two lines"
+        expandableDescription
+        description={
+          <>
+            First line.
+            <br />
+            Second line.
+          </>
+        }
+        badges={[]}
+      />
+      <EarnTestCard
+        title="Long unbroken text"
+        expandableDescription
+        description={"UnbrokenDescription".repeat(40)}
         badges={[]}
       />
     </Stack>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByRole("article")).toHaveLength(2);
+    await expect(canvas.getAllByRole("article")).toHaveLength(4);
     await expect(canvas.getByRole("heading", { name: "Your listed app" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: "View analytics" })).toHaveAttribute(
       "href",
@@ -417,6 +442,36 @@ export const EarnTestCardContract: Story = {
     );
     await expect(canvas.getByRole("link", { name: "Resume test" })).toBeVisible();
     await expect(canvas.getByText("92% Test-back Rate", { exact: false })).toBeVisible();
+    const toggle = await canvas.findByRole("button", {
+      name: /Show full description for A deliberately/,
+    });
+    const ownerToggle = await canvas.findByRole("button", {
+      name: "Show full description for Your listed app",
+    });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(within(toggle).getByText("more", { exact: true })).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", {
+        name: /Show full description for (Exactly two lines|App details loading)/,
+      }),
+    ).toBeNull();
+    toggle.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(toggle).toHaveFocus();
+    await expect(toggle).toHaveTextContent("Show less");
+    await expect(within(toggle).queryByText("more", { exact: true })).toBeNull();
+    await expect(
+      canvasElement.ownerDocument.getElementById(toggle.getAttribute("aria-controls")!),
+    ).toBeVisible();
+    await expect(ownerToggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.keyboard(" ");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(toggle).toHaveFocus();
+    await userEvent.click(ownerToggle);
+    await expect(ownerToggle).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(ownerToggle);
+    await expect(ownerToggle).toHaveAttribute("aria-expanded", "false");
   },
 };
 

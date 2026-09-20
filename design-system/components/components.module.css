@@ -1342,6 +1342,44 @@
   color: var(--ds-semantic-color-text-secondary);
 }
 
+.earnTestCardDescription {
+  position: relative;
+  min-width: var(--ds-semantic-space-zero);
+  max-width: var(--ds-semantic-size-content-prose);
+  color: var(--ds-semantic-color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.earnTestCardDescriptionClamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.earnTestCardDescriptionMeasure {
+  position: absolute;
+  inset-block-start: var(--ds-semantic-space-zero);
+  inset-inline: var(--ds-semantic-space-zero);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.earnTestCardDescriptionToggle {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: var(--ds-semantic-space-zero);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.earnTestCardDescriptionLess {
+  margin-block-start: var(--ds-semantic-space-stack-xs);
+}
+
 .earnTestCardSupportingNote {
   color: var(--ds-semantic-color-status-warning);
   font-weight: var(--ds-semantic-typography-weight-semibold);

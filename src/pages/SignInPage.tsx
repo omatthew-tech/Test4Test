@@ -14,7 +14,9 @@ function sanitizeReturnTo(value: string | null) {
     return null;
   }
 
-  return value;
+  const target = new URL(value, window.location.origin);
+  target.searchParams.delete("earn_entry");
+  return `${target.pathname}${target.search}${target.hash}`;
 }
 
 export function SignInPage() {

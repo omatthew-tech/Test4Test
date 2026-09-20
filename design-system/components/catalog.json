@@ -4,6 +4,37 @@
   "version": "1.0.0",
   "components": [
     {
+      "id": "timeline-range",
+      "name": "Timeline range",
+      "family": "inputs",
+      "version": "1.0.0",
+      "lifecycle": "beta",
+      "source": "design-system/components/timeline-range.tsx",
+      "story": "design-system/stories/TimelineRange.stories.tsx",
+      "storyExport": "TimelineRangeContract",
+      "exportName": "TimelineRange",
+      "description": "Two time handles for selecting a media range with pointer and keyboard input.",
+      "sizes": ["default"],
+      "variants": ["media"],
+      "states": ["enabled", "focus-visible", "disabled", "narrow-range"],
+      "accessibleName": "Required label names the group; Clip start and Clip end name each slider.",
+      "controlMode": "controlled",
+      "examples": ["design-system/stories/TimelineRange.stories.tsx#TimelineRangeContract"],
+      "semantics": [
+        "Two labeled sliders with time value text",
+        "Handles cannot cross",
+        "Opposite vertical targets keep narrow ranges operable"
+      ],
+      "keyboard": [
+        "Arrow keys adjust one step",
+        "Shift and arrows adjust ten steps",
+        "Page keys adjust ten seconds",
+        "Home and End reach the permitted limits"
+      ],
+      "targetSize": 44,
+      "dependencies": []
+    },
+    {
       "id": "button",
       "name": "Button",
       "family": "actions",
@@ -1034,17 +1065,33 @@
       "lifecycle": "stable",
       "source": "design-system/components/product.tsx",
       "story": "design-system/stories/Product.stories.tsx",
-      "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context.",
-      "semantics": ["Article or section", "Visible heading names the card"],
-      "keyboard": ["The navigation action is a separate focus target"],
+      "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place.",
+      "semantics": [
+        "Article or section",
+        "Visible heading names the card",
+        "Overflowing descriptions use a button with aria-expanded and aria-controls; short descriptions remain plain text"
+      ],
+      "keyboard": [
+        "The navigation action is a separate focus target",
+        "Enter or Space expands the description or activates Show less while retaining focus"
+      ],
       "targetSize": 44,
-      "dependencies": ["badge", "link", "surface"],
+      "dependencies": ["badge", "button", "link", "surface"],
       "exportName": "EarnTestCard",
       "sizes": ["responsive"],
-      "variants": ["with-action", "without-action", "with-reputation"],
-      "states": ["default", "long-content", "narrow-width", "supporting-note"],
-      "accessibleName": "A visible heading names the card and the action has visible link text.",
-      "controlMode": "not-applicable",
+      "variants": ["with-action", "without-action", "with-reputation", "expandable-description"],
+      "states": [
+        "default",
+        "long-content",
+        "narrow-width",
+        "supporting-note",
+        "collapsed",
+        "expanded",
+        "short-description",
+        "two-line-description"
+      ],
+      "accessibleName": "A visible heading names the card and the action has visible link text. Description disclosure buttons are named by their action and card heading.",
+      "controlMode": "uncontrolled",
       "storyExport": "EarnTestCardContract",
       "examples": ["design-system/stories/Product.stories.tsx#EarnTestCardContract"]
     },
