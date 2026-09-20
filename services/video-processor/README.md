@@ -132,6 +132,21 @@ secret.
 
 ## API
 
+### `POST /recordings/clips/process`
+
+Requires `x-worker-secret` and `CLIP_COMPLETION_WEBHOOK_URL` pointing to the
+project's `/functions/v1/complete-recording-clip` endpoint. Accepts `clipId`,
+`attemptId`, `startMs`, `endMs`, and a `source` containing either the configured
+recording bucket/object key or a signed Supabase storage URL from the callback's
+project. Returns 202 when queued, 400 for invalid input, or 429 when full.
+
+The worker exports an accurately trimmed H.264/AAC MP4 to the private source
+recording bucket, then acknowledges completion to Supabase. Attempt IDs fence
+stale work; heartbeats and completion retries preserve durable job ownership.
+R2 credentials require GetObject, PutObject, and DeleteObject for that bucket.
+
+
+
 ### `POST /recordings/thumbnails/process`
 
 Enqueues a bounded thumbnail-only job and returns `202` with a `jobId`. This
