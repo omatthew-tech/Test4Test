@@ -21,6 +21,49 @@ const base = {
   startMs: 1200,
   endMs: 2600,
 };
+test("preserves a high-resolution VP9 screen recording with bounded export buffering", async () => {
+  const { default: ffmpeg } = await import("ffmpeg-static");
+  const { exportClipFile, probeClip } = await import("./clipProcessor.js");
+  const directory = await mkdtemp(join(tmpdir(), "clip-screen-export-test-"));
+  const source = join(directory, "screen.webm");
+  const output = join(directory, "clip.mp4");
+  try {
+    const generated = spawnSync(
+      ffmpeg as unknown as string,
+      [
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc2=s=2880x1800:r=30:d=2",
+        "-c:v",
+        "libvpx-vp9",
+        "-deadline",
+        "realtime",
+        "-cpu-used",
+        "8",
+        "-threads",
+        "1",
+        "-live",
+        "1",
+        "-y",
+        source,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(generated.status, 0, generated.stderr);
+    await exportClipFile(source, output, 330, 1630);
+    const info = await probeClip(output);
+    const video = info.streams.find((stream) => stream.codec_type === "video");
+    assert.equal(video?.width, 2880);
+    assert.equal(video?.height, 1800);
+    assert.equal(video?.codec_name, "h264");
+    assert.ok(Math.abs(Number(info.format.duration) - 1.3) < 0.15);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 test("clip jobs validate ranges and reject arbitrary URLs and buckets", async () => {
   const { parseClipJob } = await import("./clipProcessor.js");
   const source = { bucket: "recordings", objectKey: "draft/video.webm" };
