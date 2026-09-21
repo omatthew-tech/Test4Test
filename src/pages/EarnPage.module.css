@@ -333,8 +333,26 @@
   }
 }
 
+.page .rankUp {
+  /* ds-exception: earn-rank-up-celebration */
+  animation: earn-rank-up calc(var(--ds-semantic-motion-interaction-duration) * 8)
+    var(--ds-semantic-motion-interaction-easing)
+    calc(var(--ds-semantic-motion-interaction-duration) * 4) both;
+}
+
+@keyframes earn-rank-up {
+  from {
+    transform: translateY(var(--earn-rank-up-offset));
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .page :global(.earn-row--private-placement-pulse) {
+  .page :global(.earn-row--private-placement-pulse),
+  .page .rankUp {
     animation: none;
   }
 }

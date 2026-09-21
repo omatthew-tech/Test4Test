@@ -1,5 +1,5 @@
 import { canReviseFeedback } from "../lib/starRatings";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -372,6 +372,7 @@ function EarnPageContent() {
   const [creditCelebration, setCreditCelebration] = useState(() =>
     parseEarnCreditCelebrationState(location.state),
   );
+  const completedRankAnimationRef = useRef<typeof creditCelebration>(null);
   const [showCreditToast, setShowCreditToast] = useState(Boolean(creditCelebration));
   const [earnTestToastMessage, setEarnTestToastMessage] = useState("");
   const available = getAvailableSubmissions(state);
@@ -1197,6 +1198,83 @@ function EarnPageContent() {
     visibilitySummary?.wouldRankedSubmissionCount,
   ]);
 
+  useLayoutEffect(() => {
+    const snapshot = creditCelebration?.placementSnapshot;
+    const currentRank = visibilitySummary?.wouldRank ?? visibilitySummary?.rank;
+    const previousRank = snapshot?.previousWouldRank;
+    if (
+      !creditCelebration ||
+      completedRankAnimationRef.current === creditCelebration ||
+      !shouldShowPrivatePlacement ||
+      isLoadingServerEarnSubmissions ||
+      !snapshot?.ownerSubmissionId ||
+      snapshot.ownerSubmissionId !== visibilitySummary?.submissionId ||
+      !previousRank ||
+      !currentRank ||
+      previousRank <= currentRank ||
+      userPrefersReducedMotion()
+    ) {
+      return;
+    }
+
+    const ownerRow = privatePlacementRowRef.current;
+    const ownerCard = ownerRow?.firstElementChild;
+    const rows = displayedSubmissions
+      .slice(0, previousRank - currentRank)
+      .map((submission) => reciprocalRowRefs.current[submission.id])
+      .filter((row): row is HTMLDivElement => Boolean(row));
+    if (!ownerRow || !(ownerCard instanceof HTMLElement) || rows.length === 0) return;
+
+    const ownerBounds = ownerRow.getBoundingClientRect();
+    const ownerOffset = rows[rows.length - 1].getBoundingClientRect().bottom - ownerBounds.bottom;
+    const peerOffset = ownerBounds.top - rows[0].getBoundingClientRect().top;
+    if (ownerOffset <= 0 || peerOffset >= 0) return;
+
+    const movingCards = [ownerCard, ...rows.map((row) => row.firstElementChild)].filter(
+      (card): card is HTMLElement => card instanceof HTMLElement,
+    );
+    movingCards.forEach((card) => {
+      // ds-exception: runtime-measurements — measured card offsets preserve the final list order.
+      card.style.setProperty(
+        "--earn-rank-up-offset",
+        `${card === ownerCard ? ownerOffset : peerOffset}px`,
+      );
+      card.classList.add(styles.rankUp);
+    });
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const clearAnimation = () => {
+      movingCards.forEach((card) => {
+        card.classList.remove(styles.rankUp);
+        card.style.removeProperty("--earn-rank-up-offset");
+      });
+    };
+    const finishAnimation = () => {
+      completedRankAnimationRef.current = creditCelebration;
+      clearAnimation();
+    };
+    const onAnimationEnd = (event: AnimationEvent) => {
+      if (event.target === ownerCard) finishAnimation();
+    };
+    ownerCard.addEventListener("animationend", onAnimationEnd, { once: true });
+    window.addEventListener("resize", finishAnimation, { once: true });
+    reducedMotion.addEventListener("change", finishAnimation, { once: true });
+    return () => {
+      clearAnimation();
+      ownerCard.removeEventListener("animationend", onAnimationEnd);
+      window.removeEventListener("resize", finishAnimation);
+      reducedMotion.removeEventListener("change", finishAnimation);
+    };
+  }, [
+    creditCelebration,
+    displayedSubmissions,
+    isLoadingServerEarnSubmissions,
+    shouldShowPrivatePlacement,
+    visibilitySummary?.rank,
+    visibilitySummary?.submissionId,
+    visibilitySummary?.wouldRank,
+  ]);
+
   const firstTestBackCard = useMemo(
     () => cards.find((card) => card.reputation?.ownerHasTestedYou === true) ?? null,
     [cards],
@@ -1332,6 +1410,15 @@ function EarnPageContent() {
       return undefined;
     }
 
+    let movingCard: HTMLElement | null = null;
+    let focusedBeforeMotion: Element | null = null;
+    const focusPlacement = () => {
+      movingCard?.removeEventListener("animationend", focusPlacement);
+      movingCard?.removeEventListener("animationcancel", focusPlacement);
+      if (!movingCard || document.activeElement === focusedBeforeMotion) {
+        privatePlacementRowRef.current?.focus({ preventScroll: true });
+      }
+    };
     const scrollTimer = window.setTimeout(() => {
       const target = privatePlacementRowRef.current;
 
@@ -1343,10 +1430,22 @@ function EarnPageContent() {
         behavior: userPrefersReducedMotion() ? "auto" : "smooth",
         block: "center",
       });
-      target.focus({ preventScroll: true });
+      const card = target.firstElementChild;
+      if (card instanceof HTMLElement && card.classList.contains(styles.rankUp)) {
+        movingCard = card;
+        focusedBeforeMotion = document.activeElement;
+        card.addEventListener("animationend", focusPlacement);
+        card.addEventListener("animationcancel", focusPlacement);
+      } else {
+        focusPlacement();
+      }
     }, 260);
 
-    return () => window.clearTimeout(scrollTimer);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      movingCard?.removeEventListener("animationend", focusPlacement);
+      movingCard?.removeEventListener("animationcancel", focusPlacement);
+    };
   }, [creditCelebration, privatePlacementSubmission?.id, shouldShowPrivatePlacement]);
 
   const firstCreditRankGain =

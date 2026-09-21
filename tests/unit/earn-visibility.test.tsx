@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
@@ -102,7 +102,11 @@ beforeEach(() => {
   sessionStorage.clear();
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
-    value: vi.fn(() => ({ matches: false })),
+    value: vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
   });
   backend.summary.mockReset().mockResolvedValue({ ...newOwnerSummary });
   backend.submissions.mockReset().mockResolvedValue([availableTest]);
@@ -361,21 +365,112 @@ it("Complete a test focuses the first reciprocal test below the locked owner pre
   expect(document.activeElement?.textContent).toContain("Pocket Pantry");
 });
 
-it("celebrates a rank improvement in place and focuses the pinned owner card", async () => {
+function measureEarnRows() {
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    const rows = Array.from(document.querySelectorAll(".earn-list > .earn-row-anchor"));
+    const index = rows.indexOf(this);
+    if (index < 0) return new DOMRect();
+    const heights = [140, 100, 180];
+    const top = rows.slice(0, index).reduce((sum, _, rowIndex) => sum + heights[rowIndex] + 8, 0);
+    return new DOMRect(0, top, 720, heights[index]);
+  });
+}
+
+const rankCelebration = (previousWouldRank: number | null = 4): EarnCreditCelebrationState => ({
+  kind: "earned-credit",
+  placementSnapshot: {
+    ownerSubmissionId: newOwnerSummary.submissionId,
+    previousWouldRank,
+    previousWouldRankedSubmissionCount: 100,
+    capturedAt: "2026-09-21T12:00:00Z",
+  },
+});
+
+it("animates a verified rank gain across measured cards without changing order or focus", async () => {
+  measureEarnRows();
+  backend.submissions.mockResolvedValue([availableTest, testApp("Another test")]);
+  await mount(rankCelebration());
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry", "Another test"]);
+  const movingCards = Array.from(
+    document.querySelectorAll<HTMLElement>('[style*="--earn-rank-up-offset"]'),
+  );
+  expect(movingCards.map((card) => card.style.getPropertyValue("--earn-rank-up-offset"))).toEqual([
+    "296px",
+    "-148px",
+    "-148px",
+  ]);
+  await waitFor(() => expect(backend.scrollIntoView).toHaveBeenCalled());
+  expect(document.activeElement).not.toBe(
+    document.querySelector(".earn-row-anchor--private-placement"),
+  );
+  fireEvent.animationEnd(movingCards[0]);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      document.querySelector(".earn-row-anchor--private-placement"),
+    ),
+  );
+  expect(screen.getByText("#2", { exact: false })).toBeTruthy();
+  expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeNull();
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry", "Another test"]);
+});
+
+it.each([2, 1, null])(
+  "keeps the existing pulse when the prior rank %s does not confirm an improvement",
+  async (previousRank) => {
+    measureEarnRows();
+    await mount(rankCelebration(previousRank));
+    expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeNull();
+    expect(document.querySelector(".earn-row--private-placement-pulse")).toBeTruthy();
+  },
+);
+
+it("does not animate a snapshot belonging to another app", async () => {
+  measureEarnRows();
   await mount({
-    kind: "earned-credit",
+    ...rankCelebration(),
     placementSnapshot: {
-      ownerSubmissionId: newOwnerSummary.submissionId,
-      previousWouldRank: 67,
-      previousWouldRankedSubmissionCount: 100,
-      capturedAt: "2026-09-21T12:00:00Z",
+      ...rankCelebration().placementSnapshot!,
+      ownerSubmissionId: "another-app",
     },
   });
+  expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeNull();
+});
+
+it("skips movement for reduced motion while retaining the credit message and owner focus", async () => {
+  measureEarnRows();
+  vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as MediaQueryList);
+  await mount(rankCelebration());
+  expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeNull();
+  expect(
+    screen.getByText("Congrats, you earned 1 credit. Your test moved up on Earn."),
+  ).toBeTruthy();
   expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry"]);
-  expect(document.querySelector(".earn-row--private-placement-pulse")).toBeTruthy();
-  expect(document.querySelector(".earn-row--private-placement-rise")).toBeNull();
-  await waitFor(() => expect(document.activeElement?.textContent).toContain("Palette Pilot"));
-  expect(screen.getByText("#2", { exact: false })).toBeTruthy();
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      document.querySelector(".earn-row-anchor--private-placement"),
+    ),
+  );
+  expect(backend.scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "center" });
+});
+
+it("clears moving card offsets on resize", async () => {
+  measureEarnRows();
+  await mount(rankCelebration());
+  expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeTruthy();
+  fireEvent(window, new Event("resize"));
+  expect(document.querySelector('[style*="--earn-rank-up-offset"]')).toBeNull();
+});
+
+it("does not steal focus if the user interacts during the rise", async () => {
+  measureEarnRows();
+  await mount(rankCelebration());
+  await waitFor(() => expect(backend.scrollIntoView).toHaveBeenCalled());
+  const action = screen.getByRole("link", { name: "View test" });
+  action.focus();
+  fireEvent.animationEnd(document.querySelector(".earn-row--private-placement")!);
+  expect(document.activeElement).toBe(action);
 });
 
 it("does not invent a rank while the summary is loading or unavailable", async () => {

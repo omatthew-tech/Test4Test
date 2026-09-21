@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "earn-rank-up-celebration",
+      "owner": "Test4Test",
+      "scope": "The one-shot credited-test rank-up animation in src/pages/EarnPage.tsx and src/pages/EarnPage.module.css.",
+      "rationale": "On 2026-09-21 the design owner requested implementation of the demonstrated rank-up animation without other changes. The owner card rises past the number of available cards corresponding to its verified rank gain while those cards slide down, preserving the final pinned layout and all ranking behavior. This permits an eight-times semantic interaction duration and a four-times delay so the existing scroll can bring the celebration into view. Offsets use measured card geometry under runtime-measurements. Reduced motion skips movement, and resizing cancels it.",
+      "expires": "2027-03-21"
+    },
+    {
       "id": "home-how-it-works-flow-background",
       "owner": "Test4Test",
       "scope": "The decorative How it works image backgrounds and screenshot clip geometry in src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
