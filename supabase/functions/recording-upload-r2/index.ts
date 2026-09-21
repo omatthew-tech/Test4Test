@@ -122,7 +122,7 @@ async function scheduleCompletedUploadThumbnail(
 ) {
   const uploadRow = await loadUploadRow(admin, input);
   if (uploadRow) {
-    scheduleRecordingThumbnailTask(enqueueRecordingThumbnailBatch(admin, [uploadRow]));
+    await enqueueRecordingThumbnailBatch(admin, [uploadRow]);
   }
 }
 
@@ -303,12 +303,14 @@ Deno.serve(async (request) => {
         uploadedAt: new Date().toISOString(),
       });
 
-      await scheduleCompletedUploadThumbnail(admin, {
-        providerBucket: env.providerBucket,
-        objectKey,
-        ownerColumn: uploadOwnerColumn,
-        ownerKey: uploadOwnerKey,
-      });
+      scheduleRecordingThumbnailTask(
+        scheduleCompletedUploadThumbnail(admin, {
+          providerBucket: env.providerBucket,
+          objectKey,
+          ownerColumn: uploadOwnerColumn,
+          ownerKey: uploadOwnerKey,
+        }),
+      );
 
       return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
     }
@@ -541,6 +543,26 @@ Deno.serve(async (request) => {
         throw new Error("Missing multipart upload completion details.");
       }
 
+      const uploadRow = (await loadUploadRow(admin, {
+        providerBucket: env.providerBucket,
+        objectKey,
+        ownerColumn: uploadOwnerColumn,
+        ownerKey: uploadOwnerKey,
+      })) as (RecordingThumbnailUploadRow & { upload_id: string }) | null;
+      if (
+        !uploadRow ||
+        uploadRow.upload_id !== uploadId ||
+        uploadRow.attached_response_id ||
+        (uploadRow.status !== "uploading" && uploadRow.status !== "completed")
+      ) {
+        throw new Error("Multipart upload session is no longer available.");
+      }
+      // A client may time out after the server commits. Reconfirm the same
+      // upload without asking R2 to complete a consumed multipart ID again.
+      if (uploadRow.status === "completed") {
+        return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
+      }
+
       const completeResponse = await r2Fetch(env, objectKey, {
         method: "POST",
         headers: {
@@ -553,7 +575,7 @@ Deno.serve(async (request) => {
       });
       const completeBody = await completeResponse.text();
 
-      if (!completeResponse.ok) {
+      if (!completeResponse.ok && !completeBody.includes("<Code>NoSuchUpload</Code>")) {
         throw new Error(completeBody || "Cloudflare R2 could not finish the multipart upload.");
       }
 
@@ -573,12 +595,14 @@ Deno.serve(async (request) => {
         uploadedAt: new Date().toISOString(),
       });
 
-      await scheduleCompletedUploadThumbnail(admin, {
-        providerBucket: env.providerBucket,
-        objectKey,
-        ownerColumn: uploadOwnerColumn,
-        ownerKey: uploadOwnerKey,
-      });
+      scheduleRecordingThumbnailTask(
+        scheduleCompletedUploadThumbnail(admin, {
+          providerBucket: env.providerBucket,
+          objectKey,
+          ownerColumn: uploadOwnerColumn,
+          ownerKey: uploadOwnerKey,
+        }),
+      );
 
       return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
     }

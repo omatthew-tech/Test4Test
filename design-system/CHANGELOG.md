@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added noninteractive Stepper dots and optional Dialog headerAccessory content for founder onboarding. Controlled dialog dismissal retains focus during saving and hands focus to the next modal after completion.
+
 - Added StarRatingDisplay for exact read-only 1–5 ratings and an explicit unrated state. Submitted feedback retains its rating beside revision/report status; recording ratings retain compact hover previews and explicit Submit.
 
 - Added a neutral star variant and optional clearing to RatingControl, with native radio keyboard behavior and 44px targets. The recording viewer pairs it with understated Tip and Message actions.

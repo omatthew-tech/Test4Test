@@ -14,6 +14,9 @@ const backend = vi.hoisted(() => ({
   user: { id: "owner", email: "owner@example.test", user_metadata: {} },
   authChange: null as null | ((event: string, session: unknown) => void),
   creditWait: null as null | Promise<void>,
+  profileWait: null as null | Promise<void>,
+  submissionWait: null as null | Promise<void>,
+  rpcResult: { ok: true, creditAwarded: false },
   failedTable: null as string | null,
   signedOut: false,
   authError: null as { name: string; message: string; status: number } | null,
@@ -22,6 +25,11 @@ const backend = vi.hoisted(() => ({
 vi.mock("../../src/lib/analytics", () => ({
   trackAuthenticatedVisit: vi.fn(),
   trackEventOncePerSession: vi.fn(),
+  trackEvent: vi.fn(),
+}));
+vi.mock("../../src/lib/earnExperiment", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ensureEarnVisit: async () => null,
 }));
 vi.mock("../../src/lib/supabase", () => ({
   hasSupabaseConfig: true,
@@ -29,6 +37,7 @@ vi.mock("../../src/lib/supabase", () => ({
   supabaseUrl: "https://example.test",
   supabasePublishableKey: "public-test",
   requireSupabase: () => ({
+    rpc: async () => ({ data: backend.rpcResult, error: null }),
     auth: {
       getUser: async () => {
         backend.userReads++;
@@ -62,6 +71,7 @@ vi.mock("../../src/lib/supabase", () => ({
         },
         or: () => query,
         order: () => query,
+        limit: () => query,
         abortSignal: (signal: AbortSignal) => {
           read.signal = signal;
           return query;
@@ -76,6 +86,8 @@ vi.mock("../../src/lib/supabase", () => ({
           backend.reads.push(read);
           return (async () => {
             if (table === "credit_transactions") await backend.creditWait;
+            if (table === "profiles") await backend.profileWait;
+            if (table === "submissions") await backend.submissionWait;
             if (table === backend.failedTable) {
               return { data: null, error: { message: "Data service unavailable" } };
             }
@@ -137,6 +149,8 @@ beforeEach(() => {
   backend.userReads = 0;
   backend.profileName = "Owner";
   backend.creditWait = null;
+  backend.profileWait = null;
+  backend.submissionWait = null;
   backend.failedTable = null;
   backend.signedOut = false;
   backend.authError = null;
@@ -167,6 +181,67 @@ it("Share reads only the owner's submissions, even when ratings are unavailable"
   expect(backend.reads[1].filters).toEqual({ user_id: "owner" });
   expect(screen.queryByRole("alert")).toBeNull();
 });
+
+it.each([
+  ["24aec9dc-d4d4-4805-979d-9bc7a2a38d76", "id"],
+  ["shared-test", "public_share_slug"],
+])(
+  "loads only the requested test %s without unrelated ratings or credits",
+  async (reference, key) => {
+    backend.failedTable = "feedback_ratings";
+    await mount(`/test/${reference}`);
+    expect(backend.reads.filter((read) => read.table === "submissions")).toEqual([
+      expect.objectContaining({ filters: { [key]: reference } }),
+    ]);
+    expect(backend.reads.map((read) => read.table)).toEqual([
+      "profiles",
+      "submissions",
+      "test_responses",
+    ]);
+    expect(screen.queryByRole("alert")).toBeNull();
+  },
+);
+
+it.each(["submit", "revise", "public"])(
+  "returns confirmed %s success while the subsequent data refresh is still pending",
+  async (kind) => {
+    await mount("/profile");
+    if (kind === "public") {
+      backend.signedOut = true;
+      await act(async () => backend.authChange!("SIGNED_OUT", null));
+      await screen.findByText("anonymous");
+      // Public test refresh must also not block on its page-data request.
+      await act(async () => navigate("/test/shared-test"));
+    }
+    let finish!: () => void;
+    const pendingRefresh = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    if (kind === "public") backend.submissionWait = pendingRefresh;
+    else backend.profileWait = pendingRefresh;
+    const recording = {
+      bucket: "r2:test-response-recordings",
+      path: "draft/recording.webm",
+      fileName: "recording.webm",
+      mimeType: "video/webm",
+      fileSizeBytes: 123,
+      uploadedAt: "2026-09-21T12:00:00Z",
+      expiresAt: null,
+    };
+    try {
+      let result;
+      await act(async () => {
+        result =
+          kind === "revise"
+            ? await actions[actions.length - 1].reviseTestResponse("response", recording, 60, 1)
+            : await actions[actions.length - 1].completeTest("test", [], 60, recording);
+      });
+      expect(result).toMatchObject({ ok: true });
+    } finally {
+      await act(async () => finish());
+    }
+  },
+);
 
 it("loads pre-migration ratings without discarding the signed-in user", async () => {
   backend.ratings = [{ id: "rating", star_rating: null, rating_value: "smiley" }];

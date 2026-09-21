@@ -8,6 +8,7 @@ export const RECORDING_MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024;
 export const RECORDING_MULTIPART_UPLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
 const RECORDING_MULTIPART_DEFAULT_PART_SIZE_BYTES = 10 * 1024 * 1024;
 const RECORDING_UPLOAD_RETRY_DELAYS_MS = [750, 1500, 3000];
+export const RECORDING_CONFIRMATION_TIMEOUT_MS = 30_000;
 export const RECORDING_ACCEPTED_MIME_TYPES = [
   "video/mp4",
   "video/quicktime",
@@ -52,7 +53,7 @@ export interface RecordingUploadProgress {
   bytesUploaded: number;
   bytesTotal: number;
   percentage: number;
-  state: "uploading" | "retrying";
+  state: "uploading" | "retrying" | "finalizing";
 }
 
 export interface RecordingUploadOptions {
@@ -102,6 +103,9 @@ interface NavigatorWithUserAgentData extends Navigator {
 }
 
 const multipartUploadCache = new Map<string, MultipartUploadCacheEntry>();
+// Keep successful PUTs available for confirmation retries without sending the
+// video again. Entries are removed as soon as confirmation succeeds.
+const pendingSingleConfirmations = new Set<string>();
 const recordingAccessCache = new Map<
   string,
   {
@@ -409,30 +413,50 @@ async function callRecordingUploadR2(
     throw new Error("Recording uploads are not available in the current environment.");
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    apikey: supabasePublishableKey,
-  };
-  const publicTesterKey = options.publicTesterKey?.trim();
-  const body = publicTesterKey ? { ...payload, publicTesterKey } : payload;
-
-  if (!publicTesterKey) {
-    const accessToken = await getCurrentAccessToken();
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response = await fetch(`${supabaseUrl}/functions/v1/recording-upload-r2`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      const error = new Error(
+        "Saving the recording took too long. Retry the upload or download a backup before leaving this page.",
+      );
+      controller.abort(error);
+      reject(error);
+    }, RECORDING_CONFIRMATION_TIMEOUT_MS);
   });
-  const result = (await response.json().catch(() => null)) as RecordingUploadR2Response | null;
+  const request = async () => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      apikey: supabasePublishableKey,
+    };
+    const publicTesterKey = options.publicTesterKey?.trim();
+    const body = publicTesterKey ? { ...payload, publicTesterKey } : payload;
 
-  if (!response.ok || !result?.ok) {
-    throw new Error(result?.error ?? result?.message ?? "The recording could not be uploaded.");
+    if (!publicTesterKey) {
+      const accessToken = await getCurrentAccessToken();
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+    controller.signal.throwIfAborted();
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/recording-upload-r2`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const result = (await response.json().catch(() => null)) as RecordingUploadR2Response | null;
+
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.error ?? result?.message ?? "The recording could not be uploaded.");
+    }
+
+    return result;
+  };
+  try {
+    return await Promise.race([request(), deadline]);
+  } finally {
+    clearTimeout(timeout!);
   }
-
-  return result;
 }
 
 function sendFileToSignedUrl(
@@ -446,6 +470,7 @@ function sendFileToSignedUrl(
 ) {
   return new Promise<SignedUploadResponse>((resolve, reject) => {
     const request = new XMLHttpRequest();
+    let confirmationTimeout: ReturnType<typeof setTimeout> | undefined;
 
     request.open("PUT", uploadUrl);
 
@@ -455,9 +480,21 @@ function sendFileToSignedUrl(
 
     request.upload.onprogress = (event) => {
       options.onUploadProgress?.(Math.min(body.size, Math.max(0, event.loaded)));
+      if (event.loaded >= body.size && confirmationTimeout === undefined) {
+        // 100% means the browser sent the bytes, not that R2 acknowledged them.
+        confirmationTimeout = setTimeout(() => {
+          const error = new Error(
+            "The recording was sent, but storage did not confirm it. Retry or download a backup before leaving this page.",
+          );
+          error.name = "TimeoutError";
+          reject(error);
+          request.abort();
+        }, RECORDING_CONFIRMATION_TIMEOUT_MS);
+      }
     };
 
     request.onload = () => {
+      clearTimeout(confirmationTimeout);
       if (request.status >= 200 && request.status < 300) {
         options.onUploadProgress?.(body.size);
         resolve({
@@ -477,6 +514,7 @@ function sendFileToSignedUrl(
     };
 
     request.onerror = () => {
+      clearTimeout(confirmationTimeout);
       reject(
         new Error(
           `${options.retryLabel ?? "Recording upload"} failed. Check your connection and try again.`,
@@ -485,6 +523,7 @@ function sendFileToSignedUrl(
     };
 
     request.onabort = () => {
+      clearTimeout(confirmationTimeout);
       reject(new Error(`${options.retryLabel ?? "Recording upload"} was cancelled.`));
     };
 
@@ -517,7 +556,7 @@ async function uploadFileToSignedUrl(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("The recording upload failed.");
 
-      if (attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length) {
+      if (lastError.name === "TimeoutError" || attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length) {
         break;
       }
 
@@ -537,33 +576,43 @@ async function uploadRecordingObjectSingle(
   onProgress?: RecordingUploadOptions["onProgress"],
   options: RecordingUploadIdentityOptions = {},
 ) {
+  const confirmationKey = getMultipartCacheKey(path, file, contentType);
   onProgress?.(buildUploadProgress(0, file.size, "uploading"));
-  const createResult = await callRecordingUploadR2(
-    {
-      action: "create_single",
-      path,
-      fileName: file.name,
-      mimeType: contentType,
-      fileSizeBytes: file.size,
-    },
-    options,
-  );
+  if (!pendingSingleConfirmations.has(confirmationKey)) {
+    const createResult = await callRecordingUploadR2(
+      {
+        action: "create_single",
+        path,
+        fileName: file.name,
+        mimeType: contentType,
+        fileSizeBytes: file.size,
+      },
+      options,
+    );
 
-  if (!createResult.uploadUrl) {
-    throw new Error("The recording upload URL could not be created.");
+    if (!createResult.uploadUrl) {
+      throw new Error("The recording upload URL could not be created.");
+    }
+
+    let maxBytesUploaded = 0;
+
+    await uploadFileToSignedUrl(createResult.uploadUrl, file, {
+      contentType,
+      retryLabel: "Recording upload",
+      onUploadProgress: (bytesUploaded) => {
+        maxBytesUploaded = Math.max(maxBytesUploaded, Math.min(file.size, bytesUploaded));
+        onProgress?.(
+          buildUploadProgress(
+            maxBytesUploaded,
+            file.size,
+            maxBytesUploaded === file.size ? "finalizing" : "uploading",
+          ),
+        );
+      },
+    });
+    pendingSingleConfirmations.add(confirmationKey);
   }
-
-  let maxBytesUploaded = 0;
-
-  await uploadFileToSignedUrl(createResult.uploadUrl, file, {
-    contentType,
-    retryLabel: "Recording upload",
-    onUploadProgress: (bytesUploaded) => {
-      maxBytesUploaded = Math.max(maxBytesUploaded, Math.min(file.size, bytesUploaded));
-      onProgress?.(buildUploadProgress(maxBytesUploaded, file.size, "uploading"));
-    },
-  });
-  onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
+  onProgress?.(buildUploadProgress(file.size, file.size, "finalizing"));
 
   await callRecordingUploadR2(
     {
@@ -575,6 +624,7 @@ async function uploadRecordingObjectSingle(
     },
     options,
   );
+  pendingSingleConfirmations.delete(confirmationKey);
 }
 
 function getMultipartCacheKey(path: string, file: File, contentType: string) {
@@ -633,14 +683,16 @@ async function uploadRecordingObjectMultipart(
   );
   const partProgress = new Map<number, number>();
   const signingBatches = new Map<number, Promise<RecordingUploadR2Response>>();
-  const reportProgress = (state: RecordingUploadProgress["state"]) =>
+  const reportProgress = (state: RecordingUploadProgress["state"]) => {
+    const bytes = uploadedBytes + [...partProgress.values()].reduce((sum, value) => sum + value, 0);
     onProgress?.(
       buildUploadProgress(
-        uploadedBytes + [...partProgress.values()].reduce((sum, bytes) => sum + bytes, 0),
+        bytes,
         file.size,
-        state,
+        state === "uploading" && bytes >= file.size ? "finalizing" : state,
       ),
     );
+  };
   await mapConcurrent(pendingParts, 3, async (partNumber, index) => {
     const partStart = (partNumber - 1) * cacheEntry.partSizeBytes;
     const partEnd = Math.min(file.size, partStart + cacheEntry.partSizeBytes);
@@ -703,7 +755,10 @@ async function uploadRecordingObjectMultipart(
         });
         break;
       } catch (error) {
-        if (attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length) {
+        if (
+          (error instanceof Error && error.name === "TimeoutError") ||
+          attempt >= RECORDING_UPLOAD_RETRY_DELAYS_MS.length
+        ) {
           throw error;
         }
       }
@@ -724,6 +779,7 @@ async function uploadRecordingObjectMultipart(
     reportProgress("uploading");
   });
 
+  onProgress?.(buildUploadProgress(file.size, file.size, "finalizing"));
   await callRecordingUploadR2(
     {
       action: "complete_multipart",
@@ -739,7 +795,7 @@ async function uploadRecordingObjectMultipart(
     options,
   );
   multipartUploadCache.delete(cacheKey);
-  onProgress?.(buildUploadProgress(file.size, file.size, "uploading"));
+  onProgress?.(buildUploadProgress(file.size, file.size, "finalizing"));
 }
 
 async function uploadRecordingObject(

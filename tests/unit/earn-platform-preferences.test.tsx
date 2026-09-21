@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { Link, MemoryRouter } from "react-router-dom";
@@ -16,6 +16,7 @@ import {
   loadEarnPlatformPreferences,
   saveEarnPlatformPreferences,
 } from "../../src/lib/earnPlatformPreferences";
+import { saveFounderWelcome } from "../../src/lib/founderWelcome";
 
 const backend = vi.hoisted(() => ({
   userId: "user-avery",
@@ -74,6 +75,12 @@ vi.mock("../../src/lib/testReports", () => ({
 const confirmationKey = "test4test:earn-platform-filter-confirmed:user-avery";
 const platformsKey = "test4test:earn-platform-filter:user-avery";
 const modalName = "What platforms can you reliably access?";
+const welcomeTitles = [
+  "Welcome to Test4Test",
+  "How to earn credits",
+  "Share your test",
+  "Review your feedback",
+];
 
 function earnRoute() {
   return (
@@ -316,11 +323,13 @@ it("does not re-prompt when account confirmation cannot be checked", async () =>
 it("preserves an explicitly saved empty selection and ignores malformed platform data", async () => {
   await saveEarnPlatformPreferences(backend.userId, []);
   expect(await loadEarnPlatformPreferences(backend.userId)).toEqual({
+    welcomeStatus: null,
     confirmed: true,
     productTypes: [],
   });
   backend.metadata.earn_platform_preferences = ["unknown"];
   expect(await loadEarnPlatformPreferences(backend.userId)).toEqual({
+    welcomeStatus: null,
     confirmed: true,
     productTypes: null,
   });
@@ -506,4 +515,164 @@ it.each(["founder", "tester"] as const)("preserves mobile %s preferences", async
   await userEvent.setup().click(screen.getByRole("button", { name: "Filters" }));
   expectPlatforms(["ios", "android"]);
   expect(backend.listEarnSubmissions).toHaveBeenLastCalledWith(["ios", "android"]);
+});
+
+it("walks new founders through the copy and dots before saving completion and handing off", async () => {
+  backend.metadata.founder_welcome_v1 = "pending";
+  const user = userEvent.setup();
+  await mount();
+  expect(screen.queryByRole("dialog", { name: modalName })).toBeNull();
+  expect(screen.queryByRole("list", { name: "Progress" })).toBeNull();
+  expect(
+    screen.getByText(
+      "Did you know xyz says 82% of UX researchers use live recordings because it's the most effective way to improve an app's experience?",
+    ),
+  ).toBeTruthy();
+  for (let step = 1; step <= 3; step++) {
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    const dialog = screen.getByRole("dialog", { name: welcomeTitles[step] });
+    const progress = within(dialog).getByRole("list", { name: "Progress" });
+    expect(within(progress).getAllByRole("listitem")).toHaveLength(3);
+    expect(progress.querySelector('[aria-current="step"]')?.textContent).toBe(welcomeTitles[step]);
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  }
+  await user.click(screen.getByRole("button", { name: "Get started" }));
+  expect(backend.metadata.founder_welcome_v1).toBe("completed");
+  expect(backend.metadata.display_name).toBe("Avery");
+  expect(backend.metadata.earn_platform_preferences_confirmed).toBeUndefined();
+  expect(screen.getByRole("dialog", { name: modalName })).toBeTruthy();
+  cleanup();
+  localStorage.clear();
+  await mount();
+  expect(screen.queryByRole("dialog", { name: welcomeTitles[0] })).toBeNull();
+  expect(screen.getByRole("dialog", { name: modalName })).toBeTruthy();
+});
+
+it.each(
+  welcomeTitles.flatMap((title, step) => [
+    { title, step, action: "X" },
+    { title, step, action: "Escape" },
+  ]),
+)("permanently dismisses $title using $action", async ({ title, step, action }) => {
+  backend.metadata.founder_welcome_v1 = "pending";
+  const user = userEvent.setup();
+  await mount();
+  for (let index = 0; index < step; index++)
+    await user.click(screen.getByRole("button", { name: "Next" }));
+  const dialog = screen.getByRole("dialog", { name: title });
+  if (action === "X") await user.click(within(dialog).getByRole("button", { name: "Close" }));
+  else fireEvent.keyDown(dialog, { key: "Escape" });
+  await screen.findByRole("dialog", { name: modalName });
+  expect(backend.metadata.founder_welcome_v1).toBe("dismissed");
+  expect(backend.updateUser).toHaveBeenCalledTimes(1);
+  cleanup();
+  localStorage.clear();
+  await mount();
+  expect(screen.queryByRole("dialog", { name: welcomeTitles[0] })).toBeNull();
+});
+
+it("restarts an unfinished tour on the next visit without writing progress", async () => {
+  backend.metadata.founder_welcome_v1 = "pending";
+  await mount();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Next" }));
+  cleanup();
+  await mount();
+  expect(screen.getByRole("dialog", { name: welcomeTitles[0] })).toBeTruthy();
+  expect(backend.updateUser).not.toHaveBeenCalled();
+});
+
+it.each(["dismissed", "completed"] as const)(
+  "retains the tour when saving %s fails and retries the same choice",
+  async (outcome) => {
+    backend.metadata.founder_welcome_v1 = "pending";
+    backend.updateUser.mockResolvedValueOnce({ error: new Error("Offline") });
+    const user = userEvent.setup();
+    await mount();
+    if (outcome === "completed") {
+      for (let index = 0; index < 3; index++)
+        await user.click(screen.getByRole("button", { name: "Next" }));
+    }
+    await user.click(
+      screen.getByRole("button", { name: outcome === "completed" ? "Get started" : "Close" }),
+    );
+    expect(screen.getByRole("alert").textContent).toContain("could not save your choice");
+    expect(backend.metadata.founder_welcome_v1).toBe("pending");
+    expect(screen.queryByRole("dialog", { name: modalName })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(backend.metadata.founder_welcome_v1).toBe(outcome);
+    expect(screen.getByRole("dialog", { name: modalName })).toBeTruthy();
+  },
+);
+
+it("guards repeated X, Escape and Next while dismissal is saving", async () => {
+  backend.metadata.founder_welcome_v1 = "pending";
+  let finishSave!: (value: unknown) => void;
+  backend.updateUser.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+  );
+  const user = userEvent.setup();
+  await mount();
+  const dialog = screen.getByRole("dialog", { name: welcomeTitles[0] });
+  const close = within(dialog).getByRole("button", { name: "Close" });
+  await user.click(close);
+  await user.click(close);
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  expect((screen.getByRole("button", { name: "Saving" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(backend.updateUser).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole("dialog", { name: modalName })).toBeNull();
+  await act(async () => finishSave({ error: null }));
+  expect(screen.getByRole("dialog", { name: modalName })).toBeTruthy();
+});
+
+it("retries an unavailable account read before choosing a popup", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  backend.metadata.founder_welcome_v1 = "pending";
+  backend.getUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("Offline") });
+  await mount();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Try again" }));
+  expect(screen.getByRole("dialog", { name: welcomeTitles[0] })).toBeTruthy();
+});
+
+it("does not show either popup before a pending signup becomes a founder", async () => {
+  backend.accountType = "pending";
+  backend.metadata.founder_welcome_v1 = "pending";
+  const view = await mount();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  backend.accountType = "founder";
+  await act(async () => view.rerender(earnRoute()));
+  expect(screen.getByRole("dialog", { name: welcomeTitles[0] })).toBeTruthy();
+});
+
+it("does not show the founder tour to paid testers", async () => {
+  useTesterProfile();
+  backend.metadata.founder_welcome_v1 = "pending";
+  await mount();
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("ignores a delayed dismissal after switching accounts", async () => {
+  backend.metadata.founder_welcome_v1 = "pending";
+  let finishSave!: (value: unknown) => void;
+  backend.updateUser.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finishSave = resolve;
+      }),
+  );
+  const view = await mount();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Close" }));
+  backend.userId = "user-nina";
+  await act(async () => view.rerender(earnRoute()));
+  await act(async () => finishSave({ error: null }));
+  expect(screen.getByRole("dialog", { name: welcomeTitles[0] })).toBeTruthy();
+  expect(screen.queryByRole("dialog", { name: modalName })).toBeNull();
+});
+
+it("rejects saving welcome preferences for a different account", async () => {
+  await expect(saveFounderWelcome("another-user", "dismissed")).rejects.toThrow("sign-in changed");
+  expect(backend.updateUser).not.toHaveBeenCalled();
 });

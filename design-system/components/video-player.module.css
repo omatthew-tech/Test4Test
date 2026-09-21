@@ -48,7 +48,7 @@
 .timeline {
   position: relative;
   height: var(--ds-semantic-size-control-target);
-  margin-inline: var(--ds-semantic-size-control-target);
+  margin-inline: var(--ds-semantic-space-inline-md);
 }
 .root .controls .seek {
   position: absolute;

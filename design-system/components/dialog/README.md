@@ -1,6 +1,6 @@
 # Dialog
 
-Modal task or confirmation using the native dialog element.
+Modal task or confirmation using the native dialog element. Optional headerAccessory content appears beside Close above the title; controlled asynchronous close requests retain focus until the dialog closes.
 
 - Family: overlays
 - Lifecycle: stable

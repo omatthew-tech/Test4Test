@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requestRecordingPreviews } from "../../src/lib/recordingPreviews";
-import { uploadRecordingDraft } from "../../src/lib/recordings";
+import { RECORDING_CONFIRMATION_TIMEOUT_MS, uploadRecordingDraft } from "../../src/lib/recordings";
 
 const auth = vi.hoisted(() => ({ userId: "owner-one" }));
 vi.mock("../../src/lib/supabase", () => ({
@@ -19,7 +19,77 @@ beforeEach(() => {
   auth.userId = "owner-one";
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+describe("upload confirmation recovery", () => {
+  it.each(["storage", "metadata"])(
+    "bounds a stalled %s confirmation and safely retries",
+    async (stage) => {
+      vi.useFakeTimers();
+      let stalled = true;
+      let puts = 0;
+      let aborted = false;
+      const progress: string[] = [];
+      class Request {
+        upload: { onprogress?: (event: { loaded: number }) => void } = {};
+        onload?: () => void;
+        onabort?: () => void;
+        status = 200;
+        open() {}
+        setRequestHeader() {}
+        getResponseHeader() {
+          return null;
+        }
+        abort() {
+          aborted = true;
+          this.onabort?.();
+        }
+        send(body: Blob) {
+          puts++;
+          this.upload.onprogress?.({ loaded: body.size });
+          if (!(stalled && stage === "storage")) this.onload?.();
+        }
+      }
+      vi.stubGlobal("XMLHttpRequest", Request);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url: string, init: RequestInit) => {
+          const payload = JSON.parse(String(init.body));
+          if (stalled && stage === "metadata" && payload.action === "complete_single") {
+            return new Promise<Response>((_resolve, reject) => {
+              init.signal!.addEventListener("abort", () => {
+                aborted = true;
+                reject(init.signal!.reason);
+              });
+            });
+          }
+          return new Response(
+            JSON.stringify({ ok: true, uploadUrl: "https://storage.test/video" }),
+          );
+        }),
+      );
+      const file = new File(["video"], "recording.webm", { type: "video/webm" });
+      const upload = () =>
+        uploadRecordingDraft("owner", "confirmation-" + stage, file, null, {
+          publicTesterKey: "tester",
+          path: "draft/confirmation-" + stage + "/recording.webm",
+          onProgress: (value) => progress.push(value.state),
+        });
+      const result = upload();
+      const rejected = expect(result).rejects.toThrow(/confirm|too long/i);
+      await vi.advanceTimersByTimeAsync(RECORDING_CONFIRMATION_TIMEOUT_MS);
+      await rejected;
+      expect(aborted).toBe(true);
+      expect(progress).toContain("finalizing");
+      expect(puts).toBe(1);
+      stalled = false;
+      await expect(upload()).resolves.toMatchObject({ fileSizeBytes: file.size });
+      // Once storage acknowledged the PUT, retry only the metadata confirmation.
+      expect(puts).toBe(stage === "metadata" ? 1 : 2);
+    },
+  );
 });
 
 describe("preview request coalescing", () => {

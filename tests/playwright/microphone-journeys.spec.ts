@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 declare global {
   interface Window {
@@ -12,7 +13,7 @@ declare global {
     __testRecordingPipDocument: Document | null;
     __testRecordingUploadControl?: {
       fail: () => void;
-      setProgress: (percentage: number, state?: "uploading" | "retrying") => void;
+      setProgress: (percentage: number, state?: "uploading" | "retrying" | "finalizing") => void;
       succeed: () => void;
     };
     __testEndScreenShare: () => void;
@@ -239,6 +240,61 @@ for (const viewport of [
   { width: 390, height: 844 },
   { width: 1440, height: 900 },
 ]) {
+  test(`upload confirmation and saved-recording dropdown at ${viewport.width}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await installMicrophoneFixture(page);
+    await page.goto(
+      "/test/submission-palette?ds-user=user-avery&ds-recording=1&ds-recording-upload=controlled",
+    );
+    await startAndFinishNativeRecording(page);
+    await expect
+      .poll(() => page.evaluate(() => Boolean(window.__testRecordingUploadControl)))
+      .toBe(true);
+    await page.evaluate(() => window.__testRecordingUploadControl?.setProgress(100, "finalizing"));
+    await expect(page.getByText("Confirming recording is saved", { exact: true })).toBeVisible();
+    const disclosure = page.locator("summary").filter({ hasText: "Already recorded?" });
+    await disclosure.press("Enter");
+    await expect(page.getByLabel("Upload saved recording")).toBeVisible();
+    await expect(page.getByLabel("Upload saved recording")).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Download backup", exact: true })).toBeEnabled();
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          status: window.__testRecordingPipDocument?.getElementById("recording-pip-upload-status")
+            ?.textContent,
+          enabledSubmit: Boolean(
+            window.__testRecordingPipDocument?.querySelector(
+              "button:not(:disabled)#recording-pip-submit",
+            ),
+          ),
+        })),
+      )
+      .toEqual({ status: "Confirming recording is saved", enabledSubmit: false });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window.__testRecordingPipDocument?.documentElement.scrollHeight ?? 0) <=
+            window.__testRecordingPipHeight,
+        ),
+      )
+      .toBe(true);
+    await expect(disclosure).toBeFocused();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    const accessibility = await new AxeBuilder({ page }).include(".test-layout").analyze();
+    expect(accessibility.violations).toEqual([]);
+    await page.screenshot({
+      path: testInfo.outputPath(`upload-confirmation-${viewport.width}.png`),
+      fullPage: true,
+    });
+    await page.evaluate(() => window.__testRecordingUploadControl?.succeed());
+    await expect(page.getByRole("button", { name: "Submit test", exact: true })).toBeEnabled();
+  });
+
   for (const revision of [false, true]) {
     test(`recording-only ${revision ? "revision" : "legacy test"} unlocks submit without answers at ${viewport.width}`, async ({
       page,

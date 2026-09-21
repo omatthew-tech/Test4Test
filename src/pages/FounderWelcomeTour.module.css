@@ -1,0 +1,32 @@
+dialog.tour {
+  width: min(
+    calc(100% - var(--ds-semantic-space-inline-2xl)),
+    var(--ds-semantic-size-overlay-dialog)
+  );
+  max-height: min(
+    var(--ds-semantic-size-overlay-viewport-height),
+    var(--ds-semantic-size-overlay-max-height)
+  );
+  margin: auto;
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  border-radius: var(--ds-semantic-radius-panel);
+  text-align: start;
+}
+
+dialog.tour :has(> div > .progress) {
+  grid-template-columns: 1fr auto 1fr;
+}
+
+dialog.tour :has(> div > .progress) > button {
+  justify-self: end;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  min-height: var(--ds-semantic-size-control-default);
+}
+
+.next {
+  width: 100%;
+}

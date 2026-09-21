@@ -852,6 +852,28 @@
   line-height: var(--ds-semantic-typography-heading-small-line-height);
 }
 
+.dialogHeaderWithAccessory {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.dialogHeaderWithAccessory > :first-child {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.dialogAccessory {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dialogHeaderWithAccessory > :last-child {
+  grid-column: 3;
+  grid-row: 1;
+}
+
 .dialogDescription {
   color: var(--ds-semantic-color-text-secondary);
 }
@@ -1158,6 +1180,36 @@
 .stepperNumbersOnly .stepComplete::before {
   background: var(--ds-semantic-color-action-primary);
   color: var(--ds-semantic-color-text-inverse);
+}
+
+.stepperDots {
+  flex-wrap: nowrap;
+}
+
+.stepperDots .step {
+  min-height: var(--ds-semantic-space-zero);
+  gap: var(--ds-semantic-space-zero);
+}
+
+.stepperDots .step::before {
+  width: var(--ds-semantic-space-inline-sm);
+  height: var(--ds-semantic-space-inline-sm);
+  content: "";
+  background: var(--ds-semantic-color-surface-default);
+  border-color: var(--ds-semantic-color-text-secondary);
+}
+
+.stepperDots .stepCurrent::before {
+  background: var(--ds-semantic-color-action-primary);
+  border-color: var(--ds-semantic-color-action-primary);
+}
+
+@media (forced-colors: active) {
+  .stepperDots .stepCurrent::before {
+    background: Highlight;
+    border-color: Highlight;
+    forced-color-adjust: none;
+  }
 }
 
 .rating {

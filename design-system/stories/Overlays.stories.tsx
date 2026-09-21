@@ -1,7 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
-import { Button, Cluster, Dialog, Drawer, Popover, Stack, Tooltip } from "@test4test/design-system";
+import {
+  Button,
+  Cluster,
+  Dialog,
+  Drawer,
+  Popover,
+  Stack,
+  Stepper,
+  Tooltip,
+} from "@test4test/design-system";
 
 const meta = {
   title: "Components/Overlays",
@@ -112,6 +121,58 @@ export const DialogContract: Story = {
     await expect(dialog).toBeVisible();
     await expect(within(dialog).getAllByRole("button")).toHaveLength(3);
     await userEvent.keyboard("{Escape}");
+    await expect(trigger).toHaveFocus();
+  },
+};
+
+export const DeferredDialogDismissal: Story = {
+  render: function DeferredDialogStory() {
+    const [open, setOpen] = useState(false);
+    const [requested, setRequested] = useState(false);
+    return (
+      <>
+        <Button
+          onClick={() => {
+            setRequested(false);
+            setOpen(true);
+          }}
+        >
+          Open welcome
+        </Button>
+        <Dialog
+          open={open}
+          onOpenChange={() => setRequested(true)}
+          title="How to earn credits"
+          headerAccessory={
+            <Stepper
+              variant="dots"
+              currentStep="earn"
+              steps={[
+                { id: "earn", label: "Earn" },
+                { id: "share", label: "Share" },
+                { id: "review", label: "Review" },
+              ]}
+            />
+          }
+        >
+          <p>Close requests retain focus while account preferences are saving.</p>
+          {requested ? <Button onClick={() => setOpen(false)}>Finish saving</Button> : null}
+        </Dialog>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "Open welcome" });
+    await userEvent.click(trigger);
+    const dialog = within(canvas.getByRole("dialog"));
+    const close = dialog.getByRole("button", { name: "Close" });
+    await userEvent.click(close);
+    await expect(close).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await expect(close).toHaveFocus();
+    await expect(dialog.getByRole("list", { name: "Progress" })).toBeVisible();
+    await userEvent.click(dialog.getByRole("button", { name: "Finish saving" }));
     await expect(trigger).toHaveFocus();
   },
 };

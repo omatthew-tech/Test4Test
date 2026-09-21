@@ -1,6 +1,6 @@
 # Stepper
 
-Ordered workflow progress with labeled and numbers-only presentations.
+Ordered workflow progress with labeled, numbers-only, and noninteractive dots presentations.
 
 - Family: product
 - Lifecycle: stable
@@ -13,15 +13,15 @@ Ordered workflow progress with labeled and numbers-only presentations.
 ## Public API
 
 - Sizes: `responsive`
-- Variants: `labeled`, `numbers-only`
+- Variants: `labeled`, `numbers-only`, `dots`
 - States: `upcoming`, `current`, `complete`, `long-label`
-- Accessible name: Progress list label and step names; the numbers-only presentation keeps names available to assistive technology.
+- Accessible name: Progress list label and step names; compact presentations keep names available to assistive technology.
 
 ## Accessibility contract
 
 - Ordered list
 - Current step uses aria-current
-- Numbers-only presentation visually hides step names without removing them from the accessibility tree
+- Numbers-only and dots presentations visually hide step names without removing them from the accessibility tree
 
 Minimum interactive target: 44 × 44 px.
 

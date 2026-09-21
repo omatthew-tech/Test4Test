@@ -198,7 +198,7 @@ export const PageHeaderContract: Story = {
   },
 };
 
-// @test4test-coverage stepper | sizes: responsive | variants: labeled, numbers-only | states: upcoming, current, complete, long-label
+// @test4test-coverage stepper | sizes: responsive | variants: labeled, numbers-only, dots | states: upcoming, current, complete, long-label
 export const StepperContract: Story = {
   render: () => (
     <Stack gap="xl">
@@ -219,6 +219,15 @@ export const StepperContract: Story = {
           { id: "review", label: "Review" },
         ]}
       />
+      <Stepper
+        currentStep="share"
+        variant="dots"
+        steps={[
+          { id: "earn", label: "How to earn credits" },
+          { id: "share", label: "Share your test" },
+          { id: "review", label: "Review your feedback" },
+        ]}
+      />
     </Stack>
   ),
   play: async ({ canvasElement }) => {
@@ -233,6 +242,14 @@ export const StepperContract: Story = {
     await expect(labeledCurrentStep).toHaveAttribute("aria-current", "step");
     await expect(numbersOnlyLabel).toHaveClass("ds-sr-only");
     await expect(numbersOnlyLabel.closest("li")).toHaveAttribute("aria-current", "step");
+    const dots = within(progressLists[2]);
+    await expect(dots.getAllByRole("listitem")).toHaveLength(3);
+    await expect(dots.getByText("Share your test")).toHaveClass("ds-sr-only");
+    await expect(dots.getByText("Share your test").closest("li")).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+    await expect(dots.queryByRole("button")).toBeNull();
   },
 };
 

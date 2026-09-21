@@ -27,6 +27,16 @@ import {
   Tooltip,
 } from "@test4test/design-system";
 import { EditSubmissionModal } from "../components/EditSubmissionModal";
+import { FounderWelcomeTour } from "./FounderWelcomeTour";
+import {
+  saveFounderWelcome,
+  type FounderWelcomeOutcome,
+  type FounderWelcomeStatus,
+} from "../lib/founderWelcome";
+import {
+  readFounderWelcomeFixture,
+  saveFounderWelcomeFixture,
+} from "../testing/founderWelcomeFixture";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { isDesktopEarnDevice } from "../lib/earnDevice";
@@ -310,6 +320,9 @@ function EarnPageContent() {
   const welcomeFixtureMode = designSystemFixturesEnabled
     ? searchParams.get("ds-earn-welcome")
     : null;
+  const tourFixtureMode = designSystemFixturesEnabled
+    ? searchParams.get("ds-founder-welcome")
+    : null;
   const experimentFixtureVariant =
     designSystemFixturesEnabled && searchParams.get("ds-earn-variant") === "B" ? "B" : "A";
   const searchParamsKey = searchParams.toString();
@@ -335,6 +348,24 @@ function EarnPageContent() {
   const [pendingProductTypes, setPendingProductTypes] =
     useState<ProductType[]>(selectedProductTypes);
   const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
+  const [welcomeTourStatus, setWelcomeTourStatus] = useState<FounderWelcomeStatus | null>(null);
+  const [accountPreferencesReady, setAccountPreferencesReady] = useState(!isConfigured);
+  const [accountPreferencesError, setAccountPreferencesError] = useState("");
+  const [preferencesRetry, setPreferencesRetry] = useState(0);
+  const welcomeFinished = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const isWelcomeTourOpen =
+    currentUser?.accountType === "founder" && welcomeTourStatus === "pending";
+  const onboardingObscuresPage =
+    isWelcomeTourOpen ||
+    isPlatformModalOpen ||
+    (currentUser?.accountType === "founder" && !accountPreferencesReady);
   const [isSavingPlatformPreferences, setIsSavingPlatformPreferences] = useState(false);
   const [platformSaveError, setPlatformSaveError] = useState("");
   const platformSelectionVersion = useRef(0);
@@ -643,7 +674,7 @@ function EarnPageContent() {
       visibilitySummary.hasCompletedTest ||
       !isConfigured ||
       designSystemFixturesEnabled ||
-      isPlatformModalOpen
+      onboardingObscuresPage
     )
       return;
     let cancelled = false;
@@ -681,7 +712,7 @@ function EarnPageContent() {
     visibilitySummary,
     isConfigured,
     designSystemFixturesEnabled,
-    isPlatformModalOpen,
+    onboardingObscuresPage,
   ]);
 
   useEffect(() => {
@@ -786,12 +817,18 @@ function EarnPageContent() {
   }, [currentUser?.id, isConfigured, isTester, visibilitySummary?.satisfactionRatePercent]);
 
   useEffect(() => {
+    if (currentUser?.accountType === "pending") {
+      setIsPlatformModalOpen(false);
+      setAccountPreferencesReady(false);
+      return;
+    }
     if (!currentUser) {
       if (!defaultToWebsites) {
         setSelectedProductTypes(defaultSelectedProductTypes);
         setPendingProductTypes(defaultSelectedProductTypes);
       }
       setIsPlatformModalOpen(false);
+      setAccountPreferencesReady(true);
       return;
     }
 
@@ -802,6 +839,7 @@ function EarnPageContent() {
         setPendingProductTypes(nextProductTypes);
       }
       setIsPlatformModalOpen(false);
+      setAccountPreferencesReady(true);
       return;
     }
 
@@ -818,14 +856,24 @@ function EarnPageContent() {
     setPlatformSaveError("");
     setIsPlatformModalOpen(!isConfigured && !isConfirmed);
 
-    if (!isConfigured) return;
+    if (!isConfigured) {
+      if (designSystemFixturesEnabled && !welcomeFinished.current) {
+        setWelcomeTourStatus(readFounderWelcomeFixture(currentUser.id, tourFixtureMode));
+      }
+      setAccountPreferencesReady(true);
+      return;
+    }
 
     let cancelled = false;
     const version = platformSelectionVersion.current;
     const userId = currentUser.id;
     void loadEarnPlatformPreferences(userId)
       .then(async (preferences) => {
-        if (cancelled || version !== platformSelectionVersion.current) return;
+        if (cancelled) return;
+        if (!welcomeFinished.current) setWelcomeTourStatus(preferences.welcomeStatus);
+        setAccountPreferencesError("");
+        setAccountPreferencesReady(true);
+        if (version !== platformSelectionVersion.current) return;
 
         const next = preferences.productTypes ?? nextSelectedProductTypes;
         // Desktop filters belong to this visit. Only explicit edits change them;
@@ -841,12 +889,18 @@ function EarnPageContent() {
           saveStoredPlatformConfirmation(userId);
         } else if (isConfirmed) {
           // Carry confirmations made before account persistence forward without prompting again.
-          await saveEarnPlatformPreferences(userId, next);
+          await saveEarnPlatformPreferences(userId, next).catch(console.error);
         }
       })
       .catch((error: unknown) => {
         // An unavailable account check must not re-prompt someone who already saved.
-        if (!cancelled) console.error(error);
+        if (!cancelled) {
+          console.error(error);
+          setAccountPreferencesReady(false);
+          setAccountPreferencesError(
+            "We could not load your welcome and platform preferences. Please try again.",
+          );
+        }
       });
 
     return () => {
@@ -859,7 +913,19 @@ function EarnPageContent() {
     defaultSelectedProductTypesKey,
     defaultToWebsites,
     isConfigured,
+    designSystemFixturesEnabled,
+    tourFixtureMode,
+    preferencesRetry,
   ]);
+
+  const finishWelcomeTour = async (outcome: FounderWelcomeOutcome) => {
+    if (!currentUser) return;
+    if (isConfigured) await saveFounderWelcome(currentUser.id, outcome);
+    else if (designSystemFixturesEnabled) saveFounderWelcomeFixture(currentUser.id, outcome);
+    if (!mounted.current) return;
+    welcomeFinished.current = true;
+    setWelcomeTourStatus(outcome);
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -1476,6 +1542,20 @@ function EarnPageContent() {
       </Toast>
       <div className={styles.page} ref={earnPageRef}>
         <h1 className="ds-sr-only">Earn</h1>
+        {accountPreferencesError ? (
+          <Alert tone="danger">
+            <p>{accountPreferencesError}</p>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAccountPreferencesError("");
+                setPreferencesRetry((value) => value + 1);
+              }}
+            >
+              Try again
+            </Button>
+          </Alert>
+        ) : null}
         {!isTester && editLinkError ? (
           <Alert title="App could not be opened" tone="warning">
             {editLinkError}
@@ -1666,7 +1746,10 @@ function EarnPageContent() {
         )}
       </div>
 
-      {isPlatformModalOpen ? (
+      {isWelcomeTourOpen && accountPreferencesReady ? (
+        <FounderWelcomeTour onFinish={finishWelcomeTour} />
+      ) : null}
+      {isPlatformModalOpen && accountPreferencesReady && !isWelcomeTourOpen ? (
         <EarnPlatformModal
           selectedProductTypes={pendingProductTypes}
           isSaving={isSavingPlatformPreferences}
@@ -1676,7 +1759,7 @@ function EarnPageContent() {
           onConfirm={confirmPlatformSelection}
         />
       ) : null}
-      {!isTester && editingVisibilitySubmission ? (
+      {!isTester && editingVisibilitySubmission && !onboardingObscuresPage ? (
         <EditSubmissionModal
           submissions={ownedSubmissions}
           activeSubmissionId={activeEarnSubmissionId}

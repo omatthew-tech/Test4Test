@@ -54,16 +54,17 @@ export interface Step {
 export interface StepperProps {
   steps: Step[];
   currentStep: string;
-  variant?: "labeled" | "numbers-only";
+  variant?: "labeled" | "numbers-only" | "dots";
 }
 
 export function Stepper({ steps, currentStep, variant = "labeled" }: StepperProps) {
   const currentIndex = steps.findIndex((step) => step.id === currentStep);
   const numbersOnly = variant === "numbers-only";
+  const dots = variant === "dots";
 
   return (
     <ol
-      className={`${styles.stepper} ${numbersOnly ? styles.stepperNumbersOnly : ""}`.trim()}
+      className={`${styles.stepper} ${numbersOnly ? styles.stepperNumbersOnly : ""} ${dots ? styles.stepperDots : ""}`.trim()}
       aria-label="Progress"
     >
       {steps.map((step, index) => (
@@ -74,7 +75,7 @@ export function Stepper({ steps, currentStep, variant = "labeled" }: StepperProp
           }`.trim()}
           aria-current={index === currentIndex ? "step" : undefined}
         >
-          <span className={numbersOnly ? "ds-sr-only" : undefined}>{step.label}</span>
+          <span className={numbersOnly || dots ? "ds-sr-only" : undefined}>{step.label}</span>
         </li>
       ))}
     </ol>

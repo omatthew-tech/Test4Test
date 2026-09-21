@@ -85,6 +85,7 @@ export interface DialogProps {
   description?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  headerAccessory?: ReactNode;
   className?: string;
   variant?: "dialog" | "drawer";
 }
@@ -96,6 +97,7 @@ export function Dialog({
   description,
   children,
   footer,
+  headerAccessory,
   className = "",
   variant = "dialog",
 }: DialogProps) {
@@ -113,11 +115,20 @@ export function Dialog({
     } else if (!open && dialog.open) {
       dialog.close();
     }
+    if (!open) return;
+    return () => {
+      requestAnimationFrame(() => {
+        // An async close request is not a close. Do not steal focus from a
+        // replacement modal when this dialog unmounts during a handoff.
+        if (!dialog.isConnected || !dialog.open) {
+          if (!document.querySelector("dialog[open]")) previousFocus.current?.focus();
+        }
+      });
+    };
   }, [open]);
 
   const handleClose = () => {
     onOpenChange(false);
-    requestAnimationFrame(() => previousFocus.current?.focus());
   };
 
   return (
@@ -134,6 +145,26 @@ export function Dialog({
         if (event.key === "Escape") {
           event.preventDefault();
           handleClose();
+          return;
+        }
+        if (event.key === "Tab") {
+          const focusable = [
+            ...(ref.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []),
+          ].filter((element) => element.getClientRects().length > 0);
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (!first) event.preventDefault();
+          else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          } else if (
+            event.shiftKey &&
+            (document.activeElement === first ||
+              !focusable.includes(document.activeElement as HTMLElement))
+          ) {
+            event.preventDefault();
+            last.focus();
+          }
         }
       }}
       onClose={() => {
@@ -141,7 +172,9 @@ export function Dialog({
       }}
     >
       <div className={styles.dialogInner}>
-        <div className={styles.dialogHeader}>
+        <div
+          className={`${styles.dialogHeader} ${headerAccessory ? styles.dialogHeaderWithAccessory : ""}`}
+        >
           <div className={styles.stack}>
             <h2 className={styles.dialogTitle} id={titleId}>
               {title}
@@ -152,6 +185,7 @@ export function Dialog({
               </p>
             )}
           </div>
+          {headerAccessory && <div className={styles.dialogAccessory}>{headerAccessory}</div>}
           <IconButton label="Close" onClick={handleClose}>
             <X aria-hidden="true" size={20} />
           </IconButton>

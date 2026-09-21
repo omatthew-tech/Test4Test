@@ -664,11 +664,14 @@ function getTestReferenceForPath(pathname: string) {
   }
 }
 
-type LoadedStateMode = "none" | "light" | "share" | "credits" | "recordings" | "full";
+type LoadedStateMode =
+  "none" | "light" | "share" | "credits" | "recordings" | "full" | `test:${string}`;
 
 function getRequiredStateMode(pathname: string, currentUserId: string | null): LoadedStateMode {
   if (!shouldLoadFullStateForPath(pathname, currentUserId)) return "light";
   const route = normalizePathname(pathname);
+  const testReference = getTestReferenceForPath(pathname);
+  if (testReference) return `test:${testReference}`;
   if (route === "/share") return "share";
   if (route === "/credits") return "credits";
   if (route === "/recordings") return "recordings";
@@ -1041,6 +1044,24 @@ async function loadVisibleSubmissions(
   signal: AbortSignal,
 ) {
   const supabase = requireSupabase();
+  // A test session needs only the requested test. Keep RLS and the same live/owner
+  // visibility rules, including shared slugs and an owner's closed tests.
+  if (publicTestReference) {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        publicTestReference,
+      );
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*")
+      .eq(isUuid ? "id" : "public_share_slug", publicTestReference)
+      .limit(1)
+      .abortSignal(signal);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as SubmissionRow[])
+      .filter((row) => row.status === "live" || (currentUserId && row.user_id === currentUserId))
+      .map(mapSubmission);
+  }
   const { data: liveRows, error: liveError } = await supabase
     .from("submissions")
     .select("*")
@@ -1054,7 +1075,6 @@ async function loadVisibleSubmissions(
   }
 
   let ownRows: SubmissionRow[] = [];
-  let publicSharedRows: SubmissionRow[] = [];
 
   if (currentUserId) {
     const { data, error } = await supabase
@@ -1071,31 +1091,7 @@ async function loadVisibleSubmissions(
     ownRows = (data ?? []) as SubmissionRow[];
   }
 
-  if (publicTestReference) {
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        publicTestReference,
-      );
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("*")
-      .eq("status", "live")
-      .eq(isUuid ? "id" : "public_share_slug", publicTestReference)
-      .limit(1)
-      .abortSignal(signal);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    publicSharedRows = (data ?? []) as SubmissionRow[];
-  }
-
-  return mergeUniqueById([
-    ...((liveRows ?? []) as SubmissionRow[]),
-    ...ownRows,
-    ...publicSharedRows,
-  ])
+  return mergeUniqueById([...((liveRows ?? []) as SubmissionRow[]), ...ownRows])
     .map(mapSubmission)
     .sort(
       (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
@@ -1699,6 +1695,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           loadedStateModeRef.current = "recordings";
           return;
         }
+        const isTestSession = nextStateMode.startsWith("test:");
+        const needsClosedTestProgress =
+          !isTestSession ||
+          submissions.some((submission) => submission.needsGooglePlayClosedTesters);
         const [
           submissionVersions,
           questionSetVersions,
@@ -1709,10 +1709,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           loadVisibleSubmissionVersions(submissionIds, signal),
           loadVisibleQuestionSets(submissionIds, signal),
-          loadResponses(currentUserId, ownedSubmissionIds, signal),
-          loadFeedbackRatings(currentUserId, signal),
-          loadCreditTransactions(currentUserId, signal),
-          loadGooglePlayClosedTestParticipations(currentUserId, signal),
+          loadResponses(currentUserId, isTestSession ? [] : ownedSubmissionIds, signal),
+          isTestSession ? [] : loadFeedbackRatings(currentUserId, signal),
+          isTestSession ? [] : loadCreditTransactions(currentUserId, signal),
+          needsClosedTestProgress
+            ? loadGooglePlayClosedTestParticipations(currentUserId, signal)
+            : [],
         ]);
         const googlePlayClosedTestCheckIns = await loadGooglePlayClosedTestCheckIns(
           googlePlayClosedTestParticipations.map((participation) => participation.id),
@@ -1738,7 +1740,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           moderationActions: [],
           otpChallenge: getStoredOtpChallenge(),
         });
-        loadedStateModeRef.current = "full";
+        loadedStateModeRef.current = nextStateMode;
       } catch (error) {
         if (signal.aborted) return;
         if (loadId !== loadIdRef.current) {
@@ -2468,7 +2470,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }
 
           const result = (data ?? {}) as SubmissionRpcResult;
-          await refreshState(null);
+          // The RPC has already committed. Page refreshes must not delay success.
+          void refreshState(null);
 
           if (result.ok) {
             trackEvent("test_completed", { submissionId, public: true });
@@ -2536,7 +2539,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const result = (data ?? {}) as SubmissionRpcResult;
-        await refreshState();
+        void refreshState();
 
         if (result.responseId) {
           void notifySubmissionOwnerAboutNewResult(result.responseId);
@@ -2579,7 +2582,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }
 
         const result = (data ?? {}) as SubmissionRpcResult;
-        await refreshState();
+        void refreshState();
 
         if (result.responseId) {
           void notifySubmissionOwnerAboutNewResult(result.responseId);

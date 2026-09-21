@@ -6,7 +6,7 @@
   "lifecycle": "stable",
   "source": "design-system/components/overlays.tsx",
   "story": "design-system/stories/Overlays.stories.tsx",
-  "description": "Modal task or confirmation using the native dialog element.",
+  "description": "Modal task or confirmation using the native dialog element. Optional headerAccessory content appears beside Close above the title; controlled asynchronous close requests retain focus until the dialog closes.",
   "semantics": [
     "Native dialog",
     "Labeled title",

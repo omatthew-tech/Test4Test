@@ -133,7 +133,17 @@ function formatUploadProgress(progress: RecordingUploadProgress | null) {
     return "Preparing upload...";
   }
 
+  if (progress.state === "finalizing") {
+    return "All recording data sent. Waiting for storage confirmation before you can submit.";
+  }
+
   return `${Math.round(progress.percentage)}% (${formatUploadBytes(progress.bytesUploaded)} of ${formatUploadBytes(progress.bytesTotal)})`;
+}
+
+function getUploadStatus(progress: RecordingUploadProgress | null) {
+  if (progress?.state === "retrying") return "Retrying upload";
+  if (progress?.state === "finalizing") return "Confirming recording is saved";
+  return "Uploading recording";
 }
 
 function getMediaPermissionMessage(error: unknown) {
@@ -1008,8 +1018,7 @@ export function TestSessionPage({
       Math.max(0, recordingUploadProgress?.percentage ?? 0),
     );
     const uploadProgressLabel = formatUploadProgress(recordingUploadProgress);
-    const uploadStatusLabel =
-      recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
+    const uploadStatusLabel = getUploadStatus(recordingUploadProgress);
     const submitDisabledAttribute = submitDisabled ? " disabled" : "";
     const deleteDisabledAttribute = isDeletingRecording || isSubmitting ? " disabled" : "";
     const downloadDisabledAttribute = nativeRecordingBlob ? "" : " disabled";
@@ -2556,12 +2565,13 @@ export function TestSessionPage({
       progressFill.style.width = `${progressPercentage.toFixed(1)}%`;
     }
     if (status) {
-      status.textContent =
-        recordingUploadProgress?.state === "retrying" ? "Retrying upload" : "Upload in progress";
+      status.textContent = getUploadStatus(recordingUploadProgress);
     }
     if (progress) {
       progress.textContent = formatUploadProgress(recordingUploadProgress);
     }
+    // Confirmation copy can wrap onto more lines than the byte counter.
+    resizeRecordingPipWindowToContent();
   }, [isNativeDesktopRecording, isUploadingRecording, recordingPhase, recordingUploadProgress]);
 
   useEffect(() => {
@@ -3185,6 +3195,40 @@ export function TestSessionPage({
     : isSharedPublicVisit
       ? sharedCustomMessage || `Congrats! You've been invited to try ${submission.productName}`
       : "";
+  const savedRecordingUpload = (
+    <details
+      className={styles.recoveryUpload}
+      open={isRecoveryUploadOpen}
+      onToggle={(event) => setIsRecoveryUploadOpen(event.currentTarget.open)}
+    >
+      <summary className={styles.recoverySummary}>
+        <span>Already recorded?</span>
+        {isRecoveryUploadOpen ? (
+          <ChevronUp size={16} aria-hidden="true" />
+        ) : (
+          <ChevronDown size={16} aria-hidden="true" />
+        )}
+      </summary>
+      <div className={styles.recoveryBody}>
+        <div className="recording-recovery-upload__copy">
+          <strong>Already have a saved recording?</strong>
+          <small className="helper-text">
+            If you downloaded a backup after a failed upload, attach it here and submit without
+            recording again.
+          </small>
+        </div>
+        <TextField
+          className="recording-recovery-upload__field"
+          type="file"
+          label="Upload saved recording"
+          helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
+          accept={RECORDING_ACCEPT_ATTRIBUTE}
+          onChange={handleRecordingUpload}
+          disabled={isUploadingRecording}
+        />
+      </div>
+    </details>
+  );
   const backToTestsLabel = currentUser ? "Go back" : "Browse tests";
   const shouldShowBackToTests = !isSharedPublicVisit;
 
@@ -3595,39 +3639,7 @@ export function TestSessionPage({
                         : styles.setupActions
                     }
                   >
-                    {isNativeDesktopRecording ? (
-                      <details
-                        className={styles.recoveryUpload}
-                        onToggle={(event) => setIsRecoveryUploadOpen(event.currentTarget.open)}
-                      >
-                        <summary className={styles.recoverySummary}>
-                          <span>Already recorded?</span>
-                          {isRecoveryUploadOpen ? (
-                            <ChevronUp size={16} aria-hidden="true" />
-                          ) : (
-                            <ChevronDown size={16} aria-hidden="true" />
-                          )}
-                        </summary>
-                        <div className={styles.recoveryBody}>
-                          <div className="recording-recovery-upload__copy">
-                            <strong>Already have a saved recording?</strong>
-                            <small className="helper-text">
-                              If you downloaded a backup after a failed upload, attach it here and
-                              submit without recording again.
-                            </small>
-                          </div>
-                          <TextField
-                            className="recording-recovery-upload__field"
-                            type="file"
-                            label="Upload saved recording"
-                            helpText="Accepted: MP4, MOV, or WEBM up to 1 GB."
-                            accept={RECORDING_ACCEPT_ATTRIBUTE}
-                            onChange={handleRecordingUpload}
-                            disabled={isUploadingRecording}
-                          />
-                        </div>
-                      </details>
-                    ) : null}
+                    {isNativeDesktopRecording ? savedRecordingUpload : null}
 
                     <div className="wizard-actions">
                       {shouldShowBackToTests ? (
@@ -3803,15 +3815,23 @@ export function TestSessionPage({
                     </p>
                   </div>
                   <RecordingStatus
-                    status={
-                      recordingUploadProgress?.state === "retrying"
-                        ? "Upload paused briefly. Retrying"
-                        : "Uploading recording"
-                    }
+                    status={getUploadStatus(recordingUploadProgress)}
                     description={formatUploadProgress(recordingUploadProgress)}
                     progress={Math.min(100, Math.max(0, recordingUploadProgress?.percentage ?? 0))}
                     tone={recordingUploadProgress?.state === "retrying" ? "warning" : "info"}
                   />
+                  {isNativeDesktopRecording ? savedRecordingUpload : null}
+                  {nativeRecordingBlob ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() =>
+                        downloadRecordingBackup(nativeRecordingBlob, nativeBackupFileName)
+                      }
+                    >
+                      Download backup
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -3865,11 +3885,7 @@ export function TestSessionPage({
 
                   {isUploadingRecording && recordingUploadProgress ? (
                     <RecordingStatus
-                      status={
-                        recordingUploadProgress.state === "retrying"
-                          ? "Retrying upload"
-                          : "Uploading recording"
-                      }
+                      status={getUploadStatus(recordingUploadProgress)}
                       description={formatUploadProgress(recordingUploadProgress)}
                       progress={Math.min(100, Math.max(0, recordingUploadProgress.percentage))}
                       tone={recordingUploadProgress.state === "retrying" ? "warning" : "info"}
