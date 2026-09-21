@@ -18,6 +18,15 @@ for (const viewport of [
       await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
       const summary = page.locator(".earn-visibility");
       await expect(summary).toBeVisible();
+      const firstCard = page.locator(".earn-list > .earn-row-anchor").first();
+      await expect(firstCard.getByRole("heading")).toHaveText("Palette Pilot");
+      await expect(firstCard.getByRole("link", { name: "View analytics" })).toHaveAttribute(
+        "href",
+        "/analytics",
+      );
+      await expect(
+        page.locator(".earn-list").getByRole("link", { name: "View test" }).first(),
+      ).toBeVisible();
       if (variant === "A") {
         await expect(page.getByText("Welcome to Test4Test!")).toBeVisible();
         await expect(summary).toContainText("#3");
@@ -44,6 +53,7 @@ for (const viewport of [
         `/earn?ds-user=user-mateo&ds-earn-welcome=completed&ds-earn-variant=${variant}`,
       );
       await expect(summary).toContainText("#1");
+      await expect(firstCard.getByRole("heading")).toHaveText("Palette Pilot");
       await expect(page.getByRole("button", { name: "Complete a test" })).toHaveCount(0);
       await expect(page.getByText("Welcome to Test4Test!")).toHaveCount(0);
     });

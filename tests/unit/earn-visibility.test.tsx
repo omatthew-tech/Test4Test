@@ -1,10 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { seededState } from "../../src/data/seeds";
 import { EarnPage } from "../../src/pages/EarnPage";
+import type { EarnCreditCelebrationState } from "../../src/lib/earnPlacementCelebration";
 import type { EarnSubmissionReputation, EarnVisibilitySummary, Submission } from "../../src/types";
 
 const backend = vi.hoisted(() => ({
@@ -12,6 +13,7 @@ const backend = vi.hoisted(() => ({
   summary: vi.fn<() => Promise<EarnVisibilitySummary>>(),
   submissions: vi.fn<() => Promise<Submission[]>>(),
   reputations: vi.fn<() => Promise<EarnSubmissionReputation[]>>(),
+  draftProgress: vi.fn<() => Promise<Record<string, boolean>>>(),
   scrollIntoView: vi.fn(),
 }));
 vi.mock("../../src/context/AppStateContext", () => ({
@@ -38,7 +40,7 @@ vi.mock("../../src/lib/testReports", () => ({
   loadMySubmissionReportStatuses: async () => [],
 }));
 vi.mock("../../src/lib/testResponseDrafts", () => ({
-  loadTestResponseDraftProgress: async () => ({}),
+  loadTestResponseDraftProgress: backend.draftProgress,
 }));
 vi.mock("../../src/lib/submittedFeedback", () => ({
   loadSubmittedFeedbackCards: async () => [],
@@ -60,11 +62,34 @@ const newOwnerSummary: EarnVisibilitySummary = {
 const availableTest = seededState.submissions.find((item) => item.id === "submission-pantry")!;
 const metric = (label: string) =>
   screen.getByText(label, { exact: true }).parentElement?.querySelector("strong")?.textContent;
+const listedTitles = () =>
+  within(document.querySelector(".earn-list") as HTMLElement)
+    .getAllByRole("heading")
+    .map((heading) => heading.textContent);
+const testApp = (name: string, overrides: Partial<Submission> = {}): Submission => ({
+  ...availableTest,
+  id: name,
+  productName: name,
+  ...overrides,
+});
+const reputation = (
+  submissionId: string,
+  overrides: Partial<EarnSubmissionReputation> = {},
+): EarnSubmissionReputation => ({
+  submissionId,
+  ownerHasTestedYou: false,
+  ownerHasCompletedTest: true,
+  ownerCreditBalance: 1,
+  ownerTestBackRatePercent: 100,
+  ownerSatisfactionRatePercent: 100,
+  ownerAvatarUrl: null,
+  ...overrides,
+});
 
-async function mount() {
+async function mount(celebration?: EarnCreditCelebrationState) {
   await act(async () => {
     render(
-      <MemoryRouter initialEntries={["/earn"]}>
+      <MemoryRouter initialEntries={[{ pathname: "/earn", state: celebration }]}>
         <EarnPage />
       </MemoryRouter>,
     );
@@ -74,6 +99,7 @@ async function mount() {
 beforeEach(() => {
   backend.guest = false;
   localStorage.clear();
+  sessionStorage.clear();
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     value: vi.fn(() => ({ matches: false })),
@@ -81,6 +107,7 @@ beforeEach(() => {
   backend.summary.mockReset().mockResolvedValue({ ...newOwnerSummary });
   backend.submissions.mockReset().mockResolvedValue([availableTest]);
   backend.reputations.mockReset().mockResolvedValue([]);
+  backend.draftProgress.mockReset().mockResolvedValue({});
   backend.scrollIntoView.mockClear();
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
     configurable: true,
@@ -107,7 +134,7 @@ it("shows the first-credit announcement above a new owner's summary with a dismi
   expect(metric("Satisfaction rate")).toBe("--");
   expect(screen.queryByText("Your app isn't listed yet...")).toBeNull();
   expect(screen.queryByRole("button", { name: "Complete a test" })).toBeNull();
-  expect(screen.queryByText(/Only visible to you|Private preview of where/)).toBeNull();
+  expect(screen.queryByText(/Only visible to you|Your app will be listed/)).toBeNull();
   expect(screen.getByText("Your app")).toBeTruthy();
   expect(screen.getByRole("link", { name: "View analytics" }).getAttribute("href")).toBe(
     "/analytics",
@@ -131,6 +158,7 @@ it("uses credit placeholders until testing history exists, even with no availabl
   expect(metric("Test-back rate")).toBe("--");
   expect(screen.getByText("#2", { exact: false })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Complete a test" })).toBeNull();
+  expect(listedTitles()).toEqual(["Palette Pilot"]);
 });
 
 it("shows the original B experience and scrolls to an available test without showing the welcome message", async () => {
@@ -145,7 +173,8 @@ it("shows the original B experience and scrolls to an available test without sho
   await mount();
   expect(screen.getByText("Your app isn't listed yet...")).toBeTruthy();
   expect(screen.getByText("Only visible to you")).toBeTruthy();
-  expect(screen.getByText(/Private preview of where/)).toBeTruthy();
+  expect(screen.getByText(/Your app will be listed on Earn after/)).toBeTruthy();
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry"]);
   expect(screen.queryByText("Welcome to Test4Test!")).toBeNull();
   expect(metric("Credits")).toBe("--");
   await userEvent.setup().click(screen.getByRole("button", { name: "Complete a test" }));
@@ -184,6 +213,10 @@ it("does not expose local apps to guests in a configured environment", async () 
 });
 
 it("preserves Improve rate scrolling and focus for owners with testing history", async () => {
+  backend.submissions.mockResolvedValue([
+    testApp("Promoted app", { promoted: true }),
+    availableTest,
+  ]);
   backend.summary.mockResolvedValue({
     ...newOwnerSummary,
     hasCompletedTest: true,
@@ -210,6 +243,7 @@ it("preserves Improve rate scrolling and focus for owners with testing history",
   await userEvent.setup().click(improve);
   expect(backend.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
   expect(document.activeElement?.textContent).toContain("Pocket Pantry");
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry", "Promoted app"]);
 });
 
 it("keeps the no-live-app state rather than claiming every account has a listing", async () => {
@@ -225,6 +259,123 @@ it("keeps the no-live-app state rather than claiming every account has a listing
   expect(screen.getByText("Submit an app to earn a Rank")).toBeTruthy();
   expect(screen.queryByText("Your app")).toBeNull();
   expect(screen.queryByText("Welcome to Test4Test!")).toBeNull();
+  expect(listedTitles()).toEqual(["Pocket Pantry"]);
+});
+
+it("pins a rank-67 owner first and retains every test with reciprocal priority and normal ranking within groups", async () => {
+  backend.summary.mockResolvedValue({ ...newOwnerSummary, rank: 67, wouldRank: 67 });
+  // These apps deliberately share an owner: the display must not discard candidates.
+  backend.submissions.mockResolvedValue([
+    testApp("Regular credits"),
+    testApp("Reciprocal lower credits"),
+    testApp("Missing reputation"),
+    testApp("Reciprocal higher credits"),
+    testApp("Regular promoted", { promoted: true }),
+    testApp("Reciprocal promoted", { promoted: true }),
+  ]);
+  backend.reputations.mockResolvedValue([
+    reputation("Regular credits", { ownerCreditBalance: 100 }),
+    reputation("Reciprocal lower credits", { ownerHasTestedYou: true }),
+    reputation("Reciprocal higher credits", {
+      ownerHasTestedYou: true,
+      ownerCreditBalance: 5,
+    }),
+    reputation("Regular promoted"),
+    reputation("Reciprocal promoted", { ownerHasTestedYou: true }),
+  ]);
+  backend.draftProgress.mockResolvedValue({ "Regular credits": true });
+
+  await mount();
+
+  expect(listedTitles()).toEqual([
+    "Palette Pilot",
+    "Reciprocal promoted",
+    "Reciprocal higher credits",
+    "Reciprocal lower credits",
+    "Regular promoted",
+    "Regular credits",
+    "Missing reputation",
+  ]);
+  expect(screen.getAllByText("Your app")).toHaveLength(1);
+  expect(screen.getAllByText("This user tested your app")).toHaveLength(3);
+  expect(screen.getByText("#67", { exact: false })).toBeTruthy();
+  const resume = screen.getByRole("link", { name: "Resume test" });
+  expect(resume.getAttribute("href")).toBe("/test/Regular credits");
+  await userEvent.setup().click(resume);
+  expect(JSON.parse(sessionStorage.getItem("test4test:earn-placement-snapshot")!)).toMatchObject({
+    ownerSubmissionId: "submission-palette",
+    previousWouldRank: 67,
+  });
+});
+
+it("reorders after reputation loads without removing tests or changing the owner position", async () => {
+  let resolveReputations!: (value: EarnSubmissionReputation[]) => void;
+  backend.submissions.mockResolvedValue([
+    testApp("Regular promoted", { promoted: true }),
+    availableTest,
+  ]);
+  backend.reputations.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveReputations = resolve;
+      }),
+  );
+  await mount();
+  expect(listedTitles()).toEqual(["Palette Pilot", "Regular promoted", "Pocket Pantry"]);
+  await act(async () =>
+    resolveReputations([reputation(availableTest.id, { ownerHasTestedYou: true })]),
+  );
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry", "Regular promoted"]);
+  expect(screen.getAllByRole("link", { name: "View test" })).toHaveLength(2);
+});
+
+it("retains the normal ordering and every eligible test when reputation fails", async () => {
+  backend.submissions.mockResolvedValue([
+    availableTest,
+    testApp("Promoted app", { promoted: true }),
+  ]);
+  backend.reputations.mockRejectedValue(new Error("Reputation unavailable"));
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  await mount();
+  expect(listedTitles()).toEqual(["Palette Pilot", "Promoted app", "Pocket Pantry"]);
+  expect(screen.queryByText("This user tested your app")).toBeNull();
+});
+
+it("Complete a test focuses the first reciprocal test below the locked owner preview", async () => {
+  backend.summary.mockResolvedValue({
+    ...newOwnerSummary,
+    listingLocked: true,
+    rank: null,
+    wouldRank: 67,
+  });
+  backend.submissions.mockResolvedValue([
+    testApp("Promoted app", { promoted: true }),
+    availableTest,
+  ]);
+  backend.reputations.mockResolvedValue([
+    reputation(availableTest.id, { ownerHasTestedYou: true }),
+  ]);
+  await mount();
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry", "Promoted app"]);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Complete a test" }));
+  expect(document.activeElement?.textContent).toContain("Pocket Pantry");
+});
+
+it("celebrates a rank improvement in place and focuses the pinned owner card", async () => {
+  await mount({
+    kind: "earned-credit",
+    placementSnapshot: {
+      ownerSubmissionId: newOwnerSummary.submissionId,
+      previousWouldRank: 67,
+      previousWouldRankedSubmissionCount: 100,
+      capturedAt: "2026-09-21T12:00:00Z",
+    },
+  });
+  expect(listedTitles()).toEqual(["Palette Pilot", "Pocket Pantry"]);
+  expect(document.querySelector(".earn-row--private-placement-pulse")).toBeTruthy();
+  expect(document.querySelector(".earn-row--private-placement-rise")).toBeNull();
+  await waitFor(() => expect(document.activeElement?.textContent).toContain("Palette Pilot"));
+  expect(screen.getByText("#2", { exact: false })).toBeTruthy();
 });
 
 it("does not invent a rank while the summary is loading or unavailable", async () => {

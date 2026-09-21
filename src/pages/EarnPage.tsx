@@ -1,5 +1,4 @@
 import { canReviseFeedback } from "../lib/starRatings";
-import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -64,8 +63,6 @@ import styles from "./EarnPage.module.css";
 
 const EARN_PLATFORM_FILTER_STORAGE_PREFIX = "test4test:earn-platform-filter:";
 const EARN_PLATFORM_CONFIRMATION_STORAGE_PREFIX = "test4test:earn-platform-filter-confirmed:";
-const EARN_PRIVATE_PLACEMENT_ROW_OFFSET_PX = 112;
-const EARN_PRIVATE_PLACEMENT_MAX_OFFSET_PX = 448;
 const productTypeSet = new Set<ProductType>(PRODUCT_TYPE_ORDER);
 
 function compareEarnSubmissionsByMode(first: Submission, second: Submission, sortMode: string) {
@@ -86,36 +83,6 @@ function compareEarnSubmissionsByMode(first: Submission, second: Submission, sor
   }
 
   return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
-}
-
-function compareTestBackTargetSubmissions(first: Submission, second: Submission) {
-  if (first.promoted !== second.promoted) {
-    return first.promoted ? -1 : 1;
-  }
-
-  if (first.responseCount !== second.responseCount) {
-    return first.responseCount - second.responseCount;
-  }
-
-  return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
-}
-
-function selectOneSubmissionPerOwner(submissions: Submission[]) {
-  const selectedByOwner = new Map<string, Submission>();
-
-  submissions.forEach((submission) => {
-    if (!submission.userId) {
-      return;
-    }
-
-    const current = selectedByOwner.get(submission.userId);
-
-    if (!current || compareTestBackTargetSubmissions(submission, current) < 0) {
-      selectedByOwner.set(submission.userId, submission);
-    }
-  });
-
-  return [...selectedByOwner.values()];
 }
 
 function userIsInGooglePlayClosedTestPool(submissions: Submission[], userId: string | null) {
@@ -1099,22 +1066,26 @@ function EarnPageContent() {
   );
 
   const displayedSubmissions = useMemo(() => {
-    const reciprocalCandidates = selectOneSubmissionPerOwner(
-      candidateSubmissions.filter(
-        (submission) => reputationBySubmissionId[submission.id]?.ownerHasTestedYou === true,
-      ),
-    );
-    const next = reciprocalCandidates.length > 0 ? reciprocalCandidates : [...candidateSubmissions];
+    const next = [...candidateSubmissions];
 
-    next.sort((first, second) =>
-      compareEarnSubmissions(
+    next.sort((first, second) => {
+      const firstReputation = reputationBySubmissionId[first.id];
+      const secondReputation = reputationBySubmissionId[second.id];
+      const firstIsReciprocal = firstReputation?.ownerHasTestedYou === true;
+      const secondIsReciprocal = secondReputation?.ownerHasTestedYou === true;
+
+      if (firstIsReciprocal !== secondIsReciprocal) {
+        return firstIsReciprocal ? -1 : 1;
+      }
+
+      return compareEarnSubmissions(
         first,
         second,
         "recommended",
-        reputationBySubmissionId[first.id],
-        reputationBySubmissionId[second.id],
-      ),
-    );
+        firstReputation,
+        secondReputation,
+      );
+    });
 
     return next;
   }, [candidateSubmissions, reputationBySubmissionId]);
@@ -1206,13 +1177,9 @@ function EarnPageContent() {
         : stateVisibilitySubmission,
     [stateVisibilitySubmission, visibilitySubmission, visibilitySummary?.submissionId],
   );
-  const privatePlacementRank = visibilitySummary?.wouldRank ?? visibilitySummary?.rank ?? null;
   const shouldShowPrivatePlacement = Boolean(
     !isTester && currentUser && visibilitySummary?.submissionId && visibilitySummary.productName,
   );
-  const privatePlacementIndex = privatePlacementRank
-    ? Math.min(Math.max(privatePlacementRank - 1, 0), cards.length)
-    : 0;
   const earnStartPlacementSnapshot = useMemo<EarnPlacementSnapshot | null>(() => {
     if (!visibilitySummary?.submissionId) {
       return null;
@@ -1229,29 +1196,6 @@ function EarnPageContent() {
     visibilitySummary?.wouldRank,
     visibilitySummary?.wouldRankedSubmissionCount,
   ]);
-  const celebrationSnapshot = creditCelebration?.placementSnapshot ?? null;
-  const snapshotMatchesCurrentSubmission =
-    !celebrationSnapshot?.ownerSubmissionId ||
-    celebrationSnapshot.ownerSubmissionId === visibilitySummary?.submissionId;
-  const previousPrivateRank = snapshotMatchesCurrentSubmission
-    ? (celebrationSnapshot?.previousWouldRank ?? null)
-    : null;
-  const didPrivatePlacementImprove = Boolean(
-    previousPrivateRank && privatePlacementRank && privatePlacementRank < previousPrivateRank,
-  );
-  const privatePlacementAnimationMode =
-    creditCelebration && shouldShowPrivatePlacement
-      ? didPrivatePlacementImprove
-        ? "rise"
-        : "pulse"
-      : null;
-  const privatePlacementOffsetPx =
-    didPrivatePlacementImprove && previousPrivateRank && privatePlacementRank
-      ? Math.min(
-          (previousPrivateRank - privatePlacementRank) * EARN_PRIVATE_PLACEMENT_ROW_OFFSET_PX,
-          EARN_PRIVATE_PLACEMENT_MAX_OFFSET_PX,
-        )
-      : 0;
 
   const firstTestBackCard = useMemo(
     () => cards.find((card) => card.reputation?.ownerHasTestedYou === true) ?? null,
@@ -1403,14 +1347,8 @@ function EarnPageContent() {
     }, 260);
 
     return () => window.clearTimeout(scrollTimer);
-  }, [
-    creditCelebration,
-    privatePlacementRank,
-    privatePlacementSubmission?.id,
-    shouldShowPrivatePlacement,
-  ]);
+  }, [creditCelebration, privatePlacementSubmission?.id, shouldShowPrivatePlacement]);
 
-  const leadingCards = shouldShowPrivatePlacement ? cards.slice(0, privatePlacementIndex) : cards;
   const firstCreditRankGain =
     currentUser &&
     welcomeDismissedForUserId !== currentUser.id &&
@@ -1423,7 +1361,6 @@ function EarnPageContent() {
     visibilitySummary.rankAfterOneCredit != null
       ? Math.max(0, visibilitySummary.rank - visibilitySummary.rankAfterOneCredit)
       : null;
-  const trailingCards = shouldShowPrivatePlacement ? cards.slice(privatePlacementIndex) : [];
   const isShowingInitialEarnLoad =
     isLoadingServerEarnSubmissions &&
     serverEarnSubmissions === null &&
@@ -1555,23 +1492,6 @@ function EarnPageContent() {
 
         {cards.length > 0 || shouldShowPrivatePlacement ? (
           <div className="earn-list">
-            {leadingCards.map((card) => (
-              <div
-                key={card.submission.id}
-                ref={(element) => {
-                  reciprocalRowRefs.current[card.submission.id] = element;
-                }}
-                className="earn-row-anchor"
-                tabIndex={-1}
-              >
-                <EarnRow
-                  card={card}
-                  hasDraftProgress={draftProgressBySubmissionId[card.submission.id] === true}
-                  placementSnapshot={earnStartPlacementSnapshot}
-                  showFounderReputation={!isTester}
-                />
-              </div>
-            ))}
             {shouldShowPrivatePlacement && visibilitySummary ? (
               <div
                 ref={privatePlacementRowRef}
@@ -1581,12 +1501,11 @@ function EarnPageContent() {
                 <EarnPrivatePlacementRow
                   summary={visibilitySummary}
                   submission={privatePlacementSubmission}
-                  animationMode={privatePlacementAnimationMode}
-                  animationOffsetPx={privatePlacementOffsetPx}
+                  celebrate={Boolean(creditCelebration)}
                 />
               </div>
             ) : null}
-            {trailingCards.map((card) => (
+            {cards.map((card) => (
               <div
                 key={card.submission.id}
                 ref={(element) => {
@@ -2138,26 +2057,20 @@ function EarnPlatformModal({
 function EarnPrivatePlacementRow({
   summary,
   submission,
-  animationMode,
-  animationOffsetPx,
+  celebrate,
 }: {
   summary: EarnVisibilitySummary;
   submission: Submission | null;
-  animationMode: "rise" | "pulse" | null;
-  animationOffsetPx: number;
+  celebrate: boolean;
 }) {
   const productName = submission?.productName ?? summary.productName ?? "Your test";
   const description = submission?.description || "Your selected app on the Earn page.";
   const placementClasses = [
     "earn-row--private-placement",
-    animationMode === "rise" ? "earn-row--private-placement-rise" : "",
-    animationMode === "pulse" ? "earn-row--private-placement-pulse" : "",
+    celebrate ? "earn-row--private-placement-pulse" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  const placementStyle = {
-    "--private-placement-offset": `${animationOffsetPx}px`,
-  } as CSSProperties;
   const badges: EarnTestCardBadge[] = [
     {
       id: "owner",
@@ -2176,7 +2089,6 @@ function EarnPrivatePlacementRow({
       : []),
   ];
 
-  // ds-exception: runtime-measurements — measured placement offset for the private row.
   return (
     <EarnTestCard
       as="section"
@@ -2186,13 +2098,12 @@ function EarnPrivatePlacementRow({
       badges={badges}
       supportingNote={
         summary.listingLocked
-          ? "Private preview of where your test will appear after you complete one credited test."
+          ? "Your app will be listed on Earn after you complete one credited test."
           : undefined
       }
       supportingNoteTone="accent"
       action={{ label: "View analytics", to: "/analytics", variant: "secondary" }}
       className={placementClasses}
-      style={placementStyle /* ds-exception: runtime-measurements */}
     />
   );
 }

@@ -322,6 +322,23 @@
   background: var(--ds-semantic-color-surface-default);
 }
 
+.page :global(.earn-row--private-placement-pulse) {
+  animation: owner-card-pulse var(--ds-semantic-motion-interaction-duration)
+    var(--ds-semantic-motion-interaction-easing);
+}
+
+@keyframes owner-card-pulse {
+  50% {
+    background: var(--ds-semantic-color-status-success-tint);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page :global(.earn-row--private-placement-pulse) {
+    animation: none;
+  }
+}
+
 @media (max-width: 767px) {
   .page {
     gap: var(--ds-semantic-space-stack-md);
