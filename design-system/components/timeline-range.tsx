@@ -1,4 +1,4 @@
-import { useId, useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { useId, useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import styles from "./timeline-range.module.css";
 
 export interface TimelineRangeProps {
@@ -9,6 +9,8 @@ export interface TimelineRangeProps {
   onChange: (start: number, end: number, handle: "start" | "end") => void;
   disabled?: boolean;
   step?: number;
+  presentation?: "standalone" | "player";
+  children?: ReactNode;
 }
 
 export function formatMediaTime(seconds: number) {
@@ -26,10 +28,12 @@ export function TimelineRange({
   onChange,
   disabled = false,
   step = 0.1,
+  presentation = "standalone",
+  children,
 }: TimelineRangeProps) {
   const id = useId();
   const track = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ pointer: number; handle: "start" | "end" } | null>(null);
+  const drag = useRef<{ pointer: number; handle: "start" | "end"; offset: number } | null>(null);
   const usable = Number.isFinite(duration) && duration >= step && step > 0;
   const locked = disabled || !usable;
   const update = (handle: "start" | "end", value: number) => {
@@ -48,7 +52,10 @@ export function TimelineRange({
     if (drag.current?.pointer !== event.pointerId || !track.current) return;
     const bounds = track.current.getBoundingClientRect();
     if (bounds.width)
-      update(drag.current.handle, ((event.clientX - bounds.left) / bounds.width) * duration);
+      update(
+        drag.current.handle,
+        ((event.clientX - bounds.left - drag.current.offset) / bounds.width) * duration,
+      );
   };
   const key = (event: KeyboardEvent<HTMLButtonElement>, handle: "start" | "end") => {
     const current = handle === "start" ? start : end;
@@ -69,12 +76,17 @@ export function TimelineRange({
     }
   };
   return (
-    <div className={styles.root} role="group" aria-labelledby={`${id}-label`}>
-      <span id={`${id}-label`} className={styles.label}>
+    <div
+      className={`${styles.root} ${presentation === "player" ? styles.player : ""}`}
+      role="group"
+      aria-labelledby={`${id}-label`}
+    >
+      <span id={`${id}-label`} className={presentation === "player" ? "ds-sr-only" : styles.label}>
         {label}
       </span>
       <div className={styles.timeline}>
         <div className={styles.track} ref={track}>
+          {children}
           <div
             className={styles.selection}
             aria-hidden="true"
@@ -106,7 +118,15 @@ export function TimelineRange({
                 if (event.button !== 0 || locked) return;
                 event.currentTarget.focus();
                 event.currentTarget.setPointerCapture(event.pointerId);
-                drag.current = { pointer: event.pointerId, handle };
+                const bounds = track.current?.getBoundingClientRect();
+                const position = handle === "start" ? start : end;
+                drag.current = {
+                  pointer: event.pointerId,
+                  handle,
+                  offset: bounds
+                    ? event.clientX - bounds.left - (position / duration) * bounds.width
+                    : 0,
+                };
               }}
               onPointerMove={move}
               onPointerUp={() => {
@@ -124,11 +144,11 @@ export function TimelineRange({
           ))}
         </div>
       </div>
-      <div className={styles.times}>
+      <div className={presentation === "player" ? "ds-sr-only" : styles.times}>
         <span>Start {formatMediaTime(start)}</span>
         <span>End {formatMediaTime(end)}</span>
       </div>
-      <p id={`${id}-help`} className={styles.help}>
+      <p id={`${id}-help`} className={presentation === "player" ? "ds-sr-only" : styles.help}>
         Drag the handles or use the arrow keys to adjust the clip.
       </p>
     </div>

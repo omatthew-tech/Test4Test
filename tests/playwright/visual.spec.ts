@@ -18,6 +18,7 @@ const representativeStories = [
 
 const contractStories = [
   "components-timeline-range--timeline-range-contract",
+  "components-video-player--video-player-contract",
   "components-actions--button-contract",
   "components-actions--icon-button-contract",
   "components-actions--link-contract",

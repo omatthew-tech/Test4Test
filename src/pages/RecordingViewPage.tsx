@@ -11,6 +11,7 @@ import {
   Select,
   Stack,
   Surface,
+  VideoPlayer,
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
@@ -108,6 +109,8 @@ export function RecordingViewPage() {
     };
   }, [selectedRecording, historyRetryKey]);
   const useDesignSystemFixture = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
+  const usePlaybackMediaFixture =
+    useDesignSystemFixture && searchParams.get("ds-recording-media") === "demo";
   const usePlaybackErrorFixture =
     useDesignSystemFixture && searchParams.get("ds-recording-error") === "1";
 
@@ -144,7 +147,7 @@ export function RecordingViewPage() {
           : {
               key: playbackKey,
               status: "ready",
-              url: "",
+              url: usePlaybackMediaFixture ? "/videos/home-share-test.mp4" : "",
               fileName: playbackFileName ?? "",
               error: "",
             },
@@ -192,6 +195,7 @@ export function RecordingViewPage() {
     playbackFileName,
     canPlay,
     useDesignSystemFixture,
+    usePlaybackMediaFixture,
     usePlaybackErrorFixture,
   ]);
 
@@ -334,22 +338,6 @@ export function RecordingViewPage() {
                   </Alert>
                 </div>
               ) : (
-                <video
-                  ref={setVideoElement}
-                  aria-label={`${positionLabel}: ${selectedRecording.submission.productName}`}
-                  className={styles.video}
-                  controls
-                  key={`${playbackKey}-${currentPlayback.url}`}
-                  playsInline
-                  preload="metadata"
-                  src={currentPlayback.url || undefined}
-                  title={currentPlayback.fileName || selectedRecording.recording.fileName}
-                  onError={handlePlaybackError}
-                >
-                  Your browser does not support embedded video playback.
-                </video>
-              )}
-              {canPlay && currentPlayback.status === "ready" && (
                 <RecordingClipEditor
                   key={playbackKey}
                   video={videoElement}
@@ -358,6 +346,22 @@ export function RecordingViewPage() {
                   durationHint={
                     selectedVersion?.durationSeconds ?? selectedRecording.response.durationSeconds
                   }
+                  renderPlayer={(clipRange, action) => (
+                    <VideoPlayer
+                      key={`${playbackKey}-${currentPlayback.url}`}
+                      videoRef={setVideoElement}
+                      label={`${positionLabel}: ${selectedRecording.submission.productName}`}
+                      src={currentPlayback.url || undefined}
+                      title={currentPlayback.fileName || selectedRecording.recording.fileName}
+                      durationHint={
+                        selectedVersion?.durationSeconds ??
+                        selectedRecording.response.durationSeconds
+                      }
+                      onError={handlePlaybackError}
+                      clipRange={clipRange}
+                      actions={action}
+                    />
+                  )}
                 />
               )}
             </Surface>

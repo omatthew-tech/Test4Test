@@ -1,7 +1,11 @@
 # Recording clips
 
-The recording viewer now provides Clip, draggable start/end handles, keyboard
-adjustment, preview, and Save clip. The initial range starts at the current
+The recording viewer now provides a standard playback control bar with play/pause,
+seek, time, mute/volume, and fullscreen, plus Clip. Draggable start/end
+handles sit directly on its playback timeline and support keyboard adjustment.
+Their outward-facing touch targets remain separate even for a very short range.
+The same player is used for guest clips; fullscreen retains the trimming handles.
+Preview and Save clip appear below the player while trimming. The initial range starts at the current
 playback position and extends up to 30 seconds. Save opens a popup; after the
 server acknowledges the request, it shows a stable link with Copy link. The
 popup and guest page show progress until the separate MP4 is ready.
@@ -130,6 +134,17 @@ state. The clipping browser journey covers dragging, keyboard adjustment, save,
 copy, guest viewing, and accessibility at 1440 x 900 and 390 x 844. Browser
 fixtures test the interface; worker tests exercise actual media encoding.
 Screenshots are under `output/validation/recording-clips`. No baselines were updated.
+
+The integrated-player revision is **Fast-checked**. All 486 application tests
+and 76 component tests pass, and the production build completes. The 1440 x 900
+and 390 x 844 clipping journeys verify
+real playback, seeking, mute, aligned handles, non-overlapping narrow-range
+targets, fullscreen trimming, saving, copying, guest viewing, and navigation, with
+no Axe violations. Updated screenshots are in `output/validation/player-clipping`.
+The full gate reached the existing homepage trusted-card contrast failure; the
+broad browser run was stopped after that unrelated failure, so this revision is
+not release-validated.
+Visual baselines have not been updated.
 
 Validation on 2026-09-20: **Fast-checked**. All 28 focused clip unit tests, 12
 clip worker tests, the timeline interaction contract, both responsive browser journeys,

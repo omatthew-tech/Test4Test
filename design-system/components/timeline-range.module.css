@@ -86,7 +86,65 @@
   color: var(--ds-semantic-color-text-secondary);
   font-size: var(--ds-semantic-typography-caption-size);
 }
+.player {
+  gap: 0;
+  color: var(--ds-semantic-color-text-inverse);
+}
+.player .timeline {
+  padding-inline: var(--ds-semantic-size-control-target);
+  padding-block: 0;
+}
+.player .track {
+  height: var(--ds-semantic-size-control-target);
+  border: 0;
+  background: transparent;
+}
+.player .selection {
+  top: calc(50% - var(--ds-semantic-border-width-focus));
+  height: calc(var(--ds-semantic-border-width-focus) * 2);
+  border: 0;
+  background: var(--ds-semantic-color-border-accent);
+  pointer-events: none;
+}
+.player .handle {
+  top: 0;
+  bottom: auto;
+}
+.player .start {
+  transform: translateX(-100%);
+}
+.player .end {
+  transform: none;
+}
+.player .handle::after {
+  display: none;
+}
+.player .handle span {
+  position: absolute;
+  top: calc(50% - var(--ds-semantic-size-icon-large) / 2);
+  width: var(--ds-semantic-space-stack-xs);
+  height: var(--ds-semantic-size-icon-large);
+  background: var(--ds-semantic-color-text-inverse);
+  border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-accent);
+}
+.player .start span {
+  right: 0;
+}
+.player .end span {
+  left: 0;
+}
+.player .handle:focus-visible {
+  outline-color: var(--ds-semantic-color-border-accent);
+  outline-offset: 0;
+}
 @media (forced-colors: active) {
+  .player .selection {
+    background: Highlight;
+  }
+  .player .handle span {
+    background: ButtonText;
+    border-color: ButtonText;
+  }
   .selection {
     border-color: Highlight;
   }

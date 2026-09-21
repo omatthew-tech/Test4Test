@@ -5,21 +5,21 @@
 }
 
 .pageSections {
-  gap: var(--ds-semantic-space-stack-section);
+  gap: var(--ds-semantic-space-stack-section-large);
   /* Continue the same rhythm after the trust strip without moving the hero. */
-  padding-block-start: var(--ds-semantic-space-stack-section);
+  padding-block-start: var(--ds-semantic-space-stack-section-large);
 }
 
-/* Desktop content separation: 64 px bottom + 64 px grid gap + 64 px top. */
+/* Desktop content separation: 80 px bottom + 80 px grid gap + 80 px top. */
 .pageSections > section {
-  padding-block: var(--ds-semantic-space-inline-2xl);
+  padding-block: var(--ds-semantic-space-stack-2xl);
 }
 
 .howItWorksContent,
 .freeFeedbackSectionContent,
 .testableProductsContent,
 .managedRecruitmentContent {
-  gap: var(--ds-semantic-space-stack-xl);
+  gap: var(--ds-semantic-space-stack-2xl);
 }
 
 .hero {
@@ -120,7 +120,8 @@
 
 .trustedByItem {
   display: flex;
-  width: var(--ds-semantic-size-content-compact-form);
+  width: max-content;
+  max-width: var(--ds-semantic-size-content-compact-form);
   min-width: var(--ds-semantic-space-zero);
   flex: none;
 }
@@ -128,6 +129,8 @@
 .trustedByCard {
   position: relative;
   width: 100%;
+  border-color: transparent;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -187,20 +190,13 @@
   visibility: hidden;
 }
 
-.trustedByCard p {
-  display: -webkit-box;
-  min-block-size: calc(var(--ds-semantic-typography-body-line-height) * 2);
-  max-block-size: calc(var(--ds-semantic-typography-body-line-height) * 2);
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+.trustedByCard p:empty {
+  display: none;
 }
 
 .trustedByOpenLink {
-  width: var(--ds-semantic-size-control-default);
-  flex: 0 0 var(--ds-semantic-size-control-default);
-  justify-content: center;
+  color: inherit;
+  font-weight: inherit;
   text-decoration: none;
 }
 
@@ -222,7 +218,9 @@
 
 @keyframes home-trusted-by-scroll {
   from {
-    transform: translateX(calc(-50% - (var(--ds-semantic-space-inline-lg) / 2)));
+    transform: translateX(
+      calc(var(--home-trusted-by-cycle-width, var(--ds-semantic-space-zero)) * -1)
+    );
   }
 
   to {
@@ -571,6 +569,7 @@
 }
 
 .howItWorksViewport {
+  position: relative;
   width: 100%;
 }
 
@@ -589,7 +588,25 @@
   text-align: center;
 }
 
+.howItWorksMedia {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-action-tint);
+}
+
+.howItWorksClipDefinitions {
+  position: absolute;
+  width: var(--ds-semantic-space-zero);
+  height: var(--ds-semantic-space-zero);
+  pointer-events: none;
+}
+
 .howItWorksImage {
+  position: relative;
   display: block;
   width: 100%;
   height: auto;
@@ -597,6 +614,144 @@
   border-radius: var(--ds-semantic-radius-surface);
   background: var(--ds-semantic-color-action-tint);
   object-fit: cover;
+  clip-path: var(--home-how-image-mask);
+}
+
+/* ds-exception: home-how-it-works-flow-background */
+.howItWorksFlow {
+  position: absolute;
+  inset-block: var(--ds-semantic-space-zero);
+  left: var(--home-how-flow-left, 0%);
+  width: var(--home-how-flow-width, 100%);
+  overflow: hidden;
+  pointer-events: none;
+  filter: saturate(1.5);
+}
+
+.howItWorksFlow > span {
+  position: absolute;
+  width: 58%;
+  height: 118%;
+  border-radius: 48% 52% 65% 35% / 38% 46% 54% 62%;
+  filter: blur(var(--ds-semantic-space-stack-lg));
+  animation-duration: var(--home-how-flow-duration);
+  animation-delay: calc(var(--home-how-flow-duration) * var(--home-how-flow-phase));
+  animation-timing-function: var(--ds-semantic-motion-interaction-easing);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-play-state: paused;
+}
+
+[data-background-playing="true"] .howItWorksFlow > span {
+  animation-play-state: running;
+}
+
+.howItWorksFlowCyan {
+  --home-how-flow-duration: calc(var(--ds-semantic-motion-interaction-duration) * 60);
+  --home-how-flow-phase: -0.22;
+  left: -20%;
+  top: -35%;
+  background: var(--ds-semantic-color-border-accent);
+  animation-name: howItWorksFlowCyan;
+}
+
+.howItWorksFlowMint {
+  --home-how-flow-duration: calc(var(--ds-semantic-motion-interaction-duration) * 65);
+  --home-how-flow-phase: -0.58;
+  left: 35%;
+  top: 20%;
+  background: color-mix(
+    in srgb,
+    var(--ds-semantic-color-status-success-tint) 85%,
+    var(--ds-semantic-color-status-success)
+  );
+  animation-name: howItWorksFlowMint;
+}
+
+.howItWorksFlowYellow {
+  --home-how-flow-duration: calc(var(--ds-semantic-motion-interaction-duration) * 50);
+  --home-how-flow-phase: -0.37;
+  left: 70%;
+  top: -30%;
+  background: var(--ds-semantic-color-status-warning-tint);
+  animation-name: howItWorksFlowYellow;
+}
+
+.howItWorksFlowBlue {
+  --home-how-flow-duration: calc(var(--ds-semantic-motion-interaction-duration) * 75);
+  --home-how-flow-phase: -0.71;
+  left: 5%;
+  top: 85%;
+  background: color-mix(
+    in srgb,
+    var(--ds-semantic-color-action-tint),
+    var(--ds-semantic-color-border-accent)
+  );
+  animation-name: howItWorksFlowBlue;
+}
+
+.howItWorksFlow > .howItWorksFlowBlue {
+  width: 42%;
+  height: 75%;
+}
+
+@keyframes howItWorksFlowCyan {
+  0% {
+    transform: translate(-8%, -10%) rotate(-12deg) scale(1);
+  }
+  50% {
+    transform: translate(58%, 22%) rotate(24deg) scale(1.05, 0.85);
+  }
+  100% {
+    transform: translate(128%, 5%) rotate(62deg) scale(0.85, 1.15);
+  }
+}
+
+@keyframes howItWorksFlowMint {
+  0% {
+    transform: translate(0%, 18%) rotate(10deg);
+  }
+  50% {
+    transform: translate(-65%, -38%) rotate(-24deg) scale(1.2, 0.85);
+  }
+  100% {
+    transform: translate(12%, -60%) rotate(38deg);
+  }
+}
+
+@keyframes howItWorksFlowYellow {
+  0% {
+    transform: translate(0%, -6%) rotate(16deg);
+  }
+  50% {
+    transform: translate(-64%, 36%) rotate(-30deg) scale(0.8, 1.25);
+  }
+  100% {
+    transform: translate(-128%, 10%) rotate(-65deg) scale(1.15, 0.95);
+  }
+}
+
+@keyframes howItWorksFlowBlue {
+  0% {
+    transform: translate(0%, 0%) scale(1.1);
+  }
+  100% {
+    transform: translate(150%, -140%) scale(1.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .howItWorksFlow {
+    display: none;
+  }
+
+  .howItWorksFlow > span {
+    animation: none;
+  }
+
+  .howItWorksImage {
+    clip-path: none;
+  }
 }
 
 .howItWorksCopy h3 {
@@ -906,9 +1061,17 @@
 }
 
 .testableProductsHeading {
-  max-width: var(--ds-semantic-size-content-prose);
+  max-width: var(--ds-semantic-size-content-data);
   align-items: center;
   text-align: center;
+}
+
+.testableProductsHeading h2 > span {
+  display: inline-block;
+}
+
+.testableProductsHeading p {
+  max-width: var(--ds-semantic-size-content-prose);
 }
 
 .testableProductsHeading p,
@@ -1003,7 +1166,7 @@
 
 @media (min-width: 768px) {
   .pageSections > section {
-    padding-block: var(--ds-semantic-space-stack-2xl);
+    padding-block: var(--ds-semantic-space-stack-section);
   }
 
   .trustedBy {
@@ -1014,7 +1177,7 @@
   .freeFeedbackSectionContent,
   .testableProductsContent,
   .managedRecruitmentContent {
-    gap: var(--ds-semantic-space-stack-2xl);
+    gap: var(--ds-semantic-space-stack-section-large);
   }
 
   .managedRecruitment,
@@ -1054,7 +1217,7 @@
   }
 
   .trustedByItem {
-    width: var(--ds-semantic-size-content-form);
+    max-width: calc(var(--ds-semantic-size-content-form) / 2);
   }
 
   .heroFeedbackExclusion {
@@ -1082,7 +1245,7 @@
   }
 
   .pageSections > section {
-    padding-block: var(--ds-semantic-space-stack-section);
+    padding-block: var(--ds-semantic-space-stack-section-large);
   }
 
   .freeFeedbackContent {
@@ -1162,7 +1325,7 @@
   .freeFeedbackHeading,
   .managedRecruitmentHeading h2,
   .testableProductsHeading h2 {
-    font-size: var(--ds-semantic-typography-heading-page-desktop-size);
-    line-height: var(--ds-semantic-typography-heading-page-desktop-line-height);
+    font-size: var(--ds-semantic-typography-heading-display-mobile-size);
+    line-height: var(--ds-semantic-typography-heading-display-mobile-line-height);
   }
 }

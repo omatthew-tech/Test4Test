@@ -99,13 +99,16 @@ test("mobile how-it-works suspends offscreen and in hidden tabs with a fresh rea
   const section = page.getByTestId("home-how-it-works-section");
   await page.clock.runFor(10000);
   await expectActive(section, 0);
+  await expect(section).toHaveAttribute("data-background-playing", "false");
   await showCards(page);
+  await expect(section).toHaveAttribute("data-background-playing", "true");
   await page.clock.runFor(5000);
   await expectActive(section, 1);
 
   await page.getByRole("heading", { level: 1 }).scrollIntoViewIfNeeded();
   await expect(section.locator("ol")).not.toBeInViewport();
   await waitForIntersection(page, false);
+  await expect(section).toHaveAttribute("data-background-playing", "false");
   await page.clock.runFor(10000);
   await expectActive(section, 1);
   await showCards(page);
@@ -118,16 +121,98 @@ test("mobile how-it-works suspends offscreen and in hidden tabs with a fresh rea
     Object.defineProperty(document, "hidden", { configurable: true, value: true });
     document.dispatchEvent(new Event("visibilitychange"));
   });
+  await expect(section).toHaveAttribute("data-background-playing", "false");
   await page.clock.runFor(10000);
   await expectActive(section, 2);
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, value: false });
     document.dispatchEvent(new Event("visibilitychange"));
   });
+  await expect(section).toHaveAttribute("data-background-playing", "true");
   await page.clock.runFor(4999);
   await expectActive(section, 2);
   await page.clock.runFor(1);
   await expectActive(section, 0);
+});
+
+test("desktop background colors move together while screenshots, copy, and white gaps stay fixed", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const section = await showCards(page);
+  const media = section.getByTestId("home-how-it-works-media");
+  const flows = section.getByTestId("home-how-it-works-flow");
+  await expect(media).toHaveCount(3);
+  await expect(flows).toHaveCount(3);
+  await expect(section.locator("button")).toHaveCount(0);
+  await expect(section).toHaveAttribute("data-background-playing", "true");
+
+  const initialGeometry = await section
+    .locator("li img, li h3, li p")
+    .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  const mediaBounds = await media.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().toJSON()),
+  );
+  const flowBounds = await flows.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().toJSON()),
+  );
+  for (let index = 0; index < mediaBounds.length; index += 1) {
+    expect(mediaBounds[index].width / mediaBounds[index].height).toBeCloseTo(4 / 3, 2);
+    expect(flowBounds[index].x).toBeCloseTo(flowBounds[0].x, 1);
+    expect(flowBounds[index].width).toBeCloseTo(flowBounds[0].width, 1);
+    await expect(media.nth(index)).toHaveCSS("overflow", "hidden");
+    await expect(flows.nth(index)).toHaveAttribute("aria-hidden", "true");
+    await expect(flows.nth(index).locator(":scope > *")).toHaveCount(4);
+    if (index > 0) {
+      expect(mediaBounds[index].x).toBeGreaterThan(
+        mediaBounds[index - 1].x + mediaBounds[index - 1].width,
+      );
+    }
+  }
+  expect(flowBounds[0].width).toBeCloseTo(
+    mediaBounds[2].x + mediaBounds[2].width - mediaBounds[0].x,
+    1,
+  );
+
+  // CSS animations use the document timeline; resume it before comparing rendered frames.
+  await page.clock.resume();
+  const firstBlob = flows.first().locator(":scope > *").first();
+  await expect(firstBlob).toHaveCSS("animation-play-state", "running");
+  const before = await firstBlob.evaluate((element) => getComputedStyle(element).transform);
+  const firstFrame = await media.first().screenshot();
+  await expect
+    .poll(() => firstBlob.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(before);
+  const secondFrame = await media.first().screenshot();
+  expect(firstFrame.equals(secondFrame)).toBe(false);
+  expect(
+    await section
+      .locator("li img, li h3, li p")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getBoundingClientRect().toJSON()),
+      ),
+  ).toEqual(initialGeometry);
+  await section.screenshot({ path: testInfo.outputPath("desktop-flowing-backgrounds.png") });
+});
+
+test("reduced motion and forced colors restore complete static screenshot panels", async ({
+  page,
+}) => {
+  const section = await showCards(page);
+  for (const preferences of [
+    { reducedMotion: "reduce", forcedColors: "none" },
+    { reducedMotion: "no-preference", forcedColors: "active" },
+  ] as const) {
+    await page.emulateMedia(preferences);
+    await expect(section).toHaveAttribute("data-background-playing", "false");
+    await expect(section.locator("button")).toHaveCount(0);
+    for (const flow of await section.getByTestId("home-how-it-works-flow").all()) {
+      await expect(flow).toHaveCSS("display", "none");
+    }
+    for (const image of await section.locator("li img").all()) {
+      await expect(image).toHaveCSS("clip-path", "none");
+    }
+  }
 });
 
 test("how-it-works restores static cards for reduced motion and tablet or desktop widths", async ({

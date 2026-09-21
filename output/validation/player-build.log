@@ -1,0 +1,119 @@
+
+> test4test@0.1.0 build
+> npm run generate:seo && tsc && vite build && npm run prerender:blog
+
+
+> test4test@0.1.0 generate:seo
+> node scripts/generate-seo-files.mjs
+
+Generated sitemap.xml and robots.txt for 1 published blog post(s).
+vite v8.2.1 building client environment for production...
+transforming...
+
+/assets/static/3b6e5df863308cb6-home-hero-savanna.webp referenced in /assets/static/3b6e5df863308cb6-home-hero-savanna.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/assets/static/fba8f577f38a2bbc-GeistMonoVF.woff2 referenced in /assets/static/fba8f577f38a2bbc-GeistMonoVF.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/assets/static/a369fcf5628ea2aa-GeistVF.woff2 referenced in /assets/static/a369fcf5628ea2aa-GeistVF.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 1912 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/static/af4171718f901888-paypal-symbol.svg                        1.15 kB │ gzip:   0.59 kB
+dist/assets/static-asset-manifest.json                                       1.95 kB │ gzip:   0.57 kB
+dist/index.html                                                              2.13 kB │ gzip:   0.68 kB
+dist/assets/static/42abe26892d6f6aa-home-share-test-poster.webp             17.45 kB
+dist/assets/static/7b3e3d28d7747d14-home-earn-credit-static.webp            18.94 kB
+dist/assets/static/5e65fb787becc53b-monkey-typing-loop.webp                 25.52 kB
+dist/assets/static/650b34f86ff6b77a-home-earn-credit-poster.webp            33.33 kB
+dist/assets/static/450f694f15c0bcd5-home-step-create-test-actual.webp       52.33 kB
+dist/assets/static/0303966e195fe99b-home-step-get-testers-actual.webp       55.05 kB
+dist/assets/static/9580950c4583b676-home-step-gain-insights-actual.webp     69.01 kB
+dist/assets/static/a369fcf5628ea2aa-GeistVF.woff2                           69.65 kB
+dist/assets/static/fba8f577f38a2bbc-GeistMonoVF.woff2                       71.36 kB
+dist/assets/static/1851cd720e0be27a-home-share-test.av1.mp4                 98.88 kB
+dist/assets/static/6391ef842990e237-home-share-test.mp4                    137.88 kB
+dist/assets/static/3bee4081f0951af8-home-earn-credit.mp4                   179.52 kB
+dist/assets/static/3b6e5df863308cb6-home-hero-savanna.webp                 183.85 kB
+dist/assets/static/673ba2cfe743c899-monkey-vine-poster.png                 546.27 kB
+dist/assets/static/769d0fcfe10369ae-monkey-vine-loop.webp                  839.04 kB
+dist/assets/static/294cf291992b0a79-how-it-works-ai-testers.png          1,327.62 kB
+dist/assets/static/d0df13b78ca5c259-monkey-typing-source.png             1,462.04 kB
+dist/assets/static/2642411dc55243f4-how-it-works-bring-testers.png       1,600.75 kB
+dist/assets/static/5e42e56003aee922-how-it-works-test-credits.png        2,158.28 kB
+dist/assets/earn-activation-v1/AdminPage-HJB7u7xw.css                        0.14 kB │ gzip:   0.12 kB
+dist/assets/earn-activation-v1/VerificationFlowShell-BQWLbVPa.css            0.48 kB │ gzip:   0.25 kB
+dist/assets/earn-activation-v1/AuthPage-Dpa_-vMd.css                         1.18 kB │ gzip:   0.46 kB
+dist/assets/earn-activation-v1/ProfilePage-C5k7fku6.css                      1.92 kB │ gzip:   0.57 kB
+dist/assets/earn-activation-v1/RecordingViewPage-BynunXuu.css                2.16 kB │ gzip:   0.72 kB
+dist/assets/earn-activation-v1/TesterSignupPage-BHn4esYs.css                 2.20 kB │ gzip:   0.67 kB
+dist/assets/earn-activation-v1/SharePage-CZH4713U.css                        2.34 kB │ gzip:   0.71 kB
+dist/assets/earn-activation-v1/AnalyticsPage-sUsfQwuL.css                    2.49 kB │ gzip:   0.89 kB
+dist/assets/earn-activation-v1/MessagesPage-6g982RG4.css                     3.00 kB │ gzip:   0.87 kB
+dist/assets/earn-activation-v1/SubmitFlowPage-Dt8gqikZ.css                   3.54 kB │ gzip:   0.94 kB
+dist/assets/earn-activation-v1/TesterLandingPage-YP-3kXr8.css                4.19 kB │ gzip:   0.98 kB
+dist/assets/earn-activation-v1/RecordingViewPage-CzUDdtOJ.css                5.78 kB │ gzip:   1.51 kB
+dist/assets/earn-activation-v1/EarnPage-KKtCq3Ga.css                        11.97 kB │ gzip:   2.00 kB
+dist/assets/earn-activation-v1/TestSessionPage-B7aIVrk7.css                 14.27 kB │ gzip:   2.44 kB
+dist/assets/earn-activation-v1/HomePage-BmIrEncj.css                        27.13 kB │ gzip:   4.24 kB
+dist/assets/earn-activation-v1/Layout-Ct5StAGK.css                          67.21 kB │ gzip:  10.00 kB
+dist/assets/earn-activation-v1/index--btesmWl.css                           69.59 kB │ gzip:   7.98 kB
+dist/assets/earn-activation-v1/check-CFQABxmt.js                             0.11 kB │ gzip:   0.13 kB
+dist/assets/earn-activation-v1/arrow-left-DrC4CSyk.js                        0.15 kB │ gzip:   0.15 kB
+dist/assets/earn-activation-v1/mail-DSyASZFS.js                              0.20 kB │ gzip:   0.19 kB
+dist/assets/earn-activation-v1/copy-TQleemzx.js                              0.22 kB │ gzip:   0.20 kB
+dist/assets/earn-activation-v1/StepIndicator-ODyExC4r.js                     0.23 kB │ gzip:   0.19 kB
+dist/assets/earn-activation-v1/external-link-B2jnJKBp.js                     0.24 kB │ gzip:   0.19 kB
+dist/assets/earn-activation-v1/pencil-line-BcRI_TGn.js                       0.30 kB │ gzip:   0.23 kB
+dist/assets/earn-activation-v1/trash-2-c_GYiziL.js                           0.31 kB │ gzip:   0.21 kB
+dist/assets/earn-activation-v1/NotFoundPage-DpZBf8jt.js                      0.32 kB │ gzip:   0.25 kB
+dist/assets/earn-activation-v1/shield-alert-B3aozmVV.js                      0.34 kB │ gzip:   0.25 kB
+dist/assets/earn-activation-v1/RecordingViewPage.module-BtgYqZTS.js          0.45 kB │ gzip:   0.23 kB
+dist/assets/earn-activation-v1/AuthPage.module-7YaE27BX.js                   0.53 kB │ gzip:   0.32 kB
+dist/assets/earn-activation-v1/rolldown-runtime-CbXtAM7H.js                  0.58 kB │ gzip:   0.36 kB
+dist/assets/earn-activation-v1/VerificationFlowShell-DbWoaxgd.js             0.74 kB │ gzip:   0.39 kB
+dist/assets/earn-activation-v1/earnExperimentFixture-BmE-HQdB.js             0.74 kB │ gzip:   0.33 kB
+dist/assets/earn-activation-v1/reportedFeedback-DpBDXjoH.js                  0.76 kB │ gzip:   0.42 kB
+dist/assets/earn-activation-v1/submittedFeedback-DHuURUFU.js                 0.93 kB │ gzip:   0.53 kB
+dist/assets/earn-activation-v1/responseVersions-CizDd9r3.js                  0.97 kB │ gzip:   0.55 kB
+dist/assets/earn-activation-v1/BannedPage-Br8mC6iu.js                        1.00 kB │ gzip:   0.52 kB
+dist/assets/earn-activation-v1/recordingShare-RVD25aei.js                    1.24 kB │ gzip:   0.66 kB
+dist/assets/earn-activation-v1/earnPlacementCelebration-PaYePPrB.js          1.34 kB │ gzip:   0.60 kB
+dist/assets/earn-activation-v1/recordingClips-DcIpaNS9.js                    1.71 kB │ gzip:   0.91 kB
+dist/assets/earn-activation-v1/SharedRecordingPage-U8KpFs7n.js               1.72 kB │ gzip:   0.85 kB
+dist/assets/earn-activation-v1/TestSuccessPage-Cz9Y8NJU.js                   1.80 kB │ gzip:   0.74 kB
+dist/assets/earn-activation-v1/testReports-Bhig-hxM.js                       1.88 kB │ gzip:   0.83 kB
+dist/assets/earn-activation-v1/transcriptReports-CwDpsE1A.js                 1.98 kB │ gzip:   0.98 kB
+dist/assets/earn-activation-v1/SharedClipPage-GG9Y53Sc.js                    2.05 kB │ gzip:   1.06 kB
+dist/assets/earn-activation-v1/CreditsPage-CVxR6sIx.js                       2.09 kB │ gzip:   0.90 kB
+dist/assets/earn-activation-v1/BlogPage-5YgFHhwb.js                          2.14 kB │ gzip:   0.77 kB
+dist/assets/earn-activation-v1/VerifyPage-COEWZPRt.js                        3.17 kB │ gzip:   1.48 kB
+dist/assets/earn-activation-v1/ReviseSubmissionPage-BAThbPS_.js              3.22 kB │ gzip:   1.63 kB
+dist/assets/earn-activation-v1/BlogPostPage-CIW299yn.js                      3.31 kB │ gzip:   1.20 kB
+dist/assets/earn-activation-v1/EmailPreviewPage-BB3jiybX.js                  3.48 kB │ gzip:   1.03 kB
+dist/assets/earn-activation-v1/SignInPage-CPFXeesw.js                        4.24 kB │ gzip:   1.80 kB
+dist/assets/earn-activation-v1/TesterLandingPage-CVqQvlwO.js                 4.70 kB │ gzip:   1.72 kB
+dist/assets/earn-activation-v1/testerSignup-BwxDc9WL.js                      4.72 kB │ gzip:   1.85 kB
+dist/assets/earn-activation-v1/SharePage-BgUPKEen.js                         7.09 kB │ gzip:   2.72 kB
+dist/assets/earn-activation-v1/MessagesPage-Bag59OMU.js                      8.12 kB │ gzip:   3.07 kB
+dist/assets/earn-activation-v1/blogSeo-CvwkzM1I.js                           9.39 kB │ gzip:   3.52 kB
+dist/assets/earn-activation-v1/SubmissionsPage-BDHwJL71.js                   9.52 kB │ gzip:   3.12 kB
+dist/assets/earn-activation-v1/TesterSignupPage-DErPOF6V.js                 10.01 kB │ gzip:   3.37 kB
+dist/assets/earn-activation-v1/recordings-B8F5YoQ7.js                       11.40 kB │ gzip:   4.27 kB
+dist/assets/earn-activation-v1/AdminPage-B6s4JOHJ.js                        13.55 kB │ gzip:   4.40 kB
+dist/assets/earn-activation-v1/ProfilePage-wDru9xxd.js                      16.18 kB │ gzip:   4.35 kB
+dist/assets/earn-activation-v1/SubmitFlowPage-DU9GUdPT.js                   17.06 kB │ gzip:   5.61 kB
+dist/assets/earn-activation-v1/AnalyticsPage-kXIubWHS.js                    19.40 kB │ gzip:   6.94 kB
+dist/assets/earn-activation-v1/questions-Zxrn8nzX.js                        21.90 kB │ gzip:   6.08 kB
+dist/assets/earn-activation-v1/HomePage-ATijFaIl.js                         28.07 kB │ gzip:   9.35 kB
+dist/assets/earn-activation-v1/RecordingViewPage-CkhCw3tQ.js                29.48 kB │ gzip:   9.86 kB
+dist/assets/earn-activation-v1/EarnPage-Co3LUzpG.js                         50.57 kB │ gzip:  15.15 kB
+dist/assets/earn-activation-v1/TestSessionPage-D34AQ8rN.js                  75.50 kB │ gzip:  19.41 kB
+dist/assets/earn-activation-v1/index-C-CTMLN7.js                           197.36 kB │ gzip:  61.69 kB
+dist/assets/earn-activation-v1/Layout-CTeGfVE-.js                          384.11 kB │ gzip: 102.57 kB
+
+✓ built in 1.45s
+
+> test4test@0.1.0 prerender:blog
+> node scripts/prerender-blog.mjs
+
+Prerendered 2 blog route(s): /blog, /blog/top-5-free-user-testing-platforms-2026

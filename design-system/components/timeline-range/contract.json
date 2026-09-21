@@ -13,7 +13,8 @@
     "default"
   ],
   "variants": [
-    "media"
+    "media",
+    "player"
   ],
   "states": [
     "enabled",
@@ -29,7 +30,8 @@
   "semantics": [
     "Two labeled sliders with time value text",
     "Handles cannot cross",
-    "Opposite vertical targets keep narrow ranges operable"
+    "Standalone handles use opposite vertical targets; player handles extend outward along the same track to keep narrow ranges operable",
+    "Player presentation accepts a playback slider on the same timeline"
   ],
   "keyboard": [
     "Arrow keys adjust one step",

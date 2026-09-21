@@ -1,0 +1,62 @@
+
+> test4test@0.1.0 ds:a11y
+> npm run test:components && node scripts/run-playwright.mjs a11y
+
+
+> test4test@0.1.0 test:components
+> vitest run --project storybook
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+
+ Test Files  10 passed (10)
+      Tests  76 passed (76)
+   Start at  17:33:40
+   Duration  9.57s (transform 0ms, setup 35.11s, import 3.70s, tests 18.08s, environment 0ms)
+
+
+Running 271 tests using 1 worker
+
+(node:39188) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   1 [a11y] › tests\playwright\a11y.spec.ts:57:3 › shared-clip has no automatically detectable WCAG A or AA violations (905ms)
+  ok   2 [a11y] › tests\playwright\a11y.spec.ts:57:3 › messages has no automatically detectable WCAG A or AA violations (1.5s)
+  ok   3 [a11y] › tests\playwright\a11y.spec.ts:57:3 › message-conversation has no automatically detectable WCAG A or AA violations (1.5s)
+  x    4 [a11y] › tests\playwright\a11y.spec.ts:57:3 › home has no automatically detectable WCAG A or AA violations (1.8s)
+(node:4504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   5 [a11y] › tests\playwright\a11y.spec.ts:57:3 › sign-in has no automatically detectable WCAG A or AA violations (1.5s)
+5:35:18 PM [vite] (client) hmr update /src/pages/SharedClipPage.tsx
+  ok   6 [a11y] › tests\playwright\a11y.spec.ts:57:3 › submit-test has no automatically detectable WCAG A or AA violations (1.5s)
+  ok   7 [a11y] › tests\playwright\a11y.spec.ts:57:3 › verify has no automatically detectable WCAG A or AA violations (1.5s)
+  ok   8 [a11y] › tests\playwright\a11y.spec.ts:57:3 › tester-landing has no automatically detectable WCAG A or AA violations (1.6s)
+  ok   9 [a11y] › tests\playwright\a11y.spec.ts:57:3 › tester-signup has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  10 [a11y] › tests\playwright\a11y.spec.ts:57:3 › blog has no automatically detectable WCAG A or AA violations (780ms)
+  ok  11 [a11y] › tests\playwright\a11y.spec.ts:57:3 › blog-post has no automatically detectable WCAG A or AA violations (906ms)
+  ok  12 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  13 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-locked has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  14 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-unlocked-paid has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  15 [a11y] › tests\playwright\a11y.spec.ts:57:3 › earn-tester-unlocked-empty has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  16 [a11y] › tests\playwright\a11y.spec.ts:57:3 › share has no automatically detectable WCAG A or AA violations (1.6s)
+  ok  17 [a11y] › tests\playwright\a11y.spec.ts:57:3 › analytics has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  18 [a11y] › tests\playwright\a11y.spec.ts:57:3 › recording-view has no automatically detectable WCAG A or AA violations (1.6s)
+  ok  19 [a11y] › tests\playwright\a11y.spec.ts:57:3 › shared-recording has no automatically detectable WCAG A or AA violations (657ms)
+  ok  20 [a11y] › tests\playwright\a11y.spec.ts:57:3 › email-preview has no automatically detectable WCAG A or AA violations (1.6s)
+  ok  21 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-session has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  22 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-session-recording has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  23 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-success has no automatically detectable WCAG A or AA violations (1.4s)
+  ok  24 [a11y] › tests\playwright\a11y.spec.ts:57:3 › test-success-tester has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  25 [a11y] › tests\playwright\a11y.spec.ts:57:3 › submissions has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  26 [a11y] › tests\playwright\a11y.spec.ts:57:3 › revise-response has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  27 [a11y] › tests\playwright\a11y.spec.ts:57:3 › credits has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  28 [a11y] › tests\playwright\a11y.spec.ts:57:3 › profile has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  29 [a11y] › tests\playwright\a11y.spec.ts:57:3 › profile-tester has no automatically detectable WCAG A or AA violations (1.6s)
+  ok  30 [a11y] › tests\playwright\a11y.spec.ts:57:3 › admin has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  31 [a11y] › tests\playwright\a11y.spec.ts:57:3 › banned has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  32 [a11y] › tests\playwright\a11y.spec.ts:57:3 › not-found-fallback has no automatically detectable WCAG A or AA violations (1.5s)
+  ok  33 [a11y] › tests\playwright\a11y.spec.ts:72:3 › shared-clip reflows at 320 CSS pixels (344ms)
+  ok  34 [a11y] › tests\playwright\a11y.spec.ts:82:3 › shared-clip supports 200% text enlargement (352ms)
+  ok  35 [a11y] › tests\playwright\a11y.spec.ts:95:3 › shared-clip supports forced colors and reduced motion (385ms)
+  ok  36 [a11y] › tests\playwright\a11y.spec.ts:72:3 › messages reflows at 320 CSS pixels (1.2s)
+  ok  37 [a11y] › tests\playwright\a11y.spec.ts:82:3 › messages supports 200% text enlargement (1.2s)

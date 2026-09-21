@@ -1,0 +1,550 @@
+
+> test4test@0.1.0 ds:check
+> npm run ds:check:release
+
+
+> test4test@0.1.0 ds:check:release
+> npm run format:check && npm run lint && npm run typecheck && npm run ds:validate && npm run test && npm run ds:a11y && npm run ds:visual && npm run build
+
+
+> test4test@0.1.0 format:check
+> prettier --check "design-system/**/*.{ts,tsx,css,json,md}" "src/**/*.{ts,tsx,css}" ".storybook/**/*.{ts,tsx}" "tests/**/*.{ts,tsx,json}" "scripts/**/*.{mjs,ts}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> test4test@0.1.0 lint
+> eslint src design-system .storybook tests scripts
+
+
+C:\Projects\Test4Test-Redesign\src\pages\AdminPage.tsx
+  143:6  warning  React Hook useEffect has a missing dependency: 'loadReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\EarnPage.tsx
+   755:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+   818:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'visibilitySummary'. Either include them or remove the dependency array            react-hooks/exhaustive-deps
+   887:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'defaultSelectedProductTypes'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   949:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'selectedProductTypes'. Either include them or remove the dependency array         react-hooks/exhaustive-deps
+   985:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+  1164:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+  1192:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\SubmissionsPage.tsx
+  139:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\src\pages\TestSessionPage.tsx
+   844:6  warning  React Hook useEffect has a missing dependency: 'submission'. Either include it or remove the dependency array                                                   react-hooks/exhaustive-deps
+  2480:6  warning  React Hook useEffect has a missing dependency: 'stopMicrophonePreviewStream'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
+  2520:6  warning  React Hook useEffect has missing dependencies: 'closeRecordingPipWindow' and 'renderRecordingPipWindow'. Either include them or remove the dependency array     react-hooks/exhaustive-deps
+  2645:6  warning  React Hook useEffect has missing dependencies: 'cleanupActiveCaptureStreams' and 'closeRecordingPipWindow'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 13 problems (0 errors, 13 warnings)
+
+
+> test4test@0.1.0 typecheck
+> tsc
+
+
+> test4test@0.1.0 ds:validate
+> node scripts/validate-design-system.mjs && node scripts/generate-chat-email.mjs --check
+
+Validated 274 tokens, 54 components and Storybook coverage contracts, 76 UI files, 34 route states, schemas, documentation, static brand artifacts, exceptions, and public imports.
+
+> test4test@0.1.0 test
+> vitest run --project unit
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+Not implemented: Window's focus() method
+
+ Test Files  54 passed (54)
+      Tests  486 passed | 1 skipped (487)
+   Start at  17:31:54
+   Duration  25.63s (transform 9.08s, setup 0ms, import 29.50s, tests 189.70s, environment 115.47s)
+
+
+> test4test@0.1.0 ds:a11y
+> npm run test:components && node scripts/run-playwright.mjs a11y
+
+
+> test4test@0.1.0 test:components
+> vitest run --project storybook
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign
+
+ ❯ |storybook (chromium)| design-system/stories/VideoPlayer.stories.tsx (1 test | 1 failed) 1305ms
+   × Video Player Contract 1303ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |storybook (chromium)| design-system/stories/VideoPlayer.stories.tsx > Video Player Contract
+AssertionError: 
+Click to debug the error directly in Storybook: http://localhost:6006/?path=/story/components-video-player--video-player-contract&addonPanel=storybook/interactions/panel
+
+Media error: undefined: expected 0 to be greater than 0
+
+Ignored nodes: comments, script, style
+<html
+  lang="en"
+>
+  <head>
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    
+    <meta
+      charset="UTF-8"
+    />
+    
+    
+    <link
+      href="/__vitest__/favicon.svg"
+      rel="icon"
+      type="image/svg+xml"
+    />
+    
+    
+    <meta
+      content="width=device-width, initial-scale=1.0"
+      name="viewport"
+    />
+    
+    
+    <title>
+      Vitest Browser Tester
+    </title>
+    
+    
+    
+    
+    <link
+      crossorigin=""
+      href="/__vitest_browser__/utils-BsFW67Gk.js"
+      rel="modulepreload"
+    />
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  
+    <base
+      target="_parent"
+    />
+    
+
+
+    
+
+
+    
+
+  </head>
+  
+  
+  <body
+    style="filter: none;"
+  >
+    <div
+      class="sb-preparing-story sb-wrapper"
+    >
+      
+  
+      <div
+        class="sb-loader"
+      />
+      
+
+    </div>
+    
+
+
+    <div
+      class="sb-preparing-docs sb-wrapper"
+    >
+      
+  
+      <div
+        class="sb-previewBlock"
+      >
+        
+    
+        <div
+          class="sb-previewBlock_header"
+        >
+          
+      
+          <div
+            class="sb-previewBlock_icon"
+          />
+          
+      
+          <div
+            class="sb-previewBlock_icon"
+          />
+          
+      
+          <div
+            class="sb-previewBlock_icon"
+          />
+          
+      
+          <div
+            class="sb-previewBlock_icon"
+          />
+          
+    
+        </div>
+        
+    
+        <div
+          class="sb-previewBlock_body"
+        >
+          
+      
+          <div
+            class="sb-loader"
+          />
+          
+    
+        </div>
+        
+  
+      </div>
+      
+  
+      <table
+        aria-hidden="true"
+        class="sb-argstableBlock"
+      >
+        
+    
+        <thead
+          class="sb-argstableBlock-head"
+        >
+          
+      
+          <tr>
+            
+        
+            <th>
+              <span>
+                Name
+              </span>
+            </th>
+            
+        
+            <th>
+              <span>
+                Description
+              </span>
+            </th>
+            
+        
+            <th>
+              <span>
+                Default
+              </span>
+            </th>
+            
+        
+            <th>
+              <span>
+                Control 
+              </span>
+            </th>
+            
+      
+          </tr>
+          
+    
+        </thead>
+        
+    
+        <tbody
+          class="sb-argstableBlock-body"
+        >
+          
+      
+          <tr>
+            
+        
+            <td>
+              <span>
+                propertyName
+              </span>
+              <span
+                title="Required"
+              >
+                *
+              </span>
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span>
+                  This is a short description
+                </span>
+              </div>
+              
+          
+              <div
+                class="sb-argstableBlock-summary"
+              >
+                
+            
+                <div>
+                  <span
+                    class="sb-argstableBlock-code"
+                  >
+                    summary
+                  </span>
+                </div>
+                
+          
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span
+                  class="sb-argstableBlock-code"
+                >
+                  defaultValue
+                </span>
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              <button>
+                Set string
+              </button>
+            </td>
+            
+      
+          </tr>
+          
+      
+          <tr>
+            
+        
+            <td>
+              <span>
+                propertyName
+              </span>
+              <span>
+                *
+              </span>
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span>
+                  This is a short description
+                </span>
+              </div>
+              
+          
+              <div
+                class="sb-argstableBlock-summary"
+              >
+                
+            
+                <div>
+                  <span
+                    class="sb-argstableBlock-code"
+                  >
+                    summary
+                  </span>
+                </div>
+                
+          
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span
+                  class="sb-argstableBlock-code"
+                >
+                  defaultValue
+                </span>
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              <button>
+                Set string
+              </button>
+            </td>
+            
+      
+          </tr>
+          
+      
+          <tr>
+            
+        
+            <td>
+              <span>
+                propertyName
+              </span>
+              <span>
+                *
+              </span>
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span>
+                  This is a short description
+                </span>
+              </div>
+              
+          
+              <div
+                class="sb-argstableBlock-summary"
+              >
+                
+            
+                <div>
+                  <span
+                    class="sb-argstableBlock-code"
+                  >
+                    summary
+                  </span>
+                </div>
+                
+          
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              
+          
+              <div>
+                <span
+                  class="sb-argstableBlock-code"
+                >
+                  defaultValue
+                </span>
+              </div>
+              
+        
+            </td>
+            
+        
+            <td>
+              <button>
+                Set string
+              </button>
+            </td>
+            
+      
+          </tr>
+          
+    
+        </tbody>
+        
+  
+      </table>
+      
+
+    </div>
+    
+
+
+    <div
+      class="sb-nopreview sb-wrapper"
+    >
+      
+  
+      <div
+        class="sb-nopreview_main"
+      >
+        
+    
+        <h1
+          class="sb-nopreview_heading sb-heading"
+        >
+          No Preview
+        </h1>
+        
+    
+        <p>
+          Sorry, but you either have no stories or none are selected somehow.
+        </p>
+        
+    
+        <ul>
+          
+      
+          <li>
+            Please check the Storybook config.
+          </li>
+     ...
+ ❯ Instrumenter.invoke node_modules/storybook/dist/instrumenter/index.js:322:22
+    320|           willRestore || restore();
+    321|         }
+    322|       }), result = fn.apply(object, finalArgs);
+       |                      ^
+    323|       return result && ["object", "function", "symbol"].includes(typeo…
+    324|         callRefsByResult: new Map([
+ ❯ Instrumenter.intercept node_modules/storybook/dist/instrumenter/index.js:243:139
+ ❯ Instrumenter.track node_modules/storybook/dist/instrumenter/index.js:238:378
+ ❯ Proxy.toBeGreaterThan node_modules/storybook/dist/instrumenter/index.js:224:263
+ ❯ toBeGreaterThan design-system/stories/VideoPlayer.stories.tsx:45:68
+ ❯ node_modules/storybook/dist/instrumenter/index.js:317:20
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:349:11
+ ❯ checkCallback node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:1097:23
+ ❯ checkRealTimersCallback node_modules/@testing-library/dom/dist/@testing-library/dom.esm.js:1091:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 9 passed (10)
+      Tests  1 failed | 75 passed (76)
+   Start at  17:32:24
+   Duration  10.43s (transform 0ms, setup 37.62s, import 3.59s, tests 17.33s, environment 0ms)
+

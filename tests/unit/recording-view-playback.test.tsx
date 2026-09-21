@@ -105,7 +105,7 @@ it.each(["PGRST205", "42P01"])(
     expect(requestedMedia()).toEqual([{ responseId: response.id, download: false }]);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByText(/Recording history could not be loaded/)).toBeNull();
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Recording version" })).toBeNull();
   },
 );
 
@@ -122,7 +122,9 @@ it("plays without waiting for history and keeps the video mounted when history a
   await act(async () => finishHistory({ data: [latest, original], error: null }));
   expect(container.querySelector("video")).toBe(video);
   expect(requestedMedia()).toEqual([{ responseId: response.id, download: false }]);
-  expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe(latest.id);
+  expect(
+    (screen.getByRole("combobox", { name: "Recording version" }) as HTMLSelectElement).value,
+  ).toBe(latest.id);
 });
 
 it.each(["42501", "PGRST003"])(

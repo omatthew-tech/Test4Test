@@ -10,5 +10,6 @@ export * from "./components/navigation";
 export * from "./components/overlays";
 export * from "./components/product";
 export * from "./components/timeline-range";
+export * from "./components/video-player";
 export { tokens, tokenSourceHash } from "./tokens/generated/tokens";
 export type { TokenPath, TokenValue } from "./tokens/generated/tokens";

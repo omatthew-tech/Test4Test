@@ -1,0 +1,122 @@
+
+> test4test@0.1.0 ds:check
+> npm run ds:check:release
+
+
+> test4test@0.1.0 ds:check:release
+> npm run format:check && npm run lint && npm run typecheck && npm run ds:validate && npm run test && npm run ds:a11y && npm run ds:visual && npm run build
+
+
+> test4test@0.1.0 format:check
+> prettier --check "design-system/**/*.{ts,tsx,css,json,md}" "src/**/*.{ts,tsx,css}" ".storybook/**/*.{ts,tsx}" "tests/**/*.{ts,tsx,json}" "scripts/**/*.{mjs,ts}"
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> test4test@0.1.0 lint
+> eslint src design-system .storybook tests scripts
+
+
+C:\Projects\Test4Test-Redesign\.codex-chat-release\src\pages\AdminPage.tsx
+  143:6  warning  React Hook useEffect has a missing dependency: 'loadReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\.codex-chat-release\src\pages\EarnPage.tsx
+   755:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+   818:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'visibilitySummary'. Either include them or remove the dependency array            react-hooks/exhaustive-deps
+   887:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'defaultSelectedProductTypes'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   949:6  warning  React Hook useEffect has missing dependencies: 'currentUser' and 'selectedProductTypes'. Either include them or remove the dependency array         react-hooks/exhaustive-deps
+   985:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+  1164:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+  1192:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\.codex-chat-release\src\pages\SubmissionsPage.tsx
+  139:6  warning  React Hook useEffect has a missing dependency: 'currentUser'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Projects\Test4Test-Redesign\.codex-chat-release\src\pages\TestSessionPage.tsx
+   844:6  warning  React Hook useEffect has a missing dependency: 'submission'. Either include it or remove the dependency array                                                   react-hooks/exhaustive-deps
+  2480:6  warning  React Hook useEffect has a missing dependency: 'stopMicrophonePreviewStream'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
+  2520:6  warning  React Hook useEffect has missing dependencies: 'closeRecordingPipWindow' and 'renderRecordingPipWindow'. Either include them or remove the dependency array     react-hooks/exhaustive-deps
+  2645:6  warning  React Hook useEffect has missing dependencies: 'cleanupActiveCaptureStreams' and 'closeRecordingPipWindow'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 13 problems (0 errors, 13 warnings)
+
+
+> test4test@0.1.0 typecheck
+> tsc
+
+
+> test4test@0.1.0 ds:validate
+> node scripts/validate-design-system.mjs && node scripts/generate-chat-email.mjs --check
+
+Validated 274 tokens, 52 components and Storybook coverage contracts, 69 UI files, 33 route states, schemas, documentation, static brand artifacts, exceptions, and public imports.
+
+> test4test@0.1.0 test
+> vitest run --project unit
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign/.codex-chat-release
+
+
+ Test Files  42 passed (42)
+      Tests  399 passed (399)
+   Start at  19:32:02
+   Duration  27.67s (transform 18.36s, setup 0ms, import 43.24s, tests 187.22s, environment 136.05s)
+
+
+> test4test@0.1.0 ds:a11y
+> npm run test:components && node scripts/run-playwright.mjs a11y
+
+
+> test4test@0.1.0 test:components
+> vitest run --project storybook
+
+
+ RUN  v4.1.10 C:/Projects/Test4Test-Redesign/.codex-chat-release
+
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+
+- C:/Projects/Test4Test-Redesign/.codex-chat-release
+- C:/Projects/Test4Test-Redesign/.codex-chat-release
+- C:/Projects/Test4Test-Redesign/node_modules/vitest
+- C:/Projects/Test4Test-Redesign/node_modules/@vitest/browser/dist
+- C:/Projects/Test4Test-Redesign/node_modules/vite/dist/client
+- C:/Projects/Test4Test-Redesign/node_modules/@vitest/browser-playwright/dist/locators.js
+
+Refer to docs https://vite.dev/config/server-options.html#server-fs-allow for configurations and more details.
+
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+ ❯ |storybook (chromium)| design-system/stories/Inputs.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/Navigation.stories.tsx (0 test)
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+The request id "C:\Projects\Test4Test-Redesign\node_modules\@storybook\addon-vitest\dist\vitest-plugin\setup-file.js" is outside of Vite serving allow list.
+ ❯ |storybook (chromium)| design-system/stories/Product.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/Actions.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/Layout.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/Feedback.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/DataDisplay.stories.tsx (0 test)
+ ❯ |storybook (chromium)| design-system/stories/Overlays.stories.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |storybook (chromium)| design-system/stories/Actions.stories.tsx [ design-system/stories/Actions.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/DataDisplay.stories.tsx [ design-system/stories/DataDisplay.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Feedback.stories.tsx [ design-system/stories/Feedback.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Inputs.stories.tsx [ design-system/stories/Inputs.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Layout.stories.tsx [ design-system/stories/Layout.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Navigation.stories.tsx [ design-system/stories/Navigation.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Overlays.stories.tsx [ design-system/stories/Overlays.stories.tsx ]
+ FAIL  |storybook (chromium)| design-system/stories/Product.stories.tsx [ design-system/stories/Product.stories.tsx ]
+Error: Failed to import test file C:/Projects/Test4Test-Redesign/node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js
+Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:63315/@fs/C:/Projects/Test4Test-Redesign/node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js?import&browserv=1789947158545
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+
+ Test Files  8 failed (8)
+      Tests  no tests
+   Start at  19:32:34
+   Duration  4.47s (transform 0ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+

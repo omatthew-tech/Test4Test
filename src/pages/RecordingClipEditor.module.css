@@ -3,19 +3,24 @@
   background: var(--ds-semantic-color-surface-default);
   color: var(--ds-semantic-color-text-primary);
 }
-.heading {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--ds-semantic-space-inline-md);
-}
-.heading span {
-  color: var(--ds-semantic-color-text-secondary);
-  font-variant-numeric: tabular-nums;
-}
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ds-semantic-space-inline-sm);
+}
+.rangeSummary {
+  margin: 0;
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+@media (width < 768px) {
+  .clipAction.clipAction {
+    width: var(--ds-semantic-size-control-target);
+    padding-inline: 0;
+  }
+  .clipAction span {
+    display: none;
+  }
 }

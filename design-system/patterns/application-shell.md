@@ -20,7 +20,7 @@ contracts rather than styling choices.
 Signed-in founder navigation contains Earn, Share, and Analyze. Tester navigation contains Earn.
 Messages belongs in the account dropdown and includes the total unread message count when positive.
 Both account types can open the private inbox and conversation routes. Secondary account destinations
-belong in the profile dropdown: Profile, a separator, New app, My reviews, Messages, then another separator
+belong in the profile dropdown: Profile, a separator, Messages, My reviews, New app, then another separator
 and Sign out. Tester accounts retain a dropdown with Profile, Messages, and a separated Sign out
 action. Sign out belongs in this menu rather than in the Profile page content. Use `Menu` with an `IconButton` trigger named "Profile
 menu" and an outlined Lucide user icon; do not show initials or personal images.

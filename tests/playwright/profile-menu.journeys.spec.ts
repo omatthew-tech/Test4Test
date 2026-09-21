@@ -16,9 +16,9 @@ test.describe("desktop profile dropdown", () => {
     await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analyze"]);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Profile",
-      "New app",
-      "My reviews",
       "Messages (1)",
+      "My reviews",
+      "New app",
       "Sign out",
     ]);
     await expect(menu.getByRole("separator")).toHaveCount(2);
@@ -66,7 +66,7 @@ test.describe("desktop profile dropdown", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("menuitem", { name: "Profile", exact: true })).toBeFocused();
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("menuitem", { name: "New app" })).toBeFocused();
+    await expect(page.getByRole("menuitem", { name: "Messages (1)", exact: true })).toBeFocused();
     await page.keyboard.press("End");
     await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeFocused();
     await page.keyboard.press("Home");

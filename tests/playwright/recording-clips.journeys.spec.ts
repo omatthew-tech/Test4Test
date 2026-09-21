@@ -7,19 +7,54 @@ for (const viewport of [
 ]) {
   test(`create and share a clip at ${viewport.width}px`, async ({ page, browser }, testInfo) => {
     await page.setViewportSize(viewport);
-    await page.goto("/recordings?ds-user=user-mateo&ds-recordings=2");
+    await page.goto("/recordings?ds-user=user-mateo&ds-recordings=2&ds-recording-media=demo");
+    await expect(page.getByRole("slider", { name: "Playback position" })).toHaveAttribute(
+      "max",
+      "7",
+    );
+    const media = page.locator("video");
+    await expect(media).not.toHaveAttribute("controls");
+    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await expect
+      .poll(() => media.evaluate((video: HTMLVideoElement) => video.currentTime))
+      .toBeGreaterThan(0);
+    await page.getByRole("button", { name: "Pause", exact: true }).click();
+    await page.getByRole("button", { name: "Mute", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Unmute", exact: true })).toBeVisible();
+    await page.getByRole("slider", { name: "Playback position" }).press("Home");
+    await page.screenshot({
+      path: testInfo.outputPath(`player-controls-${viewport.width}.png`),
+      fullPage: true,
+    });
     await page.getByRole("button", { name: "Clip", exact: true }).click();
     const start = page.getByRole("slider", { name: "Clip start" });
     await start.focus();
     await page.keyboard.press("ArrowRight");
     await expect(start).toHaveAttribute("aria-valuenow", "0.1");
     const end = page.getByRole("slider", { name: "Clip end" });
+    const startBounds = await start.boundingBox();
     const bounds = await end.boundingBox();
+    expect(startBounds!.y).toBe(bounds!.y);
+    const player = page.getByRole("group", { name: /^Recording 1 of 2: .+ player$/ });
+    await expect(player.getByRole("slider", { name: "Clip start" })).toBeVisible();
+    await expect(player.getByRole("slider", { name: "Playback position" })).toHaveCount(1);
     await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
     await page.mouse.down();
-    await page.mouse.move(bounds!.x + bounds!.width / 2 + 30, bounds!.y + bounds!.height / 2);
+    await page.mouse.move(bounds!.x + bounds!.width / 2 - 30, bounds!.y + bounds!.height / 2);
     await page.mouse.up();
-    await expect(end).not.toHaveAttribute("aria-valuenow", "30");
+    await expect(end).not.toHaveAttribute("aria-valuenow", "7");
+    await start.press("End");
+    const narrowStart = await start.boundingBox();
+    const narrowEnd = await end.boundingBox();
+    expect(narrowStart!.x + narrowStart!.width).toBeLessThanOrEqual(narrowEnd!.x);
+    expect(narrowStart!.height).toBeGreaterThanOrEqual(44);
+    await start.press("Home");
+    await start.press("ArrowRight");
+    await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Exit fullscreen" })).toBeVisible();
+    await expect(start).toBeVisible();
+    await page.getByRole("button", { name: "Exit fullscreen" }).click();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     await page.screenshot({
       path: testInfo.outputPath(`clip-editor-${viewport.width}.png`),
@@ -49,7 +84,7 @@ for (const viewport of [
     try {
       const guestPage = await guest.newPage();
       await guestPage.goto(url);
-      await expect(guestPage.getByLabel("MastoMetrics clip")).toBeVisible();
+      await expect(guestPage.getByLabel("MastoMetrics clip", { exact: true })).toBeVisible();
       expect((await new AxeBuilder({ page: guestPage }).analyze()).violations).toEqual([]);
       await guestPage.screenshot({
         path: testInfo.outputPath(`clip-guest-${viewport.width}.png`),

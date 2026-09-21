@@ -177,9 +177,14 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
   const openLinks = list.getByRole("link", { name: /^Open .+ test$/ });
   await expect(openLinks).toHaveCount(6);
   await expect(openLinks.first()).toHaveAttribute("href", /^\/test\//);
-  await expect(list.getByRole("article").first().locator("p")).toHaveCSS("-webkit-line-clamp", "2");
+  for (const description of await section.locator("article p").all()) {
+    await expect(description).toBeEmpty();
+    await expect(description).toHaveCSS("display", "none");
+  }
   const duplicateList = section.locator('ol[aria-hidden="true"]');
-  await expect(duplicateList).not.toHaveAttribute("inert");
+  for (const list of await duplicateList.all()) {
+    await expect(list).not.toHaveAttribute("inert");
+  }
   for (const link of await duplicateList.locator("a").all()) {
     await expect(link).toHaveAttribute("tabindex", "-1");
   }
@@ -213,6 +218,15 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
     { width: 1440, height: 900 },
   ]) {
     await page.setViewportSize(viewport);
+    await page.evaluate(() => document.fonts.ready);
+    const appGaps = await section.locator("article a").evaluateAll((links) => {
+      const bounds = links.map((link) => link.getBoundingClientRect());
+      return bounds
+        .slice(1)
+        .map((bounds, index) => bounds.left - links[index].getBoundingClientRect().right);
+    });
+    expect(Math.min(...appGaps)).toBeGreaterThan(0);
+    expect(Math.max(...appGaps) - Math.min(...appGaps)).toBeLessThanOrEqual(1);
     const cardHeights = await list
       .getByRole("article")
       .evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
@@ -226,6 +240,90 @@ test("home Trusted by section shows six Earn cards in an accessible horizontal l
     });
   }
 });
+
+for (const initialViewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+  { width: 2560, height: 1440 },
+]) {
+  test(`home Trusted by fills the viewport throughout its loop at ${initialViewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(initialViewport);
+    let releaseFont!: () => void;
+    const fontReady = new Promise<void>((resolve) => {
+      releaseFont = resolve;
+    });
+    await page.route("**/fonts/geist/GeistVF.woff2*", async (route) => {
+      await fontReady;
+      await route.continue();
+    });
+
+    try {
+      await page.goto("/?ds-home-trusted=1", { waitUntil: "domcontentloaded" });
+      const section = page.getByTestId("home-trusted-by-section");
+      const track = page.getByTestId("home-trusted-by-track");
+      await expect(section).toBeVisible();
+
+      const expectCoverage = async (progress: number) => {
+        await track.evaluate((element, position) => {
+          for (const animation of element.getAnimations()) {
+            animation.pause();
+            animation.currentTime = Number(animation.effect?.getTiming().duration) * position;
+          }
+        }, progress);
+        await expect
+          .poll(() =>
+            track.evaluate((element) => {
+              const viewport = element.parentElement!.getBoundingClientRect();
+              const cards = Array.from(element.querySelectorAll("article"), (card) =>
+                card.getBoundingClientRect(),
+              );
+              const links = Array.from(element.querySelectorAll("article a"), (link) =>
+                link.getBoundingClientRect(),
+              );
+              const gaps = links.slice(1).map((bounds, index) => bounds.left - links[index].right);
+              return (
+                cards[0].left <= viewport.left + 1 &&
+                cards[cards.length - 1].right >= viewport.right - 1 &&
+                Math.min(...gaps) > 0 &&
+                Math.max(...gaps) - Math.min(...gaps) <= 1
+              );
+            }),
+          )
+          .toBe(true);
+      };
+
+      // Check the first layout while the real font is still loading.
+      await expectCoverage(0);
+      releaseFont();
+      await page.evaluate(() => document.fonts.ready);
+
+      // Include both sides of the reset, not just the middle of the animation.
+      for (const progress of [0, 0.25, 0.5, 0.75, 0.9999, 1, 1.0001]) {
+        await expectCoverage(progress);
+      }
+      await expect(section.getByRole("list")).toHaveCount(1);
+      await expect(section.getByRole("link")).toHaveCount(6);
+      await expectCoverage(0);
+      await section.screenshot({ path: testInfo.outputPath("filled-app-row.png") });
+
+      if (initialViewport.width === 1440) {
+        for (const viewport of [
+          { width: 390, height: 844 },
+          { width: 2560, height: 1440 },
+          { width: 1440, height: 900 },
+        ]) {
+          await page.setViewportSize(viewport);
+          await expectCoverage(0);
+          await expectCoverage(0.9999);
+        }
+      }
+    } finally {
+      releaseFont();
+    }
+  });
+}
 
 for (const viewport of [
   { width: 390, height: 844 },
@@ -242,7 +340,7 @@ for (const viewport of [
         const section = page.getByTestId("home-trusted-by-section");
         const track = page.getByTestId("home-trusted-by-track");
         await section.scrollIntoViewIfNeeded();
-        // Inspect both halves of the loop without waiting for a complete animation cycle.
+        // Inspect the leading duplicate and original without waiting for a complete cycle.
         await track.evaluate((element, showDuplicate) => {
           for (const animation of element.getAnimations()) {
             animation.pause();
@@ -252,7 +350,7 @@ for (const viewport of [
         }, duplicate);
 
         const list = duplicate
-          ? section.locator('ol[aria-hidden="true"]')
+          ? section.locator('ol[aria-hidden="true"]').first()
           : section.getByRole("list", { name: "Top tests available on Earn" });
         const card = list.locator("article").first();
         const link = card.locator("a");
@@ -317,7 +415,9 @@ test("home Trusted by section becomes a static scroller for reduced motion", asy
   const viewport = page.getByTestId("home-trusted-by-viewport");
 
   await expect(section.getByTestId("home-trusted-by-pause")).toHaveCount(0);
-  await expect(section.locator('ol[aria-hidden="true"]')).toBeHidden();
+  for (const duplicate of await section.locator('ol[aria-hidden="true"]').all()) {
+    await expect(duplicate).toBeHidden();
+  }
   await expect(track).toHaveCSS("animation-name", "none");
   await expect(viewport).toHaveCSS("overflow-x", "auto");
   await expect(

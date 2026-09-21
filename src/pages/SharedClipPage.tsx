@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Alert, Button, Link, Stack, Surface } from "@test4test/design-system";
+import { Alert, Button, Link, Stack, Surface, VideoPlayer } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { loadPublicClip, type PublicClip } from "../lib/recordingClips";
 import styles from "./RecordingViewPage.module.css";
@@ -56,13 +56,11 @@ export function SharedClipPage() {
         ) : clip?.status === "ready" ? (
           <>
             <Surface className={styles.playerSurface} padding="none" tone="raised">
-              <video
-                className={styles.video}
-                controls
-                playsInline
-                preload="metadata"
+              <VideoPlayer
+                key={clip.url}
                 src={clip.url || undefined}
-                aria-label={`${clip.productName} clip`}
+                label={`${clip.productName} clip`}
+                durationHint={clip.durationMs / 1000}
                 onError={() => setError("The video could not be played. Try again to reload it.")}
               />
             </Surface>

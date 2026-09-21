@@ -1,0 +1,51 @@
+{
+  "id": "video-player",
+  "name": "Video player",
+  "family": "product",
+  "version": "1.0.0",
+  "lifecycle": "beta",
+  "source": "design-system/components/video-player.tsx",
+  "story": "design-system/stories/VideoPlayer.stories.tsx",
+  "storyExport": "VideoPlayerContract",
+  "exportName": "VideoPlayer",
+  "description": "Native video with familiar playback controls and optional clip handles on a single timeline.",
+  "sizes": [
+    "responsive"
+  ],
+  "variants": [
+    "playback",
+    "clipping"
+  ],
+  "states": [
+    "paused",
+    "playing",
+    "muted",
+    "focus-visible",
+    "unavailable",
+    "fullscreen"
+  ],
+  "accessibleName": "Required label names the video and player; each playback control has an explicit label.",
+  "controlMode": "both",
+  "examples": [
+    "design-system/stories/VideoPlayer.stories.tsx#VideoPlayerContract"
+  ],
+  "semantics": [
+    "Native HTML video preserves media events and transcript synchronization",
+    "One labeled playback slider with optional independently labeled clip handles",
+    "Controls remain visible and operable by touch or keyboard",
+    "Fullscreen includes the timeline and handles when supported",
+    "Playback errors are announced with recovery text"
+  ],
+  "keyboard": [
+    "Enter or Space activates playback controls",
+    "Arrow keys seek and adjust volume",
+    "Clip handles retain the Timeline range keyboard contract",
+    "Escape exits browser fullscreen"
+  ],
+  "targetSize": 44,
+  "dependencies": [
+    "icon-button",
+    "timeline-range"
+  ],
+  "$schema": "../../contracts/component.schema.json"
+}

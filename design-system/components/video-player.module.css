@@ -1,0 +1,162 @@
+.root {
+  min-width: 0;
+  width: 100%;
+  background: var(--ds-semantic-color-surface-scrim);
+  color: var(--ds-semantic-color-text-inverse);
+}
+.video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+.picture {
+  position: relative;
+  min-height: 0;
+}
+.pictureButton {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ds-semantic-color-text-inverse);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.pictureButton:focus-visible {
+  outline: var(--ds-semantic-border-width-focus) solid var(--ds-semantic-color-border-accent);
+  outline-offset: calc(-1 * var(--ds-semantic-border-width-focus));
+}
+.playBadge {
+  display: grid;
+  place-items: center;
+  width: var(--ds-semantic-size-control-target);
+  height: var(--ds-semantic-size-control-target);
+  background: var(--ds-semantic-color-surface-scrim);
+  border-radius: var(--ds-semantic-radius-pill);
+}
+.playBadge svg {
+  width: var(--ds-semantic-size-icon-large);
+  height: var(--ds-semantic-size-icon-large);
+}
+.controls {
+  padding: var(--ds-semantic-space-stack-xs) var(--ds-semantic-space-inline-sm);
+}
+.timeline {
+  position: relative;
+  height: var(--ds-semantic-size-control-target);
+  margin-inline: var(--ds-semantic-size-control-target);
+}
+.root .controls .seek {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  width: 100%;
+  height: var(--ds-semantic-size-control-target);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--ds-semantic-color-text-inverse);
+}
+.seek::-webkit-slider-runnable-track {
+  height: calc(var(--ds-semantic-border-width-focus) * 2);
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-border-strong);
+}
+.seek::-moz-range-track {
+  height: calc(var(--ds-semantic-border-width-focus) * 2);
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-border-strong);
+}
+.seek::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+  margin-top: calc(var(--ds-semantic-border-width-focus) - var(--ds-semantic-size-icon-small) / 2);
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-text-inverse);
+}
+.seek::-moz-range-thumb {
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+  border: 0;
+  border-radius: var(--ds-semantic-radius-pill);
+  background: var(--ds-semantic-color-text-inverse);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ds-semantic-space-inline-xs);
+}
+.control.control,
+.actions button {
+  color: var(--ds-semantic-color-text-inverse);
+  background: var(--ds-semantic-color-surface-scrim);
+  border-color: transparent;
+}
+.control.control:hover,
+.actions button:hover {
+  background: var(--ds-semantic-color-text-secondary);
+}
+.controls :focus-visible {
+  outline-color: var(--ds-semantic-color-border-accent);
+}
+.time {
+  white-space: nowrap;
+  font-size: var(--ds-semantic-typography-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+.volume {
+  display: flex;
+  align-items: center;
+}
+.root .controls .volumeSlider {
+  width: calc(var(--ds-semantic-size-control-target) * 2);
+  height: var(--ds-semantic-size-control-target);
+  accent-color: var(--ds-semantic-color-text-inverse);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.spacer {
+  flex: 1;
+}
+.error {
+  margin: var(--ds-semantic-space-stack-sm);
+  color: inherit;
+}
+.root:fullscreen {
+  display: flex;
+  flex-direction: column;
+}
+.root:fullscreen .picture {
+  flex: 1;
+  min-height: 0;
+}
+.root:fullscreen .video {
+  height: 100%;
+}
+@media (width < 768px) {
+  .root .controls .volumeSlider {
+    display: none;
+  }
+}
+@media (forced-colors: active) {
+  .root,
+  .control.control,
+  .actions button {
+    color: CanvasText;
+    background: Canvas;
+  }
+  .root .controls .seek {
+    appearance: auto;
+  }
+}

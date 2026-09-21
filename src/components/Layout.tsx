@@ -156,29 +156,29 @@ export function AppShell({
   };
   const accountDestinations = [
     { id: "profile", label: "Profile", to: accountHref("/profile"), icon: <UserRound /> },
+    {
+      id: "messages",
+      label: unreadCount ? `Messages (${unreadCount})` : "Messages",
+      to: accountHref("/messages"),
+      icon: <MessageCircle />,
+      separatorBefore: currentUser?.accountType !== "tester",
+    },
     ...(currentUser?.accountType === "tester"
       ? []
       : [
-          {
-            id: "new-app",
-            label: "New app",
-            to: accountHref("/submit"),
-            icon: <Plus />,
-            separatorBefore: true,
-          },
           {
             id: "my-reviews",
             label: "My reviews",
             to: accountHref("/submissions"),
             icon: <ListChecks />,
           },
+          {
+            id: "new-app",
+            label: "New app",
+            to: accountHref("/submit"),
+            icon: <Plus />,
+          },
         ]),
-    {
-      id: "messages",
-      label: unreadCount ? `Messages (${unreadCount})` : "Messages",
-      to: accountHref("/messages"),
-      icon: <MessageCircle />,
-    },
   ];
   const signOutItem = {
     id: "sign-out",

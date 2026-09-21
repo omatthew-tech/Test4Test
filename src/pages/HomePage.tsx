@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink, Globe, PanelsTopLeft, Star } from "lucide-react";
+import { ArrowRight, Globe, PanelsTopLeft, Star } from "lucide-react";
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -6,6 +6,7 @@ import {
   type TransitionEvent as ReactTransitionEvent,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -124,9 +125,6 @@ function HomeMobilePlatformMarks() {
   );
 }
 
-const homeTrustedSubmissionFallbackDescription =
-  "Open the app, move through the main experience, and share thoughtful usability feedback.";
-
 function HomeTrustedLogo({ name, url }: { name: string; url: string | null }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -161,28 +159,25 @@ function HomeTrustedTestCard({
     <EarnTestCard
       className={styles.trustedByCard}
       title={
-        <span className={styles.trustedByCardTitle}>
+        <Link
+          aria-label={`Open ${submission.productName} test`}
+          aria-description="Opens in a new tab"
+          className={`${styles.trustedByCardTitle} ${styles.trustedByOpenLink}`}
+          title={`Open ${submission.productName} test (opens in a new tab)`}
+          to={`/test/${submission.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          tabIndex={duplicate ? -1 : undefined}
+        >
           <HomeTrustedLogo
             key={logoUrl ?? "initials"}
             name={submission.productName}
             url={logoUrl}
           />
           <span className={styles.trustedByProductName}>{submission.productName}</span>
-          <Link
-            aria-label={`Open ${submission.productName} test`}
-            aria-description="Opens in a new tab"
-            className={styles.trustedByOpenLink}
-            title={`Open ${submission.productName} test (opens in a new tab)`}
-            to={`/test/${submission.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            tabIndex={duplicate ? -1 : undefined}
-          >
-            <ExternalLink aria-hidden="true" size={16} />
-          </Link>
-        </span>
+        </Link>
       }
-      description={submission.description || homeTrustedSubmissionFallbackDescription}
+      description={null}
       badges={[]}
     />
   );
@@ -196,7 +191,34 @@ function HomeTrustedBySection({
   submittedTestCount: number | null;
 }) {
   const shouldAnimate = submissions.length > 1;
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const primaryListRef = useRef<HTMLOListElement>(null);
+  const [sequenceCopies, setSequenceCopies] = useState(2);
   const [logos, setLogos] = useState<Record<string, string | null>>({});
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    const primaryList = primaryListRef.current;
+    if (!shouldAnimate || !viewport || !track || !primaryList) return;
+
+    const measure = () => {
+      const gap = Number.parseFloat(window.getComputedStyle(track).columnGap);
+      const sequenceWidth = primaryList.getBoundingClientRect().width + gap;
+      if (!(sequenceWidth > 0) || viewport.clientWidth === 0) return;
+
+      // ds-exception: runtime-measurements
+      track.style.setProperty("--home-trusted-by-cycle-width", `${sequenceWidth}px`);
+      setSequenceCopies(Math.ceil(viewport.clientWidth / sequenceWidth) + 2);
+    };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(primaryList);
+    measure();
+    return () => observer.disconnect();
+  }, [shouldAnimate, submissions]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -239,6 +261,7 @@ function HomeTrustedBySection({
     >
       <div
         className={styles.trustedByViewport}
+        ref={viewportRef}
         data-contained-horizontal-overflow="true"
         data-testid="home-trusted-by-viewport"
       >
@@ -247,6 +270,7 @@ function HomeTrustedBySection({
             shouldAnimate ? "" : ` ${styles.trustedByTrackStatic}`
           }`}
           data-testid="home-trusted-by-track"
+          ref={trackRef}
         >
           {shouldAnimate ? (
             <ol
@@ -256,9 +280,24 @@ function HomeTrustedBySection({
               {renderCards(true)}
             </ol>
           ) : null}
-          <ol className={styles.trustedByList} aria-label="Top tests available on Earn">
+          <ol
+            className={styles.trustedByList}
+            aria-label="Top tests available on Earn"
+            ref={primaryListRef}
+          >
             {renderCards(false)}
           </ol>
+          {shouldAnimate
+            ? Array.from({ length: sequenceCopies - 2 }, (_, index) => (
+                <ol
+                  className={`${styles.trustedByList} ${styles.trustedByDuplicate}`}
+                  aria-hidden="true"
+                  key={`trailing-sequence-${index}`}
+                >
+                  {renderCards(true)}
+                </ol>
+              ))
+            : null}
         </div>
       </div>
       <Container>
@@ -282,18 +321,21 @@ const homeHowItWorksSteps = [
     title: "Create your test",
     description: "Create your first test in seconds. Answer a few questions or use AI",
     image: "/images/home-step-create-test-actual.webp",
+    screenshot: { x: 68, y: 185, width: 1312, height: 845, radius: 26 },
   },
   {
     title: "Get testers",
     description:
       "Share your test to unlimited users or earn credits by testing other founder's tests",
     image: "/images/home-step-get-testers-actual.webp",
+    screenshot: { x: 33, y: 184, width: 1383, height: 734, radius: 30 },
   },
   {
     title: "Gain insights",
     description:
       "Manage every insight from one dashboard. Watch your tests, clip or export it to your favorite LLM",
     image: "/images/home-step-gain-insights-actual.webp",
+    screenshot: { x: 39, y: 138, width: 1370, height: 849, radius: 26 },
   },
 ] as const;
 
@@ -303,7 +345,29 @@ const homeHowItWorksFadeMs = tokens["semantic.motion.interaction.duration"].dtcg
 
 function HomeHowItWorksSection() {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const maskId = useId();
   const [activeStep, setActiveStep] = useState(0);
+  const [backgroundPlaying, setBackgroundPlaying] = useState(false);
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const media = Array.from(viewport.querySelectorAll<HTMLElement>("[data-how-it-works-media]"));
+    const alignBackgrounds = () => {
+      const bounds = viewport.getBoundingClientRect();
+      for (const frame of media) {
+        const frameBounds = frame.getBoundingClientRect();
+        // ds-exception: runtime-measurements
+        frame.style.setProperty("--home-how-flow-width", `${bounds.width}px`);
+        frame.style.setProperty("--home-how-flow-left", `${bounds.left - frameBounds.left}px`);
+      }
+    };
+    const observer = new ResizeObserver(alignBackgrounds);
+    observer.observe(viewport);
+    media.forEach((frame) => observer.observe(frame));
+    alignBackgrounds();
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -313,6 +377,7 @@ function HomeHowItWorksSection() {
       `(min-width: ${tokens["primitive.breakpoint.medium"].value})`,
     );
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const forcedColors = window.matchMedia("(forced-colors: active)");
     let inView = false;
     let timer: number | undefined;
     const shouldPlay = () =>
@@ -325,6 +390,9 @@ function HomeHowItWorksSection() {
     };
     const updatePlayback = () => {
       window.clearTimeout(timer);
+      setBackgroundPlaying(
+        inView && !document.hidden && !reducedMotion.matches && !forcedColors.matches,
+      );
       if (shouldPlay()) timer = window.setTimeout(advance, homeHowItWorksHoldMs);
     };
     const observer = new IntersectionObserver(([entry]) => {
@@ -336,18 +404,56 @@ function HomeHowItWorksSection() {
     observer.observe(viewport);
     desktop.addEventListener("change", updatePlayback);
     reducedMotion.addEventListener("change", updatePlayback);
+    forcedColors.addEventListener("change", updatePlayback);
     document.addEventListener("visibilitychange", updatePlayback);
     return () => {
       window.clearTimeout(timer);
       observer.disconnect();
       desktop.removeEventListener("change", updatePlayback);
       reducedMotion.removeEventListener("change", updatePlayback);
+      forcedColors.removeEventListener("change", updatePlayback);
       document.removeEventListener("visibilitychange", updatePlayback);
     };
   }, []);
 
   return (
-    <Section aria-labelledby="home-how-it-works-title" data-testid="home-how-it-works-section">
+    <Section
+      aria-labelledby="home-how-it-works-title"
+      data-background-playing={backgroundPlaying}
+      data-testid="home-how-it-works-section"
+    >
+      {/* ds-exception: home-how-it-works-flow-background */}
+      <svg aria-hidden="true" className={styles.howItWorksClipDefinitions} focusable="false">
+        <defs>
+          {homeHowItWorksSteps.map((step, index) => (
+            <clipPath clipPathUnits="objectBoundingBox" id={`${maskId}-${index}`} key={step.title}>
+              <rect
+                x={step.screenshot.x / 1448}
+                y={step.screenshot.y / 1086}
+                width={step.screenshot.width / 1448}
+                height={step.screenshot.height / 1086}
+                rx={step.screenshot.radius / 1448}
+                ry={step.screenshot.radius / 1086}
+              />
+              {index === 0 ? (
+                <>
+                  {[588, 724, 860].map((center) => (
+                    <ellipse
+                      key={center}
+                      cx={center / 1448}
+                      cy={99 / 1086}
+                      rx={35 / 1448}
+                      ry={35 / 1086}
+                    />
+                  ))}
+                  <rect x={622 / 1448} y={98 / 1086} width={68 / 1448} height={2 / 1086} />
+                  <rect x={758 / 1448} y={98 / 1086} width={68 / 1448} height={2 / 1086} />
+                </>
+              ) : null}
+            </clipPath>
+          ))}
+        </defs>
+      </svg>
       <Stack className={styles.howItWorksContent} gap="xl">
         <h2 className={styles.howItWorksHeading} id="home-how-it-works-title">
           How it works
@@ -362,16 +468,35 @@ function HomeHowItWorksSection() {
                 gap="lg"
                 key={step.title}
               >
-                {/* ds-exception: home-how-it-works-screenshot-previews */}
-                <img
-                  alt=""
-                  className={styles.howItWorksImage}
-                  decoding="async"
-                  height={1086}
-                  loading="lazy"
-                  src={step.image}
-                  width={1448}
-                />
+                <div
+                  className={styles.howItWorksMedia}
+                  data-how-it-works-media
+                  data-testid="home-how-it-works-media"
+                >
+                  <div
+                    aria-hidden="true"
+                    className={styles.howItWorksFlow}
+                    data-testid="home-how-it-works-flow"
+                  >
+                    <span className={styles.howItWorksFlowCyan} />
+                    <span className={styles.howItWorksFlowMint} />
+                    <span className={styles.howItWorksFlowYellow} />
+                    <span className={styles.howItWorksFlowBlue} />
+                  </div>
+                  {/* ds-exception: home-how-it-works-flow-background */}
+                  <img
+                    alt=""
+                    className={styles.howItWorksImage}
+                    style={
+                      { "--home-how-image-mask": `url("#${maskId}-${index}")` } as CSSProperties
+                    }
+                    decoding="async"
+                    height={1086}
+                    loading="lazy"
+                    src={step.image}
+                    width={1448}
+                  />
+                </div>
                 <Stack className={styles.howItWorksCopy} gap="sm">
                   <h3>{step.title}</h3>
                   <p>{step.description}</p>
@@ -1190,7 +1315,9 @@ export function HomePage() {
             >
               <Stack className={styles.testableProductsContent} gap="xl">
                 <Stack className={styles.testableProductsHeading} gap="sm">
-                  <h2 id="home-testable-products-title">If you can link to it, you can test it</h2>
+                  <h2 id="home-testable-products-title">
+                    <span>If you can link to it,</span> <span>you can test it</span>
+                  </h2>
                   <p>
                     Founders, students, UX designers, product managers, or researchers — Test4Test
                     makes getting valuable insights free and easy

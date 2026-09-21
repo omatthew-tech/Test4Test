@@ -21,7 +21,7 @@ for (const viewport of [
         );
     await expect(rating.getByRole("radio")).toHaveCount(5);
     await expect(rating.getByRole("radio", { name: "1 star", exact: true })).toBeEnabled();
-    await expect(rating.locator("legend")).toHaveCSS("opacity", "1");
+    await expect(rating.locator("legend")).toHaveCSS("opacity", viewport.width === 390 ? "0" : "1");
     await expect(page.getByRole("button", { name: "Clear rating" })).toHaveCount(0);
     await expect(submit).toHaveCount(0);
     await rating.locator("label").nth(4).hover();
@@ -45,6 +45,8 @@ for (const viewport of [
     for (const action of [tip, message, share]) {
       const bounds = await action.boundingBox();
       expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      const starBounds = await rating.locator("label").first().boundingBox();
+      expect(Math.abs(bounds!.y - starBounds!.y)).toBeLessThanOrEqual(1);
     }
     await rating.getByRole("radio", { name: "3 stars" }).check();
     await expect(submit).toBeVisible();
@@ -59,8 +61,13 @@ for (const viewport of [
     await expect(rating.getByRole("radio", { name: "4 stars" })).toBeChecked();
     const lastStarBounds = await rating.locator("label").last().boundingBox();
     const submitBounds = await submit.boundingBox();
-    expect(submitBounds!.x).toBeGreaterThanOrEqual(lastStarBounds!.x + lastStarBounds!.width);
-    expect(Math.abs(submitBounds!.y - lastStarBounds!.y)).toBeLessThanOrEqual(1);
+    if (viewport.width === 390) {
+      expect(submitBounds!.y).toBeGreaterThanOrEqual(lastStarBounds!.y + lastStarBounds!.height);
+      expect(Math.abs((await tip.boundingBox())!.y - lastStarBounds!.y)).toBeLessThanOrEqual(1);
+    } else {
+      expect(submitBounds!.x).toBeGreaterThanOrEqual(lastStarBounds!.x + lastStarBounds!.width);
+      expect(Math.abs(submitBounds!.y - lastStarBounds!.y)).toBeLessThanOrEqual(1);
+    }
     expect(submitBounds!.width).toBeGreaterThanOrEqual(44);
     expect(submitBounds!.height).toBeGreaterThanOrEqual(44);
     await page.screenshot({
@@ -96,7 +103,7 @@ for (const viewport of [
     await expect(rating.getByRole("radio", { name: "4 stars" })).toBeFocused();
     await page.getByRole("button", { name: "Next recording" }).click();
     await expect(rating.getByRole("radio", { name: "4 stars" })).not.toBeChecked();
-    await expect(rating.locator("legend")).toHaveCSS("opacity", "1");
+    await expect(rating.locator("legend")).toHaveCSS("opacity", viewport.width === 390 ? "0" : "1");
     await page.getByRole("button", { name: "Previous recording" }).click();
     await expect(rating.getByRole("radio", { name: "4 stars" })).toBeChecked();
     await expect(rating.locator("legend")).toHaveCSS("opacity", "0");

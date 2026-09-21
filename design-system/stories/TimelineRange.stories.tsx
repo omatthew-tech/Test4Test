@@ -11,7 +11,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// @test4test-coverage timeline-range | sizes: default | variants: media | states: enabled, focus-visible, disabled, narrow-range
+// @test4test-coverage timeline-range | sizes: default | variants: media, player | states: enabled, focus-visible, disabled, narrow-range
 export const TimelineRangeContract: Story = {
   render: function RangeStory(args) {
     const [range, setRange] = useState([args.start, args.end]);

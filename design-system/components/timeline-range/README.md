@@ -13,7 +13,7 @@ Two time handles for selecting a media range with pointer and keyboard input.
 ## Public API
 
 - Sizes: `default`
-- Variants: `media`
+- Variants: `media`, `player`
 - States: `enabled`, `focus-visible`, `disabled`, `narrow-range`
 - Accessible name: Required label names the group; Clip start and Clip end name each slider.
 
@@ -21,7 +21,8 @@ Two time handles for selecting a media range with pointer and keyboard input.
 
 - Two labeled sliders with time value text
 - Handles cannot cross
-- Opposite vertical targets keep narrow ranges operable
+- Standalone handles use opposite vertical targets; player handles extend outward along the same track to keep narrow ranges operable
+- Player presentation accepts a playback slider on the same timeline
 
 ## Keyboard
 

@@ -55,9 +55,9 @@ test("founder menu groups current navigation and all existing account destinatio
   );
   await expect(panel.getByRole("navigation", { name: "Account" }).getByRole("link")).toHaveText([
     "Profile",
-    "New app",
-    "My reviews",
     "Messages (1)",
+    "My reviews",
+    "New app",
   ]);
   await expect(panel.getByRole("button", { name: "Sign out" })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("header").analyze()).violations).toEqual([]);

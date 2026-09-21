@@ -127,3 +127,59 @@
   width: var(--ds-semantic-size-icon-small);
   height: var(--ds-semantic-size-icon-small);
 }
+
+@media (max-width: 767px) {
+  .toolbar {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--ds-semantic-space-stack-xs) var(--ds-semantic-space-inline-sm);
+  }
+
+  /* Keep the optional Submit action below the compact control row. */
+  .rating {
+    display: contents;
+  }
+
+  .rating fieldset {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: nowrap;
+  }
+
+  .rating fieldset > legend {
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  .rating fieldset label {
+    min-width: calc(var(--ds-semantic-size-icon-medium) + var(--ds-semantic-space-inline-xs));
+  }
+
+  .feedback .rating fieldset label svg {
+    width: var(--ds-semantic-size-icon-small);
+    height: var(--ds-semantic-size-icon-small);
+  }
+
+  .submit {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    gap: var(--ds-semantic-space-inline-xs);
+  }
+
+  .action {
+    gap: var(--ds-semantic-space-inline-xs);
+    border-block-width: var(--ds-semantic-border-width-focus);
+    padding-inline: var(--ds-semantic-space-inline-xs);
+    background-clip: padding-box;
+  }
+}

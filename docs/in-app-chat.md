@@ -154,3 +154,9 @@ Deployed as Cloudflare version `ff481f1c-a764-4908-8e5d-4f956a5b2b0a`; the prior
 All nine navigation browser journeys, the fast checks, and the production build passed. Both
 requested viewport sizes were inspected. The full gate encountered the same Storybook setup-import
 limitation above. The served layout asset matches the validated build. **Fast-checked**.
+
+The subsequent requested swap puts the founder items in this order: Profile, Messages, My reviews,
+New app, Sign out. It is deployed as `6351afbf-67e8-4d9f-a959-69c112cf33d1`, with
+`ff481f1c-a764-4908-8e5d-4f956a5b2b0a` as the previous version. Fast checks, the production build,
+and all nine responsive navigation journeys passed; the same Storybook setup-import limitation
+prevented full release validation. The live layout asset matches the tested build. **Fast-checked**.

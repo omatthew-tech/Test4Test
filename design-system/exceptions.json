@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "home-how-it-works-flow-background",
+      "owner": "Test4Test",
+      "scope": "The decorative How it works image backgrounds and screenshot clip geometry in src/pages/HomePage.tsx and src/pages/HomePage.module.css.",
+      "rationale": "On 2026-09-20 the design owner approved a coordinated lava-lamp color animation confined to the three existing image panels and requested implementation with all white gaps, captions, screenshot placement, and section spacing preserved. This route-local exception permits looping blurred shapes, token-derived color interpolation and saturation, percentage/rotation geometry, and negatively phased loops derived from semantic interaction duration (60, 65, 50, and 75 times). An inline SVG clip exposes the original opaque screenshot panels and progress indicator while replacing only their baked-in backgrounds; normalized clip coordinates and per-instance mask references are asset geometry. Measured field width and horizontal offsets synchronize the same background across the existing columns. The original image assets remain intact as the static fallback for reduced motion and forced colors. The owner subsequently explicitly requested removal of the visible Pause animations control, so this exception permits the decorative loop without a manual pause/resume action. Playback still suspends offscreen or in hidden tabs, and the existing mobile card sequence retains its layout and reading interval.",
+      "expires": "2027-03-20"
+    },
+    {
       "id": "chat-email-platform-format",
       "owner": "Test4Test Backend",
       "scope": "Chat notification HTML in supabase/functions/_shared/chat-email.ts, generated chat-email-tokens.ts, and public/brand/test4test-email-mark.png.",
@@ -12,8 +19,8 @@
     {
       "id": "recording-star-pointer-density",
       "owner": "Test4Test",
-      "scope": "Fine-pointer star-rating labels in src/pages/RecordingFeedback.module.css on the recording page.",
-      "rationale": "The design owner selected the tight star-spacing mockup. Fine-pointer devices use 24px-wide by 44px-high star targets, derived from the semantic medium icon size plus inline-xs spacing. Touch and coarse-pointer devices retain 44px targets. Native radio semantics, cumulative hover previews, keyboard focus indicators, and explicit submission remain unchanged.",
+      "scope": "Fine-pointer and mobile star-rating labels in src/pages/RecordingFeedback.module.css on the recording page.",
+      "rationale": "The design owner selected tight star spacing and requested smaller mobile stars and action buttons in one row. Fine-pointer devices and mobile viewports use 24px-wide by 44px-high star targets, derived from the semantic medium icon size plus inline-xs spacing; larger coarse-pointer viewports retain 44px targets. Mobile star icons use the semantic small icon size, the group legend remains accessible while visually hidden, and the optional Submit action sits below the row. Action buttons retain 44px-high targets with narrower padding and a compact visible background. Native radio semantics, cumulative hover previews, keyboard focus indicators, and explicit submission remain unchanged.",
       "expires": "2027-03-17"
     },
     {
