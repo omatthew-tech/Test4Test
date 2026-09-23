@@ -24,17 +24,17 @@
 
 .hero {
   display: grid;
+  /* Preserve the hero panel height while removing the trailing gap before the logos. */
   min-height: calc(
-    var(--ds-semantic-size-viewport-fallback-height) -
-      var(--ds-semantic-space-stack-section-large) - var(--ds-semantic-space-stack-xl)
+    var(--ds-semantic-size-viewport-fallback-height) - var(--ds-semantic-size-header-min) -
+      var(--ds-semantic-space-stack-xl) - var(--ds-semantic-space-stack-xl)
   );
   min-height: calc(
-    var(--ds-semantic-size-viewport-full-height) - var(--ds-semantic-space-stack-section-large) -
-      var(--ds-semantic-space-stack-xl)
+    var(--ds-semantic-size-viewport-full-height) - var(--ds-semantic-size-header-min) -
+      var(--ds-semantic-space-stack-xl) - var(--ds-semantic-space-stack-xl)
   );
   padding-inline: var(--ds-semantic-space-gutter-small);
   padding-block: var(--ds-semantic-space-zero);
-  padding-block-end: var(--ds-semantic-space-stack-xl);
 }
 
 .heroPanel {
@@ -56,10 +56,10 @@
 .trustedBy {
   display: grid;
   min-width: var(--ds-semantic-space-zero);
-  /* The viewport-sized hero keeps this tighter card strip below the fold. */
-  padding-block-start: var(--ds-semantic-space-stack-lg);
+  /* Card insets place the logos just below the initial viewport, ready for a small scroll. */
+  padding-block-start: var(--ds-semantic-space-stack-xs);
   padding-block-end: var(--ds-semantic-space-inline-2xl);
-  gap: var(--ds-semantic-space-stack-sm);
+  gap: var(--ds-semantic-space-zero);
   overflow: hidden;
 }
 
@@ -134,6 +134,10 @@
   cursor: pointer;
 }
 
+.trustedByCard > div {
+  padding-block-end: var(--ds-semantic-space-stack-xs);
+}
+
 .trustedByCard,
 .trustedByCaption {
   /* ds-exception: home-trusted-by-faded */
@@ -149,7 +153,7 @@
   display: inline-flex;
   min-width: var(--ds-semantic-space-zero);
   align-items: center;
-  gap: var(--ds-semantic-space-inline-xs);
+  gap: var(--ds-semantic-space-inline-sm);
 }
 
 .trustedByProductName {
@@ -815,7 +819,7 @@
 }
 
 .freeFeedbackContent {
-  gap: var(--ds-semantic-space-stack-2xl);
+  gap: var(--ds-semantic-space-stack-lg);
 }
 
 .freeFeedbackHeading {
@@ -836,6 +840,13 @@
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: var(--ds-semantic-space-stack-lg);
+  padding: var(--ds-semantic-space-stack-lg) var(--ds-semantic-space-gutter-small);
+  border-radius: var(--ds-semantic-radius-surface);
+  background: var(--ds-semantic-color-background-subtle);
+}
+
+.feedbackMethod:nth-child(even) {
+  background: var(--ds-semantic-color-action-tint);
 }
 
 .feedbackPreview {
@@ -851,6 +862,13 @@
 .feedbackVideoFrame {
   position: relative;
   overflow: hidden;
+}
+
+/* ds-exception: home-feedback-demo-media — crop the recorded blue matte to the card bounds. */
+.feedbackMethod:first-child .feedbackVideoFrame {
+  clip-path: inset(
+    calc(100% * 96 / 1080) calc(100% * 82 / 1620) round var(--ds-semantic-radius-surface)
+  );
 }
 
 .feedbackVideo,
@@ -1188,6 +1206,7 @@
   .feedbackMethod {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ds-semantic-space-stack-xl);
+    padding-inline: var(--ds-semantic-space-gutter-medium);
   }
 
   .feedbackMethod:nth-child(even) .feedbackPreview {
@@ -1202,12 +1221,12 @@
 
   .hero {
     min-height: calc(
-      var(--ds-semantic-size-viewport-fallback-height) -
-        var(--ds-semantic-space-stack-section-large) - var(--ds-semantic-space-stack-2xl)
+      var(--ds-semantic-size-viewport-fallback-height) - var(--ds-semantic-size-header-min) -
+        var(--ds-semantic-space-stack-2xl) - var(--ds-semantic-space-stack-xl)
     );
     min-height: calc(
-      var(--ds-semantic-size-viewport-full-height) - var(--ds-semantic-space-stack-section-large) -
-        var(--ds-semantic-space-stack-2xl)
+      var(--ds-semantic-size-viewport-full-height) - var(--ds-semantic-size-header-min) -
+        var(--ds-semantic-space-stack-2xl) - var(--ds-semantic-space-stack-xl)
     );
     padding-inline: var(--ds-semantic-space-gutter-medium);
   }
@@ -1248,13 +1267,9 @@
     padding-block: var(--ds-semantic-space-stack-section-large);
   }
 
-  .freeFeedbackContent {
-    gap: var(--ds-semantic-space-inline-2xl);
-    padding-inline: var(--ds-semantic-space-inline-2xl);
-  }
-
   .feedbackMethod {
     gap: var(--ds-semantic-space-stack-section);
+    padding-inline: var(--ds-semantic-space-stack-section-large);
   }
 
   .feedbackMethodCopy p {

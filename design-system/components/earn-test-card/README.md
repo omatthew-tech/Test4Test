@@ -1,6 +1,6 @@
 # Earn test card
 
-Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place.
+Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place. Collapsed descriptions retain plain text styling on hover and press, with a muted more label after the ellipsis and a visible keyboard focus ring.
 
 - Family: product
 - Lifecycle: stable

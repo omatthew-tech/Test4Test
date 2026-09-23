@@ -89,6 +89,7 @@ it.each([false, true])(
         recording,
         "qsv-palette-1",
         "sv-palette-1",
+        "shared_link",
       ),
     );
     await screen.findByText("Completed");

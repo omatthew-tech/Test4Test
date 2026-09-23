@@ -61,8 +61,11 @@ for (const viewport of [
     const section = page.getByTestId("free-feedback-section");
     const methods = section.getByRole("article");
     await expect(methods).toHaveCount(2);
-    await expect(section.getByRole("heading", { level: 2 })).toHaveText([
-      "Test other founders",
+    await expect(
+      section.getByRole("heading", { level: 2, name: "2 free ways to get feedback" }),
+    ).toBeVisible();
+    await expect(section.getByRole("heading", { level: 3 })).toHaveText([
+      "Earn credits by testing apps",
       "Bring your own testers",
     ]);
     await expect(section.locator("p")).toHaveText([
@@ -71,7 +74,6 @@ for (const viewport of [
     ]);
     await expect(section.getByRole("button")).toHaveCount(0);
     await expect(section.getByRole("link")).toHaveCount(0);
-    await expect(section.getByText("2 free ways to get feedback")).toHaveCount(0);
 
     for (let index = 0; index < 2; index += 1) {
       const method = methods.nth(index);
@@ -113,7 +115,7 @@ test("home managed recruitment follows the free-feedback showcase and uses anima
   await expect(
     managedSection.getByRole("heading", {
       level: 2,
-      name: "Most platforms give you tools. We go find the people.",
+      name: "Go Wild",
     }),
   ).toBeVisible();
   await expect(managedSection.getByRole("heading", { level: 3 })).toHaveCount(2);
@@ -1306,60 +1308,82 @@ test("Share page redirects guests and guides members without a live test", async
   );
 });
 
-test("Analytics is authenticated, follows Share in navigation, and exports transcripts", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+]) {
+  test(`Analytics opens selected recordings and exposes reports at ${viewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
 
-  const navigation = page.getByRole("navigation", { name: "Primary" });
-  await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analytics"]);
-  await expect(navigation.getByRole("link", { name: "Analytics" })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
-  await expect(page.getByRole("heading", { level: 1, name: "Transcript report" })).toBeVisible();
-  await expect(
-    page.getByText("2 of 2 transcripts ready for Palette Pilot.", { exact: true }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
+    if (viewport.width >= 768) {
+      const navigation = page.getByRole("navigation", { name: "Primary" });
+      await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analyze"]);
+      await expect(navigation.getByRole("link", { name: "Analyze" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    }
+    await expect(page.getByRole("heading", { level: 1, name: "Transcript report" })).toBeVisible();
+    await expect(
+      page.getByText("2 of 2 transcripts ready for Palette Pilot.", { exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
 
-  const viewRecordings = page.getByRole("link", { name: "View Palette Pilot's recordings" });
-  await expect(viewRecordings).toHaveAttribute(
-    "href",
-    "/recordings?ds-user=user-mateo&ds-recordings=2",
-  );
+    const viewRecordings = page.getByRole("link", { name: "View recordings", exact: true });
+    await expect(viewRecordings).toHaveAttribute(
+      "href",
+      "/recordings?ds-user=user-mateo&ds-recordings=2",
+    );
 
-  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
-  await expect(page.getByText(/^Recording [12]$/)).toHaveCount(0);
-  await expect(page.getByText(/^Preview from /)).toHaveCount(0);
-  await expect(page.getByRole("img", { name: /recording preview$/ })).toHaveCount(2);
-  await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(2);
-  await expect(page.locator("video")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
+    await expect(page.getByText(/^Recording [12]$/)).toHaveCount(0);
+    await expect(page.getByText(/^Preview from /)).toHaveCount(0);
+    await expect(page.getByRole("img", { name: /recording preview$/ })).toHaveCount(2);
+    await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(2);
+    await expect(page.locator("video")).toHaveCount(0);
+    await page.screenshot({
+      path: testInfo.outputPath(`analytics-${viewport.width}.png`),
+      fullPage: true,
+    });
 
-  const firstPlay = page.getByRole("button", { name: "Play Recording 1: Palette Pilot" });
-  await firstPlay.focus();
-  await page.keyboard.press("Enter");
-  await expect(page.locator('video[aria-label="Recording 1: Palette Pilot"]')).toBeVisible();
-  await expect(page.locator("video")).toHaveCount(1);
+    const firstPlay = page.getByRole("button", { name: "Play Recording 1: Palette Pilot" });
+    await firstPlay.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(
+      /\/recordings\?ds-user=user-mateo&ds-recordings=2&response=response-palette-2$/,
+    );
+    await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Recording 1 of 2: Palette Pilot", { exact: true })).toBeVisible();
+    await expect(page.locator("video")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Play Recording 2: Palette Pilot" }).click();
-  await expect(page.locator('video[aria-label="Recording 2: Palette Pilot"]')).toBeVisible();
-  await expect(page.locator('video[aria-label="Recording 1: Palette Pilot"]')).toHaveCount(0);
-  await expect(page.locator("video")).toHaveCount(1);
+    await page.goBack();
+    await page.getByRole("button", { name: "Play Recording 2: Palette Pilot" }).click();
+    await expect(page).toHaveURL(
+      /\/recordings\?ds-user=user-mateo&ds-recordings=2&response=response-palette-1$/,
+    );
+    await expect(page.getByText("Recording 2 of 2", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Recording 2 of 2: Palette Pilot", { exact: true })).toBeVisible();
+    await expect(page.locator("video")).toHaveCount(1);
+    await page.screenshot({
+      path: testInfo.outputPath(`selected-recording-${viewport.width}.png`),
+      fullPage: true,
+    });
 
-  await viewRecordings.click();
-  await expect(page).toHaveURL(/\/recordings\?/);
-  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
-});
+    await page.goBack();
+    await viewRecordings.click();
+    await expect(page).toHaveURL(/\/recordings\?/);
+    await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+  });
+}
 
 test("Analytics exposes report actions and its empty state", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
   await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
-  await expect(
-    page.getByRole("link", { name: "View Palette Pilot's recording", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "View recordings", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(1);
   await expect(page.getByText("Recording 1", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/^Preview from /)).toHaveCount(0);
@@ -1377,7 +1401,7 @@ test("Analytics exposes report actions and its empty state", async ({ page }) =>
 
 test("Recording view opens the latest video and browses available recordings", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");
-  await page.getByRole("link", { name: "View Palette Pilot's recordings" }).click();
+  await page.getByRole("link", { name: "View recordings", exact: true }).click();
 
   await expect(page).toHaveURL(/\/recordings\?ds-user=user-mateo&ds-recordings=2$/);
   await expect(page.getByRole("heading", { level: 1, name: "Palette Pilot" })).toBeVisible();
@@ -1388,7 +1412,7 @@ test("Recording view opens the latest video and browses available recordings", a
     }),
   ).toHaveCount(0);
   await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Recording 1 of 2: Palette Pilot")).toBeVisible();
+  await expect(page.getByLabel("Recording 1 of 2: Palette Pilot", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Recording transcript", exact: true }),
   ).toBeVisible();
@@ -1410,12 +1434,13 @@ test("Recording view opens the latest video and browses available recordings", a
   await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
 });
 
-test("Recording view normalizes invalid selections and exposes empty and error states", async ({
+test("Recording view preserves invalid selections and exposes empty and error states", async ({
   page,
 }) => {
   await page.goto("/recordings?ds-user=user-mateo&ds-recordings=2&response=missing-recording");
-  await expect(page).not.toHaveURL(/response=missing-recording/);
-  await expect(page.getByText("Recording 1 of 2", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/response=missing-recording/);
+  await expect(page.getByRole("heading", { name: "Recording unavailable" })).toBeVisible();
+  await expect(page.locator("video")).toHaveCount(0);
 
   await page.goto("/recordings?ds-user=user-mateo");
   await expect(
@@ -1457,7 +1482,7 @@ for (const viewport of [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
 ]) {
-  test(`Earn platform preferences stay saved across visits at ${viewport.width}px`, async ({
+  test(`Earn saves platform preferences and applies desktop visit defaults at ${viewport.width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(viewport);
@@ -1505,7 +1530,9 @@ for (const viewport of [
     await expect(page.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
     await expect(dialog).not.toBeVisible();
     await page.getByRole("button", { name: "Filters", exact: true }).click();
-    await expect(page.getByRole("checkbox", { name: "Web", exact: true })).not.toBeChecked();
+    // Both viewport sizes use a desktop browser. Saved onboarding stays confirmed,
+    // while a new desktop visit intentionally starts with website tests.
+    await expect(page.getByRole("checkbox", { name: "Web", exact: true })).toBeChecked();
     await page.screenshot({ path: testInfo.outputPath("saved-preferences-return-visit.png") });
   });
 }
@@ -1678,6 +1705,8 @@ test("tester Earn separates locked progress from unlocked paid availability", as
 
   await page.goto("/earn?ds-tester=unlocked&ds-paid=1");
   await expect(page.getByRole("heading", { name: "Paid tests unlocked" })).toBeVisible();
+  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  await page.getByRole("checkbox", { name: "iOS", exact: true }).check();
   await expect(page.getByRole("heading", { name: "Paid Research Preview" })).toBeVisible();
   await expect(page.getByText("Paid test", { exact: true })).toBeVisible();
 

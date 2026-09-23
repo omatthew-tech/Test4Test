@@ -1,8 +1,8 @@
 /* Generated from design-system/tokens/source/tokens.json.
- * Source SHA-256: 20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa
+ * Source SHA-256: 20dc32da0c6285748c7a69c1218af52dc4e3920c134df5cf60c8b45f0b519f70
  * Do not edit manually.
  */
-export const tokenSourceHash = "20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa" as const;
+export const tokenSourceHash = "20dc32da0c6285748c7a69c1218af52dc4e3920c134df5cf60c8b45f0b519f70" as const;
 
 export const tokens = {
   "component.button.primary.background.default": {
@@ -87,6 +87,27 @@ export const tokens = {
       ],
       "alpha": 1,
       "hex": "#007BAE"
+    }
+  },
+  "component.video-player.preview-blur": {
+    "type": "dimension",
+    "value": "8px",
+    "dtcgValue": {
+      "value": 8,
+      "unit": "px"
+    }
+  },
+  "component.video-player.preview-scrim": {
+    "type": "color",
+    "value": "rgba(22, 27, 32, 0.8)",
+    "dtcgValue": {
+      "colorSpace": "srgb",
+      "components": [
+        0.086275,
+        0.105882,
+        0.12549
+      ],
+      "alpha": 0.8
     }
   },
   "primitive.border.width.default": {

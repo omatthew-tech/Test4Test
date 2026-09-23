@@ -31,6 +31,17 @@ export function MessagesPage() {
     }
   }
   const suffix = fixtureSearch.size ? `?${fixtureSearch}` : "";
+  if (!selected && !loading && !error && !inbox.items.length) {
+    return (
+      <AppShell>
+        <h1 className="ds-sr-only">Messages</h1>
+        <p>
+          You have no messages. Go to <Link to={`/analytics${suffix}`}>your recordings</Link> and
+          send someone a message there.
+        </p>
+      </AppShell>
+    );
+  }
   return (
     <AppShell title="Messages">
       <div className={styles.layout} data-selected={selected}>

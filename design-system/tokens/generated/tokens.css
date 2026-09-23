@@ -1,5 +1,5 @@
 /* Generated from design-system/tokens/source/tokens.json.
- * Source SHA-256: 20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa
+ * Source SHA-256: 20dc32da0c6285748c7a69c1218af52dc4e3920c134df5cf60c8b45f0b519f70
  * Do not edit manually.
  */
 :root {
@@ -9,6 +9,8 @@
   --ds-component-field-background: #FFFFFF;
   --ds-component-field-border: #D9DFE3;
   --ds-component-field-border-focus: #007BAE;
+  --ds-component-video-player-preview-blur: 8px;
+  --ds-component-video-player-preview-scrim: rgba(22, 27, 32, 0.8);
   --ds-primitive-border-width-default: 1px;
   --ds-primitive-border-width-focus: 2px;
   --ds-primitive-breakpoint-large: 1024px;

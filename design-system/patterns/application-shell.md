@@ -20,14 +20,14 @@ contracts rather than styling choices.
 Signed-in founder navigation contains Earn, Share, and Analyze. Tester navigation contains Earn.
 Messages belongs in the account dropdown and includes the total unread message count when positive.
 Both account types can open the private inbox and conversation routes. Secondary account destinations
-belong in the profile dropdown: Profile, a separator, Messages, My reviews, New app, then another separator
+belong in the profile dropdown: Profile, a separator, Messages, My reviews, New app, Buy credits, then another separator
 and Sign out. Tester accounts retain a dropdown with Profile, Messages, and a separated Sign out
 action. Sign out belongs in this menu rather than in the Profile page content. Use `Menu` with an `IconButton` trigger named "Profile
 menu" and an outlined Lucide user icon; do not show initials or personal images.
 
 On desktop the profile dropdown aligns to the end of its trigger. On mobile, pass the same
 destinations and sign-out action through `TopNavigation.mobileAccountItems` to render a separate
-Account navigation group directly below the primary links. Preserve New app and My reviews for
+Account navigation group directly below the primary links. Preserve New app, My reviews, and Buy credits for
 founders and omit them for testers. Optional `NavigationItem.icon` values appear only on mobile.
 Guest Sign in and Get started actions share an equal-width row beneath a divider. The panel uses
 semantic surface, border, radius, shadow, spacing, and typography tokens, with a viewport-limited

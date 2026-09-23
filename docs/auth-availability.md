@@ -44,7 +44,8 @@ schema, or paid compute configuration were changed.
 - OTP sends and verifications are not automatically replayed. A timed-out send
   may have reached the server, so blind retries could send duplicate emails or
   invalidate codes. Only a successful send creates a local OTP challenge.
-- Database requests, Edge Functions, and recording uploads retain their existing
+- The test-account login Edge Function uses the same deadline and error feedback.
+  Database requests, other Edge Functions, and recording uploads retain their existing
   transport behavior. Session persistence and refresh remain with the Supabase SDK.
 
 ## Read-only health check
@@ -96,3 +97,56 @@ and pass in the targeted auth suite. This is not a full release-validated state.
 The production recovery is complete and the dashboard reports Healthy. The
 application safeguards remain local pending deployment approval. No full real
 user OTP sign-in has yet been confirmed in this investigation.
+
+## September 21, 2026 recurrence (EDT)
+
+The local test-account sign-in stalled and eventually displayed `{}`. Independent
+read-only probes confirmed Auth health and settings both exceeded 15 seconds;
+OTP preflight passed in 72 ms. A database query through the management connector
+failed with `Connection terminated due to connection timeout`, although project
+metadata still reported `ACTIVE_HEALTHY`. Recovery was subsequently confirmed after
+the authorized restart described below.
+
+At approximately 22:07 EDT, the signed-in dashboard reported **Unhealthy**. API
+Gateway logs showed password-token HTTP 522 failures at 21:45:53, 21:46:13,
+21:48:19, and 21:55:58, and two HTTP 524 failures for
+`list_home_trusted_submissions` at 21:46:07. Database observability could not load
+memory, CPU, disk, network, or connection metrics. The dashboard's displayed zero
+database size during this failure is not a valid measurement. The underlying
+host/resource failure remains undetermined. The existing project's restart control
+is available; restarting requires approval because it interrupts production services.
+
+With the owner's explicit approval, a full project restart was requested at
+02:09:28 UTC on September 22 (22:09:28 EDT on September 21). Supabase acknowledged
+the request and reported `RESTARTING`. Postgres started at 02:14:38.901 UTC, and a
+02:15:03 UTC query returned 12 connections with zero waiting locks. Auth health and
+settings recovered around 02:16 UTC, but an initial test-account login still hit
+HTTP 504 while the database API readiness checks returned 503. The zero-row database
+API probe subsequently returned HTTP 200. A deliberate login retry succeeded:
+by 02:19:11 UTC the authorized test account had reached `/earn`, loaded the test
+listings, and displayed its welcome dialog. This confirms login recovery, not just
+the health endpoint. No second restart was issued.
+
+Post-restart metrics showed roughly 0.05 GB of database data on an 8 GB disk;
+CPU and memory history remained unavailable. The queries observed no blocked
+database sessions. These post-recovery measurements do not establish the resource
+conditions that caused the outage. This is a recurrence of the earlier availability
+incident; a provider/resource investigation remains appropriate if it happens again.
+
+The test-account flow invokes `/functions/v1/test-account-login`, which was outside
+the existing `/auth/v1/` deadline. That exact function now receives the same
+15-second deadline, including response-body reads. Wrapped function timeouts,
+network failures, HTTP 5xx responses, and empty serialized errors receive useful
+feedback. Invalid-passcode and rate-limit messages remain actionable. Requests
+are not automatically replayed. No backend settings or credentials were changed.
+
+Validation: 36 focused auth tests and all eight sign-in route accessibility/visual
+checks passed; the browser displayed the timeout message and released the pending
+button. The changes are **Fast-checked**. The full release gate passed formatting,
+lint, types, and design-system validation, then stopped on five unrelated founder-tour
+tests that require a `window.matchMedia` mock (569 passed, one skipped).
+
+The running local server returned sign-in HTML in 19 ms; a warm browser reload
+rendered the passcode form in 449 ms. An isolated cold Vite dependency optimization
+took 467 ms. These measurements do not reproduce or establish the cause of the
+user's original first-load delay. No Vite configuration change was made.

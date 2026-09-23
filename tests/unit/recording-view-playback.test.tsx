@@ -7,7 +7,12 @@ import { invalidateResponseRecordingUrl } from "../../src/lib/recordings";
 import { RecordingViewPage } from "../../src/pages/RecordingViewPage";
 import type { AppState, ResponseRecording } from "../../src/types";
 
-const backend = vi.hoisted(() => ({ history: vi.fn(), state: null as AppState | null }));
+const backend = vi.hoisted(() => ({
+  history: vi.fn(),
+  openFeedback: vi.fn(),
+  testAccount: false,
+  state: null as AppState | null,
+}));
 vi.mock("../../src/lib/recordingFeedback", () => ({
   loadRecordingRating: vi.fn().mockResolvedValue(null),
   loadRecordingContact: vi.fn().mockResolvedValue(null),
@@ -20,12 +25,22 @@ vi.mock("../../src/lib/recordingTranscript", async (importOriginal) => ({
   requestRecordingTranscript: vi.fn().mockResolvedValue({ transcript: null }),
 }));
 vi.mock("../../src/context/AppStateContext", () => ({
-  useAppState: () => ({ state: backend.state }),
+  useAppState: () => ({
+    state: backend.state,
+    currentUser: { email: backend.testAccount ? "test@test4test.io" : "founder@example.test" },
+    openFeedback: backend.openFeedback,
+  }),
 }));
 vi.mock("../../src/components/Layout", () => ({
-  AppShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
+  AppShell: ({ children, title }: { children: ReactNode; title?: string }) => (
+    <main>
+      {title ? <h1>{title}</h1> : null}
+      {children}
+    </main>
+  ),
 }));
 vi.mock("../../src/lib/supabase", () => ({
+  isTestAccountEmail: (email: string) => email === "test@test4test.io",
   supabaseUrl: "https://project.supabase.co",
   supabasePublishableKey: "publishable-key",
   requireSupabase: () => ({
@@ -68,6 +83,15 @@ function mount(query = "") {
   );
 }
 
+async function endPreview() {
+  await waitFor(() => expect(document.querySelector("video")).not.toBeNull());
+  const video = document.querySelector("video")!;
+  video.pause = vi.fn();
+  video.currentTime = 15;
+  fireEvent.timeUpdate(video);
+  await screen.findByRole("heading", { name: "You're out of credits" });
+}
+
 function requestedMedia() {
   return vi.mocked(fetch).mock.calls.map(([, options]) => JSON.parse(String(options?.body)));
 }
@@ -79,12 +103,161 @@ function signedUrl(url = "https://media.example/current.webm") {
   };
 }
 
+it("plays only the preview before showing the in-player lock and keeps feedback tools unavailable", async () => {
+  backend.openFeedback.mockResolvedValue({
+    status: "insufficient_credits",
+    balance: 0,
+    testBackSubmissionId: "tester-app",
+  });
+  const { container } = mount(`?response=${response.id}`);
+  await endPreview();
+  expect((screen.getByRole("button", { name: "Buy credits" }) as HTMLButtonElement).disabled).toBe(
+    false,
+  );
+  expect(screen.getByRole("button", { name: "Earn credits" })).toBeDefined();
+  expect(container.querySelector("video")?.getAttribute("src")).toBe(
+    "https://media.example/preview.mp4",
+  );
+  expect(backend.history).not.toHaveBeenCalled();
+  expect(requestedMedia()).toEqual([{ responseId: response.id, preview: true }]);
+  expect(screen.queryByRole("group", { name: "Rate video" })).toBeNull();
+});
+
+it("lets the test account preview the page without opening feedback or changing its balance", async () => {
+  backend.testAccount = true;
+  const before = structuredClone(backend.state);
+  const { container } = mount("?preview=out-of-credits&previewTestBack=tester-app");
+  await endPreview();
+  expect((screen.getByRole("button", { name: "Buy credits" }) as HTMLButtonElement).disabled).toBe(
+    false,
+  );
+  expect(screen.getByRole("button", { name: "Earn credits" })).toBeDefined();
+  fireEvent.focus(window);
+  expect(backend.openFeedback).not.toHaveBeenCalled();
+  expect(backend.history).not.toHaveBeenCalled();
+  expect(fetch).not.toHaveBeenCalled();
+  expect(container.querySelector("video")?.getAttribute("src")).toBe(
+    "/videos/feedback-preview-demo.mp4",
+  );
+  expect(backend.state).toEqual(before);
+});
+
+it("supports the test-account preview without any received recordings", async () => {
+  backend.testAccount = true;
+  backend.state!.responses = [];
+  mount("?preview=out-of-credits");
+  await endPreview();
+  expect(screen.queryByRole("button", { name: "Test back" })).toBeNull();
+  expect(backend.openFeedback).not.toHaveBeenCalled();
+});
+
+it("rejects previews for regular accounts without opening or charging for real feedback", async () => {
+  const { container } = mount("?preview=out-of-credits&previewTestBack=tester-app");
+  await screen.findByRole("heading", { name: "Test account required" });
+  expect(container.querySelector("video")).toBeNull();
+  expect(screen.queryByText("You're out of credits")).toBeNull();
+  expect(backend.openFeedback).not.toHaveBeenCalled();
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+it("omits test back when the tester has no eligible app and keeps the target URL", async () => {
+  backend.openFeedback.mockResolvedValue({
+    status: "insufficient_credits",
+    balance: -1,
+    testBackSubmissionId: null,
+  });
+  mount(`?response=${response.id}&version=${original.id}`);
+  await endPreview();
+  expect(screen.queryByRole("button", { name: "Test back" })).toBeNull();
+  expect(backend.openFeedback).toHaveBeenCalledWith(response.id, original.id);
+});
+
+it("does not spend a credit on a fallback recording for an invalid link", async () => {
+  mount("?response=missing");
+  await screen.findByRole("heading", { name: "Recording unavailable" });
+  expect(backend.openFeedback).not.toHaveBeenCalled();
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+it("distinguishes a temporary access failure from insufficient credits and can retry", async () => {
+  backend.openFeedback
+    .mockRejectedValueOnce(new Error("Connection interrupted"))
+    .mockResolvedValue({ status: "unlocked", balance: 0 });
+  const { container } = mount();
+  await screen.findByText("Connection interrupted");
+  expect(screen.queryByText("You're out of credits")).toBeNull();
+  expect(fetch).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+});
+
+it("opens successfully after spending the last credit without another balance gate", async () => {
+  backend.openFeedback.mockResolvedValue({ status: "unlocked", balance: 0 });
+  const { container } = mount();
+  await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+  expect(screen.queryByText("You're out of credits")).toBeNull();
+  expect(backend.openFeedback).toHaveBeenCalledTimes(1);
+});
+
+it("retries the same response and revision after returning with an earned credit", async () => {
+  backend.history.mockResolvedValue({ data: [latest, original], error: null });
+  backend.openFeedback
+    .mockResolvedValueOnce({ status: "insufficient_credits", balance: 0 })
+    .mockResolvedValue({ status: "unlocked", balance: 0 });
+  const { container } = mount(`?response=${response.id}&version=${original.id}`);
+  await endPreview();
+  fireEvent.focus(window);
+  await waitFor(() =>
+    expect(container.querySelector("video")?.getAttribute("src")).toBe(
+      "https://media.example/current.webm",
+    ),
+  );
+  expect(backend.openFeedback.mock.calls).toEqual([
+    [response.id, original.id],
+    [response.id, original.id],
+  ]);
+});
+
+it("keeps free feedback reachable from a locked recording at zero credits", async () => {
+  const free = { ...response, id: "free-response", submittedAt: "2026-03-24T13:20:00Z" };
+  backend.state!.responses = [{ ...response, recording: null, hasRecording: true }, free];
+  backend.openFeedback.mockImplementation(async (id) => ({
+    status: id === response.id ? "insufficient_credits" : "free",
+    balance: 0,
+  }));
+  const { container } = mount(`?response=${response.id}`);
+  await endPreview();
+  fireEvent.click(screen.getByRole("button", { name: "Next recording" }));
+  await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+  expect(requestedMedia()).toEqual([
+    { responseId: response.id, preview: true },
+    { responseId: free.id, download: false },
+  ]);
+});
+
 beforeEach(() => {
+  backend.testAccount = false;
   vi.stubEnv("VITE_DS_FIXTURES", "0");
   backend.state = { ...seededState, currentUserId: "user-mateo", responses: [response] };
   backend.history.mockReset().mockResolvedValue({ data: [], error: null });
+  backend.openFeedback.mockReset().mockResolvedValue({ status: "free", balance: 0 });
   invalidateResponseRecordingUrl(response.id);
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(signedUrl()));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockImplementation(async (_url, options) =>
+      JSON.parse(String(options?.body)).preview
+        ? {
+            ok: true,
+            json: async () => ({
+              ok: true,
+              status: "ready",
+              url: "https://media.example/preview.mp4",
+              previewSeconds: 15,
+            }),
+          }
+        : signedUrl(),
+    ),
+  );
 });
 afterEach(() => {
   cleanup();

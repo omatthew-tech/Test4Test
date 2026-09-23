@@ -64,6 +64,7 @@ import styles from "./TestSessionPage.module.css";
 import { getActiveQuestionSet, getActiveSubmissionVersion } from "../lib/selectors";
 import { trackEventOncePerSession } from "../lib/analytics";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
+import { testFeedbackSource } from "../lib/feedbackSource";
 import { reportTest } from "../lib/testReports";
 import { ProductType, ResponseRecording, TestReportReason } from "../types";
 
@@ -630,6 +631,11 @@ export function TestSessionPage({
   const sharedCustomMessage =
     submission?.publicShareMessage?.trim() || searchParams.get("message")?.trim() || "";
   const initialRecordingSessionRef = useRef(loadRecordingTestSession(sessionKey));
+  const feedbackSource = testFeedbackSource(
+    isSlugSharedVisit || searchParams.get("shared") === "1",
+    searchParams,
+    initialRecordingSessionRef.current?.feedbackSource,
+  );
   const hasHandledRecordingRecoveryRef = useRef(false);
   const isUnmountingRef = useRef(false);
   const microphoneAudioContextRef = useRef<AudioContext | null>(null);
@@ -2434,6 +2440,7 @@ export function TestSessionPage({
         chosenProductType: validChosenProductType,
         confirmedRecording,
         recording: uploadedRecording,
+        feedbackSource,
       });
     });
   }, [
@@ -2445,6 +2452,7 @@ export function TestSessionPage({
     recordingSessionStorageIds,
     selectedProductType,
     uploadedRecording,
+    feedbackSource,
   ]);
 
   useEffect(() => {
@@ -2670,7 +2678,9 @@ export function TestSessionPage({
     }
 
     if (!currentUser) {
-      navigate(`/sign-in?returnTo=${encodeURIComponent(`/test/${submission.id}`)}`);
+      navigate(
+        `/sign-in?returnTo=${encodeURIComponent(`/test/${testRef}${searchParams.size ? `?${searchParams}` : ""}`)}`,
+      );
       return;
     }
 
@@ -2729,6 +2739,7 @@ export function TestSessionPage({
               uploadedRecording,
               questionSet.id,
               activeSubmissionVersion.id,
+              feedbackSource,
             );
       setMessage(result.message);
       if (result.ok) {

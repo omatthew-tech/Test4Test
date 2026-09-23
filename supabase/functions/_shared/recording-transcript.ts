@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { receivedFeedbackAccess } from "./feedback-access.ts";
 
 export class RecordingTranscriptError extends Error {
   constructor(
@@ -16,7 +17,7 @@ const missingSchema = (code?: string) =>
   ["PGRST205", "42P01", "42703", "PGRST204"].includes(code ?? "");
 
 /** Only app owners may read transcripts. Never substitute another recording version. */
-async function readSource(
+export async function readSource(
   admin: SupabaseClient,
   userId: string,
   responseId: string,
@@ -24,7 +25,7 @@ async function readSource(
 ) {
   const response = await admin
     .from("test_responses")
-    .select(`submission_id, ${sourceColumns}`)
+    .select(`submission_id, feedback_source, ${sourceColumns}`)
     .eq("id", responseId)
     .maybeSingle();
   if (response.error) throw new Error("Recording lookup failed");
@@ -37,6 +38,11 @@ async function readSource(
   if (owner.error) throw new Error("Owner lookup failed");
   if (owner.data?.user_id !== userId)
     throw new RecordingTranscriptError("Recording unavailable.", 404);
+  if (response.data.feedback_source === "earn") {
+    const access = await receivedFeedbackAccess(admin, userId, [responseId]);
+    if (access.get(responseId) === "locked")
+      throw new RecordingTranscriptError("Open this feedback before viewing its transcript.", 403);
+  }
   let source = response.data;
   if (versionId) {
     const version = await admin

@@ -8,6 +8,7 @@ import {
   type RecordingThumbnailUploadRow,
 } from "../_shared/recording-thumbnails.ts";
 import { createR2PresignedUrl, getR2RecordingEnvironment } from "../_shared/r2-recordings.ts";
+import { receivedFeedbackAccess, type FeedbackAccess } from "../_shared/feedback-access.ts";
 import {
   createRecordingAdminClient,
   getRecordingEnvironment,
@@ -25,6 +26,7 @@ interface SubmissionRow {
 }
 
 interface ResponseRow {
+  feedback_source: string;
   id: string;
   submission_id: string;
   submitted_at: string;
@@ -191,7 +193,7 @@ Deno.serve(async (request) => {
   let responseQuery = admin
     .from("test_responses")
     .select(
-      "id, submission_id, submitted_at, duration_seconds, recording_bucket, recording_path, recording_expires_at, recording_thumbnail_bucket, recording_thumbnail_path, recording_thumbnail_content_type, recording_thumbnail_size_bytes, recording_thumbnail_width, recording_thumbnail_height, recording_thumbnail_status, recording_thumbnail_attempt_count, recording_thumbnail_last_attempt_at, recording_thumbnail_error, recording_thumbnail_timestamp_ms, recording_thumbnail_duration_ms, recording_thumbnail_generation_version",
+      "id, submission_id, feedback_source, submitted_at, duration_seconds, recording_bucket, recording_path, recording_expires_at, recording_thumbnail_bucket, recording_thumbnail_path, recording_thumbnail_content_type, recording_thumbnail_size_bytes, recording_thumbnail_width, recording_thumbnail_height, recording_thumbnail_status, recording_thumbnail_attempt_count, recording_thumbnail_last_attempt_at, recording_thumbnail_error, recording_thumbnail_timestamp_ms, recording_thumbnail_duration_ms, recording_thumbnail_generation_version",
     )
     .in("submission_id", [...submissionById.keys()])
     .not("recording_bucket", "is", null)
@@ -209,11 +211,35 @@ Deno.serve(async (request) => {
     return recordingJson({ error: responseError.message }, 500);
   }
 
-  const responses = (responseData ?? []) as ResponseRow[];
+  const allResponses = (responseData ?? []) as ResponseRow[];
+  let access: Map<string, FeedbackAccess>;
+  try {
+    access = await receivedFeedbackAccess(
+      admin,
+      user.id,
+      allResponses.filter((row) => row.feedback_source === "earn").map((row) => row.id),
+    );
+  } catch {
+    return recordingJson({ error: "Feedback access could not be verified. Try again." }, 503);
+  }
+  const responses = allResponses.filter((row) => access.get(row.id) !== "locked");
+  const lockedRecordings = allResponses
+    .filter((row) => access.get(row.id) === "locked")
+    .map((row) => ({
+      responseId: row.id,
+      submissionId: row.submission_id,
+      productName: submissionById.get(row.submission_id)?.product_name ?? "Recording",
+      submittedAt: row.submitted_at,
+      durationSeconds: row.duration_seconds,
+      feedbackAccess: "locked",
+      thumbnailStatus: "ready",
+      thumbnailError: null,
+      thumbnail: null,
+    }));
   if (responses.length === 0) {
     return recordingJson({
       ok: true,
-      recordings: [],
+      recordings: lockedRecordings,
       expiresInSeconds: RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
     });
   }
@@ -309,6 +335,7 @@ Deno.serve(async (request) => {
     const isFailed = Boolean(signingError || status === "failed");
 
     return {
+      feedbackAccess: access.get(response.id) ?? "free",
       responseId: response.id,
       submissionId: response.submission_id,
       productName: submission?.product_name ?? "Recording",
@@ -341,7 +368,10 @@ Deno.serve(async (request) => {
 
   return recordingJson({
     ok: true,
-    recordings,
+    recordings: [...recordings, ...lockedRecordings].sort(
+      (a, b) =>
+        b.submittedAt.localeCompare(a.submittedAt) || a.responseId.localeCompare(b.responseId),
+    ),
     expiresInSeconds: RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
   });
 });

@@ -165,7 +165,7 @@ afterEach(() => {
 it.each([
   ["/profile", ["profiles"]],
   ["/credits", ["profiles", "credit_transactions"]],
-  ["/recordings", ["profiles", "submissions"]],
+  ["/recordings", ["profiles", "submissions", "credit_transactions"]],
   ["/share", ["profiles", "submissions"]],
 ])("loads only the data required by %s and handles INITIAL_SESSION once", async (route, tables) => {
   await mount(route as string);

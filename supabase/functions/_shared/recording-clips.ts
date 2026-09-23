@@ -1,5 +1,6 @@
 import { ClipError, type ClipAdmin } from "./clip-http.ts";
 import { getR2RecordingEnvironment, r2Fetch } from "./r2-recordings.ts";
+import { receivedFeedbackAccess } from "./feedback-access.ts";
 
 export async function clipSource(
   admin: ClipAdmin,
@@ -10,7 +11,7 @@ export async function clipSource(
   const { data: response, error } = await admin
     .from("test_responses")
     .select(
-      "id, submission_id, tester_user_id, recording_bucket, recording_path, recording_deleted_at",
+      "id, submission_id, tester_user_id, feedback_source, recording_bucket, recording_path, recording_deleted_at",
     )
     .eq("id", responseId)
     .maybeSingle();
@@ -26,6 +27,11 @@ export async function clipSource(
   if (!submission) throw new ClipError("This recording is no longer available.", 410);
   if (userId && userId !== response.tester_user_id && userId !== submission.user_id)
     throw new ClipError("You do not have access to this recording.", 403);
+  if (userId && response.feedback_source === "earn") {
+    const access = await receivedFeedbackAccess(admin, submission.user_id, [responseId]);
+    if (access.get(responseId) === "locked")
+      throw new ClipError("This feedback must be opened before creating or accessing clips.", 403);
+  }
   let source = response;
   if (versionId) {
     const { data: version, error: versionError } = await admin

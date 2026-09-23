@@ -155,26 +155,25 @@ function HomeTrustedTestCard({
   logoUrl: string | null;
   duplicate: boolean;
 }) {
+  const displayName =
+    submission.id === "3e7dee0a-ab78-40c9-a5aa-56b0bbafc374" ? "Pinch" : submission.productName;
+
   return (
     <EarnTestCard
       className={styles.trustedByCard}
       title={
         <Link
-          aria-label={`Open ${submission.productName} test`}
+          aria-label={`Open ${displayName} test`}
           aria-description="Opens in a new tab"
           className={`${styles.trustedByCardTitle} ${styles.trustedByOpenLink}`}
-          title={`Open ${submission.productName} test (opens in a new tab)`}
+          title={`Open ${displayName} test (opens in a new tab)`}
           to={`/test/${submission.id}`}
           target="_blank"
           rel="noopener noreferrer"
           tabIndex={duplicate ? -1 : undefined}
         >
-          <HomeTrustedLogo
-            key={logoUrl ?? "initials"}
-            name={submission.productName}
-            url={logoUrl}
-          />
-          <span className={styles.trustedByProductName}>{submission.productName}</span>
+          <HomeTrustedLogo key={logoUrl ?? "initials"} name={displayName} url={logoUrl} />
+          <span className={styles.trustedByProductName}>{displayName}</span>
         </Link>
       }
       description={null}
@@ -476,6 +475,7 @@ function HomeHowItWorksSection() {
                   <div
                     aria-hidden="true"
                     className={styles.howItWorksFlow}
+                    data-contained-horizontal-overflow="true"
                     data-testid="home-how-it-works-flow"
                   >
                     <span className={styles.howItWorksFlowCyan} />
@@ -512,7 +512,7 @@ function HomeHowItWorksSection() {
 
 const freeFeedbackMethods = [
   {
-    title: "Earn 1:1 credits",
+    title: "Earn credits by testing apps",
     description: "Earn credits 1:1 (we don't take a cut)",
     id: "home-test-other-founders-title",
     poster: "/videos/home-earn-credit-poster.webp",

@@ -1,5 +1,6 @@
 import { canReviseFeedback } from "../lib/starRatings";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { earnTestHref } from "../lib/feedbackSource";
 import {
   ArrowRight,
   Check,
@@ -30,8 +31,10 @@ import { EditSubmissionModal } from "../components/EditSubmissionModal";
 import { FounderWelcomeTour } from "./FounderWelcomeTour";
 import {
   saveFounderWelcome,
+  saveTestAccountWelcomeReplay,
   type FounderWelcomeOutcome,
   type FounderWelcomeStatus,
+  type TestAccountWelcomeReplay,
 } from "../lib/founderWelcome";
 import {
   readFounderWelcomeFixture,
@@ -353,6 +356,7 @@ function EarnPageContent() {
   const [accountPreferencesError, setAccountPreferencesError] = useState("");
   const [preferencesRetry, setPreferencesRetry] = useState(0);
   const welcomeFinished = useRef(false);
+  const welcomeReplay = useRef<TestAccountWelcomeReplay | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -870,7 +874,10 @@ function EarnPageContent() {
     void loadEarnPlatformPreferences(userId)
       .then(async (preferences) => {
         if (cancelled) return;
-        if (!welcomeFinished.current) setWelcomeTourStatus(preferences.welcomeStatus);
+        welcomeReplay.current = preferences.welcomeReplay ?? null;
+        if (!welcomeFinished.current) {
+          setWelcomeTourStatus(welcomeReplay.current?.welcomeStatus ?? preferences.welcomeStatus);
+        }
         setAccountPreferencesError("");
         setAccountPreferencesReady(true);
         if (version !== platformSelectionVersion.current) return;
@@ -882,7 +889,9 @@ function EarnPageContent() {
           setSelectedProductTypes(next);
           setPendingProductTypes(next);
         }
-        setIsPlatformModalOpen(!preferences.confirmed && !isConfirmed);
+        setIsPlatformModalOpen(
+          welcomeReplay.current?.platformPending ?? (!preferences.confirmed && !isConfirmed),
+        );
 
         if (preferences.confirmed) {
           saveStoredProductTypes(userId, next);
@@ -923,6 +932,9 @@ function EarnPageContent() {
     if (isConfigured) await saveFounderWelcome(currentUser.id, outcome);
     else if (designSystemFixturesEnabled) saveFounderWelcomeFixture(currentUser.id, outcome);
     if (!mounted.current) return;
+    welcomeReplay.current = saveTestAccountWelcomeReplay(welcomeReplay.current, {
+      welcomeStatus: outcome,
+    });
     welcomeFinished.current = true;
     setWelcomeTourStatus(outcome);
   };
@@ -1028,6 +1040,9 @@ function EarnPageContent() {
 
   const closePlatformModal = () => {
     if (platformSaveInFlight.current) return;
+    welcomeReplay.current = saveTestAccountWelcomeReplay(welcomeReplay.current, {
+      platformPending: false,
+    });
     setPendingProductTypes(selectedProductTypes);
     setPlatformSaveError("");
     setIsPlatformModalOpen(false);
@@ -1069,6 +1084,9 @@ function EarnPageContent() {
       setSelectedProductTypes(next);
       setPendingProductTypes(next);
       if (closeModal) {
+        welcomeReplay.current = saveTestAccountWelcomeReplay(welcomeReplay.current, {
+          platformPending: false,
+        });
         setIsPlatformModalOpen(false);
       }
       setServerEarnError("");
@@ -1747,7 +1765,20 @@ function EarnPageContent() {
       </div>
 
       {isWelcomeTourOpen && accountPreferencesReady ? (
-        <FounderWelcomeTour onFinish={finishWelcomeTour} />
+        <FounderWelcomeTour
+          appName={
+            privatePlacementSubmission?.productName ||
+            visibilitySummary?.productName ||
+            ownedSubmissions[0]?.productName ||
+            undefined
+          }
+          appDescription={
+            privatePlacementSubmission?.description ||
+            (!visibilitySummary?.submissionId ? ownedSubmissions[0]?.description : undefined) ||
+            undefined
+          }
+          onFinish={finishWelcomeTour}
+        />
       ) : null}
       {isPlatformModalOpen && accountPreferencesReady && !isWelcomeTourOpen ? (
         <EarnPlatformModal
@@ -2022,11 +2053,6 @@ function EarnVisibilityPanel({
               </Button>
             ) : null}
           </div>
-          {showImproveRate && !hasTestBackTarget ? (
-            <small className="earn-visibility__detail-note">
-              No available test-back target right now.
-            </small>
-          ) : null}
 
           <div className="earn-visibility__detail-row earn-visibility__detail-row--action">
             <strong>{satisfactionValue}</strong>
@@ -2348,7 +2374,7 @@ function EarnRow({
       }
       action={{
         label: hasDraftProgress ? "Resume test" : "View test",
-        to: `/test/${submission.id}`,
+        to: earnTestHref(submission.id),
         onClick: savePlacementSnapshot,
       }}
       reputation={

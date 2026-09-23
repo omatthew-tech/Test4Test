@@ -4,17 +4,21 @@ export const AUTH_TIMEOUT_MESSAGE =
 export const AUTH_UNAVAILABLE_MESSAGE =
   "The sign-in service is temporarily unavailable. Please try again in a few minutes.";
 
-/** Bound Auth requests without retrying sends, verification, or token rotation. */
+/** Bound sign-in requests without retrying sends, verification, or token rotation. */
 export function createAuthFetch(
   supabaseUrl: string,
   fetcher: typeof fetch = fetch,
   timeoutMs = AUTH_REQUEST_TIMEOUT_MS,
 ): typeof fetch {
   const authUrl = new URL(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/`);
+  const testAccountPath = "/functions/v1/test-account-login";
 
   return async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input);
-    if (url.origin !== authUrl.origin || !url.pathname.startsWith(authUrl.pathname)) {
+    if (
+      url.origin !== authUrl.origin ||
+      (!url.pathname.startsWith(authUrl.pathname) && url.pathname !== testAccountPath)
+    ) {
       return fetcher(input, init);
     }
 
@@ -51,6 +55,8 @@ export function createAuthFetch(
 export function getAuthErrorMessage(error: { message: string; name?: string; status?: number }) {
   const isConnectionFailure =
     error.name === "AuthRetryableFetchError" ||
+    error.name === "FunctionsFetchError" ||
+    error.name === "FunctionsRelayError" ||
     /failed to fetch|fetch failed|load failed|networkerror|network request failed/i.test(
       error.message,
     );
@@ -62,6 +68,40 @@ export function getAuthErrorMessage(error: { message: string; name?: string; sta
   if (isConnectionFailure || (error.status !== undefined && error.status >= 500)) {
     return AUTH_UNAVAILABLE_MESSAGE;
   }
+  if (!error.message.trim() || /^(?:\{\s*\}|\[\s*\]|null|undefined)$/.test(error.message.trim())) {
+    return AUTH_UNAVAILABLE_MESSAGE;
+  }
   // Preserve actionable API messages such as rate limits and invalid/expired codes.
   return error.message;
+}
+
+/** Edge Functions wrap transport failures in context and HTTP errors in a Response. */
+export async function getTestAccountLoginErrorMessage(error: unknown, fallbackMessage: string) {
+  const context =
+    typeof error === "object" && error !== null && "context" in error ? error.context : null;
+
+  if (context instanceof Response) {
+    if (context.status >= 500) return AUTH_UNAVAILABLE_MESSAGE;
+    const payload = (await context
+      .clone()
+      .json()
+      .catch(() => null)) as { error?: unknown; message?: unknown } | null;
+    const message =
+      typeof payload?.error === "string"
+        ? payload.error
+        : typeof payload?.message === "string"
+          ? payload.message
+          : fallbackMessage;
+    return getAuthErrorMessage({ message, status: context.status });
+  }
+
+  if (
+    typeof context === "object" &&
+    context !== null &&
+    "message" in context &&
+    context.message === AUTH_TIMEOUT_MESSAGE
+  ) {
+    return AUTH_TIMEOUT_MESSAGE;
+  }
+  return error instanceof Error ? getAuthErrorMessage(error) : fallbackMessage;
 }

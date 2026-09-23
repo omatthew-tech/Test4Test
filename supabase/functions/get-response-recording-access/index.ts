@@ -17,6 +17,8 @@ import {
   RecordingShareError,
   type ShareSource,
 } from "../_shared/recording-share.ts";
+import { receivedFeedbackAccess } from "../_shared/feedback-access.ts";
+import { feedbackPreview } from "../_shared/feedback-preview.ts";
 
 interface RecordingAccessRequest {
   responseId?: string;
@@ -24,9 +26,11 @@ interface RecordingAccessRequest {
   download?: boolean;
   action?: "share";
   shareToken?: string;
+  preview?: boolean;
 }
 
 interface ResponseRow {
+  feedback_source: string;
   id: string;
   submission_id: string;
   tester_user_id: string;
@@ -35,6 +39,7 @@ interface ResponseRow {
   recording_file_name: string | null;
   recording_expires_at: string | null;
   recording_deleted_at: string | null;
+  duration_seconds: number;
 }
 
 interface SubmissionRow {
@@ -68,6 +73,15 @@ Deno.serve(async (request) => {
     return recordingJson({ error: "Invalid request." }, 400);
   }
   const payload = body as RecordingAccessRequest;
+  if (
+    payload.preview !== undefined &&
+    (payload.preview !== true ||
+      payload.download !== undefined ||
+      payload.action !== undefined ||
+      payload.shareToken !== undefined)
+  ) {
+    return recordingJson({ error: "Invalid recording preview request." }, 400);
+  }
   let sharedSource: ShareSource | null = null;
   let userId = "";
   if (payload.shareToken !== undefined) {
@@ -112,7 +126,7 @@ Deno.serve(async (request) => {
   const { data: responseRow, error: responseError } = await admin
     .from("test_responses")
     .select(
-      "id, submission_id, tester_user_id, recording_bucket, recording_path, recording_file_name, recording_expires_at, recording_deleted_at",
+      "id, submission_id, tester_user_id, feedback_source, duration_seconds, recording_bucket, recording_path, recording_file_name, recording_expires_at, recording_deleted_at",
     )
     .eq("id", responseId)
     .single();
@@ -141,6 +155,28 @@ Deno.serve(async (request) => {
     return recordingJson({ error: "You do not have permission to access this recording." }, 403);
   }
 
+  if (payload.preview && userId !== submissionRecord.user_id) {
+    return recordingJson({ error: "You do not have permission to preview this recording." }, 403);
+  }
+
+  if (
+    !sharedSource &&
+    responseRecord.feedback_source === "earn" &&
+    (userId === submissionRecord.user_id || payload.action === "share")
+  ) {
+    try {
+      const access = await receivedFeedbackAccess(admin, submissionRecord.user_id, [responseId]);
+      if (access.get(responseId) === "locked" && !payload.preview) {
+        return recordingJson(
+          { code: "FEEDBACK_LOCKED", error: "Open this feedback before accessing its recording." },
+          403,
+        );
+      }
+    } catch {
+      return recordingJson({ error: "Feedback access could not be verified. Try again." }, 503);
+    }
+  }
+
   if (sharedSource) {
     try {
       assertSharedRecordingSource(sharedSource, responseRecord);
@@ -164,7 +200,9 @@ Deno.serve(async (request) => {
     }
     const { data: version, error } = await admin
       .from("test_response_versions")
-      .select("recording_bucket, recording_path, recording_file_name, recording_deleted_at")
+      .select(
+        "recording_bucket, recording_path, recording_file_name, recording_deleted_at, duration_seconds",
+      )
       .eq("id", payload.versionId)
       .eq("response_id", responseId)
       .maybeSingle();
@@ -175,6 +213,25 @@ Deno.serve(async (request) => {
     return recordingJson({ error: "Recording has been deleted." }, 410);
   if (!responseRecord.recording_bucket || !responseRecord.recording_path) {
     return recordingJson({ error: "Recording not available for this response." }, 404);
+  }
+
+  if (payload.preview) {
+    try {
+      const preview = await feedbackPreview(admin, {
+        responseId,
+        versionId: payload.versionId,
+        ownerId: userId,
+        bucket: responseRecord.recording_bucket,
+        path: responseRecord.recording_path,
+        durationSeconds: responseRecord.duration_seconds,
+      });
+      return recordingJson(preview, preview.status === "pending" ? 202 : 200);
+    } catch (error) {
+      return recordingJson(
+        { error: error instanceof Error ? error.message : "Recording preview is unavailable." },
+        503,
+      );
+    }
   }
 
   if (payload.action === "share") {

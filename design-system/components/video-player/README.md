@@ -13,8 +13,8 @@ Native video with familiar playback controls and optional clip handles on a sing
 ## Public API
 
 - Sizes: `responsive`
-- Variants: `playback`, `clipping`
-- States: `paused`, `playing`, `muted`, `focus-visible`, `unavailable`, `fullscreen`
+- Variants: `playback`, `clipping`, `preview`
+- States: `paused`, `playing`, `muted`, `focus-visible`, `unavailable`, `fullscreen`, `locked`
 - Accessible name: Required label names the video and player; each playback control has an explicit label.
 
 ## Accessibility contract
@@ -24,6 +24,7 @@ Native video with familiar playback controls and optional clip handles on a sing
 - Controls remain visible and operable by touch or keyboard
 - Fullscreen includes the timeline and handles when supported
 - Playback errors are announced with recovery text
+- Preview playback stops at its limit or end; the lock region receives focus and retains its actions in fullscreen
 
 ## Keyboard
 

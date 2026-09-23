@@ -1,5 +1,9 @@
 import { UUID_PATTERN } from "../_shared/transcript-contract.ts";
-import { retryCompatibleTranscript } from "../_shared/recording-transcript.ts";
+import {
+  readSource,
+  RecordingTranscriptError,
+  retryCompatibleTranscript,
+} from "../_shared/recording-transcript.ts";
 import {
   TranscriptHttpError,
   transcriptHandler,
@@ -16,6 +20,13 @@ Deno.serve((request) =>
       (typeof body.versionId !== "string" || !UUID_PATTERN.test(body.versionId))
     )
       throw new TranscriptHttpError("Invalid recording version.");
+    try {
+      await readSource(admin, userId, body.responseId, body.versionId as string | undefined);
+    } catch (error) {
+      if (error instanceof RecordingTranscriptError)
+        throw new TranscriptHttpError(error.message, error.status);
+      throw error;
+    }
     const data = await retryCompatibleTranscript(
       admin,
       userId,

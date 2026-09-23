@@ -1426,6 +1426,18 @@
   font: inherit;
   text-align: start;
   overflow-wrap: anywhere;
+  transition: none;
+}
+
+.earnTestCardDescriptionToggle:hover:not(:disabled),
+.earnTestCardDescriptionToggle:active:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+}
+
+.earnTestCardDescriptionMore {
+  color: var(--ds-semantic-color-text-tertiary);
 }
 
 .earnTestCardDescriptionLess {

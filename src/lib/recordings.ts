@@ -1,6 +1,7 @@
 import { ProductType, ResponseRecording } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
 import { mapConcurrent } from "./concurrent";
+import type { NewFeedbackSource } from "./feedbackSource";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
 export const R2_RECORDING_BUCKET_ID = `r2:${RECORDING_BUCKET_ID}`;
@@ -32,6 +33,7 @@ export interface RecordingExperience {
 }
 
 export interface RecordingTestSessionState {
+  feedbackSource?: NewFeedbackSource;
   submissionId: string;
   sessionId: string;
   phase: RecordingTestPhase;
@@ -169,6 +171,10 @@ export function loadRecordingTestSession(submissionId: string) {
           : null,
       confirmedRecording: parsed.confirmedRecording === true,
       recording: parsed.recording ?? null,
+      feedbackSource:
+        parsed.feedbackSource === "earn" || parsed.feedbackSource === "shared_link"
+          ? parsed.feedbackSource
+          : undefined,
     } satisfies RecordingTestSessionState;
   } catch {
     return null;
@@ -931,23 +937,12 @@ export async function requestResponseRecordingUrl(
   download = false,
   versionId?: string,
 ) {
-  const cacheKey = `${responseId}:${versionId ?? "latest"}:${download ? "download" : "play"}`;
-  // A response-only request must resolve the latest version again after a revision.
-  const cached = versionId ? recordingAccessCache.get(cacheKey) : undefined;
-  if (cached && cached.expiresAt > Date.now() + 30 * 1000) {
-    return cached.value;
-  }
-
   if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
     const fixtureValue = {
       url: "data:video/webm;base64,GkXfo0AgQoaBAULygQFC8oEEQvKBAkKBgQI=",
       fileName: "fixture-recording.webm",
       expiresInSeconds: 300,
     };
-    recordingAccessCache.set(cacheKey, {
-      value: fixtureValue,
-      expiresAt: Date.now() + fixtureValue.expiresInSeconds * 1000,
-    });
     return fixtureValue;
   }
 
@@ -964,6 +959,10 @@ export async function requestResponseRecordingUrl(
   if (sessionError || !session?.access_token) {
     throw new Error("Sign in again to view this recording.");
   }
+  const cacheKey = `${responseId}:${session.user?.id ?? ""}:${versionId ?? "latest"}:${download ? "download" : "play"}`;
+  // Never reuse a private URL across accounts. Current-version requests always revalidate.
+  const cached = versionId ? recordingAccessCache.get(cacheKey) : undefined;
+  if (cached && cached.expiresAt > Date.now() + 30 * 1000) return cached.value;
 
   const response = await fetch(`${supabaseUrl}/functions/v1/get-response-recording-access`, {
     method: "POST",
@@ -994,4 +993,38 @@ export async function requestResponseRecordingUrl(
     expiresAt: Date.now() + value.expiresInSeconds * 1000,
   });
   return value;
+}
+
+/** Requests only the server-trimmed preview; never caches it as full recording access. */
+export async function requestResponseRecordingPreview(
+  responseId: string,
+  versionId?: string,
+  signal?: AbortSignal,
+) {
+  const {
+    data: { session },
+    error,
+  } = await requireSupabase().auth.getSession();
+  if (error || !session?.access_token) throw new Error("Sign in again to view this recording.");
+  const response = await fetch(`${supabaseUrl}/functions/v1/get-response-recording-access`, {
+    method: "POST",
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: supabasePublishableKey,
+    },
+    body: JSON.stringify({ responseId, versionId, preview: true }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (
+    !response.ok ||
+    !payload?.ok ||
+    !["pending", "ready"].includes(payload.status) ||
+    (payload.status === "ready" &&
+      (!payload.url || !(payload.previewSeconds > 0 && payload.previewSeconds <= 15)))
+  ) {
+    throw new Error(payload?.error ?? "Recording preview could not be loaded. Try again.");
+  }
+  return payload as { status: "pending" | "ready"; url?: string; previewSeconds: number };
 }

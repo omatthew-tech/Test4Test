@@ -29,7 +29,7 @@ Paid recruitment is a human-managed service. Test4Test may use software to help 
 ### Credits and reputation
 
 - One approved recording earns one test-back credit.
-- One credit funds one community test of an owner’s app.
+- One credit permanently unlocks one new Earn-sourced feedback response when the owner first opens it, including later recording revisions. Shared-test-URL feedback and responses predating credit unlocks remain free.
 - New accounts receive no starter credit.
 - Recording quality is rated optionally from 1 to 5 stars.
 - Star ratings contribute to tester reputation and future discovery or moderation decisions.

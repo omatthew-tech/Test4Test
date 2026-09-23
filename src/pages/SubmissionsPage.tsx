@@ -299,8 +299,9 @@ export function SubmissionsPage() {
 
   if (!currentUser) {
     return (
-      <AppShell title="My reviews" eyebrowLabel={null}>
+      <AppShell eyebrowLabel={null}>
         <div className="page-stack submissions-page">
+          <h1 className="ds-sr-only">Submitted reviews</h1>
           <Surface>
             <div className="empty-state">
               <h3>Sign in to view your submitted tests</h3>
@@ -319,8 +320,9 @@ export function SubmissionsPage() {
   }
 
   return (
-    <AppShell title="My reviews" eyebrowLabel={null}>
+    <AppShell eyebrowLabel={null}>
       <div className="page-stack submissions-page">
+        <h1 className="ds-sr-only">Submitted reviews</h1>
         <Surface className="earn-controls submissions-switcher">
           <div className="results-toggle" role="group" aria-label="Feedback view">
             <button
@@ -342,7 +344,6 @@ export function SubmissionsPage() {
           </div>
         </Surface>
 
-        {loadError ? <Surface className="callout callout--warning">{loadError}</Surface> : null}
         {favoriteError ? (
           <Surface className="callout callout--warning">{favoriteError}</Surface>
         ) : null}
@@ -388,6 +389,13 @@ export function SubmissionsPage() {
             <div className="empty-state">
               <h3>Loading your submissions</h3>
               <p>Pulling together your submitted tests and their latest ratings.</p>
+            </div>
+          </Surface>
+        ) : loadError ? (
+          <Surface>
+            <div className="empty-state" role="alert">
+              <h3>Your submitted tests could not be loaded</h3>
+              <p>Please refresh the page to try again.</p>
             </div>
           </Surface>
         ) : items.length > 0 ? (

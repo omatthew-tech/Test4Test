@@ -1,6 +1,6 @@
-import { ArrowRight, Play, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { useSearchParams } from "react-router-dom";
+import { ArrowRight, Play } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -18,62 +18,26 @@ import {
   mergeRecordingPreviews,
   requestRecordingPreviews,
 } from "../lib/recordingPreviews";
-import { invalidateResponseRecordingUrl, requestResponseRecordingUrl } from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
 import type { RecordingPreviewSummary } from "../types";
 import { AnalyticsTranscriptReport } from "./AnalyticsTranscriptReport";
 import styles from "./AnalyticsPage.module.css";
 
-interface PlaybackState {
-  responseId: string;
-  status: "loading" | "ready" | "error";
-  url: string | null;
-  error: string | null;
-}
-
 function RecordingPreviewCard({
   preview,
   index,
-  playback,
-  videoRef,
   onPlay,
-  onPlaybackError,
   onRetryThumbnail,
 }: {
   preview: RecordingPreviewSummary;
   index: number;
-  playback: PlaybackState | null;
-  videoRef: RefObject<HTMLVideoElement | null>;
-  onPlay: (preview: RecordingPreviewSummary, force?: boolean) => void;
-  onPlaybackError: (message: string) => void;
+  onPlay: (preview: RecordingPreviewSummary) => void;
   onRetryThumbnail: (responseId: string) => void;
 }) {
-  const isActive = playback?.responseId === preview.responseId;
-
   return (
     <Card as="li" className={styles.recordingCard}>
       <div className={styles.previewFrame}>
-        {isActive && playback?.url ? (
-          <video
-            aria-label={`Recording ${index + 1}: ${preview.productName}`}
-            autoPlay
-            className={styles.video}
-            controls
-            onError={() =>
-              onPlaybackError("This recording could not be played. Try loading it again.")
-            }
-            onLoadedMetadata={(event) => {
-              event.currentTarget.muted = false;
-              event.currentTarget.volume = 1;
-              void event.currentTarget.play().catch(() => undefined);
-            }}
-            playsInline
-            poster={preview.thumbnail?.url ?? undefined}
-            preload="metadata"
-            ref={videoRef}
-            src={playback.url}
-          />
-        ) : preview.thumbnail?.url ? (
+        {preview.thumbnail?.url ? (
           <img
             alt={`${preview.productName} recording preview`}
             className={styles.thumbnail}
@@ -83,7 +47,7 @@ function RecordingPreviewCard({
             src={preview.thumbnail.url}
             width={preview.thumbnail.width ?? 960}
           />
-        ) : (
+        ) : preview.feedbackAccess === "locked" ? null : (
           <Skeleton
             className={styles.previewSkeleton}
             label={
@@ -94,50 +58,32 @@ function RecordingPreviewCard({
           />
         )}
 
-        {isActive && playback?.status === "loading" ? (
-          <Skeleton className={styles.previewSkeleton} label="Loading recording" />
-        ) : null}
-
-        {!isActive || playback?.status === "error" ? (
-          <IconButton
-            className={styles.playButton}
-            label={`${playback?.status === "error" ? "Retry" : "Play"} Recording ${index + 1}: ${preview.productName}`}
-            onClick={() => onPlay(preview, playback?.status === "error")}
-            type="button"
-            variant="secondary"
-          >
-            {playback?.status === "error" ? (
-              <RefreshCw aria-hidden="true" size={20} />
-            ) : (
-              <Play aria-hidden="true" fill="currentColor" size={20} />
-            )}
-          </IconButton>
-        ) : null}
+        <IconButton
+          className={styles.playButton}
+          label={`Play Recording ${index + 1}: ${preview.productName}`}
+          onClick={() => onPlay(preview)}
+          type="button"
+          variant="secondary"
+        >
+          <Play aria-hidden="true" fill="currentColor" size={20} />
+        </IconButton>
       </div>
 
-      {preview.thumbnailStatus === "failed" || (isActive && playback?.error) ? (
+      {preview.thumbnailStatus === "failed" ? (
         <Stack className={styles.recordingAlerts} gap="xs">
-          {preview.thumbnailStatus === "failed" ? (
-            <Alert className={styles.cardAlert} title="Preview unavailable" tone="warning">
-              <Stack gap="xs">
-                <span>{preview.thumbnailError ?? "The recording can still be played."}</span>
-                <Button
-                  onClick={() => onRetryThumbnail(preview.responseId)}
-                  size="compact"
-                  type="button"
-                  variant="quiet"
-                >
-                  Retry preview
-                </Button>
-              </Stack>
-            </Alert>
-          ) : null}
-
-          {isActive && playback?.error ? (
-            <Alert className={styles.cardAlert} title="Playback unavailable" tone="danger">
-              {playback.error}
-            </Alert>
-          ) : null}
+          <Alert className={styles.cardAlert} title="Preview unavailable" tone="warning">
+            <Stack gap="xs">
+              <span>{preview.thumbnailError ?? "The recording can still be played."}</span>
+              <Button
+                onClick={() => onRetryThumbnail(preview.responseId)}
+                size="compact"
+                type="button"
+                variant="quiet"
+              >
+                Retry preview
+              </Button>
+            </Stack>
+          </Alert>
         </Stack>
       ) : null}
     </Card>
@@ -146,6 +92,7 @@ function RecordingPreviewCard({
 
 export function AnalyticsPage() {
   const { state } = useAppState();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const availableRecordings = getAvailableRecordingsForCurrentUser(state);
   const fixtureMode = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
@@ -174,9 +121,6 @@ export function AnalyticsPage() {
   }, [previews]);
   const [previewLoading, setPreviewLoading] = useState(!fixtureMode);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [playback, setPlayback] = useState<PlaybackState | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playbackRequestRef = useRef(0);
   const pollingAttemptsRef = useRef(0);
   const recordingsSearch = searchParams.toString();
   const recordingsHref = `/recordings${recordingsSearch ? `?${recordingsSearch}` : ""}`;
@@ -263,30 +207,8 @@ export function AnalyticsPage() {
     };
   }, [fixtureMode, pendingResponseIds]);
 
-  function handlePlay(preview: RecordingPreviewSummary, force = false) {
-    videoRef.current?.pause();
-    if (force) {
-      invalidateResponseRecordingUrl(preview.responseId);
-    }
-
-    const requestId = ++playbackRequestRef.current;
-    setPlayback({ responseId: preview.responseId, status: "loading", url: null, error: null });
-    requestResponseRecordingUrl(preview.responseId)
-      .then(({ url }) => {
-        if (requestId === playbackRequestRef.current) {
-          setPlayback({ responseId: preview.responseId, status: "ready", url, error: null });
-        }
-      })
-      .catch((error) => {
-        if (requestId === playbackRequestRef.current) {
-          setPlayback({
-            responseId: preview.responseId,
-            status: "error",
-            url: null,
-            error: error instanceof Error ? error.message : "Recording playback failed.",
-          });
-        }
-      });
+  function handlePlay(preview: RecordingPreviewSummary) {
+    navigate(buildRecordingHref(preview.responseId));
   }
 
   function handleRetryThumbnail(responseId: string) {
@@ -399,17 +321,8 @@ export function AnalyticsPage() {
                         index={preview.index}
                         key={preview.responseId}
                         onPlay={handlePlay}
-                        onPlaybackError={(message) => {
-                          setPlayback((current) =>
-                            current && current.responseId === preview.responseId
-                              ? { ...current, status: "error", error: message }
-                              : current,
-                          );
-                        }}
                         onRetryThumbnail={handleRetryThumbnail}
-                        playback={playback?.responseId === preview.responseId ? playback : null}
                         preview={preview}
-                        videoRef={videoRef}
                       />
                     ))}
                   </Grid>

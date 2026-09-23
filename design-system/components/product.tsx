@@ -353,7 +353,7 @@ function EarnTestCardDescription({
               {previewText}
               <span aria-hidden="true">
                 …{"\u00a0"}
-                <span>more</span>
+                <span className={styles.earnTestCardDescriptionMore}>more</span>
               </span>
             </span>
           ) : null}

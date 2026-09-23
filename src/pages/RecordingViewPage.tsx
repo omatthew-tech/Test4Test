@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, VideoOff } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight, LockKeyhole, VideoOff } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
+  Cluster,
   EmptyState,
   IconButton,
   Link,
+  PageHeader,
   Skeleton,
   Select,
   Stack,
@@ -16,8 +18,14 @@ import {
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { formatDateTime } from "../lib/format";
-import { invalidateResponseRecordingUrl, requestResponseRecordingUrl } from "../lib/recordings";
+import {
+  invalidateResponseRecordingUrl,
+  requestResponseRecordingUrl,
+  requestResponseRecordingPreview,
+} from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
+import type { OpenFeedbackResult } from "../lib/feedbackAccess";
+import { isTestAccountEmail } from "../lib/supabase";
 import {
   loadResponseVersions,
   RecordingHistoryError,
@@ -44,6 +52,288 @@ const initialPlaybackState: PlaybackState = {
 };
 
 export function RecordingViewPage() {
+  const { state, currentUser, openFeedback } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const previewRequested = searchParams.get("preview") === "out-of-credits";
+  const previewOutOfCredits = previewRequested && isTestAccountEmail(currentUser?.email);
+  const recordings = getAvailableRecordingsForCurrentUser(state);
+  const requestedId = searchParams.get("response")?.trim();
+  const selectedIndex = requestedId
+    ? recordings.findIndex((item) => item.response.id === requestedId)
+    : 0;
+  const selected = recordings[selectedIndex];
+  const responseId = selected?.response.id;
+  const versionId = searchParams.get("version")?.trim() || undefined;
+  const accessKey = `${state.currentUserId}:${responseId}:${versionId ?? "latest"}`;
+  const [attempt, setAttempt] = useState(0);
+  const [access, setAccess] = useState<{
+    key: string;
+    result?: OpenFeedbackResult;
+    error?: string;
+  } | null>(null);
+  const currentAccess = access?.key === accessKey ? access : null;
+
+  useEffect(() => {
+    // A test-account preview must never call the opening operation or change the ledger.
+    if (!responseId || previewRequested) return;
+    let cancelled = false;
+    void openFeedback(responseId, versionId)
+      .then((result) => {
+        if (!cancelled) setAccess({ key: accessKey, result });
+      })
+      .catch((error) => {
+        if (!cancelled)
+          setAccess({
+            key: accessKey,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Feedback access could not be verified. Try again.",
+          });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessKey, responseId, versionId, openFeedback, attempt, previewRequested]);
+
+  // Returning to this tab after earning elsewhere retries only a previously blocked open.
+  useEffect(() => {
+    if (previewRequested || currentAccess?.result?.status !== "insufficient_credits") return;
+    const retry = () => {
+      if (document.visibilityState === "visible") setAttempt((value) => value + 1);
+    };
+    window.addEventListener("focus", retry);
+    document.addEventListener("visibilitychange", retry);
+    return () => {
+      window.removeEventListener("focus", retry);
+      document.removeEventListener("visibilitychange", retry);
+    };
+  }, [currentAccess?.result?.status, previewRequested]);
+
+  if (
+    !previewRequested &&
+    (currentAccess?.result?.status === "free" || currentAccess?.result?.status === "unlocked")
+  )
+    return <RecordingContent />;
+
+  const unavailable =
+    (Boolean(requestedId) && !selected) || currentAccess?.result?.status === "unavailable";
+  const blocked = previewOutOfCredits || currentAccess?.result?.status === "insufficient_credits";
+  if (blocked) return <RecordingPreviewContent key={accessKey} simulation={previewOutOfCredits} />;
+  return (
+    <AppShell eyebrowLabel={null}>
+      <Stack className={styles.content} gap="xl">
+        <PageHeader title="Recordings" />
+        {previewRequested && !previewOutOfCredits ? (
+          <EmptyState
+            title="Test account required"
+            description="Sign in with the test account to preview this screen. Your credits have not changed."
+          />
+        ) : currentAccess?.error ? (
+          <Alert tone="danger" title="Feedback could not be loaded">
+            <Stack gap="md">
+              <p>{currentAccess.error}</p>
+              <Button onClick={() => setAttempt((value) => value + 1)}>Try again</Button>
+            </Stack>
+          </Alert>
+        ) : unavailable || !selected ? (
+          <EmptyState
+            title={unavailable ? "Recording unavailable" : "No recordings available"}
+            description={
+              unavailable
+                ? "This recording could not be found."
+                : "New recordings will appear here after testers submit them."
+            }
+          />
+        ) : (
+          <Skeleton label="Checking feedback access" />
+        )}
+        <Cluster>
+          <Link to="/analytics">Back to analytics</Link>
+          {selectedIndex > 0 ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set("response", recordings[selectedIndex - 1].response.id);
+                next.delete("version");
+                setSearchParams(next);
+              }}
+            >
+              Previous recording
+            </Button>
+          ) : null}
+          {selected && selectedIndex < recordings.length - 1 ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set("response", recordings[selectedIndex + 1].response.id);
+                next.delete("version");
+                setSearchParams(next);
+              }}
+            >
+              Next recording
+            </Button>
+          ) : null}
+        </Cluster>
+      </Stack>
+    </AppShell>
+  );
+}
+
+function RecordingPreviewContent({ simulation }: { simulation: boolean }) {
+  const { state } = useAppState();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const recordings = getAvailableRecordingsForCurrentUser(state);
+  const requestedId = searchParams.get("response");
+  const index = requestedId ? recordings.findIndex((item) => item.response.id === requestedId) : 0;
+  const selected = recordings[index];
+  const responseId = selected?.response.id;
+  const versionId = searchParams.get("version") || undefined;
+  const fixture = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
+  const [retry, setRetry] = useState(0);
+  const [media, setMedia] = useState<{ url?: string; seconds?: number; error?: string }>({});
+  useEffect(() => {
+    setMedia({});
+    if (simulation || fixture) {
+      setMedia({ url: "/videos/feedback-preview-demo.mp4", seconds: 15 });
+      return;
+    }
+    if (!responseId) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    const started = Date.now();
+    const load = async () => {
+      try {
+        const result = await requestResponseRecordingPreview(
+          responseId,
+          versionId,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        if (result.status === "ready")
+          setMedia({ url: result.url, seconds: result.previewSeconds });
+        else if (Date.now() - started < 120000) timer = setTimeout(() => void load(), 2000);
+        else
+          setMedia({ error: "The recording preview is still being prepared. Try again shortly." });
+      } catch (error) {
+        if (!controller.signal.aborted)
+          setMedia({
+            error:
+              error instanceof Error ? error.message : "Recording preview could not be loaded.",
+          });
+      }
+    };
+    void load();
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [responseId, versionId, simulation, fixture, retry]);
+  const select = (nextIndex: number) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("response", recordings[nextIndex].response.id);
+    next.delete("version");
+    setSearchParams(next);
+  };
+  const position = selected
+    ? `Recording ${index + 1} of ${recordings.length}`
+    : "Recording preview";
+  return (
+    <AppShell eyebrowLabel={null}>
+      <Stack className={styles.content} gap="xl">
+        <header className={styles.recordingHeader}>
+          <p className={styles.position}>{position}</p>
+          <h1>{selected?.submission.productName ?? "Recording preview"}</h1>
+          {selected && (
+            <p className={styles.submittedAt}>{formatDateTime(selected.response.submittedAt)}</p>
+          )}
+        </header>
+        <div className={styles.playerNavigation}>
+          <IconButton
+            className={styles.previousButton}
+            disabled={index <= 0}
+            label="Previous recording"
+            onClick={() => select(index - 1)}
+            size="large"
+            variant="secondary"
+          >
+            <ChevronLeft aria-hidden="true" size={24} />
+          </IconButton>
+          <Surface className={styles.playerSurface} padding="none" tone="raised">
+            {media.error ? (
+              <div className={styles.playerStatus}>
+                <Alert tone="danger" title="Recording preview unavailable">
+                  <Stack>
+                    <p>{media.error}</p>
+                    <Button onClick={() => setRetry((value) => value + 1)}>Reload video</Button>
+                  </Stack>
+                </Alert>
+              </div>
+            ) : !media.url ? (
+              <div className={styles.playerStatus}>
+                <Skeleton label="Preparing recording preview" />
+              </div>
+            ) : (
+              <VideoPlayer
+                key={`${media.url}:${retry}`}
+                label={`${position}: ${selected?.submission.productName ?? "Preview"}`}
+                src={media.url}
+                durationHint={selected?.response.durationSeconds ?? 222}
+                onError={() =>
+                  setMedia({
+                    error:
+                      "The recording preview could not be played. Reload the video to try again.",
+                  })
+                }
+                preview={{
+                  seconds: media.seconds ?? 15,
+                  overlay: (
+                    <Stack className={styles.creditLock} gap="lg">
+                      <LockKeyhole className={styles.lockIcon} aria-hidden="true" />
+                      <h2>You're out of credits</h2>
+                      <p>Someone tested your app but you haven't tested-back their app</p>
+                      <Cluster className={styles.lockActions}>
+                        <Button onClick={() => navigate("/earn")}>Earn credits</Button>
+                        <Button
+                          className={styles.buyCredits}
+                          variant="secondary"
+                          onClick={() =>
+                            navigate({
+                              pathname: "/buy-credits",
+                              search: fixture ? searchParams.toString() : "",
+                            })
+                          }
+                        >
+                          Buy credits
+                        </Button>
+                      </Cluster>
+                    </Stack>
+                  ),
+                }}
+              />
+            )}
+          </Surface>
+          <IconButton
+            className={styles.nextButton}
+            disabled={!selected || index >= recordings.length - 1}
+            label="Next recording"
+            onClick={() => select(index + 1)}
+            size="large"
+            variant="secondary"
+          >
+            <ChevronRight aria-hidden="true" size={24} />
+          </IconButton>
+        </div>
+        <Link to="/analytics">Back to analytics</Link>
+      </Stack>
+    </AppShell>
+  );
+}
+
+function RecordingContent() {
   const { state } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
   const [playbackState, setPlaybackState] = useState<PlaybackState>(initialPlaybackState);
@@ -352,7 +642,11 @@ export function RecordingViewPage() {
                       videoRef={setVideoElement}
                       label={`${positionLabel}: ${selectedRecording.submission.productName}`}
                       src={currentPlayback.url || undefined}
-                      title={currentPlayback.fileName || selectedRecording.recording.fileName}
+                      title={
+                        currentPlayback.fileName ||
+                        selectedRecording.recording?.fileName ||
+                        "Recording"
+                      }
                       durationHint={
                         selectedVersion?.durationSeconds ??
                         selectedRecording.response.durationSeconds

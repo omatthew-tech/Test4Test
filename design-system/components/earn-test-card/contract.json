@@ -6,7 +6,7 @@
   "lifecycle": "stable",
   "source": "design-system/components/product.tsx",
   "story": "design-system/stories/Product.stories.tsx",
-  "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place.",
+  "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place. Collapsed descriptions retain plain text styling on hover and press, with a muted more label after the ellipsis and a visible keyboard focus ring.",
   "semantics": [
     "Article or section",
     "Visible heading names the card",

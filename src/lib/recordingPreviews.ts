@@ -70,6 +70,10 @@ function parsePreview(value: unknown): RecordingPreviewSummary | null {
       : null;
 
   return {
+    feedbackAccess:
+      row.feedbackAccess === "locked" || row.feedbackAccess === "unlocked"
+        ? row.feedbackAccess
+        : "free",
     responseId: row.responseId,
     submissionId: row.submissionId,
     productName: row.productName,

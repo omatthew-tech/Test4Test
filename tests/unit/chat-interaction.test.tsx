@@ -40,6 +40,7 @@ vi.mock("../../src/components/Layout", () => ({
 }));
 beforeEach(() => {
   mocks.hidden = false;
+  mocks.observer = null;
   mocks.refresh.mockReset();
   mocks.api = {
     context: vi.fn().mockResolvedValue(conversation),
@@ -127,6 +128,7 @@ it("prevents duplicate pending sends and rejects oversized content before sendin
 it("acknowledges only rendered, visible messages in a foreground conversation", async () => {
   mount();
   await screen.findByRole("textbox", { name: "Message" });
+  await waitFor(() => expect(mocks.observer).not.toBeNull());
   expect(mocks.api.markRead).not.toHaveBeenCalled();
   const target = document.querySelector("[data-read-sequence]")!;
   mocks.hidden = true;

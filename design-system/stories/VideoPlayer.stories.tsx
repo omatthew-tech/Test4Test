@@ -11,7 +11,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// @test4test-coverage video-player | sizes: responsive | variants: playback, clipping | states: paused, playing, muted, focus-visible, unavailable, fullscreen
+// @test4test-coverage video-player | sizes: responsive | variants: playback, clipping, preview | states: paused, playing, muted, focus-visible, unavailable, fullscreen, locked
 export const VideoPlayerContract: Story = {
   render: function PlayerStory(args) {
     const [range, setRange] = useState<[number, number] | null>(null);
@@ -35,10 +35,31 @@ export const VideoPlayerContract: Story = {
           }
         />
         <VideoPlayer label="Unavailable recording" />
+        <VideoPlayer
+          label="Preview recording"
+          src={args.src}
+          durationHint={120}
+          preview={{
+            seconds: 15,
+            overlay: (
+              <Stack>
+                <h2>Preview ended</h2>
+                <Button>Earn credits</Button>
+              </Stack>
+            ),
+          }}
+        />
       </Stack>
     );
   },
   play: async ({ canvasElement }) => {
+    const preview = within(canvasElement).getByLabelText("Preview recording") as HTMLVideoElement;
+    preview.dispatchEvent(new Event("ended"));
+    Object.defineProperty(preview, "ended", { configurable: true, value: true });
+    preview.dispatchEvent(new Event("ended"));
+    await expect(
+      await within(canvasElement).findByRole("heading", { name: "Preview ended" }),
+    ).toBeVisible();
     const player = within(within(canvasElement).getByRole("group", { name: "Recording player" }));
     const media = player.getByLabelText("Recording") as HTMLVideoElement;
     await waitFor(

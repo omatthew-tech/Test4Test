@@ -137,6 +137,15 @@ it("allows the tester but rejects malformed ranges and unowned versions", async 
   expect((await call({ ...create, startMs: 1.2 }, "owner")).status).toBe(400);
   expect((await call({ ...create, versionId: id }, "owner")).status).toBe(410);
 });
+
+it("blocks new clips for locked feedback without revoking existing public clips", async () => {
+  rows.test_responses[0].feedback_source = "earn";
+  rpc.mockResolvedValue({ data: [{ response_id: responseId, access: "locked" }], error: null });
+  expect((await call(create, "owner")).status).toBe(403);
+  expect((await call(create, "tester")).status).toBe(403);
+  expect(rpc.mock.calls.every(([name]) => name !== "create_recording_clip")).toBe(true);
+  expect((await call({ action: "public", token })).status).toBe(200);
+});
 it("guest capability returns only clip media and approved metadata", async () => {
   const result = await call({ action: "public", token });
   expect(result.status).toBe(200);

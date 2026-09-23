@@ -178,6 +178,12 @@ export function AppShell({
             to: accountHref("/submit"),
             icon: <Plus />,
           },
+          {
+            id: "buy-credits",
+            label: "Buy credits",
+            to: accountHref("/buy-credits"),
+            icon: <Coins />,
+          },
         ]),
   ];
   const signOutItem = {

@@ -530,7 +530,7 @@ async function processClaimedReminderSequence(
   }
 
   const feedbackUrl = `${env.appBaseUrl}/analytics?earn_entry=test_back_email`;
-  const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}?earn_entry=test_back_email`;
+  const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}?earn_entry=test_back_email&feedback_source=earn`;
   const rendered = renderEmailTemplate(template, {
     ownerDisplayName: owner.display_name,
     ownerProductName: triggeringSubmission.product_name,

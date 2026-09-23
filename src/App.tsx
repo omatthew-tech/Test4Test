@@ -37,6 +37,9 @@ const BlogPostPage = lazy(() =>
 const CreditsPage = lazy(() =>
   import("./pages/CreditsPage").then((m) => ({ default: m.CreditsPage })),
 );
+const BuyCreditsPage = lazy(() =>
+  import("./pages/BuyCreditsPage").then((m) => ({ default: m.BuyCreditsPage })),
+);
 const EarnPage = lazy(() => import("./pages/EarnPage").then((m) => ({ default: m.EarnPage })));
 const EmailPreviewPage = lazy(() =>
   import("./pages/EmailPreviewPage").then((m) => ({ default: m.EmailPreviewPage })),
@@ -396,6 +399,14 @@ export default function App({
                   element={
                     <AuthenticatedRoute>
                       <ReviseSubmissionPage />
+                    </AuthenticatedRoute>
+                  }
+                />
+                <Route
+                  path="/buy-credits"
+                  element={
+                    <AuthenticatedRoute>
+                      <BuyCreditsPage />
                     </AuthenticatedRoute>
                   }
                 />

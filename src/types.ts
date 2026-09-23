@@ -68,7 +68,10 @@ export type FeedbackReportStatus = "pending" | "resolved" | "dismissed";
 export type TestReportReason =
   "app_unavailable" | "requires_payment" | "suspicious_malware" | "other";
 export type TestReportStatus = "pending" | "dismissed" | "confirmed";
-export type CreditTransactionType = "starter_credit" | "earned_test" | "adjustment" | "revocation";
+export type CreditTransactionType =
+  "starter_credit" | "earned_test" | "adjustment" | "revocation" | "feedback_unlock" | "purchase";
+export type FeedbackAccess = "free" | "locked" | "unlocked";
+export type FeedbackSource = "legacy" | "earn" | "shared_link";
 export type NotificationType = "otp" | "new_feedback" | "system";
 export type ModerationActionType = "flag" | "reject" | "revoke_credit" | "warn" | "suspend" | "ban";
 export type GooglePlayClosedTestParticipationStatus =
@@ -152,6 +155,7 @@ export interface RecordingThumbnailMetadata {
 }
 
 export interface RecordingPreviewSummary {
+  feedbackAccess?: FeedbackAccess;
   responseId: string;
   submissionId: string;
   productName: string;
@@ -295,6 +299,9 @@ export interface TestAnswer {
 }
 
 export interface TestResponse {
+  feedbackSource?: FeedbackSource;
+  feedbackAccess?: FeedbackAccess;
+  hasRecording?: boolean;
   id: string;
   submissionId: string;
   submissionVersionId: string;
@@ -384,6 +391,7 @@ export interface ModerationAction {
 }
 
 export interface AppState {
+  creditBalances?: Record<string, number>;
   currentUserId: string | null;
   users: User[];
   submissions: Submission[];

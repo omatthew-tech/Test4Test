@@ -70,6 +70,32 @@
   aspect-ratio: 16 / 9;
 }
 
+.creditLock {
+  align-items: center;
+  max-width: var(--ds-semantic-size-overlay-dialog);
+  margin-inline: auto;
+}
+.creditLock h2 {
+  color: inherit;
+  font-size: var(--ds-semantic-typography-heading-section-mobile-size);
+  line-height: var(--ds-semantic-typography-heading-section-mobile-line-height);
+}
+.creditLock p {
+  color: inherit;
+}
+.lockIcon {
+  width: var(--ds-semantic-size-control-target);
+  height: var(--ds-semantic-size-control-target);
+}
+.lockActions {
+  justify-content: center;
+}
+.buyCredits.buyCredits {
+  background: transparent;
+  color: var(--ds-semantic-color-text-inverse);
+  border-color: var(--ds-semantic-color-text-inverse);
+}
+
 .playerStatus {
   display: grid;
   align-items: center;

@@ -119,6 +119,23 @@ function database(options: { versioned?: boolean; wordCount?: number } = {}) {
 }
 
 describe("recording transcript access", () => {
+  it("denies locked transcript content before querying text or timed words", async () => {
+    const db = database();
+    db.rows.test_responses[0].feedback_source = "earn";
+    const rpc = vi
+      .fn()
+      .mockResolvedValue({ data: [{ response_id: "response", access: "locked" }], error: null });
+    Object.assign(db.client, { rpc });
+    await expect(readRecordingTranscript(db.client, "owner", "response")).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(db.calls).not.toContain("recording_transcripts");
+    expect(db.calls).not.toContain("transcript_words");
+    rpc.mockResolvedValue({ data: [{ response_id: "response", access: "unlocked" }], error: null });
+    expect(
+      (await readRecordingTranscript(db.client, "owner", "response")).transcript?.words,
+    ).toHaveLength(2);
+  });
   it("reads all 1,437 words without consulting unavailable history", async () => {
     const db = database({ wordCount: 1437 });
     const result = await readRecordingTranscript(db.client, "owner", "response");

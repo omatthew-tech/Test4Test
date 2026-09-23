@@ -23,6 +23,8 @@ export interface VideoPlayerProps {
   clipRange?: VideoClipRange;
   actions?: ReactNode;
   onError?: (event: SyntheticEvent<HTMLVideoElement>) => void;
+  /** Supply a server-trimmed source. This limit controls UX, not media authorization. */
+  preview?: { seconds: number; overlay: ReactNode };
 }
 function clock(seconds: number) {
   return formatMediaTime(seconds).split(".")[0];
@@ -39,6 +41,7 @@ export function VideoPlayer({
   clipRange,
   actions,
   onError,
+  preview,
 }: VideoPlayerProps) {
   const root = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement | null>(null);
@@ -50,6 +53,11 @@ export function VideoPlayer({
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
   const [error, setError] = useState("");
+  const [locked, setLocked] = useState(false);
+  const lockPanel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (locked) lockPanel.current?.focus({ preventScroll: true });
+  }, [locked]);
   const attach = useCallback(
     (element: HTMLVideoElement | null) => {
       video.current = element;
@@ -67,6 +75,11 @@ export function VideoPlayer({
   const sync = () => {
     const element = video.current;
     if (!element) return;
+    if (preview && (locked || element.currentTime >= preview.seconds || element.ended)) {
+      if (!element.paused) element.pause();
+      if (element.currentTime > preview.seconds) element.currentTime = preview.seconds;
+      setLocked(true);
+    }
     setDuration(
       Number.isFinite(element.duration) && element.duration > 0 ? element.duration : durationHint,
     );
@@ -76,9 +89,10 @@ export function VideoPlayer({
     setMuted(element.muted);
   };
   const usable = Number.isFinite(duration) && duration > 0;
+  const totalDuration = preview ? Math.max(durationHint, duration) : duration;
   const toggle = async () => {
     const element = video.current;
-    if (!element) return;
+    if (!element || locked) return;
     setError("");
     if (!element.paused) element.pause();
     else {
@@ -94,21 +108,23 @@ export function VideoPlayer({
       className={styles.seek}
       type="range"
       aria-label="Playback position"
-      aria-valuetext={`${clock(time)} of ${clock(usable ? duration : 0)}`}
+      aria-valuetext={`${clock(time)} of ${clock(usable ? totalDuration : 0)}`}
       min={0}
-      max={usable ? duration : 0}
+      max={usable ? totalDuration : 0}
       step={0.1}
       value={Math.min(time, usable ? duration : 0)}
-      disabled={!usable}
+      disabled={!usable || locked}
       onChange={(event) => {
-        if (video.current) video.current.currentTime = Number(event.target.value);
-        setTime(Number(event.target.value));
+        const next = Math.min(Number(event.target.value), preview?.seconds ?? totalDuration);
+        if (video.current) video.current.currentTime = next;
+        setTime(next);
+        sync();
       }}
     />
   );
   return (
     <div className={styles.root} ref={root} role="group" aria-label={`${label} player`}>
-      <div className={styles.picture}>
+      <div className={styles.picture} data-locked={locked || undefined}>
         <video
           ref={attach}
           className={styles.video}
@@ -121,6 +137,7 @@ export function VideoPlayer({
           onLoadedMetadata={sync}
           onDurationChange={sync}
           onTimeUpdate={sync}
+          onSeeking={sync}
           onPlay={sync}
           onPause={sync}
           onEnded={sync}
@@ -130,18 +147,31 @@ export function VideoPlayer({
         >
           Your browser does not support embedded video playback.
         </video>
-        <button
-          className={styles.pictureButton}
-          type="button"
-          aria-label={paused ? "Play video" : "Pause video"}
-          onClick={() => void toggle()}
-        >
-          {paused && (
-            <span className={styles.playBadge}>
-              <Play aria-hidden="true" />
-            </span>
-          )}
-        </button>
+        {!locked && (
+          <button
+            className={styles.pictureButton}
+            type="button"
+            aria-label={paused ? "Play video" : "Pause video"}
+            onClick={() => void toggle()}
+          >
+            {paused && (
+              <span className={styles.playBadge}>
+                <Play aria-hidden="true" />
+              </span>
+            )}
+          </button>
+        )}
+        {locked && (
+          <div
+            className={styles.previewLock}
+            ref={lockPanel}
+            tabIndex={-1}
+            role="region"
+            aria-label="Recording preview ended"
+          >
+            {preview?.overlay}
+          </div>
+        )}
       </div>
       <div className={styles.controls}>
         {clipRange ? (
@@ -161,12 +191,13 @@ export function VideoPlayer({
             className={styles.control}
             variant="quiet"
             label={paused ? "Play" : "Pause"}
+            disabled={locked}
             onClick={() => void toggle()}
           >
             {paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
           </IconButton>
           <span className={styles.time}>
-            {clock(time)} / {clock(usable ? duration : 0)}
+            {clock(time)} / {clock(usable ? totalDuration : 0)}
           </span>
           <div className={styles.volume}>
             <IconButton

@@ -9,7 +9,9 @@ async function openProfileMenu(page: Page) {
 test.describe("desktop profile dropdown", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("groups destinations and navigates, including the current route", async ({ page }) => {
+  test("groups destinations and navigates, including the current route", async ({
+    page,
+  }, testInfo) => {
     await page.goto("/profile?ds-user=user-mateo");
     const menu = await openProfileMenu(page);
     const navigation = page.getByRole("navigation", { name: "Primary" }).filter({ visible: true });
@@ -19,6 +21,7 @@ test.describe("desktop profile dropdown", () => {
       "Messages (1)",
       "My reviews",
       "New app",
+      "Buy credits",
       "Sign out",
     ]);
     await expect(menu.getByRole("separator")).toHaveCount(2);
@@ -37,10 +40,12 @@ test.describe("desktop profile dropdown", () => {
     for (const item of await menu.getByRole("menuitem").all()) {
       expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
+    await page.screenshot({ path: testInfo.outputPath("profile-menu-desktop.png") });
 
     for (const [label, route] of [
       ["Profile", "/profile"],
       ["New app", "/submit"],
+      ["Buy credits", "/buy-credits"],
       ["My reviews", "/submissions"],
       ["Messages (1)", "/messages"],
     ]) {

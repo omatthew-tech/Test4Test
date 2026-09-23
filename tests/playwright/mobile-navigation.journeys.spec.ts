@@ -40,7 +40,7 @@ test("visitor menu is compact, accessible, and keeps both auth actions on one ro
 
 test("founder menu groups current navigation and all existing account destinations", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/earn?ds-user=user-mateo");
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
   const panel = await openNavigation(page);
@@ -58,12 +58,15 @@ test("founder menu groups current navigation and all existing account destinatio
     "Messages (1)",
     "My reviews",
     "New app",
+    "Buy credits",
   ]);
   await expect(panel.getByRole("button", { name: "Sign out" })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("header").analyze()).violations).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("profile-menu-mobile.png") });
   for (const [name, route] of [
     ["Profile", "/profile"],
     ["New app", "/submit"],
+    ["Buy credits", "/buy-credits"],
     ["My reviews", "/submissions"],
     ["Messages (1)", "/messages"],
   ]) {

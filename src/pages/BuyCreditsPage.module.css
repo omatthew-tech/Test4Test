@@ -1,0 +1,74 @@
+.page {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xl);
+  width: 100%;
+  max-width: var(--ds-semantic-size-content-data);
+  margin-inline: auto;
+}
+
+.packs {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ds-semantic-size-content-grid-item-min)), 1fr)
+  );
+  gap: var(--ds-semantic-space-inline-xl);
+}
+
+.pack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-semantic-space-stack-lg);
+  min-width: 0;
+  padding: var(--ds-semantic-space-inset-card-desktop);
+  border-radius: var(--ds-semantic-radius-panel);
+}
+
+.bestValue {
+  background: var(--ds-semantic-color-action-tint);
+  border-color: var(--ds-semantic-color-border-accent);
+}
+
+.packHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.packHeading h2 {
+  font-size: var(--ds-semantic-typography-heading-small-size);
+  line-height: var(--ds-semantic-typography-heading-small-line-height);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+}
+
+.priceGroup {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-sm);
+}
+
+.price {
+  font-size: var(--ds-semantic-typography-heading-hero-desktop-size);
+  line-height: var(--ds-semantic-typography-heading-hero-desktop-line-height);
+  letter-spacing: var(--ds-semantic-typography-heading-tracking);
+  font-weight: var(--ds-semantic-typography-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.purchaseType,
+.benefit {
+  color: var(--ds-semantic-color-text-secondary);
+}
+
+.benefit {
+  flex: 1;
+  border-top: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-default);
+  padding-top: var(--ds-semantic-space-stack-lg);
+}
+
+.guarantee {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}

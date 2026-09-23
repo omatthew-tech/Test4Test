@@ -1,4 +1,4 @@
-import { readStarRating } from "./starRatings";
+import { readStoredStarRating } from "./starRatings";
 import {
   StarRating,
   FeedbackReportStatus,
@@ -17,7 +17,8 @@ interface SubmittedFeedbackCardRpcRow {
   description: string | null;
   needs_google_play_closed_testers?: boolean | null;
   submitted_at: string;
-  star_rating: StarRating | null;
+  star_rating?: StarRating | null;
+  rating_value?: string | null;
   owner_test_back_rate_percent: number | null;
   owner_satisfaction_rate_percent: number | null;
   submission_status: SubmissionStatus;
@@ -52,7 +53,10 @@ export async function loadSubmittedFeedbackCards() {
     description: row.description ?? "",
     needsGooglePlayClosedTesters: row.needs_google_play_closed_testers === true,
     submittedAt: row.submitted_at,
-    starRating: row.star_rating === null ? null : readStarRating(row.star_rating),
+    starRating:
+      row.star_rating == null && row.rating_value == null
+        ? null
+        : readStoredStarRating(row.star_rating, row.rating_value),
     ownerTestBackRatePercent: normalizePercent(row.owner_test_back_rate_percent),
     ownerSatisfactionRatePercent: normalizePercent(row.owner_satisfaction_rate_percent),
     ownerAvatarUrl: null,

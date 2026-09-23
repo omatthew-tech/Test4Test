@@ -15,8 +15,16 @@
       "exportName": "VideoPlayer",
       "description": "Native video with familiar playback controls and optional clip handles on a single timeline.",
       "sizes": ["responsive"],
-      "variants": ["playback", "clipping"],
-      "states": ["paused", "playing", "muted", "focus-visible", "unavailable", "fullscreen"],
+      "variants": ["playback", "clipping", "preview"],
+      "states": [
+        "paused",
+        "playing",
+        "muted",
+        "focus-visible",
+        "unavailable",
+        "fullscreen",
+        "locked"
+      ],
       "accessibleName": "Required label names the video and player; each playback control has an explicit label.",
       "controlMode": "both",
       "examples": ["design-system/stories/VideoPlayer.stories.tsx#VideoPlayerContract"],
@@ -25,7 +33,8 @@
         "One labeled playback slider with optional independently labeled clip handles",
         "Controls remain visible and operable by touch or keyboard",
         "Fullscreen includes the timeline and handles when supported",
-        "Playback errors are announced with recovery text"
+        "Playback errors are announced with recovery text",
+        "Preview playback stops at its limit or end; the lock region receives focus and retains its actions in fullscreen"
       ],
       "keyboard": [
         "Enter or Space activates playback controls",
@@ -1099,7 +1108,7 @@
       "lifecycle": "stable",
       "source": "design-system/components/product.tsx",
       "story": "design-system/stories/Product.stories.tsx",
-      "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place.",
+      "description": "Responsive Earn listing card with badges, an explicit action, and optional reputation context. Set expandableDescription (default false) to preview descriptions in two lines and expand overflowing text in place. Collapsed descriptions retain plain text styling on hover and press, with a muted more label after the ellipsis and a visible keyboard focus ring.",
       "semantics": [
         "Article or section",
         "Visible heading names the card",

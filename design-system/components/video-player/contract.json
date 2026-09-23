@@ -14,7 +14,8 @@
   ],
   "variants": [
     "playback",
-    "clipping"
+    "clipping",
+    "preview"
   ],
   "states": [
     "paused",
@@ -22,7 +23,8 @@
     "muted",
     "focus-visible",
     "unavailable",
-    "fullscreen"
+    "fullscreen",
+    "locked"
   ],
   "accessibleName": "Required label names the video and player; each playback control has an explicit label.",
   "controlMode": "both",
@@ -34,7 +36,8 @@
     "One labeled playback slider with optional independently labeled clip handles",
     "Controls remain visible and operable by touch or keyboard",
     "Fullscreen includes the timeline and handles when supported",
-    "Playback errors are announced with recovery text"
+    "Playback errors are announced with recovery text",
+    "Preview playback stops at its limit or end; the lock region receives focus and retains its actions in fullscreen"
   ],
   "keyboard": [
     "Enter or Space activates playback controls",

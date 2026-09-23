@@ -49,6 +49,7 @@ export function getCreditBalance(state: AppState, userId: string | null) {
   if (!userId) {
     return 0;
   }
+  if (state.creditBalances?.[userId] !== undefined) return state.creditBalances[userId];
 
   return state.creditTransactions
     .filter((transaction) => transaction.userId === userId)
@@ -104,7 +105,7 @@ export function getMySubmissions(state: AppState) {
 }
 
 export interface AvailableRecording {
-  recording: ResponseRecording;
+  recording: ResponseRecording | null;
   response: TestResponse;
   submission: Submission;
 }
@@ -125,7 +126,7 @@ export function getAvailableRecordingsForCurrentUser(state: AppState): Available
       const submission = ownedSubmissions.get(response.submissionId);
       const recording = response.recording;
 
-      if (!submission || !recording || recording.deletedAt) {
+      if (!submission || (!recording && !response.hasRecording) || recording?.deletedAt) {
         return availableRecordings;
       }
 

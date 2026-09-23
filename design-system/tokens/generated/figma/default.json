@@ -1736,6 +1736,29 @@
     }
   },
   "component": {
+    "video-player": {
+      "preview-scrim": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.086275,
+            0.105882,
+            0.12549
+          ],
+          "alpha": 0.8
+        },
+        "$description": "Darkens the paused preview behind the accepted recording credit lock."
+      },
+      "preview-blur": {
+        "$type": "dimension",
+        "$value": {
+          "value": 8,
+          "unit": "px"
+        },
+        "$description": "Softens the paused frame behind the recording preview lock."
+      }
+    },
     "button": {
       "primary": {
         "background": {
@@ -1780,7 +1803,7 @@
       "collection": "Test4Test Design System",
       "mode": "Default",
       "source": "design-system/tokens/source/tokens.json",
-      "sourceSha256": "20497279024907ab7c3e77ca0ab569c840009c1a1129e17bb61b96ec2dcd9faa",
+      "sourceSha256": "20dc32da0c6285748c7a69c1218af52dc4e3920c134df5cf60c8b45f0b519f70",
       "conversions": {
         "fontFamily": "First family in the canonical fallback stack",
         "fontWeight": "DTCG fontWeight converted to a Figma number variable",

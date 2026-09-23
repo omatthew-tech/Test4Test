@@ -147,6 +147,11 @@
     "path": "/credits?ds-user=user-avery"
   },
   {
+    "name": "buy-credits",
+    "routePattern": "/buy-credits",
+    "path": "/buy-credits?ds-user=user-avery"
+  },
+  {
     "name": "profile",
     "routePattern": "/profile",
     "path": "/profile?ds-user=user-avery"

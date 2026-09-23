@@ -3,6 +3,54 @@ import { afterEach, expect, it, vi } from "vitest";
 import { VideoPlayer } from "@test4test/design-system";
 
 afterEach(cleanup);
+it("ends the preview at 15 seconds, clamps seeking and moves focus into its lock in the player", () => {
+  render(
+    <VideoPlayer
+      label="Preview"
+      src="/preview.mp4"
+      durationHint={120}
+      preview={{
+        seconds: 15,
+        overlay: (
+          <>
+            <h2>You're out of credits</h2>
+            <button>Earn credits</button>
+          </>
+        ),
+      }}
+    />,
+  );
+  const video = screen.getByLabelText("Preview") as HTMLVideoElement;
+  video.pause = vi.fn();
+  Object.defineProperty(video, "duration", { configurable: true, value: 15 });
+  fireEvent.loadedMetadata(video);
+  video.currentTime = 14.9;
+  fireEvent.timeUpdate(video);
+  expect(screen.queryByRole("heading")).toBeNull();
+  fireEvent.change(screen.getByRole("slider", { name: "Playback position" }), {
+    target: { value: "90" },
+  });
+  expect(video.currentTime).toBe(15);
+  expect(screen.getByRole("heading", { name: "You're out of credits" })).toBeTruthy();
+  expect(document.activeElement).toBe(
+    screen.getByRole("region", { name: "Recording preview ended" }),
+  );
+  expect(
+    (screen.getByRole("slider", { name: "Playback position" }) as HTMLInputElement).disabled,
+  ).toBe(true);
+  expect((screen.getByRole("button", { name: "Play" }) as HTMLButtonElement).disabled).toBe(true);
+  video.currentTime = 30;
+  fireEvent.seeking(video);
+  expect(video.currentTime).toBe(15);
+});
+
+it("shows the lock at the end of a recording shorter than the preview limit", () => {
+  render(<VideoPlayer label="Short preview" preview={{ seconds: 15, overlay: <h2>Locked</h2> }} />);
+  const video = screen.getByLabelText("Short preview") as HTMLVideoElement;
+  Object.defineProperty(video, "ended", { configurable: true, value: true });
+  fireEvent.ended(video);
+  expect(screen.getByRole("heading", { name: "Locked" })).toBeTruthy();
+});
 function mount() {
   render(<VideoPlayer label="Recording" src="/recording.mp4" />);
   const video = screen.getByLabelText("Recording") as HTMLVideoElement;

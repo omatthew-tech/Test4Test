@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import routeStates from "./route-states.json" with { type: "json" };
+import designExceptions from "../../design-system/exceptions.json" with { type: "json" };
 
 const renderableRouteStates = routeStates.filter(
   (route) => !("redirectOnly" in route && route.redirectOnly),
@@ -54,7 +55,7 @@ async function findHorizontalOverflow(page: Page) {
 }
 
 for (const route of renderableRouteStates) {
-  test(`${route.name} has no automatically detectable WCAG A or AA violations`, async ({
+  test(`${route.name} has no unaccepted automatically detectable WCAG A or AA violations`, async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -64,7 +65,29 @@ for (const route of renderableRouteStates) {
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
       .analyze();
-    expect(results.violations).toEqual([]);
+    // Preserve the owner's explicitly accepted resting-contrast exception, while
+    // still checking every other rule and node. Expiry restores the failing gate.
+    const fadedCaptionException = designExceptions.exceptions.find(
+      (exception) => exception.id === "home-trusted-by-faded",
+    );
+    const acceptedCaption =
+      route.name === "home" &&
+      fadedCaptionException &&
+      Date.now() < Date.parse(`${fadedCaptionException.expires}T23:59:59Z`);
+    const violations = results.violations.flatMap((violation) => {
+      if (!acceptedCaption || violation.id !== "color-contrast") return [violation];
+      const nodes = violation.nodes.filter(
+        (node) => JSON.stringify(node.target) !== JSON.stringify(["#home-trusted-by-title"]),
+      );
+      if (nodes.length !== violation.nodes.length) {
+        test.info().annotations.push({
+          type: "design-exception",
+          description: `home-trusted-by-faded: resting caption contrast; expires ${fadedCaptionException.expires}`,
+        });
+      }
+      return nodes.length ? [{ ...violation, nodes }] : [];
+    });
+    expect(violations).toEqual([]);
   });
 }
 

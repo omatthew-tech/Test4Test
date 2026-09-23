@@ -14,6 +14,27 @@
   position: relative;
   min-height: 0;
 }
+.picture[data-locked] {
+  display: grid;
+}
+.picture[data-locked] .video,
+.previewLock {
+  grid-area: 1 / 1;
+}
+.picture[data-locked] .video {
+  height: 100%;
+  min-height: 0;
+}
+.previewLock {
+  position: relative;
+  display: grid;
+  place-content: center;
+  padding: var(--ds-semantic-space-inset-card-desktop);
+  background: var(--ds-component-video-player-preview-scrim);
+  backdrop-filter: blur(var(--ds-component-video-player-preview-blur));
+  color: var(--ds-semantic-color-text-inverse);
+  text-align: center;
+}
 .pictureButton {
   position: absolute;
   inset: 0;
@@ -150,6 +171,10 @@
   }
 }
 @media (forced-colors: active) {
+  .previewLock {
+    background: Canvas;
+    color: CanvasText;
+  }
   .root,
   .control.control,
   .actions button {

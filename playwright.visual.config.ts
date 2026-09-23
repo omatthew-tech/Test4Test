@@ -6,6 +6,8 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   workers: 1,
+  // Baselines require design-owner acceptance, including newly added stories.
+  updateSnapshots: "none",
   reporter: process.env.CI ? "github" : "list",
   testMatch: /visual\.spec\.ts/,
   expect: {

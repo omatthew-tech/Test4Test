@@ -1,10 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, FunctionsFetchError, FunctionsHttpError } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AUTH_TIMEOUT_MESSAGE,
   AUTH_UNAVAILABLE_MESSAGE,
   createAuthFetch,
   getAuthErrorMessage,
+  getTestAccountLoginErrorMessage,
 } from "../../src/lib/authTransport";
 
 const url = "https://auth.example.test";
@@ -15,6 +16,49 @@ afterEach(() => {
 });
 
 describe("auth request deadlines", () => {
+  it("aborts a stalled test-account login without replaying the passcode", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        }),
+    );
+    const client = createClient(url, "public-test-key", {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: createAuthFetch(url, fetcher) },
+    });
+    const pending = client.functions.invoke("test-account-login", {
+      body: { email: "test@example.test", passcode: "test-passcode" },
+    });
+    await vi.advanceTimersByTimeAsync(15_000);
+    const { error } = await pending;
+    expect(await getTestAccountLoginErrorMessage(error, "Fallback")).toBe(AUTH_TIMEOUT_MESSAGE);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("keeps the test-account deadline active while reading the response body", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>(
+      async (_input, init) =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              init?.signal?.addEventListener("abort", () =>
+                controller.error(new DOMException("Body aborted", "AbortError")),
+              );
+            },
+          }),
+        ),
+    );
+    const pending = createAuthFetch(url, fetcher)(`${url}/functions/v1/test-account-login`);
+    const assertion = expect(pending).rejects.toThrow(AUTH_TIMEOUT_MESSAGE);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await assertion;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("aborts a stalled SDK OTP request without resending it", async () => {
     vi.useFakeTimers();
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -89,7 +133,10 @@ describe("auth request deadlines", () => {
   it.each([
     `${url}/storage/v1/object/recording`,
     `${url}/rest/v1/profiles`,
+    `${url}/functions/v1/upload-recording`,
+    `${url}/functions/v1/test-account-login-other`,
     "https://other.example.test/auth/v1/otp",
+    "https://other.example.test/functions/v1/test-account-login",
   ])("leaves non-auth traffic untouched: %s", async (target) => {
     const response = new Response("untouched");
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response);
@@ -100,6 +147,12 @@ describe("auth request deadlines", () => {
 });
 
 describe("auth error feedback", () => {
+  it.each(["{}", " { } ", "[]", "null", "", "  "])(
+    "replaces empty serialized errors with useful feedback: %s",
+    (message) => {
+      expect(getAuthErrorMessage({ message })).toBe(AUTH_UNAVAILABLE_MESSAGE);
+    },
+  );
   it.each([
     { message: "Failed to fetch" },
     { message: "Load failed" },
@@ -117,5 +170,32 @@ describe("auth error feedback", () => {
     { message: "For security purposes, try again after 60 seconds", status: 429 },
   ])("preserves actionable API feedback: $message", (error) => {
     expect(getAuthErrorMessage(error)).toBe(error.message);
+  });
+});
+
+describe("test-account login error feedback", () => {
+  it.each([
+    {
+      status: 401,
+      body: '{"error":"Invalid test account passcode."}',
+      expected: "Invalid test account passcode.",
+    },
+    { status: 401, body: '{"error":"{}"}', expected: AUTH_UNAVAILABLE_MESSAGE },
+    { status: 504, body: "<html>Gateway timeout</html>", expected: AUTH_UNAVAILABLE_MESSAGE },
+    {
+      status: 429,
+      body: '{"message":"Try again in 60 seconds."}',
+      expected: "Try again in 60 seconds.",
+    },
+  ])("handles HTTP $status: $body", async ({ status, body, expected }) => {
+    const error = new FunctionsHttpError(new Response(body, { status }));
+    expect(await getTestAccountLoginErrorMessage(error, "Fallback")).toBe(expected);
+  });
+
+  it("explains a function connection failure", async () => {
+    const error = new FunctionsFetchError(new TypeError("Failed to fetch"));
+    expect(await getTestAccountLoginErrorMessage(error, "Fallback")).toBe(AUTH_UNAVAILABLE_MESSAGE);
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    expect(await getTestAccountLoginErrorMessage(error, "Fallback")).toContain("offline");
   });
 });

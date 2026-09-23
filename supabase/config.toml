@@ -4,6 +4,13 @@
 # working directory name when running `supabase init`.
 project_id = "LIKE4LIKE"
 
+# Checkout validates the bearer token with Auth; Stripe verifies the raw webhook signature.
+[functions.create-credit-checkout]
+verify_jwt = false
+
+[functions.stripe-credit-webhook]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

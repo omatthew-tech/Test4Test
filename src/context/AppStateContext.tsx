@@ -38,10 +38,12 @@ import { normalizeInstructionSteps, serializeInstructionSteps } from "../lib/ins
 import { notifySubmissionOwnerAboutNewResult } from "../lib/testResultNotifications";
 import { notifyTipPaymentMethodsAdded } from "../lib/tipRequests";
 import { wait } from "../lib/timing";
-import { getAuthErrorMessage } from "../lib/authTransport";
+import { getAuthErrorMessage, getTestAccountLoginErrorMessage } from "../lib/authTransport";
 import { getActiveQuestionSet, getCurrentUser } from "../lib/selectors";
 import { slugifyShareName } from "../lib/shareLinks";
 import { getPublicTesterKey } from "../lib/publicTesterKey";
+import { openReceivedFeedback, type OpenFeedbackResult } from "../lib/feedbackAccess";
+import type { NewFeedbackSource } from "../lib/feedbackSource";
 import { hasSupabaseConfig, isTestAccountEmail, requireSupabase } from "../lib/supabase";
 import {
   AppState,
@@ -144,6 +146,9 @@ interface QuestionSetVersionRow {
 }
 
 interface TestResponseRow {
+  feedback_source?: TestResponse["feedbackSource"];
+  feedback_access?: TestResponse["feedbackAccess"];
+  has_recording?: boolean;
   id: string;
   submission_id: string;
   submission_version_id?: string | null;
@@ -257,6 +262,7 @@ interface AppStateContextValue {
   isLoading: boolean;
   loadError: string | null;
   retryLoad: () => Promise<void>;
+  openFeedback: (responseId: string, versionId?: string) => Promise<OpenFeedbackResult>;
   isConfigured: boolean;
   requestOtp: (
     email: string,
@@ -289,6 +295,7 @@ interface AppStateContextValue {
     recording?: ResponseRecording | null,
     questionSetVersionId?: string,
     submissionVersionId?: string,
+    feedbackSource?: NewFeedbackSource,
   ) => Promise<{ ok: boolean; message: string; creditAwarded: boolean }>;
   reviseTestResponse: (
     responseId: string,
@@ -548,6 +555,9 @@ function mapQuestionSetVersion(row: QuestionSetVersionRow) {
 
 function mapTestResponse(row: TestResponseRow): TestResponse {
   return {
+    feedbackSource: row.feedback_source,
+    feedbackAccess: row.feedback_access,
+    hasRecording: row.has_recording,
     id: row.id,
     submissionId: row.submission_id,
     submissionVersionId: row.submission_version_id ?? row.question_set_version_id,
@@ -712,36 +722,6 @@ async function ensureAuthenticatedSession(fallbackMessage = "Please sign in agai
   };
 }
 
-async function getFunctionErrorMessage(error: unknown, fallbackMessage: string) {
-  const context =
-    typeof error === "object" && error !== null && "context" in error
-      ? (error as { context?: unknown }).context
-      : null;
-
-  if (context instanceof Response) {
-    const payload = (await context
-      .clone()
-      .json()
-      .catch(() => null)) as { error?: unknown; message?: unknown } | null;
-    const message =
-      typeof payload?.error === "string"
-        ? payload.error
-        : typeof payload?.message === "string"
-          ? payload.message
-          : "";
-
-    if (message) {
-      return message;
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallbackMessage;
-}
-
 async function signInWithTestAccountPasscode(email: string, passcode: string) {
   const supabase = requireSupabase();
   const fallbackMessage =
@@ -757,11 +737,13 @@ async function signInWithTestAccountPasscode(email: string, passcode: string) {
   );
 
   if (error) {
-    throw new Error(await getFunctionErrorMessage(error, fallbackMessage));
+    throw new Error(await getTestAccountLoginErrorMessage(error, fallbackMessage));
   }
 
   if (!data?.ok || !data.session?.access_token || !data.session.refresh_token) {
-    throw new Error(data?.error ?? data?.message ?? fallbackMessage);
+    throw new Error(
+      getAuthErrorMessage({ message: data?.error ?? data?.message ?? fallbackMessage }),
+    );
   }
 
   const { error: setSessionError } = await supabase.auth.setSession({
@@ -1173,12 +1155,7 @@ async function loadResponses(
   let ownedRows: TestResponseRow[] = [];
 
   if (ownedSubmissionIds.length > 0) {
-    const { data, error } = await supabase
-      .from("test_responses")
-      .select("*")
-      .in("submission_id", ownedSubmissionIds)
-      .order("submitted_at", { ascending: false })
-      .abortSignal(signal);
+    const { data, error } = await supabase.rpc("list_received_feedback").abortSignal(signal);
 
     if (error) {
       throw new Error(error.message);
@@ -1682,7 +1659,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               .map((submission) => submission.id)
           : [];
         if (nextStateMode === "recordings") {
-          const responses = await loadResponses(currentUserId, ownedSubmissionIds, signal, false);
+          const [responses, creditTransactions] = await Promise.all([
+            loadResponses(currentUserId, ownedSubmissionIds, signal, false),
+            loadCreditTransactions(currentUserId, signal),
+          ]);
           signal.throwIfAborted();
           setState({
             ...emptyState,
@@ -1690,6 +1670,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             users: currentProfile ? [currentProfile] : [],
             submissions,
             responses,
+            creditTransactions,
             otpChallenge: getStoredOtpChallenge(),
           });
           loadedStateModeRef.current = "recordings";
@@ -2417,6 +2398,33 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await refreshState();
         return shareLink;
       },
+      async openFeedback(responseId, versionId) {
+        const ownerId = currentUser?.id;
+        const result = await openReceivedFeedback(responseId, versionId);
+        if (ownerId)
+          setState((current) => {
+            if (current.currentUserId !== ownerId) return current;
+            return {
+              ...current,
+              creditBalances:
+                typeof result.balance === "number"
+                  ? { ...current.creditBalances, [ownerId]: result.balance }
+                  : current.creditBalances,
+              responses:
+                result.response && (result.status === "free" || result.status === "unlocked")
+                  ? current.responses.map((response) =>
+                      response.id === responseId
+                        ? {
+                            ...mapTestResponse(result.response as unknown as TestResponseRow),
+                            feedbackAccess: result.status as "free" | "unlocked",
+                          }
+                        : response,
+                    )
+                  : current.responses,
+            };
+          });
+        return result;
+      },
       async completeTest(
         submissionId,
         answers,
@@ -2424,6 +2432,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         recording,
         questionSetVersionId,
         submissionVersionId,
+        feedbackSource = "shared_link",
       ) {
         if (!currentUser) {
           const supabase = requireSupabase();
@@ -2498,12 +2507,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           p_question_set_version_id: questionSetVersionId ?? null,
           p_submission_version_id: submissionVersionId ?? null,
         };
-        let { data, error } = await supabase.rpc("submit_test_response_with_attribution", {
+        let { data, error } = await supabase.rpc("submit_test_response_from_source", {
           ...responseArgs,
           p_visit_id: visitId,
+          p_feedback_source: feedbackSource,
         });
         // Older deployments can still accept feedback; the DB trigger counts it without attribution.
-        if (error?.code === "PGRST202") {
+        if (feedbackSource === "shared_link" && error?.code === "PGRST202") {
           const retry = await supabase.rpc("submit_test_response", responseArgs);
           data = retry.data;
           error = retry.error;
@@ -2511,6 +2521,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
         if (
           error &&
+          feedbackSource === "shared_link" &&
           (error.message.includes("p_question_set_version_id") ||
             error.message.includes("p_submission_version_id") ||
             error.message.includes("Could not find the function"))

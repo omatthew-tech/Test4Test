@@ -144,7 +144,7 @@ it("shows the first-credit announcement above a new owner's summary with a dismi
     "/analytics",
   );
   expect(screen.getByRole("link", { name: "View test" }).getAttribute("href")).toBe(
-    "/test/submission-pantry",
+    "/test/submission-pantry?feedback_source=earn",
   );
   await userEvent
     .setup()
@@ -304,7 +304,7 @@ it("pins a rank-67 owner first and retains every test with reciprocal priority a
   expect(screen.getAllByText("This user tested your app")).toHaveLength(3);
   expect(screen.getByText("#67", { exact: false })).toBeTruthy();
   const resume = screen.getByRole("link", { name: "Resume test" });
-  expect(resume.getAttribute("href")).toBe("/test/Regular credits");
+  expect(resume.getAttribute("href")).toBe("/test/Regular%20credits?feedback_source=earn");
   await userEvent.setup().click(resume);
   expect(JSON.parse(sessionStorage.getItem("test4test:earn-placement-snapshot")!)).toMatchObject({
     ownerSubmissionId: "submission-palette",

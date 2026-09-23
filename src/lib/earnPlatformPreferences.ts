@@ -1,6 +1,6 @@
 import { normalizeProductTypes, PRODUCT_TYPE_ORDER } from "./format";
 import { requireSupabase } from "./supabase";
-import { parseFounderWelcomeStatus } from "./founderWelcome";
+import { parseFounderWelcomeStatus, readTestAccountWelcomeReplay } from "./founderWelcome";
 import type { ProductType } from "../types";
 
 export async function loadEarnPlatformPreferences(userId: string) {
@@ -16,7 +16,10 @@ export async function loadEarnPlatformPreferences(userId: string) {
       ? normalizeProductTypes(platforms as ProductType[])
       : null;
 
+  const welcomeReplay = readTestAccountWelcomeReplay(data.user);
+
   return {
+    ...(welcomeReplay ? { welcomeReplay } : {}),
     welcomeStatus: parseFounderWelcomeStatus(metadata.founder_welcome_v1),
     confirmed: metadata.earn_platform_preferences_confirmed === true,
     productTypes,

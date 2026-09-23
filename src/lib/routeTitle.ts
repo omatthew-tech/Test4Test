@@ -16,6 +16,7 @@ const routeTitles: Record<string, string> = {
   "/email-preview": "Email preview",
   "/submissions": "My reviews",
   "/credits": "Credits",
+  "/buy-credits": "Buy credits",
   "/profile": "Profile",
   "/admin": "Admin",
   "/banned": "Account unavailable",

@@ -92,7 +92,6 @@
 }
 
 .thumbnail,
-.video,
 .previewSkeleton {
   position: absolute;
   inset: var(--ds-semantic-space-zero);
@@ -100,8 +99,7 @@
   height: 100%;
 }
 
-.thumbnail,
-.video {
+.thumbnail {
   display: block;
   object-fit: cover;
 }

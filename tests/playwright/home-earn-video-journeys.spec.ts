@@ -19,7 +19,10 @@ for (const viewport of [
     });
     await page.setViewportSize(viewport);
     await page.goto("/?ds-home-trusted=1");
-    const article = page.getByRole("article", { name: "Earn 1:1 credits", exact: true });
+    const article = page.getByRole("article", {
+      name: "Earn credits by testing apps",
+      exact: true,
+    });
     const video = article.locator("video");
     await expect(video).toHaveCount(1);
     expect(requests).toEqual([]);
@@ -68,7 +71,10 @@ for (const preference of ["reduced-motion", "save-data"] as const) {
       });
     }
     await page.goto("/?ds-home-trusted=1");
-    const article = page.getByRole("article", { name: "Earn 1:1 credits", exact: true });
+    const article = page.getByRole("article", {
+      name: "Earn credits by testing apps",
+      exact: true,
+    });
     await article.scrollIntoViewIfNeeded();
     await expect(article.locator("img")).toHaveAttribute(
       "src",
@@ -86,7 +92,10 @@ test("home credit demo falls back to its confirmation when the video cannot load
 }) => {
   await page.route("**/videos/home-earn-credit.mp4", (route) => route.abort());
   await page.goto("/?ds-home-trusted=1");
-  const article = page.getByRole("article", { name: "Earn 1:1 credits", exact: true });
+  const article = page.getByRole("article", {
+    name: "Earn credits by testing apps",
+    exact: true,
+  });
   await article.scrollIntoViewIfNeeded();
   await expect(article.locator("video")).toHaveCount(0);
   await expect(article.locator("img")).toHaveAttribute(

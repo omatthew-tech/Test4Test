@@ -13,12 +13,26 @@ dialog.tour {
   text-align: start;
 }
 
-dialog.tour :has(> div > .progress) {
+dialog.tour > div > div:first-child {
+  display: grid;
   grid-template-columns: 1fr auto 1fr;
 }
 
-dialog.tour :has(> div > .progress) > button {
+dialog.tour > div > div:first-child > :first-child {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+dialog.tour > div > div:first-child > button {
   justify-self: end;
+}
+
+dialog.tour:has(.welcomeTitle) > div > div:first-child > button {
+  display: none;
+}
+
+.welcomeTitle {
+  display: block;
 }
 
 .progress {
@@ -27,6 +41,93 @@ dialog.tour :has(> div > .progress) > button {
   min-height: var(--ds-semantic-size-control-default);
 }
 
-.next {
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--ds-semantic-space-inline-sm);
+}
+
+.compactActions {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  justify-content: space-between;
+}
+
+.compactActions > button {
+  padding-inline: var(--ds-semantic-space-inline-2xl);
+}
+
+.welcomeImage {
+  display: block;
   width: 100%;
+  height: auto;
+  border-radius: var(--ds-semantic-radius-surface);
+}
+
+.source {
+  text-decoration-line: underline;
+}
+
+.rankPreview {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: var(--ds-semantic-space-stack-sm);
+  isolation: isolate;
+}
+
+.rankPreview .rankCard {
+  min-width: var(--ds-semantic-space-zero);
+  /* ds-exception: earn-rank-up-celebration */
+  animation-duration: calc(var(--ds-semantic-motion-interaction-duration) * 8);
+  animation-delay: calc(var(--ds-semantic-motion-interaction-duration) * 50 / 3);
+  animation-timing-function: var(--ds-semantic-motion-interaction-easing);
+  animation-fill-mode: both;
+}
+
+.rankPreview .rankOwner {
+  z-index: 1;
+  border-color: var(--ds-semantic-color-border-accent);
+  animation-name: onboarding-rank-owner;
+}
+
+.rankPeer {
+  animation-name: onboarding-rank-peer;
+}
+
+.rankText {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rankCard h3,
+.rankCard p {
+  min-width: var(--ds-semantic-space-zero);
+}
+
+@keyframes onboarding-rank-owner {
+  from {
+    transform: translateY(calc(200% + var(--ds-semantic-space-stack-sm) * 2));
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboarding-rank-peer {
+  from {
+    transform: translateY(calc(-100% - var(--ds-semantic-space-stack-sm)));
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rankPreview .rankCard {
+    animation: none;
+  }
 }

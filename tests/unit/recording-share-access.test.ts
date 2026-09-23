@@ -4,6 +4,17 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 
+const preview = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({
+    ok: true,
+    status: "ready",
+    url: "https://media.example/preview.mp4",
+    previewSeconds: 15,
+  }),
+);
+vi.mock("../../supabase/functions/_shared/feedback-preview.ts", () => ({
+  feedbackPreview: preview,
+}));
 const context = vi.hoisted(() => ({ admin: null as unknown as SupabaseClient }));
 vi.mock("../../supabase/functions/_shared/response-recordings.ts", () => ({
   createRecordingAdminClient: () => context.admin,
@@ -54,6 +65,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  preview.mockClear();
   rows = {
     test_responses: [
       {
@@ -178,6 +190,28 @@ it("continues requiring authentication for private playback", async () => {
   expect((await request({ responseId }, "owner")).status).toBe(200);
 });
 
+it("blocks locked owner playback and new shares, while keeping tester playback and existing shares", async () => {
+  rows.test_responses[0].feedback_source = "earn";
+  const rpc = vi
+    .fn()
+    .mockResolvedValue({ data: [{ response_id: responseId, access: "locked" }], error: null });
+  Object.assign(context.admin, { rpc });
+  expect((await request({ responseId }, "owner")).status).toBe(403);
+  expect((await request({ responseId, download: true }, "owner")).status).toBe(403);
+  expect((await request({ responseId, action: "share" }, "owner")).status).toBe(403);
+  expect((await request({ responseId, action: "share" }, "tester")).status).toBe(403);
+  expect((await request({ responseId }, "tester")).status).toBe(200);
+  expect((await request({ shareToken: token })).status).toBe(200);
+  rpc.mockResolvedValue({ data: [{ response_id: responseId, access: "unlocked" }], error: null });
+  expect((await request({ responseId }, "owner")).status).toBe(200);
+});
+
+it("fails closed when feedback access cannot be verified", async () => {
+  rows.test_responses[0].feedback_source = "earn";
+  Object.assign(context.admin, { rpc: vi.fn().mockResolvedValue({ error: { code: "XX000" } }) });
+  expect((await request({ responseId }, "owner")).status).toBe(503);
+});
+
 it("applies the migration with RLS and no client access to share tokens", async () => {
   expect(
     (await db.query("select relrowsecurity from pg_class where relname = 'recording_share_links'"))
@@ -198,4 +232,54 @@ it("applies the migration with RLS and no client access to share tokens", async 
   expect(result.rows[0].token).toMatch(/^[0-9a-f-]{36}$/);
   await db.exec(`reset role; delete from test_responses where id = '${responseId}';`);
   expect((await db.query("select * from recording_share_links")).rows).toHaveLength(0);
+});
+
+it("permits only owner previews while retaining the full recording and sharing lock", async () => {
+  rows.test_responses[0].feedback_source = "earn";
+  rows.test_responses[0].duration_seconds = 120;
+  Object.assign(context.admin, {
+    rpc: vi
+      .fn()
+      .mockResolvedValue({ data: [{ response_id: responseId, access: "locked" }], error: null }),
+  });
+  expect((await request({ responseId, preview: true })).status).toBe(401);
+  expect((await request({ responseId, preview: true }, "unrelated")).status).toBe(403);
+  expect((await request({ responseId, preview: true }, "tester")).status).toBe(403);
+  expect(preview).not.toHaveBeenCalled();
+  const result = await request({ responseId, preview: true }, "owner");
+  expect(result.status).toBe(200);
+  expect(await result.json()).toMatchObject({
+    url: "https://media.example/preview.mp4",
+    previewSeconds: 15,
+  });
+  expect(preview).toHaveBeenCalledWith(
+    context.admin,
+    expect.objectContaining({ ownerId: "owner", responseId, path: "video.webm" }),
+  );
+  expect((await request({ responseId }, "owner")).status).toBe(403);
+});
+it.each([{ download: true }, { action: "share" }, { shareToken: token }])(
+  "rejects preview requests combined with another operation",
+  async (extra) => {
+    expect((await request({ responseId, preview: true, ...extra }, "owner")).status).toBe(400);
+    expect(preview).not.toHaveBeenCalled();
+  },
+);
+it("resolves the requested preview version without falling back to a different recording", async () => {
+  const versionId = "00000000-0000-4000-8000-000000000010";
+  rows.test_response_versions = [];
+  expect((await request({ responseId, versionId, preview: true }, "owner")).status).toBe(404);
+  expect(preview).not.toHaveBeenCalled();
+  rows.test_response_versions.push({
+    id: versionId,
+    response_id: responseId,
+    recording_path: "revision.webm",
+    recording_bucket: "r2:recordings",
+    duration_seconds: 20,
+  });
+  expect((await request({ responseId, versionId, preview: true }, "owner")).status).toBe(200);
+  expect(preview).toHaveBeenCalledWith(
+    context.admin,
+    expect.objectContaining({ versionId, path: "revision.webm", durationSeconds: 20 }),
+  );
 });

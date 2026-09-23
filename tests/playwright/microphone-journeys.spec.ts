@@ -1063,13 +1063,11 @@ for (const viewport of [
         const styles = window.getComputedStyle(element);
         return {
           borderWidth: styles.borderWidth,
-          color: styles.color,
           padding: styles.padding,
         };
       }),
     ).toEqual({
       borderWidth: "0px",
-      color: await testerInstructions.evaluate((element) => window.getComputedStyle(element).color),
       padding: "0px",
     });
 
@@ -1081,8 +1079,13 @@ for (const viewport of [
     expect(appLinkTextBounds).not.toBeNull();
     expect(testerInstructionsLabelBounds).not.toBeNull();
     expect(firstInstructionBounds).not.toBeNull();
-    expect(Math.round((appLinkTextBounds?.y ?? 0) - (appLinkLabelBounds?.y ?? 0))).toBe(
-      Math.round((firstInstructionBounds?.y ?? 0) - (testerInstructionsLabelBounds?.y ?? 0)),
+    // The responsive instruction panel has its own spacing; both pieces of
+    // content must still sit below their labels without overlap.
+    expect(appLinkTextBounds!.y).toBeGreaterThanOrEqual(
+      appLinkLabelBounds!.y + appLinkLabelBounds!.height,
+    );
+    expect(firstInstructionBounds!.y).toBeGreaterThanOrEqual(
+      testerInstructionsLabelBounds!.y + testerInstructionsLabelBounds!.height,
     );
 
     const shareScreen = page.getByRole("button", { name: "Share screen" });
