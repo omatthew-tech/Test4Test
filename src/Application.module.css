@@ -1353,6 +1353,18 @@
   line-height: var(--ds-semantic-typography-interface-line-height);
 }
 
+.application [class~="submissions-page"] {
+  max-width: calc(var(--ds-semantic-size-content-data) + var(--ds-semantic-space-gutter-large) * 2);
+  padding-block: var(--ds-semantic-space-zero);
+  gap: var(--ds-semantic-space-stack-md);
+}
+
+.application [class~="submission-feedback-card"] {
+  display: grid;
+  gap: var(--ds-semantic-space-stack-xs);
+  padding: var(--ds-semantic-space-inset-card-desktop);
+}
+
 .application [class~="submission-feedback-card__header"],
 .application [class~="submission-feedback-card__title-row"] {
   display: flex;
@@ -1362,11 +1374,15 @@
 
 .application [class~="submission-feedback-card__header"] {
   justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--ds-semantic-space-inline-sm);
 }
 
 .application [class~="submission-feedback-card__title-row"] {
   min-width: 0;
+  min-height: var(--ds-semantic-size-control-target);
   flex: 1 1 auto;
+  gap: var(--ds-semantic-space-zero);
 }
 
 .application [class~="submission-feedback-card__title-row"] h2 {
@@ -1390,6 +1406,43 @@
 .application [class~="submission-feedback-card__title-link"]:hover {
   background: var(--ds-semantic-color-action-tint);
   color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.application [class~="submission-feedback-card__quick-actions"] {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.application [class~="submission-feedback-card__icon-action"] {
+  display: inline-flex;
+  width: var(--ds-semantic-size-control-target);
+  height: var(--ds-semantic-size-control-target);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-semantic-space-zero);
+  border: var(--ds-semantic-border-width-default) solid transparent;
+  border-radius: var(--ds-semantic-radius-control);
+  background: transparent;
+  color: var(--ds-semantic-color-text-primary);
+  text-decoration: none;
+}
+
+.application [class~="submission-feedback-card__icon-action"] svg {
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+}
+
+.application [class~="submission-feedback-card__icon-action"]:hover:not(:disabled) {
+  border-color: var(--ds-semantic-color-border-accent);
+  background: var(--ds-semantic-color-action-tint);
+  color: var(--ds-semantic-color-action-primary-strong);
+}
+
+.application [class~="submission-feedback-card__copy"] p {
+  color: var(--ds-semantic-color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .application [class~="submission-feedback-card__actions"] {
@@ -2252,6 +2305,14 @@
     ),
   .application [class~="page-stack"] {
     padding: var(--ds-semantic-space-stack-xl) var(--ds-semantic-space-gutter-small);
+  }
+
+  .application [class~="submissions-page"] {
+    padding-block: var(--ds-semantic-space-zero);
+  }
+
+  .application [class~="submission-feedback-card"] {
+    padding: var(--ds-semantic-space-inset-card-mobile);
   }
 
   .application

@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { seededState } from "../../src/data/seeds";
 import { SubmissionsPage } from "../../src/pages/SubmissionsPage";
+import { createStarRatingCards } from "../../src/testing/starRatingFixtures";
 
 const backend = vi.hoisted(() => ({ cards: vi.fn() }));
 vi.mock("../../src/lib/submittedFeedback", () => ({ loadSubmittedFeedbackCards: backend.cards }));
@@ -58,4 +59,21 @@ it("shows empty states only after a successful load", async () => {
   expect(screen.queryByRole("alert")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Favorites" }));
   expect(screen.getByText("No favorite submissions yet")).toBeTruthy();
+});
+
+it("opens each submitted test's founder conversation using its response", async () => {
+  const cards = createStarRatingCards();
+  backend.cards.mockResolvedValue([
+    cards[0],
+    { ...cards[1], submissionId: "without-conversation" },
+  ]);
+  mount();
+  expect(
+    (await screen.findByRole("link", { name: "Message about 5-star recording" })).getAttribute(
+      "href",
+    ),
+  ).toBe(`/messages?response=${cards[0].responseId}`);
+  expect(
+    screen.getByRole("link", { name: "Message about Unrated recording" }).getAttribute("href"),
+  ).toBe(`/messages?response=${cards[1].responseId}`);
 });

@@ -1,6 +1,7 @@
 # Private chat and message notifications
 
-Founders start conversations from a registered tester's recording. Each app/tester pair has one
+Founders start conversations from a registered tester's recording; testers can start them from the
+message icon on their submitted feedback cards. Each app/tester pair has one
 conversation across response revisions. Both participants can read and reply at `/messages` and
 `/messages/:conversationId`; tester accounts use the shared authenticated route without gaining
 access to founder workspace pages. Sign-in retains the conversation destination.
@@ -25,6 +26,12 @@ Email addresses never appear in chat responses. RLS also applies to Realtime tab
 writes, and atomically saves the message, initial email job, and unread reminder jobs. A unique
 sender/request ID prevents duplicates across retries. Reusing it with different content or a different
 conversation is rejected. History is keyset-paginated in batches of 50; the inbox uses batches of 30.
+
+`20260923173203_allow_tester_started_conversations.sql` allows either the app owner or the registered
+tester on a response to open and start that conversation. Response links resolve the existing
+app/tester conversation across revisions. The server derives the founder and tester from the
+response, checks both participants' availability, and rejects unrelated users and anonymous tests.
+Apply this migration before releasing the submission-card message action.
 
 The client reconciles missed history after reconnecting, refreshes on focus, and polls every 15 seconds
 while Realtime is unavailable. A displayed message's timestamp must intersect the visible history

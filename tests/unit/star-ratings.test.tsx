@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { afterEach, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { afterEach, expect, it, vi } from "vitest";
 import { StarRatingDisplay } from "@test4test/design-system";
 import {
   canReportRating,
@@ -104,7 +105,7 @@ it.each([
   [card(4, { reportStatus: "pending" }), "Report in progress"],
   [card(3, { submissionStatus: "paused" }), "Test closed"],
   [card(5, { submissionStatus: "paused" }), "Test closed"],
-  [card(null), "Not rated"],
+  [card(null), null],
 ] as const)("keeps rating visible independently of status %#", (value, status) => {
   render(
     <MemoryRouter>
@@ -117,10 +118,50 @@ it.each([
       />
     </MemoryRouter>,
   );
-  expect(screen.getByText(status)).toBeTruthy();
+  if (status) expect(screen.getByText(status)).toBeTruthy();
+  expect(screen.queryByText("Not rated")).toBeNull();
+  expect(screen.getByRole("link", { name: "Message about Example" }).getAttribute("href")).toBe(
+    `/messages?response=${value.responseId}`,
+  );
   if (value.starRating)
     expect(screen.getByRole("img", { name: `${value.starRating} out of 5 stars` })).toBeTruthy();
   expect(screen.queryByRole("button", { name: /favorites/ }) !== null).toBe(
     value.starRating === null || value.starRating === 5,
   );
+});
+
+it("opens the selected response conversation and keeps bookmarking independent", async () => {
+  const user = userEvent.setup();
+  const onToggleFavorite = vi.fn();
+  const responseId = "response/with?reserved&characters";
+  function MessageDestination() {
+    const location = useLocation();
+    return <p>Conversation: {new URLSearchParams(location.search).get("response")}</p>;
+  }
+  render(
+    <MemoryRouter initialEntries={["/submissions"]}>
+      <Routes>
+        <Route
+          path="/submissions"
+          element={
+            <SubmissionFeedbackRow
+              card={card(null, { responseId })}
+              isFavorite
+              isFavoritePending={false}
+              primaryAccessUrl={null}
+              onToggleFavorite={onToggleFavorite}
+            />
+          }
+        />
+        <Route path="/messages" element={<MessageDestination />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const bookmark = screen.getByRole("button", { name: "Remove Example from favorites" });
+  expect(bookmark.getAttribute("aria-pressed")).toBe("true");
+  await user.click(bookmark);
+  expect(onToggleFavorite).toHaveBeenCalledExactlyOnceWith(responseId);
+  await user.click(screen.getByRole("link", { name: "Message about Example" }));
+  expect(screen.getByText(`Conversation: ${responseId}`)).toBeTruthy();
+  expect(onToggleFavorite).toHaveBeenCalledTimes(1);
 });

@@ -1,9 +1,9 @@
-import { Link as DesignSystemLink, StarRatingDisplay } from "@test4test/design-system";
+import { IconButton, Link as DesignSystemLink, StarRatingDisplay } from "@test4test/design-system";
 import { createStarRatingCards } from "../testing/starRatingFixtures";
 import { isRevisionRating, canReviseFeedback, compareSubmittedRatings } from "../lib/starRatings";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Bookmark, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, Bookmark, ExternalLink, MessageCircle } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { getPrimaryAccessLink } from "../lib/format";
@@ -467,10 +467,21 @@ export function SubmissionFeedbackRow({
   primaryAccessUrl: string | null;
   onToggleFavorite: (responseId: string) => void;
 }) {
+  const location = useLocation();
   const isAttentionCard = isRevisionRating(card.starRating);
   const hasPendingReport = card.reportStatus === "pending";
   const canRevise = canReviseFeedback(card);
   const showBookmark = !isAttentionCard;
+  const showStatus =
+    card.starRating !== null || hasPendingReport || card.submissionStatus !== "live";
+  const messageQuery = new URLSearchParams({ response: card.responseId });
+  if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
+    const current = new URLSearchParams(location.search);
+    for (const key of ["ds-user", "ds-tester"]) {
+      const value = current.get(key);
+      if (value) messageQuery.set(key, value);
+    }
+  }
 
   return (
     <Surface className="submission-feedback-card">
@@ -485,30 +496,37 @@ export function SubmissionFeedbackRow({
               className="submission-feedback-card__title-link"
               aria-label={`Open ${card.productName}`}
             >
-              <ExternalLink size={16} />
+              <ExternalLink size={16} aria-hidden="true" />
             </a>
           ) : null}
         </div>
-        {showBookmark ? (
-          <button
-            type="button"
-            className={`submission-feedback-card__bookmark${isFavorite ? " submission-feedback-card__bookmark--active" : ""}`}
-            aria-label={
-              isFavorite
-                ? `Remove ${card.productName} from favorites`
-                : `Add ${card.productName} to favorites`
-            }
-            aria-pressed={isFavorite}
-            disabled={isFavoritePending}
-            onClick={() => void onToggleFavorite(card.responseId)}
+        <div className="submission-feedback-card__quick-actions">
+          <DesignSystemLink
+            to={`/messages?${messageQuery}`}
+            className="submission-feedback-card__icon-action"
+            aria-label={`Message about ${card.productName}`}
+            title={`Message about ${card.productName}`}
           >
-            <Bookmark
-              size={24}
-              fill={isFavorite ? "currentColor" : "none"}
-              stroke={isFavorite ? "none" : "currentColor"}
-            />
-          </button>
-        ) : null}
+            <MessageCircle aria-hidden="true" />
+          </DesignSystemLink>
+          {showBookmark ? (
+            <IconButton
+              type="button"
+              variant="quiet"
+              className="submission-feedback-card__icon-action"
+              label={
+                isFavorite
+                  ? `Remove ${card.productName} from favorites`
+                  : `Add ${card.productName} to favorites`
+              }
+              aria-pressed={isFavorite}
+              disabled={isFavoritePending}
+              onClick={() => void onToggleFavorite(card.responseId)}
+            >
+              <Bookmark aria-hidden="true" fill={isFavorite ? "currentColor" : "none"} />
+            </IconButton>
+          ) : null}
+        </div>
       </div>
 
       <div className="submission-feedback-card__body">
@@ -521,34 +539,36 @@ export function SubmissionFeedbackRow({
             <span className="tag tag--warm">Google Play closed test</span>
           ) : null}
         </div>
-        <div className="submission-feedback-card__actions">
-          <StarRatingDisplay value={card.starRating} />
-          {hasPendingReport ? (
-            <span className="submission-feedback-card__status-pill submission-feedback-card__status-pill--report">
-              Report in progress
-            </span>
-          ) : canRevise ? (
-            <Link
-              to={`/submissions/${card.responseId}/revise`}
-              className="submission-feedback-card__action-button"
-            >
-              Revise Feedback
-              <ArrowRight size={16} />
-            </Link>
-          ) : card.submissionStatus !== "live" ? (
-            <>
-              <span className="submission-feedback-card__status-pill">Test closed</span>
-              {isAttentionCard ? (
-                <DesignSystemLink
-                  to={`/submissions/${card.responseId}/revise`}
-                  className="submission-feedback-card__action-button"
-                >
-                  Report Rating
-                </DesignSystemLink>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+        {showStatus ? (
+          <div className="submission-feedback-card__actions">
+            {card.starRating !== null ? <StarRatingDisplay value={card.starRating} /> : null}
+            {hasPendingReport ? (
+              <span className="submission-feedback-card__status-pill submission-feedback-card__status-pill--report">
+                Report in progress
+              </span>
+            ) : canRevise ? (
+              <Link
+                to={`/submissions/${card.responseId}/revise`}
+                className="submission-feedback-card__action-button"
+              >
+                Revise Feedback
+                <ArrowRight size={16} />
+              </Link>
+            ) : card.submissionStatus !== "live" ? (
+              <>
+                <span className="submission-feedback-card__status-pill">Test closed</span>
+                {isAttentionCard ? (
+                  <DesignSystemLink
+                    to={`/submissions/${card.responseId}/revise`}
+                    className="submission-feedback-card__action-button"
+                  >
+                    Report Rating
+                  </DesignSystemLink>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </Surface>
   );

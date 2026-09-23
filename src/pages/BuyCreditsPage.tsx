@@ -156,12 +156,7 @@ export function BuyCreditsPage() {
             </Surface>
           ))}
         </div>
-        {enabled && (
-          <p>
-            Prices are in USD. Applicable tax is calculated at checkout. You'll receive a paid
-            invoice after payment.
-          </p>
-        )}
+        {enabled && <p>Prices are in USD. Applicable tax is calculated at checkout.</p>}
         <p className={styles.guarantee}>
           All credits come with a satisfaction guarantee. If you don't receive high quality
           feedback, simply rate the recording less than 5 stars and the tester will be prompted to

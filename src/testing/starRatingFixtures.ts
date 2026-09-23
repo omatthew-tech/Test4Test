@@ -2,8 +2,8 @@ import type { SubmittedFeedbackCard } from "../types";
 
 export function createStarRatingCards(): SubmittedFeedbackCard[] {
   return ([5, null, 4, 2, 1, 3] as const).map((starRating) => ({
-    responseId: `star-fixture-${starRating ?? "unrated"}`,
-    submissionId: "palette-pilot",
+    responseId: starRating === null ? "response-palette-1" : `star-fixture-${starRating}`,
+    submissionId: starRating === null ? "submission-palette" : "palette-pilot",
     productName: starRating === null ? "Unrated recording" : `${starRating}-star recording`,
     productTypes: ["website"],
     description: "Feedback from a completed usability test.",

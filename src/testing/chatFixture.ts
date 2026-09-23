@@ -45,18 +45,21 @@ export function createChatFixture(state: AppState): ChatApi {
       return item;
     }
     const response = state.responses.find((entry) => entry.id === target.responseId);
-    const submission = state.submissions.find(
-      (entry) => entry.id === response?.submissionId && entry.userId === actor,
-    );
-    if (!response?.testerUserId || !submission)
-      throw new Error("This tester is unavailable for messaging.");
+    const submission = state.submissions.find((entry) => entry.id === response?.submissionId);
+    if (
+      !response?.testerUserId ||
+      !submission?.userId ||
+      response.testerUserId === submission.userId ||
+      ![submission.userId, response.testerUserId].includes(actor)
+    )
+      throw new Error("This conversation is unavailable.");
     return (
       items.find(
         (entry) => entry.submissionId === submission.id && entry.testerId === response.testerUserId,
       ) ?? {
         id: crypto.randomUUID(),
         submissionId: submission.id,
-        founderId: actor,
+        founderId: submission.userId,
         testerId: response.testerUserId,
         productName: submission.productName,
         names: Object.fromEntries(state.users.map((user) => [user.id, user.displayName])),
