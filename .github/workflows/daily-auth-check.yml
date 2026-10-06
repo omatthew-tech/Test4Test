@@ -2,8 +2,9 @@ name: Daily authentication check
 
 on:
   schedule:
-    # Daily at 13:17 UTC (09:17 New York during daylight time, 08:17 otherwise).
-    - cron: "17 13 * * *"
+    # Keep 4 a.m. Eastern through daylight-saving transitions.
+    - cron: "0 4 * * *"
+      timezone: "America/New_York"
   workflow_dispatch:
 
 permissions:
