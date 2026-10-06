@@ -22,8 +22,8 @@ dedicated, readable test mailbox. Do not substitute a personal or support inbox.
 3. Put the workflow and runner on the repository's default branch (`master`)
    and enable GitHub Actions. Scheduled workflows only run from that branch.
 4. Run **Actions → Daily authentication check → Run workflow** once and confirm
-   the result. The cron then runs daily at 13:17 UTC (9:17 a.m. New York during
-   daylight saving time, 8:17 a.m. during standard time). GitHub may delay runs;
+   the result. The cron then runs daily at 4:00 a.m. Eastern using the
+   `America/New_York` timezone, including daylight-saving changes. GitHub may delay runs;
    public-repository schedules can be disabled after 60 days without activity.
 
 ## Logs
