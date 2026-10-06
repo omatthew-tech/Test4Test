@@ -1,0 +1,55 @@
+name: Daily authentication check
+
+on:
+  schedule:
+    # Daily at 13:17 UTC (09:17 New York during daylight time, 08:17 otherwise).
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-auth-check
+  cancel-in-progress: false
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Check live login
+        id: check
+        run: npm run test:auth
+        env:
+          AUTH_CHECK_URL: https://test4test.io/test4test-redesign
+          AUTH_CHECK_EMAIL: test@test4test.io
+          TEST_ACCOUNT_OTP_CODE: ${{ secrets.TEST_ACCOUNT_OTP_CODE }}
+      - name: Log runner failure
+        if: always()
+        run: |
+          if [ -f artifacts/auth-check/latest.json ]; then exit 0; fi
+          mkdir -p artifacts/auth-check
+          node --input-type=module -e '
+            import { writeFileSync, appendFileSync } from "node:fs";
+            const result = {timestamp: new Date().toISOString(), url: "https://test4test.io/test4test-redesign", status: "BLOCKED", stage: "runner_setup", reason: "The runner could not complete the check; login was not verified."};
+            writeFileSync("artifacts/auth-check/latest.json", JSON.stringify(result, null, 2));
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, "Authentication: BLOCKED — runner setup failed.\n");
+          '
+      - name: Save authentication result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/auth-check/
+          retention-days: 90
+          if-no-files-found: error
