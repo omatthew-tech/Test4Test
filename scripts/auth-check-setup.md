@@ -1,10 +1,14 @@
 # Daily authentication check
 
 The `Daily authentication check` GitHub Actions workflow opens
-`https://test4test.io/test4test-redesign` in a fresh Chromium context, follows its
+`https://test4test.io/` in a fresh Chromium context, follows its
 login link, enters the dedicated test account and passcode, verifies that the
 authentication server validates the resulting user, opens Profile, and reloads
 it to confirm the session persists.
+
+Form fields are selected by their accessible textbox names, so decorative
+required-field markers do not break the check. The retired
+`/test4test-redesign` path is not the production homepage.
 
 The check supports the redesign's **Profile menu → Profile** navigation and its
 **Sign out** menu item, as well as the older layout's Profile link and Sign out

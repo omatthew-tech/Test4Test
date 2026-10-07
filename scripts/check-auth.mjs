@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
-const defaultUrl = "https://test4test.io/test4test-redesign";
+const defaultUrl = "https://test4test.io/";
 
 class CheckFailure extends Error {
   constructor(message, status = "NOT_WORKING") {
@@ -99,14 +99,14 @@ export async function checkAuth(env = process.env) {
     requireCheck(response?.ok(), `The requested page returned HTTP ${response?.status() ?? "unknown"}.`);
 
     result.stage = "open_login";
-    // Start at the requested redesign URL and follow its actual login link.
+    // Start at the configured homepage and follow its actual login link.
     // Never silently substitute a different landing page when this one fails.
     const loginLink = page.getByRole("link", { name: /^(log in|sign in)$/i }).filter({ visible: true }).first();
     await assertion(loginLink).toBeVisible();
     const loginUrl = new URL(await loginLink.getAttribute("href"), page.url());
     requireCheck(loginUrl.origin === target.origin, "The login link points to an unexpected origin.");
     await loginLink.click();
-    await page.getByLabel("Email address", { exact: true }).fill(email);
+    await page.getByRole("textbox", { name: "Email address", exact: true }).fill(email);
 
     result.stage = "request_code";
     // The dedicated account uses Continue. Refuse the email flow so this check
@@ -116,7 +116,7 @@ export async function checkAuth(env = process.env) {
       throw new CheckFailure("The deployed site did not offer the configured test-account flow.", "BLOCKED");
     });
     await continueButton.click();
-    await page.getByLabel("Test account passcode", { exact: true }).fill(passcode);
+    await page.getByRole("textbox", { name: "Test account passcode", exact: true }).fill(passcode);
 
     result.stage = "verify_code";
     const loginResponsePromise = page.waitForResponse((r) =>

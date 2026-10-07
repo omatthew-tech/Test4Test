@@ -32,7 +32,7 @@ jobs:
         id: check
         run: npm run test:auth
         env:
-          AUTH_CHECK_URL: https://test4test.io/test4test-redesign
+          AUTH_CHECK_URL: https://test4test.io/
           AUTH_CHECK_EMAIL: test@test4test.io
           TEST_ACCOUNT_OTP_CODE: ${{ secrets.TEST_ACCOUNT_OTP_CODE }}
       - name: Log runner failure
@@ -42,7 +42,7 @@ jobs:
           mkdir -p artifacts/auth-check
           node --input-type=module -e '
             import { writeFileSync, appendFileSync } from "node:fs";
-            const result = {timestamp: new Date().toISOString(), url: "https://test4test.io/test4test-redesign", status: "BLOCKED", stage: "runner_setup", reason: "The runner could not complete the check; login was not verified."};
+            const result = {timestamp: new Date().toISOString(), url: "https://test4test.io/", status: "BLOCKED", stage: "runner_setup", reason: "The runner could not complete the check; login was not verified."};
             writeFileSync("artifacts/auth-check/latest.json", JSON.stringify(result, null, 2));
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, "Authentication: BLOCKED — runner setup failed.\n");
           '
