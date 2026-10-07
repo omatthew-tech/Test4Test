@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -12,6 +13,7 @@ import { chatApi, type ChatApi, type ChatInbox } from "../lib/chat";
 import { createChatFixture } from "../testing/chatFixture";
 
 const fixtureMode = import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1";
+const ChatUnreadContext = createContext(0);
 const ChatContext = createContext<{
   api: ChatApi;
   inbox: ChatInbox;
@@ -50,23 +52,40 @@ function ChatSession({
   const [revision, setRevision] = useState(0);
   const alive = useRef(true);
   const request = useRef(0);
-  const refresh = useCallback(async () => {
-    if (!userId) return;
-    const ticket = ++request.current;
-    try {
-      const result = await api.list();
-      if (alive.current && ticket === request.current) {
-        setInbox(result);
-        setError("");
+  const refreshing = useRef<Promise<void> | null>(null);
+  const refreshPending = useRef(false);
+  const refresh = useCallback((): Promise<void> => {
+    if (!userId || !alive.current) return Promise.resolve();
+    request.current++;
+    refreshPending.current = true;
+    if (refreshing.current) return refreshing.current;
+    // A burst of realtime, focus, or reconnect events needs at most one follow-up
+    // read. Never discard an invalidation that arrives during the current request.
+    const pending = (async () => {
+      while (alive.current && refreshPending.current) {
+        refreshPending.current = false;
+        const ticket = request.current;
+        try {
+          const result = await api.list();
+          if (alive.current && ticket === request.current) {
+            setInbox(result);
+            setError("");
+          }
+        } catch (failure) {
+          if (alive.current && ticket === request.current)
+            setError(failure instanceof Error ? failure.message : "Messages could not be loaded.");
+        } finally {
+          if (alive.current && ticket === request.current) setLoading(false);
+        }
       }
-    } catch (failure) {
-      if (alive.current && ticket === request.current)
-        setError(failure instanceof Error ? failure.message : "Messages could not be loaded.");
-    } finally {
-      if (alive.current && ticket === request.current) setLoading(false);
-    }
+    })().finally(() => {
+      refreshing.current = null;
+      if (alive.current && refreshPending.current) return refresh();
+    });
+    refreshing.current = pending;
+    return pending;
   }, [api, userId]);
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     if (!inbox.nextBefore) return;
     const ticket = request.current;
     try {
@@ -83,7 +102,7 @@ function ChatSession({
     } catch {
       if (alive.current) setError("More conversations could not be loaded. Try again.");
     }
-  };
+  }, [api, inbox.nextBefore]);
   useEffect(() => {
     alive.current = true;
     if (!userId) return;
@@ -110,6 +129,8 @@ function ChatSession({
     document.addEventListener("visibilitychange", visible);
     return () => {
       alive.current = false;
+      refreshPending.current = false;
+      request.current++;
       unsubscribe();
       window.removeEventListener("focus", visible);
       window.removeEventListener("online", changed);
@@ -126,11 +147,13 @@ function ChatSession({
     }, 15_000);
     return () => window.clearInterval(timer);
   }, [connected, refresh, userId]);
+  const value = useMemo(
+    () => ({ api, inbox, loading, error, connected, revision, refresh, loadMore }),
+    [api, inbox, loading, error, connected, revision, refresh, loadMore],
+  );
   return (
-    <ChatContext.Provider
-      value={{ api, inbox, loading, error, connected, revision, refresh, loadMore }}
-    >
-      {children}
+    <ChatContext.Provider value={value}>
+      <ChatUnreadContext.Provider value={inbox.unreadCount}>{children}</ChatUnreadContext.Provider>
     </ChatContext.Provider>
   );
 }
@@ -143,5 +166,5 @@ export function useChat() {
 
 // Layout is also rendered independently in existing stories/tests.
 export function useChatUnreadCount() {
-  return useContext(ChatContext)?.inbox.unreadCount ?? 0;
+  return useContext(ChatUnreadContext);
 }

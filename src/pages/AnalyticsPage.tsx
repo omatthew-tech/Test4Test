@@ -121,6 +121,7 @@ export function AnalyticsPage() {
   }, [previews]);
   const [previewLoading, setPreviewLoading] = useState(!fixtureMode);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const hasNoRecordings = !previewLoading && !previewError && previews.length === 0;
   const pollingAttemptsRef = useRef(0);
   const recordingsSearch = searchParams.toString();
   const recordingsHref = `/recordings${recordingsSearch ? `?${recordingsSearch}` : ""}`;
@@ -238,6 +239,7 @@ export function AnalyticsPage() {
 
   return (
     <AppShell>
+      {hasNoRecordings ? <h1 className="ds-sr-only">Analyze</h1> : null}
       <Stack className={styles.content} gap="xl">
         <section aria-label="Recordings">
           <Stack gap="md">
@@ -250,7 +252,7 @@ export function AnalyticsPage() {
               </h2>
             ) : null}
 
-            {!previewLoading && !previewError && previews.length === 0 ? (
+            {hasNoRecordings ? (
               <p className={styles.emptyRecordings}>
                 You have no recordings. <Link to="/share">Share your test</Link> or{" "}
                 <Link to="/earn">earn credits</Link>
@@ -332,7 +334,9 @@ export function AnalyticsPage() {
           </Stack>
         </section>
 
-        <AnalyticsTranscriptReport key={state.currentUserId ?? "guest"} />
+        {!hasNoRecordings ? (
+          <AnalyticsTranscriptReport key={state.currentUserId ?? "guest"} />
+        ) : null}
       </Stack>
     </AppShell>
   );

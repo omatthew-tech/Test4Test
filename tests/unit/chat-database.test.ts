@@ -9,6 +9,8 @@ const outsider = "00000000-0000-4000-8000-000000000003";
 const app = "00000000-0000-4000-8000-000000000004";
 const response = "00000000-0000-4000-8000-000000000005";
 let db: PGlite;
+let legacyChatFunctions: string;
+let testerInitiationMigration: string;
 beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
@@ -25,20 +27,29 @@ beforeAll(async () => {
       "utf8",
     ),
   );
-  await db.exec(
-    await readFile(
-      new URL(
-        "../../supabase/migrations/20260923173203_allow_tester_started_conversations.sql",
-        import.meta.url,
-      ),
-      "utf8",
+  legacyChatFunctions = (
+    await db.query<{ definition: string }>(
+      `select pg_get_functiondef(p.oid) as definition from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'private' and p.proname in ('chat_context', 'chat_send')`,
+    )
+  ).rows
+    .map((row) => row.definition)
+    .join(";\n");
+  testerInitiationMigration = await readFile(
+    new URL(
+      "../../supabase/migrations/20261001022459_allow_tester_started_conversations.sql",
+      import.meta.url,
     ),
+    "utf8",
   );
+  await db.exec(testerInitiationMigration);
 }, 30_000);
 afterAll(async () => {
   await db?.close();
 });
 beforeEach(async () => {
+  await db.exec(testerInitiationMigration);
   await db.exec(`truncate public.profiles, public.submissions, public.test_responses, public.chat_conversations, public.chat_messages, public.chat_read_states, public.chat_notification_outbox restart identity cascade;
     insert into profiles(id,display_name,email) values ('${founder}','Founder','founder@example.test'),('${tester}','Tester','tester@example.test'),('${outsider}','Other','other@example.test');
     insert into submissions values ('${app}','${founder}','Example app');
@@ -64,6 +75,44 @@ const send = (
   );
 const rows = async (sql: string, params: unknown[] = []) =>
   (await db.query<Record<string, any>>(sql, params)).rows;
+
+it("upgrades the founder-only database to tester initiation without changing execution grants", async () => {
+  await db.exec(legacyChatFunctions);
+  const grants = () =>
+    rows(`select p.proname, p.proacl::text as grants from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private' and p.proname in ('chat_context', 'chat_send') order by p.proname`);
+  const previousGrants = await grants();
+  await expect(asUser(tester, "select chat_context($1,null) result", [response])).rejects.toThrow(
+    "This conversation is unavailable.",
+  );
+  await expect(send(tester)).rejects.toThrow("This tester is unavailable for messaging.");
+  expect(await asUser(founder, "select chat_context($1,null) result", [response])).toMatchObject({
+    id: null,
+    peerName: "Tester",
+  });
+
+  await db.exec(testerInitiationMigration);
+  // A migration retry is safe and leaves restricted EXECUTE grants intact.
+  await db.exec(testerInitiationMigration);
+  expect(await grants()).toEqual(previousGrants);
+  expect(await asUser(tester, "select chat_context($1,null) result", [response])).toMatchObject({
+    id: null,
+    peerName: "Founder",
+    canSend: true,
+  });
+  expect(await rows("select * from chat_conversations")).toHaveLength(0);
+  expect(await rows("select * from chat_notification_outbox")).toHaveLength(0);
+  const requestId = crypto.randomUUID();
+  const first = await send(tester, null, "First message from My Reviews", requestId);
+  expect(await send(tester, null, "First message from My Reviews", requestId)).toEqual(first);
+  await send(founder, first.conversationId, "Thanks for testing!");
+  expect(await rows("select * from chat_conversations")).toHaveLength(1);
+  expect(await rows("select * from chat_messages")).toHaveLength(2);
+  await expect(asUser(outsider, "select chat_context($1,null) result", [response])).rejects.toThrow(
+    "This conversation is unavailable.",
+  );
+});
 
 it("creates nothing when opening a composer, then atomically saves message, participants and three jobs", async () => {
   const context = await asUser<{ id: null; peerName: string }>(

@@ -65,7 +65,11 @@ The production frontend release remains separate and is not deployed by this rol
    the project's `/functions/v1/complete-recording-clip` URL. Its shared secret
    must match Supabase. Source R2 credentials need GetObject, PutObject, DeleteObject.
 5. Confirm the `dispatch-recording-clips` cron job runs each minute. Save also
-   dispatches immediately; cron handles recovery and cleanup after the editor closes.
+   dispatches immediately. Since October 6, the external background scheduler checks
+   for recovery work every five minutes and requests asset cleanup hourly. Completion
+   callbacks also wake eligible queued clips. Cleanup keeps the existing one-hour
+   grace period and stops after a bounded 90-second work window; retained ledger
+   entries are retried on the next maintenance run. Access revocation is unchanged.
 6. Deploy the frontend after the backend dependencies. In preview, verify actual
    retained recordings: save, copy, open in a signed-out browser, play/download,
    retry failure, delete the source, and confirm link revocation and eventual

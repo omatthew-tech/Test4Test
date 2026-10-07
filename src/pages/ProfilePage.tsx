@@ -1,7 +1,14 @@
 ﻿import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowRight, Mail, PencilLine, Trash2, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useModalFocus } from "@test4test/design-system";
+import {
+  Alert,
+  Button,
+  Stack,
+  Surface as DesignSurface,
+  useModalFocus,
+} from "@test4test/design-system";
+import { useEmailLinkRevocation } from "../lib/useEmailLinkRevocation";
 import { AppShell, Surface } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
 import { TesterProfileSettings } from "./TesterProfileSettings";
@@ -42,6 +49,7 @@ function createPaymentDraft(
 }
 
 export function ProfilePage() {
+  const emailLinks = useEmailLinkRevocation();
   const navigate = useNavigate();
   const { currentUser, changeEmail, updatePaymentMethods, deleteAccount } = useAppState();
 
@@ -146,6 +154,26 @@ export function ProfilePage() {
       <h1 className="ds-sr-only">Profile</h1>
       <div className="page-stack profile-page profile-page--settings">
         <div className="profile-settings-shell">
+          <DesignSurface>
+            <Stack>
+              <h2>Email sign-in links</h2>
+              <p>
+                Anyone with one of your email sign-in links can access your account. Invalidate
+                existing links to stop future use. This keeps current sessions signed in.
+              </p>
+              <Button
+                variant="secondary"
+                loading={emailLinks.busy}
+                loadingLabel="Invalidating links"
+                onClick={() => void emailLinks.revoke()}
+              >
+                Invalidate existing email sign-in links
+              </Button>
+              {emailLinks.message ? (
+                <Alert tone={emailLinks.failed ? "danger" : "success"}>{emailLinks.message}</Alert>
+              ) : null}
+            </Stack>
+          </DesignSurface>
           <Surface className="profile-panel profile-panel--account">
             <div className="profile-account-stack">
               <div className="profile-account-row">
@@ -154,7 +182,6 @@ export function ProfilePage() {
                     <Mail size={20} />
                   </div>
                   <div className="profile-email-card__content">
-                    <small>Current email</small>
                     <strong>{currentUser.email}</strong>
                   </div>
                 </div>
@@ -283,9 +310,6 @@ export function ProfilePage() {
               <h2>Delete account</h2>
             </div>
             <div className="profile-danger-stack">
-              <p className="profile-danger-copy">
-                Deleting your account permanently removes your apps, ratings, and credits.
-              </p>
               <button
                 type="button"
                 className="button button--secondary profile-delete-button"

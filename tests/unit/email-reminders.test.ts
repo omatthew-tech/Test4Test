@@ -1,16 +1,19 @@
 // @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const email = vi.hoisted(() => ({ send: vi.fn(), log: vi.fn() }));
+const email = vi.hoisted(() => ({ send: vi.fn(), log: vi.fn(), render: vi.fn() }));
 vi.mock("../../supabase/functions/_shared/email-system.ts", () => ({
   sendEmail: email.send,
   logEmailDelivery: email.log,
   loadEmailTemplates: async () => templates,
-  renderEmailTemplate: () => ({
-    subject: "Reminder",
-    textBody: "Test back",
-    htmlBody: "Test back",
-  }),
+  renderEmailTemplate: (...args: unknown[]) => {
+    email.render(...args);
+    return {
+      subject: "Reminder",
+      textBody: "Test back",
+      htmlBody: "Test back",
+    };
+  },
 }));
 const modulePath = "../../supabase/functions/_shared/test-back-reminders.ts";
 const { processReminderSequence, loadDueReminderSequences } = await import(modulePath);
@@ -32,6 +35,9 @@ type Row = Record<string, any>;
 class FakeDatabase {
   tables: Record<string, Row[]> = {};
   failTargetRead = false;
+  targetUnavailable = false;
+  failTargetRpc = false;
+  rpcCalls: Array<{ name: string; args: Row }> = [];
   from(table: string) {
     const filters: Array<(row: Row) => boolean> = [];
     let changes: Row | undefined;
@@ -96,7 +102,21 @@ class FakeDatabase {
     };
     return builder;
   }
-  async rpc() {
+  async rpc(name: string, args: Row) {
+    this.rpcCalls.push({ name, args });
+    if (name === "find_test_back_target_submission") {
+      if (this.failTargetRpc) {
+        return { data: null, error: { message: "Target lookup failed" } };
+      }
+      const target = this.tables.submissions.find((row) => row.user_id === args.p_tester_user_id);
+      return {
+        data:
+          target && !this.targetUnavailable
+            ? [{ submission_id: target.id, product_name: target.product_name }]
+            : [],
+        error: null,
+      };
+    }
     return {
       data: [{ current_test_back_rate_percent: 100, new_test_back_rate_percent: 50 }],
       error: null,
@@ -112,6 +132,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date("2026-09-20T18:00:00Z"));
   email.send.mockReset().mockResolvedValue({ providerMessageId: "provider-1" });
   email.log.mockReset();
+  email.render.mockReset();
   db = new FakeDatabase();
   reminder = {
     id: "sequence",
@@ -150,6 +171,42 @@ beforeEach(() => {
   db.tables.email_delivery_logs = [];
 });
 afterEach(() => vi.useRealTimers());
+
+it("issues separate reusable feedback and exact test-back links when enabled", async () => {
+  await processReminderSequence(
+    db,
+    {
+      ...env,
+      emailAccessLinksEnabled: true,
+      smtp2goAuthLinkApiKey: "untracked-key",
+      smtp2goAuthLinkTrackingDisabled: true,
+    },
+    reminder,
+    templates,
+  );
+  const issued = db.rpcCalls.filter((call) => call.name === "issue_email_access_link");
+  expect(issued).toHaveLength(2);
+  expect(issued.map((call) => call.args)).toEqual([
+    expect.objectContaining({
+      p_user_id: "owner",
+      p_destination: "feedback",
+      p_resource_id: "response",
+      p_entry: "test_back_email",
+    }),
+    expect.objectContaining({
+      p_user_id: "owner",
+      p_destination: "test",
+      p_resource_id: "tester-app",
+      p_entry: "test_back_email",
+      p_feedback_source: "earn",
+    }),
+  ]);
+  const variables = email.render.mock.calls[0][1];
+  expect(variables.feedbackUrl).toMatch(/\/email-access#token=[a-f0-9]{64}$/);
+  expect(variables.testBackUrl).not.toBe(variables.feedbackUrl);
+  expect(email.send.mock.calls[0][1].containsAuthenticationLink).toBe(true);
+  expect(JSON.stringify(email.log.mock.calls)).not.toContain("#token=");
+});
 
 it("reconciles an already-delivered final reminder without sending again", async () => {
   db.tables.email_delivery_logs.push({
@@ -260,5 +317,65 @@ it("keeps the 24-hour spacing after a successful non-final reminder", async () =
     status: "pending",
     emails_sent: 2,
     next_send_at: "2026-09-21T18:00:00.000Z",
+  });
+});
+
+it("uses server eligibility even when a target still exists locally", async () => {
+  db.targetUnavailable = true;
+  await expect(processReminderSequence(db, env, reminder, templates)).resolves.toMatchObject({
+    outcome: "cancelled",
+    reason: "missing_target_submission",
+  });
+  expect(db.rpcCalls).toEqual([
+    {
+      name: "find_test_back_target_submission",
+      args: { p_tester_user_id: "tester", p_owner_user_id: "owner" },
+    },
+  ]);
+  expect(email.send).not.toHaveBeenCalled();
+  expect(db.tables.test_back_reminder_sequences[0].affects_test_back_rate).toBeUndefined();
+});
+
+it("defers an eligibility lookup error instead of cancelling or sending", async () => {
+  db.failTargetRpc = true;
+  await expect(processReminderSequence(db, env, reminder, templates)).rejects.toThrow(
+    "Target lookup failed",
+  );
+  expect(db.tables.test_back_reminder_sequences[0]).toMatchObject({
+    status: "pending",
+    emails_sent: 2,
+    next_send_at: "2026-09-20T19:00:00.000Z",
+  });
+  expect(email.send).not.toHaveBeenCalled();
+});
+
+it("renders final reminder rates from the database transition and the shared target", async () => {
+  await processReminderSequence(db, env, reminder, templates);
+  expect(email.render).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      currentTestBackRatePercent: "100",
+      newTestBackRatePercent: "50",
+      testBackUrl:
+        "https://example.test/test/tester-app?earn_entry=test_back_email&feedback_source=earn",
+    }),
+  );
+});
+
+it("reconciles a delivered final reminder after a target becomes unavailable without resending", async () => {
+  db.targetUnavailable = true;
+  db.tables.email_delivery_logs.push({
+    reminder_sequence_id: "sequence",
+    related_response_id: "response",
+    template_key: "test_back_reminder_stage_3",
+    status: "sent",
+    created_at: "2026-05-02T00:00:00.000Z",
+  });
+  await processReminderSequence(db, env, reminder, templates);
+  expect(email.send).not.toHaveBeenCalled();
+  expect(db.tables.test_back_reminder_sequences[0]).toMatchObject({
+    status: "resolved",
+    emails_sent: 3,
+    affects_test_back_rate: true,
   });
 });

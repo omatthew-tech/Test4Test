@@ -12,7 +12,7 @@ import {
 } from "react";
 import { ChevronRight, Menu as MenuIcon, X } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-import { tokens } from "../tokens/generated/tokens";
+import { breakpoints } from "../tokens/generated/breakpoints";
 import { Button, IconButton } from "./actions";
 import { Test4TestBrand } from "./brand";
 import { Container, Divider } from "./layout";
@@ -96,7 +96,7 @@ export function TopNavigation({
     const dismissOutside = (event: PointerEvent | FocusEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpenLocation(null);
     };
-    const desktop = window.matchMedia(`(min-width: ${tokens["primitive.breakpoint.large"].value})`);
+    const desktop = window.matchMedia(`(min-width: ${breakpoints.large})`);
     const dismissOnDesktop = () => {
       if (!desktop.matches) return;
       if (panelRef.current?.contains(document.activeElement)) {

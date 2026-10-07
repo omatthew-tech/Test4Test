@@ -27,11 +27,35 @@ writes, and atomically saves the message, initial email job, and unread reminder
 sender/request ID prevents duplicates across retries. Reusing it with different content or a different
 conversation is rejected. History is keyset-paginated in batches of 50; the inbox uses batches of 30.
 
-`20260923173203_allow_tester_started_conversations.sql` allows either the app owner or the registered
+`20261001022459_allow_tester_started_conversations.sql` allows either the app owner or the registered
 tester on a response to open and start that conversation. Response links resolve the existing
 app/tester conversation across revisions. The server derives the founder and tester from the
 response, checks both participants' availability, and rejects unrelated users and anonymous tests.
 Apply this migration before releasing the submission-card message action.
+
+### Required release verification
+
+Local migration files and fixture browser tests do not prove that the hosted database
+has the same behavior. Before marking a chat release complete:
+
+1. Check `supabase_migrations.schema_migrations` for the tester-initiation migration
+   and inspect the effective `private.chat_context` and `private.chat_send` definitions.
+   Both must derive the participants from the response and allow either participant.
+2. Run the database upgrade regression and the My Reviews browser journey at
+   390 × 844 and 1440 × 900. Run `npm run ds:check` for the release, retaining any
+   unrelated failures in the validation record rather than rewriting visual baselines.
+3. Apply only the reviewed migration to the approved target project. Record its actual
+   hosted version and align the local filename and test references with that version.
+4. In a read-only transaction, call `public.chat_context(response_id, null)` under the
+   response tester's authenticated identity. For an available pair without an existing
+   conversation, require `id: null`, `canSend: true`, and the owner's peer name. Opening
+   the composer must create no conversation, message, or notification job.
+5. Verify first send, duplicate-send retry, founder reply, and conversation reuse with
+   controlled accounts. Use isolated fixtures or a transaction that is rolled back
+   before notification workers can see any test jobs; never message real recipients.
+
+A frontend release with the My Reviews message action is incomplete until the hosted
+tester-context check passes. `Try again` cannot repair a missing database migration.
 
 The client reconciles missed history after reconnecting, refreshes on focus, and polls every 15 seconds
 while Realtime is unavailable. A displayed message's timestamp must intersect the visible history
@@ -84,10 +108,13 @@ Reconcile provider IDs and logs before manually replaying uncertain jobs.
    `SMTP2GO_SENDER`, Supabase server credentials, and an `APP_BASE_URL` for that environment.
 3. Generate a dedicated `CHAT_DISPATCH_SECRET`. Set it in Edge Function secrets and Vault under
    `chat_dispatch_secret`. Ensure Vault's `project_url` points to the same environment.
-4. Enable/verify `pg_cron`, `pg_net`, and Vault. The migration schedules
-   `private.dispatch_chat_notifications()` every minute if infrastructure is present. Otherwise,
-   register the named `dispatch-chat-notifications` minute job after infrastructure is ready.
-   Missing secrets leave the durable queue pending rather than dropping messages.
+4. Enable/verify `pg_net` and Vault. The October 6 background scheduling migration adds
+   a transactional outbox trigger for immediate initial dispatch and completion-driven draining.
+   Cloudflare's `test4test-background-scheduler` checks for due work every five minutes;
+   future reminders and retries retain their original due dates and attempt limits.
+   The original minute cron is retained as an inactive rollback option after verified cutover.
+   Missing secrets or a failed handoff leave durable work queued. See `docs/auth-availability.md`
+   for deployment, health verification and rollback.
 5. Confirm `chat_conversations`, `chat_messages`, and `chat_read_states` are in the
    `supabase_realtime` publication. Verify two consented preview accounts can exchange messages,
    unrelated accounts cannot read them, and only the two intended email recipients receive mail.
@@ -167,3 +194,53 @@ New app, Sign out. It is deployed as `6351afbf-67e8-4d9f-a959-69c112cf33d1`, wit
 `ff481f1c-a764-4908-8e5d-4f956a5b2b0a` as the previous version. Fast checks, the production build,
 and all nine responsive navigation journeys passed; the same Storybook setup-import limitation
 prevented full release validation. The live layout asset matches the tested build. **Fast-checked**.
+
+## My Reviews messaging repair — September 30, 2026
+
+The My Reviews message action was live while production still had the founder-only
+`chat_context` and `chat_send` helpers. A read-only call as the affected response's
+tester reproduced SQLSTATE `42501`, "This conversation is unavailable." The response,
+app, and both available participant profiles existed; there was no prior conversation.
+
+After the owner requested implementation and rollout, the existing tester-initiation
+migration was applied alone to project `lteimepkxuiupbcsbcpz` as version
+`20261001022459` (October 1 UTC, September 30 in New York). Its original local filename
+was `20260923173203_allow_tester_started_conversations.sql`; the SQL is unchanged and
+the filename and test reference now match hosted migration history. No frontend,
+notification-worker, unrelated migration, or data-backfill deployment was needed.
+
+Production verification confirmed:
+
+- The affected response returns `conversationId: null`, `canSend: true`, and a peer
+  name through the public RPC under the tester's authenticated role.
+- The check was read-only and the app/tester pair still has zero conversations.
+  No verification messages or email jobs were created.
+- Both private function bodies match the reviewed SQL; their restricted execution
+  grants and empty search paths are unchanged. The security advisor reports no new
+  notices compared with the pre-deployment check.
+
+Validation for this repair:
+
+- All 19 focused database/interface tests passed, including the old-to-new upgrade,
+  safe migration reruns, permission preservation, first send, retry deduplication,
+  founder replies, and outsider rejection.
+- The new fixture-only My Reviews browser journey passed at 390 × 844 and
+  1440 × 900, including keyboard send, accessibility, reload, founder reply, and
+  reuse of the same conversation. Both final screenshots were inspected. These
+  tests use controlled fixture accounts and do not certify live email delivery.
+- The full release-gate rerun passed formatting, lint (14 existing warnings), types,
+  design-system validation, 693 unit tests (one skipped), 77 component tests, and all
+  310 browser journey/accessibility checks. An initial payments database startup
+  timeout passed in isolation and in that full rerun.
+- Visual comparison passed 406 of 416 cases in the full run. Two unrelated button
+  stories timed out during page load and both passed targeted reruns, leaving eight
+  existing baseline mismatches across the submissions and profile routes at all
+  four viewports. This repair changes neither route's rendering. All Messages
+  baselines passed. Existing Profile edits and all visual baselines were preserved.
+- The production build passed separately after the visual gate stopped.
+
+This repair is **Fast-checked, not Release-validated** because the eight unrelated
+visual mismatches remain. The database repair is deployed and its affected production
+context is verified. The two prior private helper definitions are saved in the ignored
+`.codex-chat-functions-before-20260930.log` for a focused rollback if required; restoring
+them would reintroduce the tester-initiation restriction without deleting chat data.

@@ -35,7 +35,12 @@ export function createAuthFetch(
     try {
       const response = await fetcher(input, { ...init, signal: controller.signal });
       // Keep the deadline active through the small JSON body, not just the headers.
-      const body = response.body ? await response.arrayBuffer() : null;
+      // Some browsers expose an empty stream even for 204 logout responses.
+      // Reconstructing those with an ArrayBuffer makes Response throw and prevents logout.
+      const method = init?.method ?? (input instanceof Request ? input.method : "GET");
+      const allowsBody =
+        method.toUpperCase() !== "HEAD" && ![204, 205, 304].includes(response.status);
+      const body = response.body && allowsBody ? await response.arrayBuffer() : null;
       return new Response(body, {
         status: response.status,
         statusText: response.statusText,

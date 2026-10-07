@@ -5,16 +5,21 @@ Deno.serve((request) =>
     const workerUrl = Deno.env.get("VIDEO_PROCESSOR_URL")?.trim().replace(/\/+$/, "");
     const secret = Deno.env.get("VIDEO_PROCESSOR_SHARED_SECRET")?.trim();
     if (!workerUrl || !secret) throw new Error("Worker configuration missing");
-    const { error: reuseError } = await admin.rpc("reuse_existing_recording_transcripts", {
-      p_limit: 25,
-    });
-    if (reuseError) throw new Error("Transcript cache preparation failed");
     const { data: jobs, error } = await admin.rpc("claim_recording_transcripts", { p_limit: 2 });
     if (error) throw new Error("Transcript claim failed");
     let dispatched = 0;
     for (const job of jobs ?? []) {
       let event = "failed";
       try {
+        const { data: reused, error: reuseError } = await admin.rpc(
+          "reuse_claimed_recording_transcript",
+          {
+            p_id: job.id,
+            p_attempt_id: job.attempt_id,
+          },
+        );
+        if (reuseError) throw new Error("Transcript cache preparation failed");
+        if (reused) continue;
         const isR2 = job.source_bucket.startsWith("r2:");
         let sourceUrl: string | undefined;
         if (!isR2) {
@@ -47,7 +52,7 @@ Deno.serve((request) =>
       }
       const { error: finishError } = await admin.rpc("finish_recording_transcript", {
         p_response_id: job.response_id,
-        p_version_id: job.version_id,
+        ...(job.version_id ? { p_version_id: job.version_id } : {}),
         p_attempt_id: job.attempt_id,
         p_event: event,
       });

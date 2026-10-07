@@ -2,9 +2,12 @@ import { clipHandler, clipJson } from "../_shared/clip-http.ts";
 import { cleanupClipAssets, dispatchClips } from "../_shared/recording-clips.ts";
 
 Deno.serve((request) =>
-  clipHandler(request, "dispatcher", async ({ admin }) => {
+  clipHandler(request, "dispatcher", async ({ admin, body }) => {
+    if (body.action === "cleanup") {
+      const deleted = await cleanupClipAssets(admin);
+      return clipJson({ ok: true, deleted });
+    }
     await dispatchClips(admin);
-    const deleted = await cleanupClipAssets(admin);
-    return clipJson({ ok: true, deleted });
+    return clipJson({ ok: true });
   }),
 );

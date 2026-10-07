@@ -199,3 +199,23 @@ describe("test-account login error feedback", () => {
     expect(await getTestAccountLoginErrorMessage(error, "Fallback")).toContain("offline");
   });
 });
+it.each([204, 205, 304])(
+  "preserves a bodyless %i response even when the browser exposes an empty stream",
+  async (status) => {
+    const readBody = vi.fn().mockResolvedValue(new ArrayBuffer(0));
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue({
+      status,
+      statusText: "",
+      headers: new Headers(),
+      body: new ReadableStream(),
+      arrayBuffer: readBody,
+    } as unknown as Response);
+    const transport = createAuthFetch("https://auth.example.test", fetcher);
+    const response = await transport("https://auth.example.test/auth/v1/logout?scope=local", {
+      method: "POST",
+    });
+    expect(response.status).toBe(status);
+    expect(response.body).toBeNull();
+    expect(readBody).not.toHaveBeenCalled();
+  },
+);

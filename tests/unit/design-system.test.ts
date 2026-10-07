@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { tokens, tokenSourceHash } from "@test4test/design-system";
+import { breakpoints, tokens, tokenSourceHash } from "@test4test/design-system";
 
 describe("design-system tokens", () => {
+  it("keeps lightweight media-query values aligned with the complete token export", () => {
+    for (const [name, value] of Object.entries(breakpoints)) {
+      expect(value).toBe(tokens[`primitive.breakpoint.${name}` as keyof typeof tokens].value);
+    }
+    expect(breakpoints.large).toBe(tokens["primitive.breakpoint.large"].value);
+  });
+
   it("keeps the approved Aegean primary value", () => {
     expect(tokens["semantic.color.action.primary"].value).toBe("#007BAE");
   });

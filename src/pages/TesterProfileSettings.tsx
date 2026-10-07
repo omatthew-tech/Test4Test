@@ -14,6 +14,7 @@ import {
   Radio,
   Select,
   Surface,
+  Stack,
   Switch,
   TextField,
 } from "@test4test/design-system";
@@ -39,6 +40,7 @@ import type {
   WorkArea,
 } from "../types";
 import styles from "./TesterProfileSettings.module.css";
+import { useEmailLinkRevocation } from "../lib/useEmailLinkRevocation";
 
 type PaymentField = "paypalHandle" | "venmoHandle" | "cashAppHandle";
 type PaymentDraft = Record<PaymentField, string>;
@@ -50,6 +52,7 @@ const paymentMethods: Array<{ key: PaymentField; label: string; placeholder: str
 ];
 
 export function TesterProfileSettings() {
+  const emailLinks = useEmailLinkRevocation();
   const navigate = useNavigate();
   const { currentUser, updateTesterProfile, changeEmail, updatePaymentMethods, deleteAccount } =
     useAppState();
@@ -444,6 +447,27 @@ export function TesterProfileSettings() {
               </Button>
             </div>
           </form>
+        </Surface>
+
+        <Surface as="section" className={styles.panel}>
+          <Stack>
+            <h2>Email sign-in links</h2>
+            <p>
+              Anyone with one of your email sign-in links can access your account. Invalidate
+              existing links to stop future use. This keeps current sessions signed in.
+            </p>
+            <Button
+              variant="secondary"
+              loading={emailLinks.busy}
+              loadingLabel="Invalidating links"
+              onClick={() => void emailLinks.revoke()}
+            >
+              Invalidate existing email sign-in links
+            </Button>
+            {emailLinks.message ? (
+              <Alert tone={emailLinks.failed ? "danger" : "success"}>{emailLinks.message}</Alert>
+            ) : null}
+          </Stack>
         </Surface>
 
         <Surface as="section" className={styles.dangerPanel}>

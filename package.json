@@ -18,6 +18,7 @@
     "perf:check": "node scripts/check-performance.mjs",
     "test:production": "node scripts/run-production-tests.mjs",
     "test": "vitest run --project unit",
+    "test:email-access:browser": "node scripts/run-playwright.mjs email-access",
     "test:home-logos:backend": "npm exec --yes --package=deno@2.9.6 -- deno test --config supabase/functions/get-home-trusted-logos/deno.json --allow-env --allow-read supabase/functions/get-home-trusted-logos/",
     "test:components": "vitest run --project storybook",
     "ds:generate": "node scripts/generate-design-system.mjs",

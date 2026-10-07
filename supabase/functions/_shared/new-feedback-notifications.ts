@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { createEmailDestinationLink } from "./email-access-links.ts";
 import {
   loadEmailTemplates,
   logEmailDelivery,
@@ -195,6 +196,7 @@ export async function sendNewFeedbackNotification(
       subject: rendered.subject,
       textBody: rendered.textBody,
       htmlBody: rendered.htmlBody,
+      containsAuthenticationLink: env.emailAccessLinksEnabled === true,
     });
 
     await logEmailDelivery(admin, {
@@ -269,7 +271,11 @@ export async function processNewFeedbackNotificationForResponse(
     return { outcome: "skipped" as const, reason: "already_sent" as const };
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/analytics?earn_entry=feedback_email`;
+  const feedbackUrl = await createEmailDestinationLink(admin, env, owner, {
+    destination: "feedback",
+    resource_id: response.id,
+    entry: "feedback_email",
+  });
 
   await sendNewFeedbackNotification(
     admin,

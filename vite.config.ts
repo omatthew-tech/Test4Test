@@ -5,6 +5,11 @@ import { versionStaticAssets } from "./scripts/version-static-assets.mjs";
 
 export default defineConfig({
   plugins: [versionStaticAssets(), react()],
+  optimizeDeps: {
+    // Only the app is a development entry point; generated reports, Storybook
+    // output, and archived mockups do not need dependency discovery.
+    entries: ["index.html"],
+  },
   build: {
     // Keep fresh URLs after the Windows asset-directory casing correction.
     assetsDir: "assets/earn-activation-v1",

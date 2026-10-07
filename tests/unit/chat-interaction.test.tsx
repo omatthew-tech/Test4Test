@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   observer: null as IntersectionObserverCallback | null,
   hidden: false,
+  items: [] as ChatConversation[],
+  loading: false,
+  error: "",
 }));
 const conversation: ChatConversation = {
   id: "thread",
@@ -27,9 +30,9 @@ vi.mock("../../src/context/ChatContext", () => ({
     refresh: mocks.refresh,
     revision: 0,
     connected: true,
-    inbox: { items: [conversation], nextBefore: null, unreadCount: 1 },
-    loading: false,
-    error: "",
+    inbox: { items: mocks.items, nextBefore: null, unreadCount: 1 },
+    loading: mocks.loading,
+    error: mocks.error,
   }),
 }));
 vi.mock("../../src/context/AppStateContext", () => ({
@@ -40,6 +43,9 @@ vi.mock("../../src/components/Layout", () => ({
 }));
 beforeEach(() => {
   mocks.hidden = false;
+  mocks.items = [conversation];
+  mocks.loading = false;
+  mocks.error = "";
   mocks.observer = null;
   mocks.refresh.mockReset();
   mocks.api = {
@@ -82,15 +88,74 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-function mount() {
+function mount(path = "/messages/thread") {
   return render(
-    <MemoryRouter initialEntries={["/messages/thread"]}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
+        <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<MessagesPage />} />
       </Routes>
     </MemoryRouter>,
   );
 }
+
+it("opens the latest conversation on entry and lets users return to choose an older one", async () => {
+  const latest = { ...conversation, id: "latest", productName: "Latest app", lastSequence: 2 };
+  mocks.items = [latest, conversation];
+  vi.mocked(mocks.api.context).mockImplementation(async ({ conversationId }) =>
+    conversationId === latest.id ? latest : conversation,
+  );
+  mount("/messages");
+  await screen.findByRole("textbox", { name: "Message" });
+  expect(mocks.api.context).toHaveBeenCalledWith({
+    conversationId: "latest",
+    responseId: undefined,
+  });
+  expect(screen.getByRole("link", { name: /Latest app/ }).getAttribute("aria-current")).toBe(
+    "page",
+  );
+
+  fireEvent.click(screen.getByRole("link", { name: "Back to messages" }));
+  expect(screen.queryByRole("textbox", { name: "Message" })).toBeNull();
+  fireEvent.click(screen.getByRole("link", { name: /Example app/ }));
+  await screen.findByRole("textbox", { name: "Message" });
+  expect(mocks.api.context).toHaveBeenLastCalledWith({
+    conversationId: "thread",
+    responseId: undefined,
+  });
+});
+
+it.each([
+  ["/messages/thread", { conversationId: "thread", responseId: undefined }],
+  ["/messages?response=recording", { conversationId: undefined, responseId: "recording" }],
+])("preserves the explicit destination %s", async (path, target) => {
+  mocks.items = [{ ...conversation, id: "latest", lastSequence: 2 }, conversation];
+  mount(path);
+  await screen.findByRole("textbox", { name: "Message" });
+  expect(mocks.api.context).toHaveBeenCalledExactlyOnceWith(target);
+});
+
+it("preserves the empty inbox message when there are no conversations", () => {
+  mocks.items = [];
+  mount("/messages");
+  expect(screen.getByText(/You have no messages/)).toBeTruthy();
+  expect(mocks.api.context).not.toHaveBeenCalled();
+});
+
+it("waits for the inbox to load before choosing a conversation", () => {
+  mocks.loading = true;
+  mount("/messages");
+  expect(screen.getByRole("status", { name: "Loading conversations" })).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Your conversations" })).toBeNull();
+  expect(mocks.api.context).not.toHaveBeenCalled();
+});
+
+it("keeps inbox errors visible instead of opening a stale conversation", () => {
+  mocks.error = "Messages could not be loaded.";
+  mount("/messages");
+  expect(screen.getByRole("alert").textContent).toContain(mocks.error);
+  expect(mocks.api.context).not.toHaveBeenCalled();
+});
 
 it("retains failed drafts and reuses the request ID when retrying an uncertain send", async () => {
   vi.mocked(mocks.api.send).mockRejectedValueOnce(new Error("Connection lost. Try again."));

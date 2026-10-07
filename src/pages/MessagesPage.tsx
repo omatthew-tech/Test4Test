@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -31,6 +31,11 @@ export function MessagesPage() {
     }
   }
   const suffix = fixtureSearch.size ? `?${fixtureSearch}` : "";
+  // The inbox is ordered by latest message. Keep an explicit list view for mobile navigation.
+  const latestConversationId = inbox.items[0]?.id;
+  if (!selected && search.get("view") !== "inbox" && !loading && !error && latestConversationId) {
+    return <Navigate to={`/messages/${latestConversationId}${suffix}`} replace />;
+  }
   if (!selected && !loading && !error && !inbox.items.length) {
     return (
       <AppShell>
@@ -43,7 +48,8 @@ export function MessagesPage() {
     );
   }
   return (
-    <AppShell title="Messages">
+    <AppShell>
+      <h1 className="ds-sr-only">Messages</h1>
       <div className={styles.layout} data-selected={selected}>
         <Surface className={styles.inbox}>
           <h2 className={styles.sectionTitle}>Conversations</h2>
@@ -78,7 +84,6 @@ export function MessagesPage() {
                         <span className={styles.unread}>{item.unreadCount} unread</span>
                       ) : null}
                     </span>
-                    <span>{item.peerName}</span>
                     <span className={styles.preview}>{item.lastMessage}</span>
                   </Link>
                 </li>
@@ -99,6 +104,10 @@ export function MessagesPage() {
               responseId={responseId}
               suffix={suffix}
             />
+          ) : loading ? (
+            <div role="status" aria-label="Loading message history">
+              <Skeleton />
+            </div>
           ) : (
             <EmptyState
               title="Your conversations"
@@ -309,7 +318,7 @@ function ChatThread({
   };
   return (
     <Stack gap="lg">
-      <Link to={`/messages${suffix}`} className={styles.back}>
+      <Link to={`/messages${suffix}${suffix ? "&" : "?"}view=inbox`} className={styles.back}>
         Back to messages
       </Link>
       {loading ? (
@@ -329,7 +338,6 @@ function ChatThread({
         <>
           <header>
             <h2 className={styles.sectionTitle}>{conversation.productName}</h2>
-            <p className={styles.muted}>{conversation.peerName}</p>
           </header>
           {offline ? (
             <Alert>You’re offline. Your draft is kept here. Reconnect to send it.</Alert>

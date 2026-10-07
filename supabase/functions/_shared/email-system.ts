@@ -6,6 +6,9 @@ export interface EmailEnvironment {
   smtp2goApiKey: string;
   smtp2goSender: string;
   appBaseUrl: string;
+  emailAccessLinksEnabled?: boolean;
+  smtp2goAuthLinkApiKey?: string;
+  smtp2goAuthLinkTrackingDisabled?: boolean;
 }
 
 export interface EmailTemplateRecord {
@@ -23,7 +26,8 @@ export interface RenderedEmail {
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-reminder-secret",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-reminder-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -47,7 +51,11 @@ export function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function renderTemplate(template: string, variables: Record<string, string>, escapeValues: boolean) {
+function renderTemplate(
+  template: string,
+  variables: Record<string, string>,
+  escapeValues: boolean,
+) {
   return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, rawKey) => {
     const key = String(rawKey);
     const value = variables[key] ?? "";
@@ -74,7 +82,10 @@ export function getEmailEnvironment(): EmailEnvironment {
     "";
   const smtp2goApiKey = Deno.env.get("SMTP2GO_API_KEY")?.trim() ?? "";
   const smtp2goSender = Deno.env.get("SMTP2GO_SENDER")?.trim() ?? "";
-  const appBaseUrl = (Deno.env.get("APP_BASE_URL")?.trim() || "https://test4test.io").replace(/\/+$/, "");
+  const appBaseUrl = (Deno.env.get("APP_BASE_URL")?.trim() || "https://test4test.io").replace(
+    /\/+$/,
+    "",
+  );
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("Missing Supabase server secrets for notifications.");
@@ -90,6 +101,9 @@ export function getEmailEnvironment(): EmailEnvironment {
     smtp2goApiKey,
     smtp2goSender,
     appBaseUrl,
+    emailAccessLinksEnabled: Deno.env.get("EMAIL_ACCESS_LINKS_ENABLED") === "true",
+    smtp2goAuthLinkApiKey: Deno.env.get("SMTP2GO_AUTH_LINK_API_KEY")?.trim(),
+    smtp2goAuthLinkTrackingDisabled: Deno.env.get("SMTP2GO_AUTH_LINK_TRACKING_DISABLED") === "true",
   };
 }
 
@@ -103,10 +117,7 @@ export function createAdminClient(env: EmailEnvironment) {
   });
 }
 
-export async function loadEmailTemplates(
-  admin: SupabaseClient,
-  keys: string[],
-) {
+export async function loadEmailTemplates(admin: SupabaseClient, keys: string[]) {
   const uniqueKeys = [...new Set(keys.filter((key) => key.trim()))];
 
   if (uniqueKeys.length === 0) {
@@ -135,7 +146,7 @@ export async function loadEmailTemplates(
   return templates;
 }
 
-export async function sendEmail(
+async function sendEmailRequest(
   env: EmailEnvironment,
   {
     to,
@@ -144,6 +155,7 @@ export async function sendEmail(
     htmlBody,
     replyTo,
     timeoutMs,
+    containsAuthenticationLink = false,
   }: {
     to: string;
     subject: string;
@@ -151,8 +163,17 @@ export async function sendEmail(
     htmlBody: string;
     replyTo?: string | null;
     timeoutMs?: number;
+    containsAuthenticationLink?: boolean;
   },
 ) {
+  if (
+    containsAuthenticationLink &&
+    (!env.smtp2goAuthLinkApiKey || !env.smtp2goAuthLinkTrackingDisabled)
+  ) {
+    throw new Error(
+      "Email sign-in delivery requires a dedicated SMTP2GO key with tracking disabled.",
+    );
+  }
   const customHeaders = replyTo?.trim()
     ? [{ header: "Reply-To", value: replyTo.trim() }]
     : undefined;
@@ -163,7 +184,9 @@ export async function sendEmail(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      "X-Smtp2go-Api-Key": env.smtp2goApiKey,
+      "X-Smtp2go-Api-Key": containsAuthenticationLink
+        ? env.smtp2goAuthLinkApiKey!
+        : env.smtp2goApiKey,
     },
     body: JSON.stringify({
       sender: `Test4Test <${env.smtp2goSender}>`,
@@ -179,14 +202,14 @@ export async function sendEmail(
 
   if (!response.ok) {
     const message = payload?.data?.error || payload?.error || "SMTP2GO request failed.";
-    throw new Error(message);
+    throw new Error(containsAuthenticationLink ? "Email sign-in delivery failed." : message);
   }
 
   if ((payload?.data?.succeeded ?? 0) < 1) {
     const failureMessage = Array.isArray(payload?.data?.failures)
       ? payload.data.failures.join("; ")
       : "SMTP2GO did not confirm a successful send.";
-    throw new Error(failureMessage);
+    throw new Error(containsAuthenticationLink ? "Email sign-in delivery failed." : failureMessage);
   }
 
   const providerMessageId =
@@ -194,8 +217,21 @@ export async function sendEmail(
 
   return {
     providerMessageId,
-    payload,
+    payload: containsAuthenticationLink ? undefined : payload,
   };
+}
+
+export async function sendEmail(
+  env: EmailEnvironment,
+  message: Parameters<typeof sendEmailRequest>[1],
+) {
+  try {
+    return await sendEmailRequest(env, message);
+  } catch (error) {
+    // Provider/network errors must never echo an email body into worker logs.
+    if (message.containsAuthenticationLink) throw new Error("Email sign-in delivery failed.");
+    throw error;
+  }
 }
 
 export async function logEmailDelivery(

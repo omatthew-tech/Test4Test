@@ -410,7 +410,7 @@ function EarnPageContent() {
   const completedRankAnimationRef = useRef<typeof creditCelebration>(null);
   const [showCreditToast, setShowCreditToast] = useState(Boolean(creditCelebration));
   const [earnTestToastMessage, setEarnTestToastMessage] = useState("");
-  const available = getAvailableSubmissions(state);
+  const available = useMemo(() => getAvailableSubmissions(state), [state]);
 
   const defaultSelectedProductTypes = useMemo(
     () => getDefaultSelectedProductTypes(state.submissions, currentUser?.id ?? null),

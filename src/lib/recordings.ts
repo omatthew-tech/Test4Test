@@ -1,6 +1,7 @@
 import { ProductType, ResponseRecording } from "../types";
 import { requireSupabase, supabasePublishableKey, supabaseUrl } from "./supabase";
 import { mapConcurrent } from "./concurrent";
+import { accountDraftKey } from "./accountDrafts";
 import type { NewFeedbackSource } from "./feedbackSource";
 
 export const RECORDING_BUCKET_ID = "test-response-recordings";
@@ -123,7 +124,7 @@ export function invalidateResponseRecordingUrl(responseId: string) {
 }
 
 function buildRecordingSessionStorageKey(submissionId: string) {
-  return `test4test:recording-session:${submissionId}`;
+  return accountDraftKey(`test4test:recording-session:${submissionId}`);
 }
 
 export function createRecordingSessionId() {

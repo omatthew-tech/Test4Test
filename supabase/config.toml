@@ -4,6 +4,10 @@
 # working directory name when running `supabase init`.
 project_id = "LIKE4LIKE"
 
+# Authenticates its own durable credential; signed-out callers have no JWT.
+[functions.redeem-email-link]
+verify_jwt = false
+
 # Checkout validates the bearer token with Auth; Stripe verifies the raw webhook signature.
 [functions.create-credit-checkout]
 verify_jwt = false
@@ -456,4 +460,8 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.dispatch-recording-clips]
+verify_jwt = false
+
+# Dedicated server-only secret is verified before any database request.
+[functions.recover-background-jobs]
 verify_jwt = false

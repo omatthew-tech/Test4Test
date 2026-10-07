@@ -241,6 +241,18 @@ const ts = `${generatedHeader}\nexport const tokenSourceHash = ${JSON.stringify(
   2,
 )} as const;\n\nexport type TokenPath = keyof typeof tokens;\nexport type TokenValue<Path extends TokenPath> = (typeof tokens)[Path]["value"];\n`;
 
+// Navigation only needs media-query values. Keep the full DTCG metadata out of
+// common startup while deriving every breakpoint from the same token source.
+const breakpointsTs = `${generatedHeader}\nexport const breakpoints = ${JSON.stringify(
+  Object.fromEntries(
+    flatTokens
+      .filter(({ path }) => path.startsWith("primitive.breakpoint."))
+      .map(({ path, value }) => [path.slice("primitive.breakpoint.".length), value]),
+  ),
+  null,
+  2,
+)} as const;\n`;
+
 const manifest = `${JSON.stringify(
   {
     name: "Test4Test Design System",
@@ -251,6 +263,7 @@ const manifest = `${JSON.stringify(
     outputs: [
       "design-system/tokens/generated/tokens.css",
       "design-system/tokens/generated/tokens.ts",
+      "design-system/tokens/generated/breakpoints.ts",
       "design-system/tokens/generated/figma/default.json",
     ],
   },
@@ -261,6 +274,7 @@ const manifest = `${JSON.stringify(
 const outputs = new Map([
   [join(root, "design-system", "tokens", "generated", "tokens.css"), css],
   [join(root, "design-system", "tokens", "generated", "tokens.ts"), ts],
+  [join(root, "design-system", "tokens", "generated", "breakpoints.ts"), breakpointsTs],
   [join(root, "design-system", "tokens", "generated", "figma", "default.json"), figmaJson],
   [join(root, "design-system", "tokens", "generated", "manifest.json"), manifest],
 ]);
@@ -285,11 +299,10 @@ for (const component of catalog.components) {
 let mismatch = false;
 
 for (const [path, content] of outputs) {
+  if (existsSync(path) && readFileSync(path, "utf8") === content) continue;
   if (checkOnly) {
-    if (!existsSync(path) || readFileSync(path, "utf8") !== content) {
-      console.error(`Generated artifact is missing or stale: ${relative(root, path)}`);
-      mismatch = true;
-    }
+    console.error(`Generated artifact is missing or stale: ${relative(root, path)}`);
+    mismatch = true;
     continue;
   }
 

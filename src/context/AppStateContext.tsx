@@ -1,4 +1,5 @@
 import { readStoredStarRating } from "../lib/starRatings";
+import { syncAccountDraftOwner } from "../lib/accountDrafts";
 import {
   createContext,
   ReactNode,
@@ -1551,6 +1552,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           authUser = error ? null : data.user;
         }
         const currentUserId = authUser?.id ?? null;
+        syncAccountDraftOwner(currentUserId);
         signal.throwIfAborted();
         currentProfile = authUser ? await ensureProfile(authUser) : null;
         signal.throwIfAborted();
@@ -1758,6 +1760,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [refreshState]);
 
   const handleAuthChange = useEffectEvent((session: Session | null) => {
+    // An email link opened in another tab may replace the shared Auth session.
+    // Reload to discard chat, media caches, and all previous-account component state.
+    if (state.currentUserId && session?.user.id && state.currentUserId !== session.user.id) {
+      syncAccountDraftOwner(session.user.id);
+      window.location.reload();
+      return;
+    }
     void refreshState(session?.user ?? null);
   });
 

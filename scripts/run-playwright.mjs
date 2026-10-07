@@ -15,9 +15,15 @@ process.env.VITE_SUPABASE_URL = "";
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY = "";
 process.env.VITE_SUPABASE_ANON_KEY = "";
 
-if (!["a11y", "visual", "visual-route", "visual-story"].includes(suite)) {
+if (suite === "email-access") {
+  // Reserved test domain: every request is intercepted; never use a live account.
+  process.env.VITE_SUPABASE_URL = "https://email-access.supabase.test";
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY = "test-public-key";
+}
+
+if (!["a11y", "visual", "visual-route", "visual-story", "email-access"].includes(suite)) {
   throw new Error(
-    `Expected Playwright suite "a11y", "visual", "visual-route", or "visual-story", received "${suite ?? ""}".`,
+    `Expected Playwright suite "a11y", "visual", "visual-route", "visual-story", or "email-access", received "${suite ?? ""}".`,
   );
 }
 
@@ -27,7 +33,7 @@ async function warmAppServer() {
 
   try {
     const page = await browser.newPage();
-    await page.goto("http://127.0.0.1:4173/", {
+    await page.goto(`http://127.0.0.1:4173/${suite === "email-access" ? "email-access" : ""}`, {
       waitUntil: "domcontentloaded",
       timeout: 120_000,
     });
@@ -37,7 +43,7 @@ async function warmAppServer() {
   }
 }
 const closeServers = [];
-if (suite === "a11y" || suite === "visual-route") {
+if (suite === "a11y" || suite === "visual-route" || suite === "email-access") {
   const vite = await createViteServer({
     configFile: join(root, "vite.config.ts"),
     server: {

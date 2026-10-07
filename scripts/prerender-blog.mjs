@@ -98,8 +98,14 @@ function getOutputPath(route) {
 const vite = await createServer({
   appType: "custom",
   logLevel: "error",
+  // This one-shot SSR pass never serves client modules or needs live updates.
+  // Avoid crawling generated reports and prebundling browser dependencies.
+  optimizeDeps: { noDiscovery: true, include: [] },
   server: {
     middlewareMode: true,
+    watch: null,
+    hmr: false,
+    ws: false,
   },
 });
 

@@ -28,6 +28,10 @@ The repository source of truth remains [`tokens/source/tokens.json`](tokens/sour
 
 The `@test4test/design-system` barrel is the only supported consumer import. Importing it also installs the generated tokens, self-hosted fonts, reset, base typography, focus behavior, and accessibility utilities. Application and Storybook consumers must not import `components/`, `tokens/`, or `styles/` internals directly.
 
+For JavaScript media queries, import `breakpoints` from the same barrel (for example,
+`breakpoints.large`). This generated subset preserves canonical values without
+loading the complete token metadata table into navigation.
+
 ## Validation lanes
 
 - `npm run ds:check:fast -- <files...>` checks changed files and design-system invariants for Tier 0–1 work.

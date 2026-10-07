@@ -37,12 +37,19 @@ function joinWithAnd(values: string[]) {
   return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
 }
 
-export function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+let dateFormatter: Intl.DateTimeFormat | undefined;
+let dateTimeFormatter: Intl.DateTimeFormat | undefined;
+
+function getDateFormatter() {
+  return (dateFormatter ??= new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(value));
+  }));
+}
+
+export function formatDate(value: string) {
+  return getDateFormatter().format(new Date(value));
 }
 
 export function formatCalendarDate(value: string) {
@@ -51,20 +58,17 @@ export function formatCalendarDate(value: string) {
     ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
     : new Date(value);
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  return getDateFormatter().format(date);
 }
 
 export function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  dateTimeFormatter ??= new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(value));
+  });
+  return dateTimeFormatter.format(new Date(value));
 }
 
 export function clamp(value: number, min: number, max: number) {

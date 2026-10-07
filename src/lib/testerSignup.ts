@@ -9,6 +9,7 @@ import type {
 
 export const TESTER_SIGNUP_DRAFT_VERSION = 1;
 export const TESTER_SIGNUP_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+import { accountDraftKey } from "./accountDrafts";
 export const TESTER_SIGNUP_STORAGE_KEY = "test4test.tester-signup.v1";
 
 export type TesterSignupStage = 1 | 2 | 3 | 4 | "email" | "otp";
@@ -298,7 +299,9 @@ function getStorageCandidates() {
 
 export function loadTesterSignupDraft() {
   const drafts = getStorageCandidates()
-    .map((storage) => parseTesterSignupDraft(storage.getItem(TESTER_SIGNUP_STORAGE_KEY)))
+    .map((storage) =>
+      parseTesterSignupDraft(storage.getItem(accountDraftKey(TESTER_SIGNUP_STORAGE_KEY))),
+    )
     .filter((draft): draft is TesterSignupStoredDraft => Boolean(draft))
     .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
   return drafts[0] ?? null;
@@ -323,7 +326,7 @@ export function saveTesterSignupDraft(
 
   getStorageCandidates().forEach((storage) => {
     try {
-      storage.setItem(TESTER_SIGNUP_STORAGE_KEY, serialized);
+      storage.setItem(accountDraftKey(TESTER_SIGNUP_STORAGE_KEY), serialized);
     } catch {
       // Keep the in-memory form usable if storage is full or unavailable.
     }
@@ -335,7 +338,7 @@ export function saveTesterSignupDraft(
 export function clearTesterSignupDraft() {
   getStorageCandidates().forEach((storage) => {
     try {
-      storage.removeItem(TESTER_SIGNUP_STORAGE_KEY);
+      storage.removeItem(accountDraftKey(TESTER_SIGNUP_STORAGE_KEY));
     } catch {
       // A completed signup should not fail because storage cleanup is blocked.
     }

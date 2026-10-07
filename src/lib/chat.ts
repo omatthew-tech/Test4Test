@@ -47,8 +47,13 @@ export interface ChatApi {
   ): () => void;
 }
 
-async function rpc<T>(name: string, args: Record<string, unknown> = {}): Promise<T> {
-  const { data, error } = await requireSupabase().rpc(name, args);
+async function rpc<T>(
+  name: string,
+  args: Record<string, unknown> = {},
+  signal?: AbortSignal,
+): Promise<T> {
+  const query = requireSupabase().rpc(name, args);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query);
   if (error) {
     // Only intentional database validation messages are suitable for the UI.
     throw new Error(
@@ -61,7 +66,9 @@ async function rpc<T>(name: string, args: Record<string, unknown> = {}): Promise
 }
 
 export const chatApi: ChatApi = {
-  list: (before) => rpc("chat_list", { p_before: before ?? null }),
+  // A stalled inbox read must release the coalesced refresh queue. Writes keep
+  // their existing behavior and idempotency rules.
+  list: (before) => rpc("chat_list", { p_before: before ?? null }, AbortSignal.timeout(15_000)),
   context: (target) =>
     rpc("chat_context", {
       p_conversation_id: target.conversationId ?? null,

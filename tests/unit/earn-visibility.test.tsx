@@ -216,6 +216,18 @@ it("does not expose local apps to guests in a configured environment", async () 
   expect(backend.submissions).not.toHaveBeenCalled();
 });
 
+it("hides Improve rate when excluded unavailable opportunities leave a 100% rate", async () => {
+  backend.summary.mockResolvedValue({
+    ...newOwnerSummary,
+    hasCompletedTest: true,
+    testBackRatePercent: 100,
+  });
+  backend.submissions.mockResolvedValue([]);
+  await mount();
+  expect(metric("Test-back rate")).toBe("100%");
+  expect(screen.queryByRole("button", { name: "Improve rate" })).toBeNull();
+});
+
 it("preserves Improve rate scrolling and focus for owners with testing history", async () => {
   backend.submissions.mockResolvedValue([
     testApp("Promoted app", { promoted: true }),

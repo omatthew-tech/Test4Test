@@ -1,5 +1,6 @@
 import { OtpIntent, Question, SubmissionDraft } from "../types";
 import { normalizeInstructionSteps, serializeInstructionSteps } from "./instructions";
+import { accountDraftKey } from "./accountDrafts";
 
 const PENDING_SUBMISSION_PREFIX = "test4test-pending-submission:";
 const OTP_CHALLENGE_KEY = "test4test-otp-challenge";
@@ -54,6 +55,7 @@ function isBrowser() {
 }
 
 function readStoredValue(key: string) {
+  key = accountDraftKey(key);
   if (!isBrowser()) {
     return null;
   }
@@ -76,6 +78,7 @@ function readStoredValue(key: string) {
 }
 
 function writeStoredValue(key: string, value: string) {
+  key = accountDraftKey(key);
   if (!isBrowser()) {
     return;
   }
@@ -94,6 +97,7 @@ function writeStoredValue(key: string, value: string) {
 }
 
 function removeStoredValue(key: string) {
+  key = accountDraftKey(key);
   if (!isBrowser()) {
     return;
   }

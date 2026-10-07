@@ -108,7 +108,9 @@ export async function cleanupClipAssets(admin: ClipAdmin) {
   if (error) throw new Error("Clip cleanup lookup failed");
   const env = getR2RecordingEnvironment();
   let deleted = 0;
+  const deadline = Date.now() + 90_000;
   for (const asset of assets ?? []) {
+    if (Date.now() >= deadline) break;
     try {
       const response = await r2Fetch(env, asset.object_path, {
         method: "DELETE",

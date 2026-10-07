@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { createEmailDestinationLink } from "../_shared/email-access-links.ts";
 import {
   corsHeaders,
   createAdminClient,
@@ -131,7 +132,11 @@ async function sendReminder(
   submission: SubmissionRow,
   checkedInDays: number,
 ) {
-  const testUrl = `${env.appBaseUrl}/test/${encodeURIComponent(participation.submission_id)}?earn_entry=other_email`;
+  const testUrl = await createEmailDestinationLink(admin, env, tester, {
+    destination: "test",
+    resource_id: participation.submission_id,
+    entry: "other_email",
+  });
   const dayLabel = `${Math.min(checkedInDays + 1, participation.required_days)} of ${participation.required_days}`;
   const subject = `Check in for ${submission.product_name}'s Google Play closed test`;
   const textBody = [
@@ -161,6 +166,7 @@ async function sendReminder(
       subject,
       textBody,
       htmlBody,
+      containsAuthenticationLink: env.emailAccessLinksEnabled === true,
     });
 
     await logEmailDelivery(admin, {

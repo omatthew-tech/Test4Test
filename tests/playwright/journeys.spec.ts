@@ -1380,24 +1380,47 @@ for (const viewport of [
   });
 }
 
-test("Analytics exposes report actions and its empty state", async ({ page }) => {
-  await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
-  await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
-  await expect(page.getByRole("link", { name: "View recordings", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(1);
-  await expect(page.getByText("Recording 1", { exact: true })).toHaveCount(0);
-  await expect(page.getByText(/^Preview from /)).toHaveCount(0);
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+]) {
+  test(`Analytics hides the report without recordings at ${viewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/analytics?ds-user=user-mateo&ds-recordings=1");
+    await expect(page.getByRole("button", { name: "Copy report" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Download report" })).toBeEnabled();
+    await expect(page.getByRole("link", { name: "View recordings", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Play Recording/ })).toHaveCount(1);
+    await expect(page.getByText("Recording 1", { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/^Preview from /)).toHaveCount(0);
 
-  await page.goto("/analytics?ds-user=user-mateo");
-  await expect(
-    page.getByText("Your transcript report will appear here when you have a recording.", {
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Copy report" })).toBeDisabled();
-  await expect(page.getByRole("heading", { level: 2, name: "View recordings" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
-});
+    await page.goto("/analytics?ds-user=user-mateo");
+    await expect(page.getByText(/You have no recordings\./)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Transcript report" })).toHaveCount(0);
+    await expect(
+      page.getByText("Your transcript report will appear here when you have a recording.", {
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Copy report" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Download report" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1, name: "Analyze" })).toHaveClass(
+      "ds-sr-only",
+    );
+    await expect(page.getByRole("heading", { level: 2, name: "View recordings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Recording/ })).toHaveCount(0);
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: testInfo.outputPath(`analytics-empty-${viewport.width}.png`),
+      fullPage: true,
+    });
+  });
+}
 
 test("Recording view opens the latest video and browses available recordings", async ({ page }) => {
   await page.goto("/analytics?ds-user=user-mateo&ds-recordings=2");

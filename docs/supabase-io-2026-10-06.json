@@ -1,0 +1,922 @@
+{
+  "project_ref": "lteimepkxuiupbcsbcpz",
+  "description": "Read-only diagnostic samples after the October 6 restart. Not pre-outage measurements. No statistics were reset by this investigation.",
+  "health_check": {
+    "sampled_at": "2026-10-06T13:50:29.448Z",
+    "auth_ms": 276,
+    "settings_ms": 516,
+    "preflight_ms": 143,
+    "zero_row_database_ms": 569,
+    "all_passed": true
+  },
+  "system": {
+    "settings": [
+      {
+        "name": "cron.log_run",
+        "unit": null,
+        "setting": "on"
+      },
+      {
+        "name": "cron.max_running_jobs",
+        "unit": null,
+        "setting": "32"
+      },
+      {
+        "name": "effective_cache_size",
+        "unit": "8kB",
+        "setting": "49152"
+      },
+      {
+        "name": "maintenance_work_mem",
+        "unit": "kB",
+        "setting": "32768"
+      },
+      {
+        "name": "max_connections",
+        "unit": null,
+        "setting": "60"
+      },
+      {
+        "name": "pg_net.batch_size",
+        "unit": null,
+        "setting": "200"
+      },
+      {
+        "name": "pg_net.ttl",
+        "unit": null,
+        "setting": "6 hours"
+      },
+      {
+        "name": "shared_buffers",
+        "unit": "8kB",
+        "setting": "28672"
+      },
+      {
+        "name": "shared_preload_libraries",
+        "unit": null,
+        "setting": "pg_stat_statements, pgaudit, plpgsql, plpgsql_check, pg_cron, pg_net, pgsodium, auto_explain, pg_tle, plan_filter, supabase_vault"
+      },
+      {
+        "name": "track_io_timing",
+        "unit": null,
+        "setting": "off"
+      },
+      {
+        "name": "track_wal_io_timing",
+        "unit": null,
+        "setting": "off"
+      },
+      {
+        "name": "work_mem",
+        "unit": "kB",
+        "setting": "2184"
+      }
+    ],
+    "extensions": [
+      {
+        "schema": "extensions",
+        "extname": "pg_stat_statements",
+        "extversion": "1.11"
+      },
+      {
+        "schema": "pg_catalog",
+        "extname": "pg_cron",
+        "extversion": "1.6.4"
+      },
+      {
+        "schema": "extensions",
+        "extname": "pg_net",
+        "extversion": "0.20.0"
+      }
+    ],
+    "sampled_at": "2026-10-06T13:51:31.703997+00:00",
+    "database_size": 50261139,
+    "database_stats": [
+      {
+        "datname": "template1",
+        "blks_hit": 0,
+        "blks_read": 0,
+        "deadlocks": 0,
+        "temp_bytes": 0,
+        "temp_files": 0,
+        "numbackends": 0,
+        "stats_reset": null,
+        "xact_commit": 0,
+        "blk_read_time": 0,
+        "xact_rollback": 0,
+        "blk_write_time": 0
+      },
+      {
+        "datname": "template0",
+        "blks_hit": 0,
+        "blks_read": 0,
+        "deadlocks": 0,
+        "temp_bytes": 0,
+        "temp_files": 0,
+        "numbackends": 0,
+        "stats_reset": null,
+        "xact_commit": 0,
+        "blk_read_time": 0,
+        "xact_rollback": 0,
+        "blk_write_time": 0
+      },
+      {
+        "datname": "postgres",
+        "blks_hit": 5964858,
+        "blks_read": 1400,
+        "deadlocks": 0,
+        "temp_bytes": 0,
+        "temp_files": 0,
+        "numbackends": 22,
+        "stats_reset": null,
+        "xact_commit": 7500,
+        "blk_read_time": 0,
+        "xact_rollback": 31,
+        "blk_write_time": 0
+      }
+    ],
+    "postgres_started_at": "2026-10-06T12:19:12.785208+00:00"
+  },
+  "statement_stats_reset": "2026-10-06T12:19:12.699822+00:00",
+  "job_queries": [
+    {
+      "job": "reuse_existing_recording_transcripts",
+      "rows": 60,
+      "calls": 60,
+      "max_ms": 926.36,
+      "mean_ms": 122.174,
+      "queryid": "-35375844036308726",
+      "wal_bytes": 0,
+      "shared_blks_hit": 67607,
+      "shared_blks_read": 35,
+      "temp_blks_written": 0,
+      "shared_blks_dirtied": 0,
+      "shared_blks_written": 0
+    },
+    {
+      "job": "claim_recording_clips",
+      "rows": 61,
+      "calls": 61,
+      "max_ms": 898.45,
+      "mean_ms": 105.308,
+      "queryid": "7477873745716404119",
+      "wal_bytes": 0,
+      "shared_blks_hit": 52467,
+      "shared_blks_read": 33,
+      "temp_blks_written": 0,
+      "shared_blks_dirtied": 0,
+      "shared_blks_written": 0
+    },
+    {
+      "job": "claim_recording_transcripts",
+      "rows": 60,
+      "calls": 60,
+      "max_ms": 601.02,
+      "mean_ms": 58.984,
+      "queryid": "6672724953621671730",
+      "wal_bytes": 0,
+      "shared_blks_hit": 56619,
+      "shared_blks_read": 7,
+      "temp_blks_written": 0,
+      "shared_blks_dirtied": 0,
+      "shared_blks_written": 0
+    },
+    {
+      "job": "claim_chat_notifications",
+      "rows": 60,
+      "calls": 60,
+      "max_ms": 478.74,
+      "mean_ms": 43.337,
+      "queryid": "-6382074073272335859",
+      "wal_bytes": 1348,
+      "shared_blks_hit": 32144,
+      "shared_blks_read": 7,
+      "temp_blks_written": 0,
+      "shared_blks_dirtied": 1,
+      "shared_blks_written": 0
+    },
+    {
+      "job": "recording_clip_garbage",
+      "rows": 61,
+      "calls": 61,
+      "max_ms": 366.66,
+      "mean_ms": 21.983,
+      "queryid": "3565545153125577615",
+      "wal_bytes": 0,
+      "shared_blks_hit": 26094,
+      "shared_blks_read": 6,
+      "temp_blks_written": 0,
+      "shared_blks_dirtied": 0,
+      "shared_blks_written": 0
+    }
+  ],
+  "queue_counts": {
+    "chat": [
+      {
+        "rows": 1,
+        "status": "sent"
+      },
+      {
+        "rows": 2,
+        "status": "pending"
+      }
+    ],
+    "clips": [
+      {
+        "rows": 1,
+        "status": "ready"
+      }
+    ],
+    "transcripts": [
+      {
+        "rows": 7,
+        "status": "failed"
+      },
+      {
+        "rows": 39,
+        "status": "ready"
+      }
+    ]
+  },
+  "cron_history": {
+    "rows": 84172,
+    "bytes": 19644416,
+    "newest": "2026-10-06T13:53:00.303359+00:00",
+    "oldest": "2026-04-08T23:00:00.154093+00:00"
+  },
+  "recent_cron": [
+    {
+      "runs": 30,
+      "jobid": 3,
+      "status": "succeeded",
+      "max_duration": "00:00:01.206472",
+      "mean_seconds": 0.114
+    },
+    {
+      "runs": 30,
+      "jobid": 4,
+      "status": "succeeded",
+      "max_duration": "00:00:01.280605",
+      "mean_seconds": 0.113
+    },
+    {
+      "runs": 30,
+      "jobid": 5,
+      "status": "succeeded",
+      "max_duration": "00:00:01.1871",
+      "mean_seconds": 0.109
+    }
+  ],
+  "wal_settings": [
+    {
+      "name": "archive_timeout",
+      "unit": "s",
+      "setting": "120"
+    },
+    {
+      "name": "checkpoint_timeout",
+      "unit": "s",
+      "setting": "300"
+    },
+    {
+      "name": "max_wal_size",
+      "unit": "MB",
+      "setting": "1024"
+    },
+    {
+      "name": "min_wal_size",
+      "unit": "MB",
+      "setting": "128"
+    },
+    {
+      "name": "wal_buffers",
+      "unit": "8kB",
+      "setting": "492"
+    },
+    {
+      "name": "wal_compression",
+      "unit": null,
+      "setting": "zstd"
+    },
+    {
+      "name": "wal_level",
+      "unit": null,
+      "setting": "logical"
+    },
+    {
+      "name": "wal_segment_size",
+      "unit": "B",
+      "setting": "16777216"
+    }
+  ],
+  "replication_slots": [
+    {
+      "active": true,
+      "slot_name": "supabase_realtime_replication_slot_2_140_10_a886414",
+      "slot_type": "logical",
+      "wal_status": "reserved",
+      "retained_bytes": 3976
+    },
+    {
+      "active": true,
+      "slot_name": "supabase_realtime_messages_replication_slot_2_140_10_a886414",
+      "slot_type": "logical",
+      "wal_status": "reserved",
+      "retained_bytes": 3976
+    }
+  ],
+  "io_sample_1": {
+    "sampled_at": "2026-10-06T13:52:05.370847+00:00",
+    "io": [
+      {
+        "hits": 6149019,
+        "reads": 1344,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 17,
+        "op_bytes": 8192,
+        "evictions": 0,
+        "writebacks": 0,
+        "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+        "backend_type": "client backend"
+      },
+      {
+        "hits": 15820,
+        "reads": 20,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 3,
+        "op_bytes": 8192,
+        "evictions": 0,
+        "writebacks": 0,
+        "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+        "backend_type": "autovacuum worker"
+      },
+      {
+        "hits": 1219,
+        "reads": 1,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 0,
+        "op_bytes": 8192,
+        "evictions": 0,
+        "writebacks": 0,
+        "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+        "backend_type": "walsender"
+      },
+      {
+        "hits": null,
+        "reads": null,
+        "fsyncs": 222,
+        "object": "relation",
+        "writes": 927,
+        "context": "normal",
+        "extends": null,
+        "op_bytes": 8192,
+        "evictions": null,
+        "writebacks": 927,
+        "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+        "backend_type": "checkpointer"
+      },
+      {
+        "hits": 1,
+        "reads": 1,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 0,
+        "op_bytes": 8192,
+        "evictions": 0,
+        "writebacks": 0,
+        "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+        "backend_type": "startup"
+      }
+    ],
+    "wal": {
+      "wal_fpi": 159,
+      "wal_sync": 477,
+      "wal_bytes": 383422,
+      "wal_write": 68795,
+      "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+      "wal_records": 1733,
+      "wal_sync_time": 0,
+      "wal_write_time": 0,
+      "wal_buffers_full": 68253
+    },
+    "archiver": {
+      "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+      "failed_count": 1,
+      "archived_count": 34,
+      "last_failed_wal": "000000010000007E0000001B",
+      "last_failed_time": "2026-10-06T12:43:16.71657+00:00",
+      "last_archived_wal": "000000010000007E00000063",
+      "last_archived_time": "2026-10-06T13:50:59.474014+00:00"
+    }
+  },
+  "io_sample_2": {
+    "db": {
+      "blks_hit": 6857791,
+      "blks_read": 1409,
+      "deadlocks": 0,
+      "temp_bytes": 0,
+      "temp_files": 0,
+      "numbackends": 22
+    },
+    "io": [
+      {
+        "hits": 6900689,
+        "reads": 1353,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 17,
+        "evictions": 0,
+        "backend_type": "client backend"
+      },
+      {
+        "hits": 16291,
+        "reads": 20,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 3,
+        "evictions": 0,
+        "backend_type": "autovacuum worker"
+      },
+      {
+        "hits": 1219,
+        "reads": 1,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 0,
+        "evictions": 0,
+        "backend_type": "walsender"
+      },
+      {
+        "hits": null,
+        "reads": null,
+        "fsyncs": 228,
+        "object": "relation",
+        "writes": 937,
+        "context": "normal",
+        "extends": null,
+        "evictions": null,
+        "backend_type": "checkpointer"
+      },
+      {
+        "hits": 1,
+        "reads": 1,
+        "fsyncs": 0,
+        "object": "relation",
+        "writes": 0,
+        "context": "normal",
+        "extends": 0,
+        "evictions": 0,
+        "backend_type": "startup"
+      }
+    ],
+    "wal": {
+      "wal_fpi": 165,
+      "wal_sync": 494,
+      "wal_bytes": 393892,
+      "wal_write": 71926,
+      "stats_reset": "2026-10-06T12:19:12.864309+00:00",
+      "wal_records": 1763,
+      "wal_sync_time": 0,
+      "wal_write_time": 0,
+      "wal_buffers_full": 71363
+    },
+    "sampled_at": "2026-10-06T13:55:24.622465+00:00",
+    "job_queries": [
+      {
+        "job": "claim_recording_clips",
+        "calls": 64,
+        "queryid": "7477873745716404119",
+        "total_ms": 8002.16,
+        "wal_bytes": 0,
+        "shared_blks_read": 33,
+        "shared_blks_written": 0
+      },
+      {
+        "job": "reuse_existing_recording_transcripts",
+        "calls": 63,
+        "queryid": "-35375844036308726",
+        "total_ms": 9549.85,
+        "wal_bytes": 0,
+        "shared_blks_read": 35,
+        "shared_blks_written": 0
+      },
+      {
+        "job": "claim_chat_notifications",
+        "calls": 63,
+        "queryid": "-6382074073272335859",
+        "total_ms": 2870.78,
+        "wal_bytes": 1348,
+        "shared_blks_read": 7,
+        "shared_blks_written": 0
+      },
+      {
+        "job": "recording_clip_garbage",
+        "calls": 64,
+        "queryid": "3565545153125577615",
+        "total_ms": 1715.95,
+        "wal_bytes": 0,
+        "shared_blks_read": 6,
+        "shared_blks_written": 0
+      },
+      {
+        "job": "claim_recording_transcripts",
+        "calls": 63,
+        "queryid": "6672724953621671730",
+        "total_ms": 4973.13,
+        "wal_bytes": 0,
+        "shared_blks_read": 7,
+        "shared_blks_written": 0
+      }
+    ],
+    "cron_statements": [
+      {
+        "calls": 286,
+        "queryid": "-4260932453283923240",
+        "total_ms": 120650.59,
+        "wal_bytes": 52215,
+        "query_prefix": "update cron.job_run_details set status = $1 where runid = $2",
+        "shared_blks_read": 0,
+        "shared_blks_written": 0
+      },
+      {
+        "calls": 69,
+        "queryid": "4847121436361946220",
+        "total_ms": 112069.79,
+        "wal_bytes": 21753,
+        "query_prefix": "update cron.job_run_details set status = $1, return_message = $2, start_time = $3, end_time = $4 where runid = $5",
+        "shared_blks_read": 0,
+        "shared_blks_written": 1
+      },
+      {
+        "calls": 286,
+        "queryid": "4644383024613326148",
+        "total_ms": 84318.13,
+        "wal_bytes": 118880,
+        "query_prefix": "insert into cron.job_run_details (jobid, runid, database, username, command, status) values ($1,$2,$3,$4,$5,$6)",
+        "shared_blks_read": 3,
+        "shared_blks_written": 1
+      },
+      {
+        "calls": 1,
+        "queryid": "2392301095133589675",
+        "total_ms": 35179.03,
+        "wal_bytes": 1175344,
+        "query_prefix": "update cron.job_run_details set status = $1, return_message = $2 where status in ($3,$4)",
+        "shared_blks_read": 2151,
+        "shared_blks_written": 0
+      },
+      {
+        "calls": 222,
+        "queryid": "-7372466190472280770",
+        "total_ms": 13898.22,
+        "wal_bytes": 39714,
+        "query_prefix": "update cron.job_run_details set job_pid = $1, status = $2 where runid = $3",
+        "shared_blks_read": 0,
+        "shared_blks_written": 0
+      },
+      {
+        "calls": 217,
+        "queryid": "3098906647665802015",
+        "total_ms": 13682.86,
+        "wal_bytes": 44791,
+        "query_prefix": "update cron.job_run_details set status = $1, return_message = $2, end_time = $3 where runid = $4",
+        "shared_blks_read": 0,
+        "shared_blks_written": 3
+      },
+      {
+        "calls": 217,
+        "queryid": "6768122447155654221",
+        "total_ms": 928.01,
+        "wal_bytes": 46750,
+        "query_prefix": "update cron.job_run_details set status = $1, start_time = $2 where runid = $3",
+        "shared_blks_read": 0,
+        "shared_blks_written": 2
+      }
+    ]
+  },
+  "advisors": [
+    {
+      "name": "unindexed_foreign_keys",
+      "count": 30,
+      "level": "INFO",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys"
+    },
+    {
+      "name": "auth_rls_initplan",
+      "count": 35,
+      "level": "WARN",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan"
+    },
+    {
+      "name": "unused_index",
+      "count": 40,
+      "level": "INFO",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index"
+    },
+    {
+      "name": "multiple_permissive_policies",
+      "count": 12,
+      "level": "WARN",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies"
+    }
+  ],
+  "reuse_read_only_lookup_plan": {
+    "Plan": {
+      "Node Type": "Limit",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 11.88,
+      "Total Cost": 11.89,
+      "Plan Rows": 1,
+      "Plan Width": 24,
+      "Actual Startup Time": 0.186,
+      "Actual Total Time": 0.187,
+      "Actual Rows": 0,
+      "Actual Loops": 1,
+      "Shared Hit Blocks": 144,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0,
+      "Plans": [
+        {
+          "Node Type": "Sort",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 11.88,
+          "Total Cost": 11.89,
+          "Plan Rows": 1,
+          "Plan Width": 24,
+          "Actual Startup Time": 0.184,
+          "Actual Total Time": 0.185,
+          "Actual Rows": 0,
+          "Actual Loops": 1,
+          "Sort Key": [
+            "old.completed_at",
+            "r.id"
+          ],
+          "Sort Method": "quicksort",
+          "Sort Space Used": 25,
+          "Sort Space Type": "Memory",
+          "Shared Hit Blocks": 144,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Nested Loop",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 0.57,
+              "Total Cost": 11.87,
+              "Plan Rows": 1,
+              "Plan Width": 24,
+              "Actual Startup Time": 0.149,
+              "Actual Total Time": 0.15,
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Inner Unique": false,
+              "Shared Hit Blocks": 138,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.42,
+                  "Total Cost": 9.49,
+                  "Plan Rows": 1,
+                  "Plan Width": 32,
+                  "Actual Startup Time": 0.149,
+                  "Actual Total Time": 0.15,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 138,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Nested Loop",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Left",
+                      "Startup Cost": 0.28,
+                      "Total Cost": 8.2,
+                      "Plan Rows": 1,
+                      "Plan Width": 48,
+                      "Actual Startup Time": 0.149,
+                      "Actual Total Time": 0.149,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1,
+                      "Inner Unique": true,
+                      "Filter": "((current.id IS NULL) OR ((current.status = 'pending'::text) AND (current.attempt_count = 0)))",
+                      "Rows Removed by Filter": 46,
+                      "Shared Hit Blocks": 138,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Index Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Scan Direction": "Forward",
+                          "Index Name": "test_responses_transcript_report_idx",
+                          "Relation Name": "test_responses",
+                          "Alias": "r",
+                          "Startup Cost": 0.14,
+                          "Total Cost": 3.46,
+                          "Plan Rows": 2,
+                          "Plan Width": 48,
+                          "Actual Startup Time": 0.009,
+                          "Actual Total Time": 0.061,
+                          "Actual Rows": 46,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 46,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        },
+                        {
+                          "Node Type": "Index Scan",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Scan Direction": "Forward",
+                          "Index Name": "recording_transcripts_response_id_key",
+                          "Relation Name": "recording_transcripts",
+                          "Alias": "current",
+                          "Startup Cost": 0.14,
+                          "Total Cost": 2.36,
+                          "Plan Rows": 1,
+                          "Plan Width": 42,
+                          "Actual Startup Time": 0.001,
+                          "Actual Total Time": 0.001,
+                          "Actual Rows": 1,
+                          "Actual Loops": 46,
+                          "Index Cond": "(response_id = r.id)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Shared Hit Blocks": 92,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Index Only Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "submissions_pkey",
+                      "Relation Name": "submissions",
+                      "Alias": "s",
+                      "Startup Cost": 0.14,
+                      "Total Cost": 1.26,
+                      "Plan Rows": 1,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 0,
+                      "Actual Total Time": 0,
+                      "Actual Rows": 0,
+                      "Actual Loops": 0,
+                      "Index Cond": "(id = r.submission_id)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Heap Fetches": 0,
+                      "Shared Hit Blocks": 0,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "test_response_transcripts_response_idx",
+                  "Relation Name": "test_response_transcripts",
+                  "Alias": "old",
+                  "Startup Cost": 0.15,
+                  "Total Cost": 2.38,
+                  "Plan Rows": 1,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0,
+                  "Actual Total Time": 0,
+                  "Actual Rows": 0,
+                  "Actual Loops": 0,
+                  "Index Cond": "(test_response_id = r.id)",
+                  "Rows Removed by Index Recheck": 0,
+                  "Filter": "((NULLIF(provider, ''::text) IS NOT NULL) AND (NULLIF(model, ''::text) IS NOT NULL) AND (status = 'completed'::text) AND (completed_at >= COALESCE(r.recording_uploaded_at, r.submitted_at)))",
+                  "Rows Removed by Filter": 0,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "Planning": {
+      "Shared Hit Blocks": 472,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 7.439,
+    "Triggers": [],
+    "Execution Time": 0.344
+  }
+}

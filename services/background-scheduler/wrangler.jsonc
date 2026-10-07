@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "test4test-background-scheduler",
+  "main": "src/index.ts",
+  "account_id": "cdb2bbaa7e9ae5ea5b7ff7848816745b",
+  "compatibility_date": "2026-10-06",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "SUPABASE_URL": "https://lteimepkxuiupbcsbcpz.supabase.co",
+  },
+  "triggers": { "crons": ["2-59/5 * * * *", "19 * * * *"] },
+  "observability": { "enabled": true },
+}

@@ -142,6 +142,12 @@ export function getAvailableRecordingsForCurrentUser(state: AppState): Available
 }
 
 export function getAvailableSubmissions(state: AppState) {
+  const completedSubmissionIds = new Set(
+    state.responses
+      .filter((response) => response.testerUserId === state.currentUserId)
+      .map((response) => response.submissionId),
+  );
+
   return state.submissions
     .filter((submission) => {
       if (submission.status !== "live") {
@@ -156,12 +162,7 @@ export function getAvailableSubmissions(state: AppState) {
         return false;
       }
 
-      const completedByUser = state.responses.some(
-        (response) =>
-          response.submissionId === submission.id && response.testerUserId === state.currentUserId,
-      );
-
-      return !completedByUser;
+      return !completedSubmissionIds.has(submission.id);
     })
     .sort((first, second) => {
       if (first.promoted !== second.promoted) {

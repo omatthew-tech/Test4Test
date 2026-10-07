@@ -24,11 +24,11 @@ export async function checkAuthHealth(
 
   const headers = { apikey: key, Origin: origin };
   const probes = [
-    { name: "Auth health", path: "health", headers },
-    { name: "Email provider", path: "settings", headers },
+    { name: "Auth health", path: "/auth/v1/health", headers },
+    { name: "Email provider", path: "/auth/v1/settings", headers },
     {
       name: "OTP preflight",
-      path: "otp",
+      path: "/auth/v1/otp",
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -37,12 +37,19 @@ export async function checkAuthHealth(
           "apikey,authorization,content-type,x-client-info,x-supabase-api-version",
       },
     },
+    {
+      // Auth can recover before PostgREST. Read zero rows through the actual
+      // database API; gateway preflight and API metadata can succeed offline.
+      name: "Database API readiness",
+      path: "/rest/v1/submissions?select=id&limit=0",
+      headers: role === "anon" ? { ...headers, Authorization: `Bearer ${key}` } : headers,
+    },
   ];
   return Promise.all(
     probes.map(async (probe) => {
       const started = Date.now();
       try {
-        const response = await fetcher(new URL(`/auth/v1/${probe.path}`, base), {
+        const response = await fetcher(new URL(probe.path, base), {
           method: probe.method ?? "GET",
           headers: probe.headers,
           signal: AbortSignal.timeout(15_000),
@@ -50,14 +57,14 @@ export async function checkAuthHealth(
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const cors = response.headers.get("access-control-allow-origin");
         if (cors !== "*" && cors !== origin) throw new Error("Browser CORS origin is not allowed");
-        if (probe.path === "health") {
+        if (probe.path === "/auth/v1/health") {
           const body = await response.json();
           if (body.name !== "GoTrue" || !body.version)
             throw new Error("Unexpected Auth health response");
-        } else if (probe.path === "settings") {
+        } else if (probe.path === "/auth/v1/settings") {
           const body = await response.json();
           if (body.external?.email !== true) throw new Error("Email authentication is not enabled");
-        } else {
+        } else if (probe.method === "OPTIONS") {
           const methods =
             response.headers
               .get("access-control-allow-methods")
@@ -72,6 +79,11 @@ export async function checkAuthHealth(
           for (const name of probe.headers["Access-Control-Request-Headers"].split(",")) {
             if (!allowed.includes(name) && !allowed.includes("*"))
               throw new Error(`CORS is missing ${name}`);
+          }
+        } else {
+          const body = await response.json();
+          if (!Array.isArray(body) || body.length !== 0) {
+            throw new Error("Unexpected database readiness response");
           }
         }
         return { name: probe.name, ok: true, milliseconds: Date.now() - started };
@@ -90,6 +102,7 @@ export async function checkAuthHealth(
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const env = { ...loadEnv("production", process.cwd(), "VITE_"), ...process.env };
+    console.log(`Backend health check at ${new Date().toISOString()}`);
     const results = await checkAuthHealth({
       url: env.VITE_SUPABASE_URL,
       key: env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY,

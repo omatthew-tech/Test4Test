@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { createEmailDestinationLink } from "./email-access-links.ts";
 import {
   loadEmailTemplates,
   logEmailDelivery,
@@ -156,93 +157,20 @@ export async function hasTestedBack(
   return Boolean(response?.id);
 }
 
-async function loadGooglePlayClosedTestPoolStatus(admin: SupabaseClient, userId: string) {
-  const { data, error } = await admin
-    .from("submissions")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("status", "live")
-    .eq("needs_google_play_closed_testers", true)
-    .limit(1);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? []).length > 0;
-}
-
 export async function findTargetSubmission(
   admin: SupabaseClient,
   testerUserId: string,
   ownerUserId: string,
 ) {
-  const { data: testerProfile, error: profileError } = await admin
-    .from("profiles")
-    .select("ban_status")
-    .eq("id", testerUserId)
-    .maybeSingle();
+  // Share the same system eligibility used by both test-back rate calculations.
+  const { data, error } = await admin.rpc("find_test_back_target_submission", {
+    p_tester_user_id: testerUserId,
+    p_owner_user_id: ownerUserId,
+  });
+  if (error) throw new Error(error.message);
 
-  if (profileError) {
-    throw new Error(profileError.message);
-  }
-
-  if (testerProfile && "ban_status" in testerProfile && testerProfile.ban_status === "banned") {
-    return null;
-  }
-
-  const [ownerNeedsGooglePlayClosedTesters, testerNeedsGooglePlayClosedTesters] = await Promise.all(
-    [
-      loadGooglePlayClosedTestPoolStatus(admin, ownerUserId),
-      loadGooglePlayClosedTestPoolStatus(admin, testerUserId),
-    ],
-  );
-
-  if (ownerNeedsGooglePlayClosedTesters !== testerNeedsGooglePlayClosedTesters) {
-    return null;
-  }
-
-  const { data: candidateRows, error: candidateError } = await admin
-    .from("submissions")
-    .select(
-      "id, user_id, product_name, status, is_open_for_more_tests, needs_google_play_closed_testers, promoted, response_count, created_at",
-    )
-    .eq("user_id", testerUserId)
-    .eq("status", "live")
-    .eq("is_open_for_more_tests", true)
-    .eq("needs_google_play_closed_testers", ownerNeedsGooglePlayClosedTesters)
-    .order("promoted", { ascending: false })
-    .order("response_count", { ascending: true })
-    .order("created_at", { ascending: false });
-
-  if (candidateError) {
-    throw new Error(candidateError.message);
-  }
-
-  const candidates = (candidateRows ?? []) as SubmissionRow[];
-
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  const { data: testedRows, error: testedError } = await admin
-    .from("test_responses")
-    .select("submission_id")
-    .eq("tester_user_id", ownerUserId)
-    .eq("status", "approved")
-    .eq("credit_awarded", true)
-    .in(
-      "submission_id",
-      candidates.map((candidate) => candidate.id),
-    );
-
-  if (testedError) {
-    throw new Error(testedError.message);
-  }
-
-  const testedSubmissionIds = new Set((testedRows ?? []).map((row) => row.submission_id as string));
-
-  return candidates.find((candidate) => !testedSubmissionIds.has(candidate.id)) ?? null;
+  const target = (data as Array<{ submission_id: string; product_name: string }> | null)?.[0];
+  return target ? { id: target.submission_id, product_name: target.product_name } : null;
 }
 
 async function loadProfiles(admin: SupabaseClient, userIds: string[]) {
@@ -529,8 +457,17 @@ async function processClaimedReminderSequence(
     throw new Error(`Missing email template: ${templateKey}`);
   }
 
-  const feedbackUrl = `${env.appBaseUrl}/analytics?earn_entry=test_back_email`;
-  const testBackUrl = `${env.appBaseUrl}/test/${targetSubmission.id}?earn_entry=test_back_email&feedback_source=earn`;
+  const feedbackUrl = await createEmailDestinationLink(admin, env, owner, {
+    destination: "feedback",
+    resource_id: reminder.latest_triggering_response_id,
+    entry: "test_back_email",
+  });
+  const testBackUrl = await createEmailDestinationLink(admin, env, owner, {
+    destination: "test",
+    resource_id: targetSubmission.id,
+    entry: "test_back_email",
+    feedback_source: "earn",
+  });
   const rendered = renderEmailTemplate(template, {
     ownerDisplayName: owner.display_name,
     ownerProductName: triggeringSubmission.product_name,
@@ -548,6 +485,7 @@ async function processClaimedReminderSequence(
       subject: rendered.subject,
       textBody: rendered.textBody,
       htmlBody: rendered.htmlBody,
+      containsAuthenticationLink: env.emailAccessLinksEnabled === true,
     });
 
     await logEmailDelivery(admin, {

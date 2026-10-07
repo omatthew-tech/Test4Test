@@ -24,6 +24,10 @@ assert(
   !modules.some((id) => /[/\\](HomePage|generalQuestionBank)\.[jt]sx?$/.test(id)),
   "Homepage/question bank leaked into common startup",
 );
+assert(
+  !modules.some((id) => /[/\\]tokens[/\\]generated[/\\]tokens\.ts$/.test(id)),
+  "Full token metadata leaked into common startup; use the lightweight breakpoint export",
+);
 const cssNames = new Set(scripts.flatMap((chunk) => [...(chunk.viteMetadata?.importedCss ?? [])]));
 const sum = (items, compress) =>
   items.reduce(
@@ -39,8 +43,14 @@ const metrics = {
   initialCssGzipBytes: sum(css, true),
 };
 // Modest headroom above this change; baseline was 562700 B JS / 150041 B CSS.
-assert(metrics.initialJsBytes <= 530000, "Initial JavaScript budget exceeded");
-assert(metrics.initialJsGzipBytes <= 155000, "Compressed initial JavaScript budget exceeded");
+assert(
+  metrics.initialJsBytes <= 530000,
+  `Initial JavaScript budget exceeded: ${metrics.initialJsBytes} > 530000 bytes`,
+);
+assert(
+  metrics.initialJsGzipBytes <= 155000,
+  `Compressed initial JavaScript budget exceeded: ${metrics.initialJsGzipBytes} > 155000 bytes`,
+);
 assert(metrics.initialCssBytes <= 125000, "Initial CSS budget exceeded");
 assert(metrics.initialCssGzipBytes <= 18000, "Compressed initial CSS budget exceeded");
 const assets = JSON.parse(String(files.get("assets/static-asset-manifest.json").source));
