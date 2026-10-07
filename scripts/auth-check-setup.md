@@ -6,6 +6,12 @@ login link, enters the dedicated test account and passcode, verifies that the
 authentication server validates the resulting user, opens Profile, and reloads
 it to confirm the session persists.
 
+The check supports the redesign's **Profile menu → Profile** navigation and its
+**Sign out** menu item, as well as the older layout's Profile link and Sign out
+button. It verifies the account email in either the developer profile text or
+the tester profile's email field. It only checks that Sign out is present; it
+does not activate it.
+
 This checks the existing **test-account login path**. It does not test delivery
 or verification of regular email OTPs. Monitoring that path also requires a
 dedicated, readable test mailbox. Do not substitute a personal or support inbox.
