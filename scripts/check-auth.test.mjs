@@ -36,12 +36,23 @@ before(async () => {
       return res.end("Unavailable");
     }
     res.setHeader("Content-Type", "text/html");
+    const redesigned = scenario.startsWith("redesign-");
+    const accountMenu = `<button aria-label="Profile menu" onclick="document.getElementById('account-menu').hidden=false; document.getElementById('profile-item').focus()">Account</button>
+      <div role="menu" id="account-menu" hidden onkeydown="if(event.key==='Escape')this.hidden=true">
+        <button id="profile-item" role="menuitem" onclick="location.href='/profile'">Profile</button>
+        ${scenario === "redesign-missing-signout" ? "" : '<button role="menuitem">Sign out</button>'}
+      </div>`;
+    const profileEmail = scenario.startsWith("redesign-tester-")
+      ? `<label>Email address<input type="email" value="${scenario === "redesign-tester-wrong-email" ? "other@example.test" : email}"></label>`
+      : `<strong>${email}</strong>`;
+    const profileMarkup = `${profileEmail}${redesigned ? accountMenu : "<button>Sign out</button>"}`;
+    const accountNavigation = redesigned ? accountMenu : '<a href="/profile">Profile</a>';
     if (req.url === "/test4test-redesign") return res.end('<a href="/sign-in">Log in</a>');
     if (req.url === "/profile") return res.end(`
       <script>
         if (localStorage.getItem('fixture-session')) {
-          document.write('<strong>${email}</strong><button>Sign out</button>');
-          ${scenario === "lose-session" ? "localStorage.clear();" : ""}
+          document.write(${JSON.stringify(profileMarkup)});
+          ${scenario.endsWith("lose-session") ? "localStorage.clear();" : ""}
         } else { document.write('Please sign in'); }
       </script>`);
     if (req.url === "/sign-in") return res.end(`
@@ -54,7 +65,7 @@ before(async () => {
             if (!login.ok) return;
             await fetch('/auth/v1/user');
             localStorage.setItem('fixture-session', 'active');
-            document.body.innerHTML = '<a href="/profile">Profile</a>';
+            document.body.innerHTML = ${JSON.stringify(accountNavigation)};
           };
         };
       </script>`);
@@ -90,6 +101,11 @@ for (const [name, status, stage] of [
   ["wrong-user", "NOT_WORKING", "validate_identity"],
   ["lose-session", "NOT_WORKING", "reload_session"],
   ["site-down", "NOT_WORKING", "open_site"],
+  ["redesign-success", "WORKING", "complete"],
+  ["redesign-lose-session", "NOT_WORKING", "reload_session"],
+  ["redesign-missing-signout", "NOT_WORKING", "authenticated_profile"],
+  ["redesign-tester-success", "WORKING", "complete"],
+  ["redesign-tester-wrong-email", "NOT_WORKING", "authenticated_profile"],
 ]) {
   test(name, async () => {
     scenario = name;
