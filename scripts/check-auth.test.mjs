@@ -47,7 +47,7 @@ before(async () => {
       : `<strong>${email}</strong>`;
     const profileMarkup = `${profileEmail}${redesigned ? accountMenu : "<button>Sign out</button>"}`;
     const accountNavigation = redesigned ? accountMenu : '<a href="/profile">Profile</a>';
-    if (req.url === "/test4test-redesign") return res.end('<a href="/sign-in">Log in</a>');
+    if (req.url === "/") return res.end('<a href="/sign-in">Log in</a>');
     if (req.url === "/profile") return res.end(`
       <script>
         if (localStorage.getItem('fixture-session')) {
@@ -56,16 +56,17 @@ before(async () => {
         } else { document.write('Please sign in'); }
       </script>`);
     if (req.url === "/sign-in") return res.end(`
-      <label>Email address<input type="email"></label><button id="next">Continue</button>
+      <label>Email address<span aria-hidden="true"> *</span><input type="email" required></label><button id="next">Continue</button>
       <script>
         document.getElementById('next').onclick = () => {
-          document.body.innerHTML = '<label>Test account passcode<input></label><button id="verify">Verify and continue</button>';
+          document.body.innerHTML = '<label>Test account passcode<span aria-hidden="true"> *</span><input required></label><button id="verify">Verify and continue</button>';
           document.getElementById('verify').onclick = async () => {
             const login = await fetch('/functions/v1/test-account-login', {method: 'POST'});
             if (!login.ok) return;
             await fetch('/auth/v1/user');
             localStorage.setItem('fixture-session', 'active');
-            document.body.innerHTML = ${JSON.stringify(accountNavigation)};
+            document.body.innerHTML = ${JSON.stringify(accountNavigation + (scenario === "redesign-welcome-dialog" ? '<dialog aria-label="Welcome to Test4Test!">Welcome tour</dialog>' : ""))};
+            document.querySelector('dialog')?.showModal();
           };
         };
       </script>`);
@@ -80,7 +81,7 @@ after(async () => { await new Promise((resolve) => server.close(resolve)); });
 
 function env() {
   return {
-    AUTH_CHECK_URL: `${origin}/test4test-redesign`,
+    AUTH_CHECK_URL: `${origin}/`,
     AUTH_CHECK_EMAIL: email,
     TEST_ACCOUNT_OTP_CODE: passcode,
     AUTH_CHECK_TIMEOUT_MS: "1500",
@@ -89,7 +90,7 @@ function env() {
 }
 
 test("logs BLOCKED when the credential is absent", async () => {
-  const result = await checkAuth({ AUTH_CHECK_URL: `${origin}/test4test-redesign` });
+  const result = await checkAuth({ AUTH_CHECK_URL: `${origin}/` });
   assert.equal(result.status, "BLOCKED");
   assert.equal(result.stage, "configuration");
 });
@@ -102,6 +103,7 @@ for (const [name, status, stage] of [
   ["lose-session", "NOT_WORKING", "reload_session"],
   ["site-down", "NOT_WORKING", "open_site"],
   ["redesign-success", "WORKING", "complete"],
+  ["redesign-welcome-dialog", "WORKING", "complete"],
   ["redesign-lose-session", "NOT_WORKING", "reload_session"],
   ["redesign-missing-signout", "NOT_WORKING", "authenticated_profile"],
   ["redesign-tester-success", "WORKING", "complete"],

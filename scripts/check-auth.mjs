@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
-const defaultUrl = "https://test4test.io/test4test-redesign";
+const defaultUrl = "https://test4test.io/";
 
 class CheckFailure extends Error {
   constructor(message, status = "NOT_WORKING") {
@@ -20,16 +20,14 @@ function profileMenu(page) {
   return page.getByRole("button", { name: "Profile menu", exact: true }).filter({ visible: true }).first();
 }
 
-async function openProfile(page, assertion) {
+async function openProfile(page, assertion, origin) {
   const menu = profileMenu(page);
   const link = page.getByRole("link", { name: "Profile", exact: true }).filter({ visible: true }).first();
   await assertion(menu.or(link).first()).toBeVisible();
-  if (await menu.isVisible()) {
-    await menu.click();
-    await page.getByRole("menuitem", { name: "Profile", exact: true }).click();
-  } else {
-    await link.click();
-  }
+  // The test account can replay its welcome tour after login. Open the
+  // protected route without dismissing the tour or changing account preferences.
+  const response = await page.goto(new URL("/profile", origin).href, { waitUntil: "domcontentloaded" });
+  requireCheck(response?.ok(), `The authenticated profile returned HTTP ${response?.status() ?? "unknown"}.`);
 }
 
 async function assertAuthenticatedProfile(page, assertion, email) {
@@ -99,14 +97,14 @@ export async function checkAuth(env = process.env) {
     requireCheck(response?.ok(), `The requested page returned HTTP ${response?.status() ?? "unknown"}.`);
 
     result.stage = "open_login";
-    // Start at the requested redesign URL and follow its actual login link.
+    // Start at the configured homepage and follow its actual login link.
     // Never silently substitute a different landing page when this one fails.
     const loginLink = page.getByRole("link", { name: /^(log in|sign in)$/i }).filter({ visible: true }).first();
     await assertion(loginLink).toBeVisible();
     const loginUrl = new URL(await loginLink.getAttribute("href"), page.url());
     requireCheck(loginUrl.origin === target.origin, "The login link points to an unexpected origin.");
     await loginLink.click();
-    await page.getByLabel("Email address", { exact: true }).fill(email);
+    await page.getByRole("textbox", { name: "Email address", exact: true }).fill(email);
 
     result.stage = "request_code";
     // The dedicated account uses Continue. Refuse the email flow so this check
@@ -116,7 +114,7 @@ export async function checkAuth(env = process.env) {
       throw new CheckFailure("The deployed site did not offer the configured test-account flow.", "BLOCKED");
     });
     await continueButton.click();
-    await page.getByLabel("Test account passcode", { exact: true }).fill(passcode);
+    await page.getByRole("textbox", { name: "Test account passcode", exact: true }).fill(passcode);
 
     result.stage = "verify_code";
     const loginResponsePromise = page.waitForResponse((r) =>
@@ -143,7 +141,7 @@ export async function checkAuth(env = process.env) {
       "The authenticated identity did not match the test account.");
 
     result.stage = "authenticated_profile";
-    await openProfile(page, assertion);
+    await openProfile(page, assertion, target.origin);
     await assertAuthenticatedProfile(page, assertion, email);
 
     result.stage = "reload_session";

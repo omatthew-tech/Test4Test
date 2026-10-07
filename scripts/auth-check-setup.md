@@ -1,16 +1,21 @@
 # Daily authentication check
 
 The `Daily authentication check` GitHub Actions workflow opens
-`https://test4test.io/test4test-redesign` in a fresh Chromium context, follows its
+`https://test4test.io/` in a fresh Chromium context, follows its
 login link, enters the dedicated test account and passcode, verifies that the
 authentication server validates the resulting user, opens Profile, and reloads
 it to confirm the session persists.
 
-The check supports the redesign's **Profile menu → Profile** navigation and its
-**Sign out** menu item, as well as the older layout's Profile link and Sign out
-button. It verifies the account email in either the developer profile text or
-the tester profile's email field. It only checks that Sign out is present; it
-does not activate it.
+Form fields are selected by their accessible textbox names, so decorative
+required-field markers do not break the check. The retired
+`/test4test-redesign` path is not the production homepage.
+
+After authenticated navigation appears, the check opens the protected
+`/profile` route directly. This prevents the test account's welcome tour from
+intercepting navigation without dismissing the tour or changing onboarding
+preferences. It verifies the account email in either the developer profile
+text or the tester profile's email field, and checks the **Sign out** menu item
+or older layout's Sign out button. It does not activate Sign out.
 
 This checks the existing **test-account login path**. It does not test delivery
 or verification of regular email OTPs. Monitoring that path also requires a
@@ -62,7 +67,7 @@ installed browser. The runner preserves `HTTPS_PROXY`, `HTTP_PROXY`, and
 and its authentication API. Never bypass an environment's network policy.
 
 `npm run test:auth:runner` exercises success, rejected login, invalid session,
-wrong user, lost session after reload, site outage, missing secrets, and log
+wrong user, welcome-tour overlays, lost session after reload, site outage, missing secrets, and log
 writing against a local fixture. It does not establish production login health.
 
 The monitor closes its fresh browser without using global sign-out, which would
