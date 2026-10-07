@@ -65,7 +65,8 @@ before(async () => {
             if (!login.ok) return;
             await fetch('/auth/v1/user');
             localStorage.setItem('fixture-session', 'active');
-            document.body.innerHTML = ${JSON.stringify(accountNavigation)};
+            document.body.innerHTML = ${JSON.stringify(accountNavigation + (scenario === "redesign-welcome-dialog" ? '<dialog aria-label="Welcome to Test4Test!">Welcome tour</dialog>' : ""))};
+            document.querySelector('dialog')?.showModal();
           };
         };
       </script>`);
@@ -102,6 +103,7 @@ for (const [name, status, stage] of [
   ["lose-session", "NOT_WORKING", "reload_session"],
   ["site-down", "NOT_WORKING", "open_site"],
   ["redesign-success", "WORKING", "complete"],
+  ["redesign-welcome-dialog", "WORKING", "complete"],
   ["redesign-lose-session", "NOT_WORKING", "reload_session"],
   ["redesign-missing-signout", "NOT_WORKING", "authenticated_profile"],
   ["redesign-tester-success", "WORKING", "complete"],
