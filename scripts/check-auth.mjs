@@ -16,6 +16,41 @@ function requireCheck(condition, message) {
   if (!condition) throw new CheckFailure(message);
 }
 
+function profileMenu(page) {
+  return page.getByRole("button", { name: "Profile menu", exact: true }).filter({ visible: true }).first();
+}
+
+async function openProfile(page, assertion) {
+  const menu = profileMenu(page);
+  const link = page.getByRole("link", { name: "Profile", exact: true }).filter({ visible: true }).first();
+  await assertion(menu.or(link).first()).toBeVisible();
+  if (await menu.isVisible()) {
+    await menu.click();
+    await page.getByRole("menuitem", { name: "Profile", exact: true }).click();
+  } else {
+    await link.click();
+  }
+}
+
+async function assertAuthenticatedProfile(page, assertion, email) {
+  await assertion(page).toHaveURL((url) => /\/profile\/?$/.test(url.pathname));
+  const emailText = page.getByText(email, { exact: true }).filter({ visible: true }).first();
+  const emailField = page.getByRole("textbox", { name: "Email address", exact: true }).filter({ visible: true }).first();
+  await assertion(emailText.or(emailField).first()).toBeVisible();
+  if (await emailField.isVisible()) await assertion(emailField).toHaveValue(email);
+  const menu = profileMenu(page);
+  const signOut = page.getByRole("button", { name: "Sign out", exact: true }).filter({ visible: true }).first();
+  await assertion(menu.or(signOut).first()).toBeVisible();
+  if (await menu.isVisible()) {
+    await menu.click();
+    await assertion(page.getByRole("menuitem", { name: "Sign out", exact: true })).toBeVisible();
+    // Inspect the authenticated action without signing out the shared account.
+    await page.keyboard.press("Escape");
+  } else {
+    await assertion(signOut).toBeVisible();
+  }
+}
+
 // A fresh browser context is essential: an existing session must never make a
 // broken login flow pass. Do not record traces, cookies, tokens, or screenshots.
 export async function checkAuth(env = process.env) {
@@ -108,17 +143,13 @@ export async function checkAuth(env = process.env) {
       "The authenticated identity did not match the test account.");
 
     result.stage = "authenticated_profile";
-    const profile = page.getByRole("link", { name: "Profile", exact: true }).filter({ visible: true }).first();
-    await assertion(profile).toBeVisible();
-    await profile.click();
-    await assertion(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
-    await assertion(page.getByText(email, { exact: true })).toBeVisible();
+    await openProfile(page, assertion);
+    await assertAuthenticatedProfile(page, assertion, email);
 
     result.stage = "reload_session";
     const reload = await page.reload({ waitUntil: "domcontentloaded" });
     requireCheck(reload?.ok(), "The authenticated page failed to reload.");
-    await assertion(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
-    await assertion(page.getByText(email, { exact: true })).toBeVisible();
+    await assertAuthenticatedProfile(page, assertion, email);
     result.status = "WORKING";
     result.stage = "complete";
     result.reason = "Login succeeded, the server validated the test user, and the authenticated profile survived a reload.";
