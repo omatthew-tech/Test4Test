@@ -1,5 +1,56 @@
 # Authentication availability and recurring incidents
 
+## October 6 late-evening outage (EDT)
+
+At 22:48 EDT (02:48 UTC October 7), the public homepage rendered in a fresh
+browser, but Auth health and settings returned HTTP 504 in about five seconds.
+The zero-row database API readiness probe timed out after 15 seconds, and
+management SQL failed with a connection timeout. Project metadata still reported
+`ACTIVE_HEALTHY`; that label did not reflect service availability.
+
+Gateway logs from 02:20-02:49 UTC contained 50 token-request HTTP 504 responses
+and three HTTP 200 responses. The infrastructure dashboard showed 100% disk-I/O
+utilization and unavailable live connection telemetry. This is consistent with
+the earlier resource-pressure incidents, but it does not identify the underlying
+host process or establish the exact cause of this recurrence. The dashboard's
+resource history is not a real-time measurement of the failing database.
+
+The Cloudflare build for commit `d10c804` succeeded. Direct browser inspection
+confirmed that the frontend loads for a guest; the independent Auth and database
+failures establish a backend outage. The separate guest-analytics CORS error is
+not the cause of the failed database probes.
+
+Automatic approval review initially blocked the production restart. After the
+owner explicitly approved it, one restart was submitted at approximately
+22:58 EDT. Supabase confirmed `RESTARTING` at 02:59 UTC. Recovery verification
+has not yet passed. No compute-plan, billing, schema, or application deployment
+change was made during this incident response.
+
+Post-restart verification:
+
+- Supabase metadata returned to `ACTIVE_HEALTHY` before all services recovered.
+- At 03:05:04 UTC, a direct SQL query succeeded. Postgres reported a start time
+  of 03:03:39.285 UTC, 13 connections, two active connections, and zero observed
+  lock or I/O waits. This was a single sample, not sustained recovery.
+- At 03:04:57 UTC, Auth returned HTTP 502 and the database API returned HTTP 521.
+- At 03:06:10 UTC, Auth health, settings, and database readiness all timed out.
+  A subsequent management SQL query also timed out. The dashboard displayed
+  `Unhealthy`, while the signed-in site remained on `Loading page`.
+- At 03:09:26 UTC, Auth health/settings still returned HTTP 504 and database
+  readiness still exceeded 15 seconds. Gateway preflight remained responsive.
+- The final 03:13:20 UTC check, roughly 15 minutes after the restart request,
+  again returned Auth HTTP 504 and a 15-second database readiness timeout.
+  Current recovery is **not confirmed**. A provider escalation draft is saved in
+  [the incident report](supabase-incident-2026-10-06-support-draft.md); it has not
+  been submitted.
+
+The provider's [status page](https://status.supabase.com/) reported all systems
+operational during this check. It listed the earlier Eastern US latency incident
+as resolved at 12:15 UTC October 6; this does not rule out a project-specific
+infrastructure fault. The restart has not demonstrated a durable recovery, and
+the present evidence does not justify attributing the outage to a particular
+application query or changing billing without authorization.
+
 ## Background scheduling reduction — October 6 implementation
 
 **Deployed and cut over at 11:23 EDT (15:23 UTC).** Cloudflare's first observed

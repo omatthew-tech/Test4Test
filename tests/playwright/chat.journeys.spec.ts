@@ -88,12 +88,17 @@ for (const viewport of [
     );
     const composer = page.getByRole("textbox", { name: "Message", exact: true });
     await expect(composer).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Palette Pilot", exact: true })).toHaveClass(
+      "ds-sr-only",
+    );
+    await expect(page.getByText(/4,000 characters\. Enter adds a new line/)).toHaveCount(0);
     await composer.fill("Thanks for your feedback!\nCan you tell me more about the first screen?");
     await page.getByRole("button", { name: "Send message", exact: true }).click();
     await expect(page.getByRole("region", { name: "Message history" })).toContainText(
       "Can you tell me more about the first screen?",
     );
     await expect(composer).toHaveValue("");
+    await expect(page.getByText("You", { exact: true })).toHaveClass("ds-sr-only");
     await page.reload();
     await expect(page.getByRole("region", { name: "Message history" })).toContainText(
       "Thanks for your feedback!",
@@ -125,6 +130,41 @@ for (const viewport of [
     await expect(page.getByRole("region", { name: "Message history" })).toContainText(
       "I found the navigation easy to use.",
     );
+  });
+
+  test(`chat app website link at ${viewport.width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize(viewport);
+    await page
+      .context()
+      .route("https://palettepilot.app/**", (route) =>
+        route.fulfill({ contentType: "text/html", body: "<title>App website</title>" }),
+      );
+    await page.goto("/messages?ds-user=user-mateo&view=inbox");
+    const website = page.getByRole("link", {
+      name: "Open Palette Pilot website in a new tab",
+    });
+    await expect(website).toHaveAttribute("href", "https://palettepilot.app/");
+    const box = await website.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    const inboxUrl = page.url();
+    await website.focus();
+    const popupPromise = page.waitForEvent("popup");
+    await page.keyboard.press("Enter");
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL("https://palettepilot.app/");
+    await expect(page).toHaveURL(inboxUrl);
+    await popup.close();
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: testInfo.outputPath(`chat-app-link-${viewport.width}.png`),
+      fullPage: true,
+    });
+    await page.getByRole("link", { name: "Palette Pilot", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Message", exact: true })).toBeVisible();
   });
 
   test(`chat email at ${viewport.width}px`, async ({ page }, testInfo) => {

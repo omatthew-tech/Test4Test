@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -12,9 +13,9 @@ import {
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { useChat } from "../context/ChatContext";
-import { useAccountState } from "../context/AppStateContext";
+import { useAccountState, useAppState } from "../context/AppStateContext";
 import { mergeMessages, type ChatConversation, type ChatMessage } from "../lib/chat";
-import { formatDateTime } from "../lib/format";
+import { formatDateTime, normalizeAccessUrl } from "../lib/format";
 import styles from "./MessagesPage.module.css";
 
 export function MessagesPage() {
@@ -23,6 +24,22 @@ export function MessagesPage() {
   const responseId = search.get("response") ?? undefined;
   const selected = Boolean(conversationId || responseId);
   const { inbox, loading, error, refresh, loadMore } = useChat();
+  const { state } = useAppState();
+  const websites = useMemo(() => {
+    const urls = new Map<string, string>();
+    for (const submission of state.submissions) {
+      if (!submission.accessLinks.website?.trim()) continue;
+      try {
+        const url = new URL(normalizeAccessUrl(submission.accessLinks.website));
+        if (url.protocol === "https:" || url.protocol === "http:") {
+          urls.set(submission.id, url.href);
+        }
+      } catch {
+        // An unavailable website must not prevent reading the conversation.
+      }
+    }
+    return urls;
+  }, [state.submissions]);
   const fixtureSearch = new URLSearchParams();
   if (import.meta.env.DEV && import.meta.env.VITE_DS_FIXTURES === "1") {
     for (const key of ["ds-user", "ds-tester"]) {
@@ -72,20 +89,42 @@ export function MessagesPage() {
           <nav aria-label="Conversations">
             <ul className={styles.conversations}>
               {inbox.items.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    to={`/messages/${item.id}${suffix}`}
-                    className={styles.conversation}
-                    aria-current={item.id === conversationId ? "page" : undefined}
-                  >
-                    <span className={styles.row}>
-                      <strong>{item.productName}</strong>
-                      {item.unreadCount ? (
-                        <span className={styles.unread}>{item.unreadCount} unread</span>
+                <li
+                  key={item.id}
+                  className={styles.conversation}
+                  data-selected={item.id === conversationId}
+                >
+                  <div className={styles.row}>
+                    <div className={styles.conversationName}>
+                      <Link
+                        to={`/messages/${item.id}${suffix}`}
+                        className={styles.conversationLink}
+                        aria-current={item.id === conversationId ? "page" : undefined}
+                        aria-describedby={`conversation-preview-${item.id}`}
+                      >
+                        <strong>{item.productName}</strong>
+                      </Link>
+                      {websites.has(item.submissionId) ? (
+                        <Link
+                          external
+                          to={websites.get(item.submissionId)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.websiteLink}
+                          aria-label={`Open ${item.productName} website in a new tab`}
+                          title={`Open ${item.productName} website in a new tab`}
+                        >
+                          <ExternalLink aria-hidden="true" />
+                        </Link>
                       ) : null}
-                    </span>
-                    <span className={styles.preview}>{item.lastMessage}</span>
-                  </Link>
+                    </div>
+                    {item.unreadCount ? (
+                      <span className={styles.unread}>{item.unreadCount} unread</span>
+                    ) : null}
+                  </div>
+                  <span id={`conversation-preview-${item.id}`} className={styles.preview}>
+                    {item.lastMessage}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -336,9 +375,7 @@ function ChatThread({
       ) : null}
       {conversation ? (
         <>
-          <header>
-            <h2 className={styles.sectionTitle}>{conversation.productName}</h2>
-          </header>
+          <h2 className="ds-sr-only">{conversation.productName}</h2>
           {offline ? (
             <Alert>You’re offline. Your draft is kept here. Reconnect to send it.</Alert>
           ) : !connected ? (
@@ -372,7 +409,7 @@ function ChatThread({
                   className={styles.message}
                   data-own={message.senderUserId === currentUser?.id}
                 >
-                  <span className={styles.sender}>
+                  <span className="ds-sr-only">
                     {message.senderUserId === currentUser?.id ? "You" : conversation.peerName}
                   </span>
                   <p className={styles.body}>{message.body}</p>
@@ -409,7 +446,6 @@ function ChatThread({
                   setSendError("");
                 }}
                 disabled={sending}
-                helpText={`${Array.from(draft).length.toLocaleString()} / 4,000 characters. Enter adds a new line.`}
                 error={sendError}
                 rows={3}
               />

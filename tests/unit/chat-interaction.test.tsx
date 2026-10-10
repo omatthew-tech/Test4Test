@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   items: [] as ChatConversation[],
   loading: false,
   error: "",
+  website: "example.com" as string | undefined,
 }));
 const conversation: ChatConversation = {
   id: "thread",
@@ -37,6 +38,9 @@ vi.mock("../../src/context/ChatContext", () => ({
 }));
 vi.mock("../../src/context/AppStateContext", () => ({
   useAccountState: () => ({ currentUser: { id: "founder" } }),
+  useAppState: () => ({
+    state: { submissions: [{ id: "app", accessLinks: { website: mocks.website } }] },
+  }),
 }));
 vi.mock("../../src/components/Layout", () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
@@ -46,6 +50,7 @@ beforeEach(() => {
   mocks.items = [conversation];
   mocks.loading = false;
   mocks.error = "";
+  mocks.website = "example.com";
   mocks.observer = null;
   mocks.refresh.mockReset();
   mocks.api = {
@@ -111,13 +116,13 @@ it("opens the latest conversation on entry and lets users return to choose an ol
     conversationId: "latest",
     responseId: undefined,
   });
-  expect(screen.getByRole("link", { name: /Latest app/ }).getAttribute("aria-current")).toBe(
+  expect(screen.getByRole("link", { name: "Latest app" }).getAttribute("aria-current")).toBe(
     "page",
   );
 
   fireEvent.click(screen.getByRole("link", { name: "Back to messages" }));
   expect(screen.queryByRole("textbox", { name: "Message" })).toBeNull();
-  fireEvent.click(screen.getByRole("link", { name: /Example app/ }));
+  fireEvent.click(screen.getByRole("link", { name: "Example app" }));
   await screen.findByRole("textbox", { name: "Message" });
   expect(mocks.api.context).toHaveBeenLastCalledWith({
     conversationId: "thread",
@@ -156,6 +161,29 @@ it("keeps inbox errors visible instead of opening a stale conversation", () => {
   expect(screen.getByRole("alert").textContent).toContain(mocks.error);
   expect(mocks.api.context).not.toHaveBeenCalled();
 });
+
+it("offers an independent website link without changing the conversation destination", async () => {
+  mount();
+  await screen.findByRole("textbox", { name: "Message" });
+  const website = screen.getByRole("link", { name: "Open Example app website in a new tab" });
+  expect(website.getAttribute("href")).toBe("https://example.com/");
+  expect(website.getAttribute("target")).toBe("_blank");
+  expect(website.getAttribute("rel")).toBe("noopener noreferrer");
+  expect(website.parentElement?.closest("a")).toBeNull();
+  expect(screen.getByRole("link", { name: "Example app" }).getAttribute("href")).toBe(
+    "/messages/thread",
+  );
+});
+
+it.each([undefined, "", "not a valid url", "javascript://alert(1)", "ftp://example.com"])(
+  "omits unavailable or unsupported website links: %s",
+  async (website) => {
+    mocks.website = website;
+    mount();
+    await screen.findByRole("textbox", { name: "Message" });
+    expect(screen.queryByRole("link", { name: /website in a new tab/ })).toBeNull();
+  },
+);
 
 it("retains failed drafts and reuses the request ID when retrying an uncertain send", async () => {
   vi.mocked(mocks.api.send).mockRejectedValueOnce(new Error("Connection lost. Try again."));
