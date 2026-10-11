@@ -2028,6 +2028,10 @@ function EarnVisibilityPanel({
                 label="How Earn ranking works"
                 variant="quiet"
                 className={styles.rankInfoTrigger}
+                onMouseLeave={(event) => {
+                  // Touch can emit mouseleave while the info button still has focus.
+                  if (event.currentTarget.matches(":focus")) event.stopPropagation();
+                }}
               >
                 <Info size={16} aria-hidden="true" />
               </IconButton>
@@ -2049,7 +2053,7 @@ function EarnVisibilityPanel({
                 onClick={onImproveRate}
                 disabled={!hasTestBackTarget}
               >
-                Improve rate
+                Improve
               </Button>
             ) : null}
           </div>
@@ -2063,7 +2067,7 @@ function EarnVisibilityPanel({
                   to={`/submissions/${revisionTargetResponseId}/revise`}
                   className="button button--secondary button--small earn-visibility__inline-action"
                 >
-                  Revise
+                  Improve
                 </Link>
               ) : (
                 <Button
@@ -2073,7 +2077,7 @@ function EarnVisibilityPanel({
                   className="earn-visibility__inline-action"
                   disabled
                 >
-                  Revise
+                  Improve
                 </Button>
               )
             ) : null}

@@ -465,3 +465,7 @@ verify_jwt = false
 # Dedicated server-only secret is verified before any database request.
 [functions.recover-background-jobs]
 verify_jwt = false
+
+# Internal scheduler endpoint authenticates TEST_BACK_REMINDER_CRON_SECRET.
+[functions.send-new-user-followups]
+verify_jwt = false

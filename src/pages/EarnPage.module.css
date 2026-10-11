@@ -379,6 +379,12 @@
     padding-inline: var(--ds-semantic-space-stack-md);
   }
 
+  .rankInfoPlacement [role="tooltip"] {
+    inset-inline-start: auto;
+    inset-inline-end: var(--ds-semantic-space-zero);
+    transform: none;
+  }
+
   .page :global(.earn-visibility__detail-row) {
     grid-template-columns: var(--ds-semantic-space-stack-2xl) minmax(0, 1fr) auto;
   }

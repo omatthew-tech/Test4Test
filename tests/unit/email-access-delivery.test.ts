@@ -11,6 +11,22 @@ const env = {
   smtp2goSender: "no-reply@example.test",
 };
 const link = `https://test4test.io/email-access#token=${"ab".repeat(32)}`;
+it("supports a per-message sender without changing other emails", async () => {
+  const send = vi.fn().mockImplementation(async () => Response.json({ data: { succeeded: 1 } }));
+  vi.stubGlobal("fetch", send);
+  const message = { to: "new@example.test", subject: "Hello", textBody: "Hi", htmlBody: "Hi" };
+  await sendEmail(env, {
+    ...message,
+    sender: { name: "Matt @ Test4Test", email: "Matt@Test4Test.io" },
+    replyTo: "Matt@Test4Test.io",
+  });
+  await sendEmail(env, message);
+  expect(JSON.parse(send.mock.calls[0][1].body)).toMatchObject({
+    sender: "Matt @ Test4Test <Matt@Test4Test.io>",
+    custom_headers: [{ header: "Reply-To", value: "Matt@Test4Test.io" }],
+  });
+  expect(JSON.parse(send.mock.calls[1][1].body).sender).toBe("Test4Test <no-reply@example.test>");
+});
 it("renders the identical credential destination in HTML and plain text, without logging bodies", async () => {
   const rendered = renderEmailTemplate(
     {

@@ -110,6 +110,12 @@
   color: var(--ds-semantic-color-text-link);
 }
 
+/* Information icons keep hover and pressed states free of button chrome. */
+.iconButton:has(> :global(.lucide-info)):is(:hover, :active):not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+}
+
 .iconButtonDanger {
   border-color: var(--ds-semantic-color-status-danger);
   background: var(--ds-semantic-color-status-danger);
@@ -203,6 +209,83 @@
 .textarea {
   min-height: var(--ds-semantic-space-stack-macro);
   resize: vertical;
+}
+
+.selectControl {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+.selectControl > .select,
+.selectControl > .input,
+.selectIndicator {
+  grid-area: 1 / 1;
+}
+
+.selectDropdown,
+.inputWithSuggestions {
+  appearance: none;
+  min-inline-size: 0;
+  padding-inline-end: calc(
+    var(--ds-semantic-space-inline-md) + var(--ds-semantic-size-icon-small) +
+      var(--ds-semantic-space-inline-sm)
+  );
+}
+
+/* Keep the native suggestion trigger clickable beneath the decorative arrow. */
+.inputWithSuggestions::-webkit-calendar-picker-indicator {
+  position: absolute;
+  display: block;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: calc(
+    var(--ds-semantic-space-inline-md) + var(--ds-semantic-size-icon-small) +
+      var(--ds-semantic-space-inline-sm)
+  );
+  block-size: 100%;
+  min-block-size: 100%;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+}
+
+.selectIndicator {
+  justify-self: end;
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+  margin-inline-end: var(--ds-semantic-space-inline-md);
+  color: var(--ds-semantic-color-text-secondary);
+  pointer-events: none;
+}
+
+.select:disabled + .selectIndicator,
+.input:disabled + .selectIndicator,
+.input:read-only + .selectIndicator {
+  color: var(--ds-semantic-color-text-disabled);
+}
+
+@media (forced-colors: active) {
+  .selectDropdown,
+  .inputWithSuggestions {
+    appearance: auto;
+    padding-inline-end: var(--ds-semantic-space-inline-md);
+  }
+
+  .inputWithSuggestions::-webkit-calendar-picker-indicator {
+    position: static;
+    display: revert;
+    inline-size: auto;
+    block-size: auto;
+    min-block-size: 0;
+    padding: revert;
+    opacity: 1;
+  }
+
+  .selectIndicator {
+    display: none;
+  }
 }
 
 .help {

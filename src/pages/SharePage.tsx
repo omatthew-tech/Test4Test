@@ -15,6 +15,7 @@ import { useAppState } from "../context/AppStateContext";
 import { getOrderedAccessLinks } from "../lib/format";
 import { getMySubmissions } from "../lib/selectors";
 import { buildReadableShareUrl, buildShareUrlFromSlug } from "../lib/shareLinks";
+import { recordShareLinkCopyClick } from "../lib/shareCopyActivity";
 import styles from "./SharePage.module.css";
 
 type CopyStatus = "idle" | "copying" | "copied" | "error";
@@ -162,6 +163,9 @@ export function SharePage() {
   const isCopying = copyStatus === "copying";
 
   const handleCopy = async () => {
+    if (state.currentUserId) {
+      void recordShareLinkCopyClick(liveSubmission.id, state.currentUserId);
+    }
     setCopyStatus("copying");
     const nextShareUrl = await saveShareMessage(customMessage);
 

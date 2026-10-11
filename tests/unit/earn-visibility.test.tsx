@@ -216,7 +216,25 @@ it("does not expose local apps to guests in a configured environment", async () 
   expect(backend.submissions).not.toHaveBeenCalled();
 });
 
-it("hides Improve rate when excluded unavailable opportunities leave a 100% rate", async () => {
+it("keeps the rank explanation open after a touch-generated mouse leave while focused", async () => {
+  await mount();
+  const user = userEvent.setup();
+  const info = screen.getByRole("button", { name: "How Earn ranking works" });
+  await user.click(info);
+  fireEvent.mouseLeave(info);
+  expect(screen.getByRole("tooltip").textContent).toBe(
+    "Rank is based on your test-back rate, satisfaction rate, and available credits.",
+  );
+  await user.keyboard("{Escape}");
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  fireEvent.blur(info);
+  fireEvent.focus(info);
+  expect(screen.getByRole("tooltip")).toBeTruthy();
+  fireEvent.blur(info);
+  expect(screen.queryByRole("tooltip")).toBeNull();
+});
+
+it("hides Improve when excluded unavailable opportunities leave a 100% rate", async () => {
   backend.summary.mockResolvedValue({
     ...newOwnerSummary,
     hasCompletedTest: true,
@@ -225,10 +243,10 @@ it("hides Improve rate when excluded unavailable opportunities leave a 100% rate
   backend.submissions.mockResolvedValue([]);
   await mount();
   expect(metric("Test-back rate")).toBe("100%");
-  expect(screen.queryByRole("button", { name: "Improve rate" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Improve" })).toBeNull();
 });
 
-it("preserves Improve rate scrolling and focus for owners with testing history", async () => {
+it("preserves Improve scrolling and focus for owners with testing history", async () => {
   backend.submissions.mockResolvedValue([
     testApp("Promoted app", { promoted: true }),
     availableTest,
@@ -254,7 +272,7 @@ it("preserves Improve rate scrolling and focus for owners with testing history",
   expect(metric("Credits")).toBe("0");
   expect(metric("Test-back rate")).toBe("80%");
   expect(metric("Satisfaction rate")).toBe("100%");
-  const improve = screen.getByRole("button", { name: "Improve rate" });
+  const improve = screen.getByRole("button", { name: "Improve" });
   await waitFor(() => expect((improve as HTMLButtonElement).disabled).toBe(false));
   await userEvent.setup().click(improve);
   expect(backend.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });

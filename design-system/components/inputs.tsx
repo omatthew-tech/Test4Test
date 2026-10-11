@@ -6,7 +6,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronDown } from "lucide-react";
 import styles from "./components.module.css";
 
 interface FieldChromeProps {
@@ -68,17 +68,27 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
   const generatedId = useId();
   const id = suppliedId ?? generatedId;
   const describedBy = error ? `${id}-error` : helpText ? `${id}-help` : undefined;
+  const input = (
+    <input
+      ref={ref}
+      id={id}
+      className={`${styles.input} ${props.list ? styles.inputWithSuggestions : ""} ${error ? styles.inputError : ""} ${className}`.trim()}
+      required={required}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy}
+      {...props}
+    />
+  );
   return (
     <FieldChrome id={id} label={label} required={required} helpText={helpText} error={error}>
-      <input
-        ref={ref}
-        id={id}
-        className={`${styles.input} ${error ? styles.inputError : ""} ${className}`.trim()}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        {...props}
-      />
+      {props.list ? (
+        <div className={styles.selectControl}>
+          {input}
+          <ChevronDown className={styles.selectIndicator} aria-hidden="true" focusable="false" />
+        </div>
+      ) : (
+        input
+      )}
     </FieldChrome>
   );
 });
@@ -124,19 +134,25 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const generatedId = useId();
   const id = suppliedId ?? generatedId;
   const describedBy = error ? `${id}-error` : helpText ? `${id}-help` : undefined;
+  const isDropdown = !props.multiple && (!props.size || props.size <= 1);
   return (
     <FieldChrome id={id} label={label} required={required} helpText={helpText} error={error}>
-      <select
-        ref={ref}
-        id={id}
-        className={`${styles.select} ${error ? styles.selectError : ""} ${className}`.trim()}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        {...props}
-      >
-        {children}
-      </select>
+      <div className={styles.selectControl}>
+        <select
+          ref={ref}
+          id={id}
+          className={`${styles.select} ${isDropdown ? styles.selectDropdown : ""} ${error ? styles.selectError : ""} ${className}`.trim()}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          {...props}
+        >
+          {children}
+        </select>
+        {isDropdown && (
+          <ChevronDown className={styles.selectIndicator} aria-hidden="true" focusable="false" />
+        )}
+      </div>
     </FieldChrome>
   );
 });

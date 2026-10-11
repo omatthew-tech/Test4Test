@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -7,14 +6,12 @@ import {
   Checkbox,
   FormSummary,
   type FormSummaryItem,
-  IconButton,
   InlineValidation,
   Radio,
   Select,
   Test4TestBrand,
   Surface,
   TextField,
-  Tooltip,
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { StepIndicator } from "../components/StepIndicator";
@@ -35,6 +32,7 @@ import {
   type TesterSignupStage,
 } from "../lib/testerSignup";
 import { clearStoredOtpChallenge } from "../lib/pendingSubmission";
+import { detectTesterDevice } from "../lib/testerDevice";
 import type {
   EmploymentStatus,
   TechnologyProficiency,
@@ -114,9 +112,12 @@ export function TesterSignupPage() {
   const navigate = useNavigate();
   const { completeTesterSignup, requestOtp, signOut, verifyOtp } = useAppState();
   const [initial] = useState(loadTesterSignupDraft);
-  const [draft, setDraft] = useState<TesterProfileDraft>(
-    initial?.draft ?? EMPTY_TESTER_PROFILE_DRAFT,
-  );
+  const [draft, setDraft] = useState<TesterProfileDraft>(() => {
+    const savedDraft = initial?.draft ?? EMPTY_TESTER_PROFILE_DRAFT;
+    if (initial?.deviceSelectionInitialized || savedDraft.devices.length > 0) return savedDraft;
+    const device = detectTesterDevice();
+    return { ...savedDraft, devices: device ? [device] : [] };
+  });
   const [stage, setStage] = useState<TesterSignupStage>(initial?.stage ?? 1);
   const [email, setEmail] = useState(initial?.email ?? "");
   const [code, setCode] = useState("");
@@ -130,7 +131,7 @@ export function TesterSignupPage() {
   const usesStateDropdown = !draft.countryCode || draft.countryCode === "US";
 
   useEffect(() => {
-    saveTesterSignupDraft(draft, stage, email);
+    saveTesterSignupDraft(draft, stage, email, true);
   }, [draft, email, stage]);
 
   useEffect(() => {
@@ -303,14 +304,16 @@ export function TesterSignupPage() {
               <StepIndicator steps={steps} currentStep={stage - 1} />
             ) : null}
 
-            <Surface className={styles.stage}>
+            <Surface
+              className={`${styles.stage} ${stage === 3 || stage === 4 ? styles.choiceStage : ""}`}
+            >
               <FormSummary ref={formSummaryRef} items={errors} />
 
               {stage === 1 ? (
                 <div className={styles.stack}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      Hey there!👋 What&apos;s your name?
+                      Hey there! 👋 What&apos;s your name?
                     </h1>
                   </div>
                   <TextField
@@ -331,9 +334,8 @@ export function TesterSignupPage() {
                 <div className={styles.stack}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      Where do you live? 🌎
+                      Where are you located? 🌎
                     </h1>
-                    <p>Choose your country and add your state or region if it applies.</p>
                   </div>
                   <Select
                     id="tester-country"
@@ -345,7 +347,8 @@ export function TesterSignupPage() {
                     required
                   >
                     <option value="">Choose a country</option>
-                    {COUNTRY_OPTIONS.map((option) => (
+                    <option value="US">United States</option>
+                    {COUNTRY_OPTIONS.filter((option) => option.code !== "US").map((option) => (
                       <option key={option.code} value={option.code}>
                         {option.label}
                       </option>
@@ -389,10 +392,10 @@ export function TesterSignupPage() {
               ) : null}
 
               {stage === 3 ? (
-                <div className={styles.stack}>
+                <div className={`${styles.stack} ${styles.choiceStep}`}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
-                      How comfortable are you with technology?
+                      How techy are you? 🤓
                     </h1>
                   </div>
 
@@ -407,23 +410,12 @@ export function TesterSignupPage() {
                         : undefined
                     }
                   >
-                    <legend className={styles.legendWithHelp}>
-                      <span>Technology proficiency</span>
-                      <Tooltip content="Be honest about your experience. Founders need feedback from both technical and non-technical people, so embrace where you are.">
-                        <IconButton
-                          type="button"
-                          label="About technology proficiency"
-                          variant="quiet"
-                          size="compact"
-                        >
-                          <Info aria-hidden="true" size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </legend>
+                    <legend>Technology proficiency</legend>
                     <div className={styles.choiceGroup}>
                       {TECHNOLOGY_PROFICIENCY_OPTIONS.map((option) => (
                         <Radio
                           key={option.value}
+                          className={styles.choiceOption}
                           id={`tester-proficiency-${option.value}`}
                           name="technology-proficiency"
                           label={option.label}
@@ -460,10 +452,11 @@ export function TesterSignupPage() {
                     }
                   >
                     <legend>Which devices do you have?</legend>
-                    <div className={styles.choiceGroup}>
+                    <div className={styles.deviceChoices}>
                       {TESTER_DEVICE_OPTIONS.map((option) => (
                         <Checkbox
                           key={option.value}
+                          className={styles.choiceOption}
                           id={`tester-device-${option.value}`}
                           label={option.label}
                           checked={draft.devices.includes(option.value)}
@@ -481,7 +474,7 @@ export function TesterSignupPage() {
               ) : null}
 
               {stage === 4 ? (
-                <div className={styles.stack}>
+                <div className={`${styles.stack} ${styles.choiceStep}`}>
                   <div className={styles.heading}>
                     <h1 ref={headingRef} tabIndex={-1}>
                       What&apos;s your employment status? 💼
@@ -504,6 +497,7 @@ export function TesterSignupPage() {
                         <Radio
                           key={option.value}
                           id={`tester-employment-${option.value}`}
+                          className={styles.choiceOption}
                           name="employment-status"
                           label={option.label}
                           value={option.value}
@@ -525,26 +519,28 @@ export function TesterSignupPage() {
                   </fieldset>
 
                   {employmentRequiresWorkArea(draft.employmentStatus) ? (
-                    <Select
-                      id="tester-work-area"
-                      label="Which area best describes your work?"
-                      value={draft.workArea}
-                      onChange={(event) =>
-                        setDraft((current) => ({
-                          ...current,
-                          workArea: event.target.value as WorkArea,
-                        }))
-                      }
-                      error={getFieldError("tester-work-area")}
-                      required
-                    >
-                      <option value="">Choose an area</option>
-                      {WORK_AREA_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
+                    <div className={styles.followupField}>
+                      <Select
+                        id="tester-work-area"
+                        label="Which area best describes your work?"
+                        value={draft.workArea}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            workArea: event.target.value as WorkArea,
+                          }))
+                        }
+                        error={getFieldError("tester-work-area")}
+                        required
+                      >
+                        <option value="">Choose an area</option>
+                        {WORK_AREA_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
                   ) : null}
                 </div>
               ) : null}

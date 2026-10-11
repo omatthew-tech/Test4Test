@@ -259,11 +259,14 @@
 .application :is(input, textarea, select):not([type="checkbox"], [type="radio"]) {
   width: 100%;
   min-height: var(--ds-semantic-size-control-target);
-  padding: var(--ds-semantic-space-inline-sm) var(--ds-semantic-space-inline-md);
   border: var(--ds-semantic-border-width-default) solid var(--ds-semantic-color-border-strong);
   border-radius: var(--ds-semantic-radius-control);
   background: var(--ds-semantic-color-surface-default);
   color: var(--ds-semantic-color-text-primary);
+}
+
+.application :is(input, textarea):not([type="checkbox"], [type="radio"], [list]) {
+  padding: var(--ds-semantic-space-inline-sm) var(--ds-semantic-space-inline-md);
 }
 
 .application textarea {
@@ -2444,14 +2447,8 @@
     flex: 0 1 auto;
   }
 
-  .application [class~="earn-filter"],
-  .application [class~="earn-visibility__inline-action"] {
+  .application [class~="earn-filter"] {
     width: 100%;
-  }
-
-  .application [class~="earn-visibility__inline-action"] {
-    grid-column: 1 / -1;
-    justify-self: stretch;
   }
 
   .application [class~="earn-row__placement-rank"],

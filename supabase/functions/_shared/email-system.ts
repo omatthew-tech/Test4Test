@@ -24,6 +24,16 @@ export interface RenderedEmail {
   htmlBody: string;
 }
 
+export class EmailDeliveryError extends Error {
+  constructor(
+    message: string,
+    public readonly outcome: "rejected" | "unknown",
+  ) {
+    super(message);
+    this.name = "EmailDeliveryError";
+  }
+}
+
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -154,6 +164,7 @@ async function sendEmailRequest(
     textBody,
     htmlBody,
     replyTo,
+    sender,
     timeoutMs,
     containsAuthenticationLink = false,
   }: {
@@ -162,6 +173,7 @@ async function sendEmailRequest(
     textBody: string;
     htmlBody: string;
     replyTo?: string | null;
+    sender?: { name: string; email: string };
     timeoutMs?: number;
     containsAuthenticationLink?: boolean;
   },
@@ -189,7 +201,7 @@ async function sendEmailRequest(
         : env.smtp2goApiKey,
     },
     body: JSON.stringify({
-      sender: `Test4Test <${env.smtp2goSender}>`,
+      sender: sender ? `${sender.name} <${sender.email}>` : `Test4Test <${env.smtp2goSender}>`,
       to: [to],
       subject,
       text_body: textBody,
@@ -202,14 +214,20 @@ async function sendEmailRequest(
 
   if (!response.ok) {
     const message = payload?.data?.error || payload?.error || "SMTP2GO request failed.";
-    throw new Error(containsAuthenticationLink ? "Email sign-in delivery failed." : message);
+    throw new EmailDeliveryError(
+      containsAuthenticationLink ? "Email sign-in delivery failed." : message,
+      response.status >= 400 && response.status < 500 ? "rejected" : "unknown",
+    );
   }
 
   if ((payload?.data?.succeeded ?? 0) < 1) {
     const failureMessage = Array.isArray(payload?.data?.failures)
       ? payload.data.failures.join("; ")
       : "SMTP2GO did not confirm a successful send.";
-    throw new Error(containsAuthenticationLink ? "Email sign-in delivery failed." : failureMessage);
+    throw new EmailDeliveryError(
+      containsAuthenticationLink ? "Email sign-in delivery failed." : failureMessage,
+      payload?.data?.succeeded === 0 && payload?.data?.failed > 0 ? "rejected" : "unknown",
+    );
   }
 
   const providerMessageId =

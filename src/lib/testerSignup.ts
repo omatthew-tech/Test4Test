@@ -21,6 +21,7 @@ export interface TesterSignupStoredDraft {
   email: string;
   createdAt: string;
   updatedAt: string;
+  deviceSelectionInitialized?: boolean;
 }
 
 export interface TesterSignupFieldError {
@@ -32,11 +33,11 @@ export const TECHNOLOGY_PROFICIENCY_OPTIONS: Array<{
   value: TechnologyProficiency;
   label: string;
 }> = [
-  { value: "not_at_all", label: "Not at all proficient 😕" },
-  { value: "slightly", label: "Slightly proficient 🙂" },
-  { value: "moderately", label: "Moderately proficient 👍" },
-  { value: "very", label: "Very proficient 😎" },
-  { value: "extremely", label: "Extremely proficient 🤓" },
+  { value: "not_at_all", label: "Not at all proficient" },
+  { value: "slightly", label: "Slightly proficient" },
+  { value: "moderately", label: "Moderately proficient" },
+  { value: "very", label: "Very proficient" },
+  { value: "extremely", label: "Extremely proficient" },
 ];
 
 export const TESTER_DEVICE_OPTIONS: Array<{ value: TesterDevice; label: string }> = [
@@ -54,7 +55,7 @@ export const EMPLOYMENT_STATUS_OPTIONS: Array<{
   { value: "self_employed", label: "Self-employed" },
   { value: "student", label: "Student" },
   { value: "retired", label: "Retired" },
-  { value: "not_employed", label: "Not employed" },
+  { value: "not_employed", label: "Not employed (looking)" },
 ];
 
 export const WORK_AREA_OPTIONS: Array<{ value: WorkArea; label: string }> = [
@@ -274,6 +275,7 @@ export function parseTesterSignupDraft(
       email,
       createdAt: parsed.createdAt ?? parsed.updatedAt ?? new Date(now).toISOString(),
       updatedAt: parsed.updatedAt ?? new Date(now).toISOString(),
+      deviceSelectionInitialized: parsed.deviceSelectionInitialized === true,
     };
   } catch {
     return null;
@@ -311,6 +313,7 @@ export function saveTesterSignupDraft(
   draft: TesterProfileDraft,
   stage: TesterSignupStage,
   email: string,
+  deviceSelectionInitialized = false,
 ) {
   const existing = loadTesterSignupDraft();
   const now = new Date().toISOString();
@@ -321,6 +324,8 @@ export function saveTesterSignupDraft(
     email,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
+    deviceSelectionInitialized:
+      deviceSelectionInitialized || existing?.deviceSelectionInitialized === true,
   };
   const serialized = JSON.stringify(stored);
 
