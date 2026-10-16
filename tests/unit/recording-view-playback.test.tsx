@@ -179,6 +179,54 @@ it("does not spend a credit on a fallback recording for an invalid link", async 
   expect(fetch).not.toHaveBeenCalled();
 });
 
+it.each(["free", "insufficient_credits"])(
+  "opens the newest recording for the linked test and keeps navigation scoped (%s)",
+  async (status) => {
+    const submission = seededState.submissions.find((item) => item.id === response.submissionId)!;
+    const newer = { ...response, id: "linked-newer", submittedAt: "2026-10-14T12:00:00Z" };
+    const unrelated = {
+      ...response,
+      id: "unrelated-newest",
+      submissionId: "another-owned-test",
+      submittedAt: "2026-10-15T12:00:00Z",
+    };
+    backend.state!.submissions = [
+      ...seededState.submissions,
+      { ...submission, id: unrelated.submissionId, productName: "Another app" },
+    ];
+    backend.state!.responses = [response, newer, unrelated];
+    backend.openFeedback.mockResolvedValue({ status, balance: 0 });
+    invalidateResponseRecordingUrl(newer.id);
+    const { container } = mount(`?submission=${submission.id}&earn_entry=feedback_email`);
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    expect(screen.getByRole("heading", { name: submission.productName })).toBeDefined();
+    expect(screen.getByText("Recording 1 of 2")).toBeDefined();
+    expect(requestedMedia()[0]).toMatchObject({ responseId: newer.id });
+    expect(
+      (screen.getByRole("button", { name: "Previous recording" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next recording" }));
+    await waitFor(() => expect(requestedMedia()).toHaveLength(2));
+    expect(requestedMedia()[1]).toMatchObject({ responseId: response.id });
+    expect(screen.getByText("Recording 2 of 2")).toBeDefined();
+    expect(
+      (screen.getByRole("button", { name: "Next recording" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(backend.openFeedback.mock.calls.map(([id]) => id)).toEqual([newer.id, response.id]);
+  },
+);
+
+it.each(["missing", "submission-trail"])(
+  "does not open unrelated feedback when the linked test is unavailable (%s)",
+  async (submissionId) => {
+    mount(`?submission=${submissionId}&earn_entry=feedback_email`);
+    await screen.findByRole("heading", { name: "Recording unavailable" });
+    expect(backend.openFeedback).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+
 it("distinguishes a temporary access failure from insufficient credits and can retry", async () => {
   backend.openFeedback
     .mockRejectedValueOnce(new Error("Connection interrupted"))

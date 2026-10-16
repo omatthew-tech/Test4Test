@@ -15,6 +15,10 @@
   font-size: var(--ds-semantic-typography-caption-size);
   font-variant-numeric: tabular-nums;
 }
+.clipAction svg {
+  width: var(--ds-semantic-size-icon-small);
+  height: var(--ds-semantic-size-icon-small);
+}
 @media (width < 768px) {
   .clipAction.clipAction {
     width: var(--ds-semantic-size-control-target);

@@ -133,6 +133,19 @@ beforeEach(() => {
   );
 });
 afterAll(() => vi.unstubAllGlobals());
+it("links feedback emails directly to the exact recording when email sign-in links are disabled", async () => {
+  await processNewFeedbackNotificationForResponse(
+    mocks.admin,
+    { ...environment, emailAccessLinksEnabled: false },
+    { ...tables.test_responses[0] },
+  );
+  const sent = mocks.send.mock.calls[0][1];
+  const destination = "https://test4test.io/recordings?response=response&earn_entry=feedback_email";
+  expect(sent.textBody).toBe(destination);
+  expect(sent.htmlBody).toContain(`href="${destination}"`);
+  expect(issued).toHaveLength(0);
+});
+
 it("sends an exact feedback credential and reconciles delivery retries without issuing again", async () => {
   await processNewFeedbackNotificationForResponse(mocks.admin, environment, {
     ...tables.test_responses[0],

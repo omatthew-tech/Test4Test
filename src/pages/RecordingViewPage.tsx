@@ -24,6 +24,7 @@ import {
   requestResponseRecordingPreview,
 } from "../lib/recordings";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
+import type { AppState } from "../types";
 import type { OpenFeedbackResult } from "../lib/feedbackAccess";
 import { isTestAccountEmail } from "../lib/supabase";
 import {
@@ -51,12 +52,20 @@ const initialPlaybackState: PlaybackState = {
   error: "",
 };
 
+function getLinkedRecordings(state: AppState, submissionId: string | null) {
+  const recordings = getAvailableRecordingsForCurrentUser(state);
+  return submissionId
+    ? recordings.filter(({ submission }) => submission.id === submissionId)
+    : recordings;
+}
+
 export function RecordingViewPage() {
   const { state, currentUser, openFeedback } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
   const previewRequested = searchParams.get("preview") === "out-of-credits";
   const previewOutOfCredits = previewRequested && isTestAccountEmail(currentUser?.email);
-  const recordings = getAvailableRecordingsForCurrentUser(state);
+  const submissionId = searchParams.get("submission")?.trim() || null;
+  const recordings = getLinkedRecordings(state, submissionId);
   const requestedId = searchParams.get("response")?.trim();
   const selectedIndex = requestedId
     ? recordings.findIndex((item) => item.response.id === requestedId)
@@ -117,7 +126,8 @@ export function RecordingViewPage() {
     return <RecordingContent />;
 
   const unavailable =
-    (Boolean(requestedId) && !selected) || currentAccess?.result?.status === "unavailable";
+    (Boolean(requestedId || submissionId) && !selected) ||
+    currentAccess?.result?.status === "unavailable";
   const blocked = previewOutOfCredits || currentAccess?.result?.status === "insufficient_credits";
   if (blocked) return <RecordingPreviewContent key={accessKey} simulation={previewOutOfCredits} />;
   return (
@@ -186,8 +196,8 @@ function RecordingPreviewContent({ simulation }: { simulation: boolean }) {
   const { state } = useAppState();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const recordings = getAvailableRecordingsForCurrentUser(state);
-  const requestedId = searchParams.get("response");
+  const recordings = getLinkedRecordings(state, searchParams.get("submission")?.trim() || null);
+  const requestedId = searchParams.get("response")?.trim();
   const index = requestedId ? recordings.findIndex((item) => item.response.id === requestedId) : 0;
   const selected = recordings[index];
   const responseId = selected?.response.id;
@@ -340,7 +350,11 @@ function RecordingContent() {
   const [playbackRetryKey, setPlaybackRetryKey] = useState(0);
   const [historyRetryKey, setHistoryRetryKey] = useState(0);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
-  const availableRecordings = useMemo(() => getAvailableRecordingsForCurrentUser(state), [state]);
+  const submissionId = searchParams.get("submission")?.trim() || null;
+  const availableRecordings = useMemo(
+    () => getLinkedRecordings(state, submissionId),
+    [state, submissionId],
+  );
   const requestedResponseId = searchParams.get("response")?.trim() ?? "";
   const requestedRecordingIndex = requestedResponseId
     ? availableRecordings.findIndex(({ response }) => response.id === requestedResponseId)

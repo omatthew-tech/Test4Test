@@ -7,6 +7,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import { Alert, Button, Container, Skeleton, Stack } from "@test4test/design-system";
 import { AppStateProvider, useAppState } from "./context/AppStateContext";
@@ -232,8 +233,11 @@ function AuthenticatedRoute({
 
 function LegacyResultsRedirect() {
   const location = useLocation();
+  const { submissionId } = useParams();
   const searchParams = new URLSearchParams(location.search);
-  const destination = searchParams.get("response")?.trim() ? "/recordings" : "/analytics";
+  const hasResponse = Boolean(searchParams.get("response")?.trim());
+  if (submissionId && !hasResponse) searchParams.set("submission", submissionId);
+  const destination = hasResponse || submissionId ? "/recordings" : "/analytics";
   const search = searchParams.toString();
 
   return <Navigate to={`${destination}${search ? `?${search}` : ""}`} replace />;
