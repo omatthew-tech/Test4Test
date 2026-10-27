@@ -15,7 +15,7 @@ test.describe("desktop profile dropdown", () => {
     await page.goto("/profile?ds-user=user-mateo");
     const menu = await openProfileMenu(page);
     const navigation = page.getByRole("navigation", { name: "Primary" }).filter({ visible: true });
-    await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analyze"]);
+    await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "My Feedback"]);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Profile",
       "Messages (1)",

@@ -88,18 +88,18 @@ const complete = (action = "complete_multipart") =>
     }),
   );
 
-it("returns upload success without waiting for the thumbnail lookup", async () => {
+it("completes uploads without scheduling retired thumbnail work", async () => {
   let finish!: (value: unknown) => void;
   mocks.backgroundRead = new Promise((resolve) => {
     finish = resolve;
   });
   const response = await complete("complete_single");
   expect(response.status).toBe(200);
-  expect(mocks.tasks).toHaveLength(1);
+  expect(mocks.tasks).toHaveLength(0);
   expect(mocks.enqueue).not.toHaveBeenCalled();
   finish({ data: mocks.row, error: null });
   await Promise.all(mocks.tasks);
-  expect(mocks.enqueue).toHaveBeenCalledOnce();
+  expect(mocks.enqueue).not.toHaveBeenCalled();
 });
 
 it("reconfirms a completed multipart upload without completing its consumed ID again", async () => {

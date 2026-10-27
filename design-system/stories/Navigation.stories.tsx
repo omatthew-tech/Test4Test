@@ -173,7 +173,7 @@ export const CompactMemberNavigation: Story = {
       items={[
         { label: "Earn", to: "/earn", icon: <Coins /> },
         { label: "Share", to: "/share", icon: <Share2 /> },
-        { label: "Analyze", to: "/analytics", icon: <ChartNoAxesCombined /> },
+        { label: "My Feedback", to: "/analytics", icon: <ChartNoAxesCombined /> },
       ]}
       mobileAccountItems={[
         { id: "profile", label: "Profile", to: "/profile", icon: <UserRound /> },

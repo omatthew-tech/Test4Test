@@ -1,5 +1,45 @@
 # video-processor
 
+## Current media entrypoint (Render retirement)
+
+`npm run dev` and `npm start` now run `src/mediaServer.ts` / `dist/mediaServer.js`.
+This entrypoint extracts audio with FFmpeg for Groq transcription and exports
+private H.264/AAC clips, including the existing limited feedback previews.
+It does not generate screenshots or recording-card thumbnails.
+
+The portable Docker image and Cloudflare Container gateway live in `Dockerfile`
+and `cloudflare/`. Native processing is serialized across the transcript and clip
+queues. Supabase remains authoritative for leases, attempt IDs, ownership,
+deletion checks, and completion. No schema migration is required.
+
+Supported routes:
+
+| Route                                  | Purpose                                                               |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `GET /healthz`                         | Public liveness; the Cloudflare gateway does not wake a container.    |
+| `POST /recordings/transcripts/process` | Authenticated transcript dispatch.                                    |
+| `POST /recordings/clips/process`       | Authenticated private clip export.                                    |
+| `POST /frames/delete`                  | Existing authenticated source-deletion cleanup for legacy thumbnails. |
+| `POST /internal/prepare-sleep`         | Container-only idle handshake; the gateway never exposes it.          |
+
+All mutations require `x-worker-secret`. The media entrypoint refuses to start
+without a shared secret. Retired generation/signing/report routes return 410.
+Idle shutdown waits for queued work, processing, and completion callbacks; a
+transient idle-probe failure keeps the container running to preserve live work.
+
+For local setup, copy `.env.media.example` to `.env` and fill its placeholders.
+For deployment gates and rollback, see the
+[migration runbook](../../docs/render-retirement/implementation.md).
+The replacement is live at `https://test4test-media-processor.omatthew.workers.dev`.
+Production dispatch uses Cloudflare. The old Render service is suspended without
+ongoing service charges; its configuration remains available for rollback.
+
+## Historical screenshot processor reference
+
+The material below describes `src/server.ts`, retained temporarily for rollback.
+It is not the current npm/Docker entrypoint. Do not run its thumbnail backfill or
+configure screenshot generation for the replacement service.
+
 Asynchronous Node.js worker that turns usability-test screen recordings into a
 set of **unique, timestamped app-page screenshots** stored in Cloudflare R2 and
 normalized Groq Whisper transcripts returned in report job results.

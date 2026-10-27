@@ -1,0 +1,91 @@
+.preview {
+  min-height: var(--ds-semantic-size-viewport-full-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-semantic-color-background-canvas);
+}
+
+.stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--ds-semantic-space-stack-xl) var(--ds-semantic-space-gutter-small);
+}
+
+.loading {
+  align-items: center;
+  text-align: center;
+}
+
+.markFrame {
+  display: grid;
+  place-items: center;
+  inline-size: calc(var(--ds-semantic-size-icon-large) * 4);
+  block-size: calc(var(--ds-semantic-size-icon-large) * 4);
+}
+
+.mark {
+  inline-size: calc(var(--ds-semantic-size-icon-large) * 3);
+  block-size: calc(var(--ds-semantic-size-icon-large) * 3);
+  color: var(--ds-semantic-color-action-primary);
+}
+
+.movingMark,
+.staticMark {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.staticMark,
+.mark[data-complete="true"] .movingMark {
+  display: none;
+}
+
+.mark[data-complete="true"] .staticMark {
+  display: block;
+}
+
+.label {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-body-size);
+  line-height: var(--ds-semantic-typography-body-line-height);
+}
+
+.controls {
+  padding: var(--ds-semantic-space-stack-lg) var(--ds-semantic-space-gutter-small);
+}
+
+.controlsContent {
+  align-items: center;
+  text-align: center;
+}
+
+.caption,
+.motionNote {
+  color: var(--ds-semantic-color-text-secondary);
+  font-size: var(--ds-semantic-typography-interface-size);
+  line-height: var(--ds-semantic-typography-interface-line-height);
+}
+
+.buttons {
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .movingMark {
+    display: none;
+  }
+
+  .staticMark {
+    display: block;
+  }
+}
+
+@media (forced-colors: active) {
+  .mark,
+  .label,
+  .caption,
+  .motionNote {
+    color: CanvasText;
+  }
+}

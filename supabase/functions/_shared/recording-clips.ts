@@ -77,10 +77,13 @@ export async function dispatchClips(admin: ClipAdmin, clipId?: string) {
         if (error || !data?.signedUrl) throw new Error("Source access failed");
         source = { url: data.signedUrl };
       }
+      // Preserve bounded failures for invalid sources; retry cold starts safely.
+      event = "busy";
       const response = await fetch(`${workerUrl}/recordings/clips/process`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-worker-secret": secret },
-        signal: AbortSignal.timeout(10000),
+        // Includes cold-start time for the scale-to-zero media processor.
+        signal: AbortSignal.timeout(45000),
         body: JSON.stringify({
           clipId: job.id,
           attemptId: job.attempt_id,
@@ -90,7 +93,7 @@ export async function dispatchClips(admin: ClipAdmin, clipId?: string) {
         }),
       });
       if (response.ok) continue;
-      if (response.status === 429 || response.status === 503) event = "busy";
+      event = response.status === 429 || response.status === 503 ? "busy" : "failed";
     } catch {
       /* Durable retries recover network failures without logging private media URLs. */
     }

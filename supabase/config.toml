@@ -448,6 +448,9 @@ verify_jwt = false
 [functions.dispatch-recording-transcripts]
 verify_jwt = false
 
+[functions.enqueue-recording-thumbnail-backfill]
+verify_jwt = false
+
 # Internal scheduler endpoint verifies CHAT_DISPATCH_SECRET in the handler.
 [functions.dispatch-chat-notifications]
 verify_jwt = false

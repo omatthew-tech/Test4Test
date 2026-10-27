@@ -91,17 +91,11 @@
   background: var(--ds-semantic-color-surface-inset);
 }
 
-.thumbnail,
 .previewSkeleton {
   position: absolute;
   inset: var(--ds-semantic-space-zero);
   width: 100%;
   height: 100%;
-}
-
-.thumbnail {
-  display: block;
-  object-fit: cover;
 }
 
 .previewSkeleton {
@@ -114,14 +108,6 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-.recordingAlerts {
-  padding: var(--ds-semantic-space-inset-card-mobile);
-}
-
-.cardAlert {
-  margin-block-start: var(--ds-semantic-space-stack-xs);
 }
 
 @media (min-width: 768px) {

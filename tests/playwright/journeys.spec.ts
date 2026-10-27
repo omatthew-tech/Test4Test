@@ -1320,8 +1320,8 @@ for (const viewport of [
 
     if (viewport.width >= 768) {
       const navigation = page.getByRole("navigation", { name: "Primary" });
-      await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "Analyze"]);
-      await expect(navigation.getByRole("link", { name: "Analyze" })).toHaveAttribute(
+      await expect(navigation.getByRole("link")).toHaveText(["Earn", "Share", "My Feedback"]);
+      await expect(navigation.getByRole("link", { name: "My Feedback" })).toHaveAttribute(
         "aria-current",
         "page",
       );

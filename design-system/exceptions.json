@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "exceptions": [
     {
+      "id": "logo-loading-preview-motion",
+      "owner": "Test4Test",
+      "scope": "The standalone loading concept in design-mockups/logo-loading-2026-10-27/preview.tsx and preview.module.css.",
+      "rationale": "The design owner requested a page-loading preview, then refined it so the logo stays upright while only its arrows travel clockwise. This permits a steady loop at twelve times the semantic interaction duration (1440 ms per circuit), with SVG centerline, stroke, and arrowhead geometry derived from the canonical mark. Arrow positions and tangents are calculated along a fixed rounded rectangle; the entire logo never rotates. Existing transition timings alone are too short for a readable circuit. The canonical Test4TestMark is retained for completion and reduced motion. Semantic colors, type, spacing, and size tokens are reused. The preview includes pause and completion controls, suspends animation in hidden tabs, disables movement under reduced motion, and retains a visible text status. This exception is limited to the design preview; production loading behavior is unchanged.",
+      "expires": "2027-01-27"
+    },
+    {
       "id": "founder-share-demo-media",
       "owner": "Test4Test",
       "scope": "The Share your test step in src/pages/FounderWelcomeTour.tsx and public/videos/onboarding-share-test*.",

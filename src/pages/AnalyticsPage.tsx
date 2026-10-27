@@ -1,5 +1,5 @@
 import { ArrowRight, Play } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -13,11 +13,7 @@ import {
 } from "@test4test/design-system";
 import { AppShell } from "../components/Layout";
 import { useAppState } from "../context/AppStateContext";
-import {
-  buildFixtureRecordingPreviews,
-  mergeRecordingPreviews,
-  requestRecordingPreviews,
-} from "../lib/recordingPreviews";
+import { buildFixtureRecordingPreviews, requestRecordingPreviews } from "../lib/recordingPreviews";
 import { getAvailableRecordingsForCurrentUser } from "../lib/selectors";
 import type { RecordingPreviewSummary } from "../types";
 import { AnalyticsTranscriptReport } from "./AnalyticsTranscriptReport";
@@ -27,37 +23,14 @@ function RecordingPreviewCard({
   preview,
   index,
   onPlay,
-  onRetryThumbnail,
 }: {
   preview: RecordingPreviewSummary;
   index: number;
   onPlay: (preview: RecordingPreviewSummary) => void;
-  onRetryThumbnail: (responseId: string) => void;
 }) {
   return (
     <Card as="li" className={styles.recordingCard}>
       <div className={styles.previewFrame}>
-        {preview.thumbnail?.url ? (
-          <img
-            alt={`${preview.productName} recording preview`}
-            className={styles.thumbnail}
-            decoding="async"
-            height={preview.thumbnail.height ?? 540}
-            loading="lazy"
-            src={preview.thumbnail.url}
-            width={preview.thumbnail.width ?? 960}
-          />
-        ) : preview.feedbackAccess === "locked" ? null : (
-          <Skeleton
-            className={styles.previewSkeleton}
-            label={
-              preview.thumbnailStatus === "failed"
-                ? "Recording preview unavailable"
-                : "Generating recording preview"
-            }
-          />
-        )}
-
         <IconButton
           className={styles.playButton}
           label={`Play Recording ${index + 1}: ${preview.productName}`}
@@ -68,24 +41,6 @@ function RecordingPreviewCard({
           <Play aria-hidden="true" fill="currentColor" size={20} />
         </IconButton>
       </div>
-
-      {preview.thumbnailStatus === "failed" ? (
-        <Stack className={styles.recordingAlerts} gap="xs">
-          <Alert className={styles.cardAlert} title="Preview unavailable" tone="warning">
-            <Stack gap="xs">
-              <span>{preview.thumbnailError ?? "The recording can still be played."}</span>
-              <Button
-                onClick={() => onRetryThumbnail(preview.responseId)}
-                size="compact"
-                type="button"
-                variant="quiet"
-              >
-                Retry preview
-              </Button>
-            </Stack>
-          </Alert>
-        </Stack>
-      ) : null}
     </Card>
   );
 }
@@ -122,7 +77,6 @@ export function AnalyticsPage() {
   const [previewLoading, setPreviewLoading] = useState(!fixtureMode);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const hasNoRecordings = !previewLoading && !previewError && previews.length === 0;
-  const pollingAttemptsRef = useRef(0);
   const recordingsSearch = searchParams.toString();
   const recordingsHref = `/recordings${recordingsSearch ? `?${recordingsSearch}` : ""}`;
   const buildRecordingHref = (responseId: string) => {
@@ -146,7 +100,6 @@ export function AnalyticsPage() {
         if (!cancelled) {
           setPreviews(recordings);
           setPreviewError(null);
-          pollingAttemptsRef.current = 0;
         }
       })
       .catch((error) => {
@@ -167,74 +120,8 @@ export function AnalyticsPage() {
     };
   }, [fixtureMode, fixturePreviews, state.currentUserId]);
 
-  const pendingResponseIds = previews
-    .filter((preview) => preview.thumbnailStatus === "pending")
-    .map((preview) => preview.responseId)
-    .join(",");
-
-  useEffect(() => {
-    if (fixtureMode || !pendingResponseIds || pollingAttemptsRef.current >= 12) {
-      return;
-    }
-
-    let cancelled = false;
-    let timer = window.setTimeout(async function poll() {
-      if (document.visibilityState === "hidden") {
-        timer = window.setTimeout(poll, 5000);
-        return;
-      }
-
-      pollingAttemptsRef.current += 1;
-      try {
-        const updates = await requestRecordingPreviews({
-          force: true,
-          responseIds: pendingResponseIds.split(","),
-        });
-        if (!cancelled) {
-          setPreviews((current) => mergeRecordingPreviews(current, updates));
-        }
-      } catch {
-        // Keep the current geometry and let the visible manual retry remain available.
-      }
-
-      if (!cancelled && pollingAttemptsRef.current < 12) {
-        timer = window.setTimeout(poll, Math.min(20000, 5000 * pollingAttemptsRef.current));
-      }
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [fixtureMode, pendingResponseIds]);
-
   function handlePlay(preview: RecordingPreviewSummary) {
     navigate(buildRecordingHref(preview.responseId));
-  }
-
-  function handleRetryThumbnail(responseId: string) {
-    setPreviews((current) =>
-      current.map((preview) =>
-        preview.responseId === responseId
-          ? { ...preview, thumbnailStatus: "pending", thumbnailError: null }
-          : preview,
-      ),
-    );
-    requestRecordingPreviews({ force: true, responseIds: [responseId] })
-      .then((updates) => setPreviews((current) => mergeRecordingPreviews(current, updates)))
-      .catch((error) => {
-        setPreviews((current) =>
-          current.map((preview) =>
-            preview.responseId === responseId
-              ? {
-                  ...preview,
-                  thumbnailStatus: "failed",
-                  thumbnailError: error instanceof Error ? error.message : "Preview retry failed.",
-                }
-              : preview,
-          ),
-        );
-      });
   }
 
   return (
@@ -323,7 +210,6 @@ export function AnalyticsPage() {
                         index={preview.index}
                         key={preview.responseId}
                         onPlay={handlePlay}
-                        onRetryThumbnail={handleRetryThumbnail}
                         preview={preview}
                       />
                     ))}

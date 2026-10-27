@@ -7,6 +7,7 @@ debug.log
 .env
 .env.*
 !.env.example
+!.env.media.example
 .codex-*.log
 # Local Codex worktrees and browser profiles must never become Git submodules.
 /.codex-*/

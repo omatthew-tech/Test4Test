@@ -1,13 +1,3 @@
-import {
-  enqueueRecordingThumbnailBatch,
-  enqueueRecordingThumbnailSources,
-  RECORDING_THUMBNAIL_GENERATION_VERSION,
-  RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
-  scheduleRecordingThumbnailTask,
-  signRecordingThumbnails,
-  type RecordingThumbnailUploadRow,
-} from "../_shared/recording-thumbnails.ts";
-import { createR2PresignedUrl, getR2RecordingEnvironment } from "../_shared/r2-recordings.ts";
 import { receivedFeedbackAccess, type FeedbackAccess } from "../_shared/feedback-access.ts";
 import {
   createRecordingAdminClient,
@@ -15,6 +5,8 @@ import {
   recordingCorsHeaders,
   recordingJson,
 } from "../_shared/response-recordings.ts";
+
+const RECORDING_PREVIEW_CACHE_SECONDS = 60;
 
 interface PreviewRequest {
   responseIds?: unknown;
@@ -34,19 +26,6 @@ interface ResponseRow {
   recording_bucket: string;
   recording_path: string;
   recording_expires_at: string | null;
-  recording_thumbnail_bucket: string | null;
-  recording_thumbnail_path: string | null;
-  recording_thumbnail_content_type: string | null;
-  recording_thumbnail_size_bytes: number | null;
-  recording_thumbnail_width: number | null;
-  recording_thumbnail_height: number | null;
-  recording_thumbnail_status: "pending" | "queued" | "processing" | "ready" | "failed" | null;
-  recording_thumbnail_attempt_count: number | null;
-  recording_thumbnail_last_attempt_at: string | null;
-  recording_thumbnail_error: string | null;
-  recording_thumbnail_timestamp_ms: number | null;
-  recording_thumbnail_duration_ms: number | null;
-  recording_thumbnail_generation_version: string | null;
 }
 
 function normalizeResponseIds(value: unknown) {
@@ -62,78 +41,6 @@ function normalizeResponseIds(value: unknown) {
         .filter(Boolean),
     ),
   ].slice(0, 100);
-}
-
-async function enqueueLegacyRecordingThumbnails(
-  admin: ReturnType<typeof createRecordingAdminClient>,
-  responses: ResponseRow[],
-) {
-  const r2Env = getR2RecordingEnvironment();
-  const queued: ResponseRow[] = [];
-
-  for (const response of responses.slice(0, 2)) {
-    const recentAttempt = response.recording_thumbnail_last_attempt_at
-      ? Date.now() - new Date(response.recording_thumbnail_last_attempt_at).getTime() <
-        15 * 60 * 1000
-      : false;
-    if (
-      recentAttempt &&
-      (response.recording_thumbnail_status === "queued" ||
-        response.recording_thumbnail_status === "processing")
-    ) {
-      continue;
-    }
-
-    const { error } = await admin
-      .from("test_responses")
-      .update({
-        recording_thumbnail_status: "queued",
-        recording_thumbnail_attempt_count:
-          Math.max(0, response.recording_thumbnail_attempt_count ?? 0) + 1,
-        recording_thumbnail_last_attempt_at: new Date().toISOString(),
-        recording_thumbnail_error: null,
-      })
-      .eq("id", response.id)
-      .eq("recording_path", response.recording_path);
-    if (!error) {
-      queued.push(response);
-    }
-  }
-
-  if (queued.length === 0) {
-    return;
-  }
-
-  try {
-    await enqueueRecordingThumbnailSources(
-      await Promise.all(
-        queued.map(async (response) => ({
-          recordingUploadId: response.id,
-          responseId: response.id,
-          objectKey: response.recording_path,
-          url: await createR2PresignedUrl(r2Env, "GET", response.recording_path, {
-            expiresInSeconds: 15 * 60,
-          }),
-          generationVersion: RECORDING_THUMBNAIL_GENERATION_VERSION,
-        })),
-      ),
-    );
-  } catch (error) {
-    await admin
-      .from("test_responses")
-      .update({
-        recording_thumbnail_status: "failed",
-        recording_thumbnail_error: (error instanceof Error
-          ? error.message
-          : "Recording thumbnail enqueue failed."
-        ).slice(0, 1000),
-      })
-      .in(
-        "id",
-        queued.map((response) => response.id),
-      );
-    throw error;
-  }
 }
 
 Deno.serve(async (request) => {
@@ -186,14 +93,14 @@ Deno.serve(async (request) => {
     return recordingJson({
       ok: true,
       recordings: [],
-      expiresInSeconds: RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
+      expiresInSeconds: RECORDING_PREVIEW_CACHE_SECONDS,
     });
   }
 
   let responseQuery = admin
     .from("test_responses")
     .select(
-      "id, submission_id, feedback_source, submitted_at, duration_seconds, recording_bucket, recording_path, recording_expires_at, recording_thumbnail_bucket, recording_thumbnail_path, recording_thumbnail_content_type, recording_thumbnail_size_bytes, recording_thumbnail_width, recording_thumbnail_height, recording_thumbnail_status, recording_thumbnail_attempt_count, recording_thumbnail_last_attempt_at, recording_thumbnail_error, recording_thumbnail_timestamp_ms, recording_thumbnail_duration_ms, recording_thumbnail_generation_version",
+      "id, submission_id, feedback_source, submitted_at, duration_seconds, recording_bucket, recording_path, recording_expires_at",
     )
     .in("submission_id", [...submissionById.keys()])
     .not("recording_bucket", "is", null)
@@ -240,131 +147,23 @@ Deno.serve(async (request) => {
     return recordingJson({
       ok: true,
       recordings: lockedRecordings,
-      expiresInSeconds: RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
+      expiresInSeconds: RECORDING_PREVIEW_CACHE_SECONDS,
     });
   }
 
-  const { data: uploadData, error: uploadError } = await admin
-    .from("test_response_recording_uploads")
-    .select("*")
-    .in(
-      "attached_response_id",
-      responses.map((response) => response.id),
-    );
-
-  if (uploadError) {
-    return recordingJson({ error: uploadError.message }, 500);
-  }
-
-  const uploads = (uploadData ?? []) as RecordingThumbnailUploadRow[];
-  const uploadByResponseId = new Map(
-    uploads
-      .filter((upload) => upload.attached_response_id)
-      .map((upload) => [upload.attached_response_id as string, upload]),
-  );
-  const readyUploads = uploads.filter(
-    (upload) =>
-      upload.thumbnail_processing_status === "ready" &&
-      upload.thumbnail_generation_version === RECORDING_THUMBNAIL_GENERATION_VERSION &&
-      upload.thumbnail_storage_bucket &&
-      upload.thumbnail_path,
-  );
-  const legacyResponses = responses.filter((response) => !uploadByResponseId.has(response.id));
-  const readyLegacyResponses = legacyResponses.filter(
-    (response) =>
-      response.recording_thumbnail_status === "ready" &&
-      response.recording_thumbnail_generation_version === RECORDING_THUMBNAIL_GENERATION_VERSION &&
-      response.recording_thumbnail_bucket &&
-      response.recording_thumbnail_path,
-  );
-
-  let signingError = "";
-  let signedUrls = new Map<string, string>();
-  try {
-    signedUrls = await signRecordingThumbnails([
-      ...readyUploads.map((upload) => ({
-        id: upload.id,
-        bucket: upload.thumbnail_storage_bucket as string,
-        key: upload.thumbnail_path as string,
-      })),
-      ...readyLegacyResponses.map((response) => ({
-        id: response.id,
-        bucket: response.recording_thumbnail_bucket as string,
-        key: response.recording_thumbnail_path as string,
-      })),
-    ]);
-  } catch (error) {
-    signingError =
-      error instanceof Error ? error.message : "Recording preview is temporarily unavailable.";
-    console.error("Could not sign recording thumbnails", { error: signingError });
-  }
-
-  const staleUploads = uploads.filter(
-    (upload) =>
-      !(
-        upload.thumbnail_processing_status === "ready" &&
-        upload.thumbnail_generation_version === RECORDING_THUMBNAIL_GENERATION_VERSION
-      ),
-  );
-  if (staleUploads.length > 0) {
-    scheduleRecordingThumbnailTask(enqueueRecordingThumbnailBatch(admin, staleUploads.slice(0, 4)));
-  }
-  const staleLegacyResponses = legacyResponses.filter(
-    (response) =>
-      !(
-        response.recording_thumbnail_status === "ready" &&
-        response.recording_thumbnail_generation_version === RECORDING_THUMBNAIL_GENERATION_VERSION
-      ),
-  );
-  if (staleLegacyResponses.length > 0) {
-    scheduleRecordingThumbnailTask(enqueueLegacyRecordingThumbnails(admin, staleLegacyResponses));
-  }
-
-  const recordings = responses.map((response) => {
-    const submission = submissionById.get(response.submission_id);
-    const upload = uploadByResponseId.get(response.id);
-    const signedUrl = signedUrls.get(upload?.id ?? response.id) ?? null;
-    const status = upload?.thumbnail_processing_status ?? response.recording_thumbnail_status;
-    const generationVersion =
-      upload?.thumbnail_generation_version ?? response.recording_thumbnail_generation_version;
-    const isReady = Boolean(
-      status === "ready" &&
-      generationVersion === RECORDING_THUMBNAIL_GENERATION_VERSION &&
-      signedUrl,
-    );
-    const isFailed = Boolean(signingError || status === "failed");
-
-    return {
-      feedbackAccess: access.get(response.id) ?? "free",
-      responseId: response.id,
-      submissionId: response.submission_id,
-      productName: submission?.product_name ?? "Recording",
-      submittedAt: response.submitted_at,
-      durationSeconds: response.duration_seconds,
-      thumbnailStatus: isReady ? "ready" : isFailed ? "failed" : "pending",
-      thumbnailError: isFailed
-        ? signingError ||
-          upload?.thumbnail_error ||
-          response.recording_thumbnail_error ||
-          "Recording preview could not be generated."
-        : null,
-      thumbnail:
-        isReady && signedUrl
-          ? {
-              url: signedUrl,
-              width: upload?.thumbnail_width ?? response.recording_thumbnail_width,
-              height: upload?.thumbnail_height ?? response.recording_thumbnail_height,
-              contentType:
-                upload?.thumbnail_content_type ?? response.recording_thumbnail_content_type,
-              sizeBytes: upload?.thumbnail_size_bytes ?? response.recording_thumbnail_size_bytes,
-              timestampMs:
-                upload?.thumbnail_timestamp_ms ?? response.recording_thumbnail_timestamp_ms,
-              durationMs: upload?.thumbnail_duration_ms ?? response.recording_thumbnail_duration_ms,
-              generationVersion,
-            }
-          : null,
-    };
-  });
+  // Ownership, deleted-source filtering, and locked-feedback handling above are unchanged.
+  // Recording cards now use metadata only; no image signing, generation, or retries.
+  const recordings = responses.map((response) => ({
+    feedbackAccess: access.get(response.id) ?? "free",
+    responseId: response.id,
+    submissionId: response.submission_id,
+    productName: submissionById.get(response.submission_id)?.product_name ?? "Recording",
+    submittedAt: response.submitted_at,
+    durationSeconds: response.duration_seconds,
+    thumbnailStatus: "ready",
+    thumbnailError: null,
+    thumbnail: null,
+  }));
 
   return recordingJson({
     ok: true,
@@ -372,6 +171,6 @@ Deno.serve(async (request) => {
       (a, b) =>
         b.submittedAt.localeCompare(a.submittedAt) || a.responseId.localeCompare(b.responseId),
     ),
-    expiresInSeconds: RECORDING_THUMBNAIL_SIGNED_URL_SECONDS,
+    expiresInSeconds: RECORDING_PREVIEW_CACHE_SECONDS,
   });
 });

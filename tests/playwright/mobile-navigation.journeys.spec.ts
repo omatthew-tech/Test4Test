@@ -47,7 +47,7 @@ test("founder menu groups current navigation and all existing account destinatio
   await expect(panel.getByRole("navigation", { name: "Primary" }).getByRole("link")).toHaveText([
     "Earn",
     "Share",
-    "Analyze",
+    "My Feedback",
   ]);
   await expect(panel.getByRole("link", { name: "Earn", exact: true })).toHaveAttribute(
     "aria-current",

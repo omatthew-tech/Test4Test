@@ -1,0 +1,8 @@
+node_modules
+dist
+cloudflare
+.env
+.env.*
+.git
+*.log
+scripts

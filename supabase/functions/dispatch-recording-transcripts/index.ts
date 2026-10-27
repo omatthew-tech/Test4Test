@@ -29,10 +29,14 @@ Deno.serve((request) =>
           if (error || !data?.signedUrl) throw new Error("Source access failed");
           sourceUrl = data.signedUrl;
         }
+        // Only transport/startup failures are busy; preparation errors retain
+        // the existing bounded failure policy.
+        event = "busy";
         const response = await fetch(`${workerUrl}/recordings/transcripts/process`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-worker-secret": secret },
-          signal: AbortSignal.timeout(10000),
+          // Allow a scale-to-zero media container to start before accepting work.
+          signal: AbortSignal.timeout(45000),
           body: JSON.stringify({
             responseId: job.response_id,
             versionId: job.version_id,
@@ -46,7 +50,7 @@ Deno.serve((request) =>
           dispatched++;
           continue;
         }
-        if (response.status === 429 || response.status === 503) event = "busy";
+        event = response.status === 429 || response.status === 503 ? "busy" : "failed";
       } catch {
         // Keep URLs and provider error bodies out of logs and job error columns.
       }

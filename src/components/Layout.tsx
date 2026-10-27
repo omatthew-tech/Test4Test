@@ -110,7 +110,7 @@ export function AppShell({
       : [
           { to: "/earn", label: "Earn", icon: <Coins /> },
           { to: "/share", label: "Share", icon: <Share2 /> },
-          { to: "/analytics", label: "Analyze", icon: <ChartNoAxesCombined /> },
+          { to: "/analytics", label: "My Feedback", icon: <ChartNoAxesCombined /> },
         ];
   const guestItems = [
     { to: "/blog", label: "Blog", icon: <Newspaper /> },

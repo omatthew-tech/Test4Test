@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "test4test-media-processor",
+  "main": "src/index.ts",
+  "account_id": "cdb2bbaa7e9ae5ea5b7ff7848816745b",
+  "compatibility_date": "2026-10-27",
+  "workers_dev": true,
+  "preview_urls": false,
+  "containers": [
+    {
+      "class_name": "MediaContainer",
+      "scheduling_policy": "durable_object",
+      "images": { "media": { "dockerfile": "../Dockerfile", "build_context": ".." } },
+    },
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "MEDIA", "class_name": "MediaContainer" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MediaContainer"] }],
+  "vars": {
+    "SUPABASE_URL": "https://lteimepkxuiupbcsbcpz.supabase.co",
+    "CLOUDFLARE_ACCOUNT_ID": "cdb2bbaa7e9ae5ea5b7ff7848816745b",
+    "CLOUDFLARE_SOURCE_BUCKET_NAME": "test-response-recordings",
+  },
+  "observability": { "enabled": true },
+}

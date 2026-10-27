@@ -13,11 +13,7 @@ import {
   validateR2RecordingThumbnailInput,
   type R2CompletedPart,
 } from "../_shared/r2-recordings.ts";
-import {
-  enqueueRecordingThumbnailBatch,
-  scheduleRecordingThumbnailTask,
-  type RecordingThumbnailUploadRow,
-} from "../_shared/recording-thumbnails.ts";
+import type { RecordingThumbnailUploadRow } from "../_shared/recording-thumbnails.ts";
 
 type RecordingUploadAction =
   | "create_single"
@@ -109,21 +105,6 @@ async function loadUploadRow(
   }
 
   return data as RecordingThumbnailUploadRow | null;
-}
-
-async function scheduleCompletedUploadThumbnail(
-  admin: ReturnType<typeof createRecordingAdminClient>,
-  input: {
-    providerBucket: string;
-    objectKey: string;
-    ownerColumn: "tester_user_id" | "public_tester_key";
-    ownerKey: string;
-  },
-) {
-  const uploadRow = await loadUploadRow(admin, input);
-  if (uploadRow) {
-    await enqueueRecordingThumbnailBatch(admin, [uploadRow]);
-  }
 }
 
 async function upsertUploadRow(
@@ -302,15 +283,6 @@ Deno.serve(async (request) => {
         fileSizeBytes,
         uploadedAt: new Date().toISOString(),
       });
-
-      scheduleRecordingThumbnailTask(
-        scheduleCompletedUploadThumbnail(admin, {
-          providerBucket: env.providerBucket,
-          objectKey,
-          ownerColumn: uploadOwnerColumn,
-          ownerKey: uploadOwnerKey,
-        }),
-      );
 
       return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
     }
@@ -594,15 +566,6 @@ Deno.serve(async (request) => {
         fileSizeBytes,
         uploadedAt: new Date().toISOString(),
       });
-
-      scheduleRecordingThumbnailTask(
-        scheduleCompletedUploadThumbnail(admin, {
-          providerBucket: env.providerBucket,
-          objectKey,
-          ownerColumn: uploadOwnerColumn,
-          ownerKey: uploadOwnerKey,
-        }),
-      );
 
       return recordingJson({ ok: true, bucket: env.providerBucket, path: objectKey });
     }
