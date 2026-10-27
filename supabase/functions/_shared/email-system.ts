@@ -8,7 +8,6 @@ export interface EmailEnvironment {
   appBaseUrl: string;
   emailAccessLinksEnabled?: boolean;
   smtp2goAuthLinkApiKey?: string;
-  smtp2goAuthLinkTrackingDisabled?: boolean;
 }
 
 export interface EmailTemplateRecord {
@@ -113,7 +112,6 @@ export function getEmailEnvironment(): EmailEnvironment {
     appBaseUrl,
     emailAccessLinksEnabled: Deno.env.get("EMAIL_ACCESS_LINKS_ENABLED") === "true",
     smtp2goAuthLinkApiKey: Deno.env.get("SMTP2GO_AUTH_LINK_API_KEY")?.trim(),
-    smtp2goAuthLinkTrackingDisabled: Deno.env.get("SMTP2GO_AUTH_LINK_TRACKING_DISABLED") === "true",
   };
 }
 
@@ -178,14 +176,13 @@ async function sendEmailRequest(
     containsAuthenticationLink?: boolean;
   },
 ) {
-  if (
-    containsAuthenticationLink &&
-    (!env.smtp2goAuthLinkApiKey || !env.smtp2goAuthLinkTrackingDisabled)
-  ) {
-    throw new Error(
-      "Email sign-in delivery requires a dedicated SMTP2GO key with tracking disabled.",
-    );
-  }
+  // SMTP2GO's documented per-link opt-out prevents its tracker from storing the
+  // credential URL, including when the ordinary key has click tracking enabled.
+  const deliveredHtml = containsAuthenticationLink
+    ? htmlBody.replace(/<a\b[^>]*>/gi, (tag) =>
+        /\bdata-no-track(?:\s|=|>)/i.test(tag) ? tag : tag.replace(/^<a/i, "$& data-no-track"),
+      )
+    : htmlBody;
   const customHeaders = replyTo?.trim()
     ? [{ header: "Reply-To", value: replyTo.trim() }]
     : undefined;
@@ -197,7 +194,7 @@ async function sendEmailRequest(
       "Content-Type": "application/json",
       Accept: "application/json",
       "X-Smtp2go-Api-Key": containsAuthenticationLink
-        ? env.smtp2goAuthLinkApiKey!
+        ? env.smtp2goAuthLinkApiKey || env.smtp2goApiKey
         : env.smtp2goApiKey,
     },
     body: JSON.stringify({
@@ -205,7 +202,7 @@ async function sendEmailRequest(
       to: [to],
       subject,
       text_body: textBody,
-      html_body: htmlBody,
+      html_body: deliveredHtml,
       custom_headers: customHeaders,
     }),
   });

@@ -179,7 +179,6 @@ it("issues separate reusable feedback and exact test-back links when enabled", a
       ...env,
       emailAccessLinksEnabled: true,
       smtp2goAuthLinkApiKey: "untracked-key",
-      smtp2goAuthLinkTrackingDisabled: true,
     },
     reminder,
     templates,

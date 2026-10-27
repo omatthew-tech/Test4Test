@@ -25,7 +25,6 @@ const environment = {
   appBaseUrl: "https://test4test.io",
   emailAccessLinksEnabled: true,
   smtp2goAuthLinkApiKey: "untracked",
-  smtp2goAuthLinkTrackingDisabled: true,
 };
 let google: (request: Request) => Promise<Response>;
 vi.stubGlobal("Deno", {

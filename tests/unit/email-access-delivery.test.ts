@@ -7,7 +7,6 @@ afterEach(() => vi.unstubAllGlobals());
 const env = {
   smtp2goApiKey: "ordinary-key",
   smtp2goAuthLinkApiKey: "untracked-key",
-  smtp2goAuthLinkTrackingDisabled: true,
   smtp2goSender: "no-reply@example.test",
 };
 const link = `https://test4test.io/email-access#token=${"ab".repeat(32)}`;
@@ -53,10 +52,31 @@ it("renders the identical credential destination in HTML and plain text, without
   expect(JSON.stringify(result)).not.toContain(link);
   expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
     text_body: rendered.textBody,
-    html_body: rendered.htmlBody,
+    html_body: rendered.htmlBody.replace("<a ", "<a data-no-track "),
   });
 });
-it("fails closed without the untracked key and redacts provider and transport errors", async () => {
+it("opts credential links out of tracking with the ordinary key and preserves normal mail", async () => {
+  const fetchMock = vi
+    .fn()
+    .mockImplementation(async () => Response.json({ data: { succeeded: 1 } }));
+  vi.stubGlobal("fetch", fetchMock);
+  const htmlBody = `<A href='${link}'>Open</A><a data-no-track href="${link}">Again</a>`;
+  const message = { to: "owner@example.test", subject: "Feedback", textBody: link, htmlBody };
+  await sendEmail(
+    { ...env, smtp2goAuthLinkApiKey: undefined },
+    {
+      ...message,
+      containsAuthenticationLink: true,
+    },
+  );
+  expect(fetchMock.mock.calls[0][1].headers["X-Smtp2go-Api-Key"]).toBe("ordinary-key");
+  const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+  expect(sent.html_body).toBe(htmlBody.replace("<A ", "<A data-no-track "));
+  expect(sent.text_body).toBe(link);
+  await sendEmail(env, message);
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body).html_body).toBe(htmlBody);
+});
+it("redacts provider and transport errors", async () => {
   const message = {
     to: "owner@example.test",
     subject: "Feedback",
@@ -66,10 +86,6 @@ it("fails closed without the untracked key and redacts provider and transport er
   };
   const fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
-  await expect(sendEmail({ ...env, smtp2goAuthLinkApiKey: undefined }, message)).rejects.toThrow(
-    "Email sign-in delivery failed",
-  );
-  expect(fetchMock).not.toHaveBeenCalled();
   fetchMock
     .mockResolvedValueOnce(new Response(JSON.stringify({ error: link }), { status: 500 }))
     .mockRejectedValueOnce(new Error(link));

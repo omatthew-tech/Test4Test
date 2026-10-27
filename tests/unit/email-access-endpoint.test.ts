@@ -75,7 +75,6 @@ it("issues independent 256-bit credentials, storing only hashes and server-owned
     appBaseUrl: origin,
     emailAccessLinksEnabled: true,
     smtp2goAuthLinkApiKey: "dedicated",
-    smtp2goAuthLinkTrackingDisabled: true,
   };
   const destination = { destination: "feedback", resource_id: resourceId, entry: "feedback_email" };
   const first = await createEmailDestinationLink(
@@ -109,7 +108,7 @@ it("issues independent 256-bit credentials, storing only hashes and server-owned
       { id: userId, email: "owner@example.test" },
       destination,
     ),
-  ).rejects.toThrow("tracking disabled");
+  ).resolves.toMatch(/^https:\/\/test4test\.io\/email-access#token=[a-f0-9]{64}$/);
 });
 it.each(["GET", "HEAD", "OPTIONS"])(
   "%s previews never authenticate or invoke the database",

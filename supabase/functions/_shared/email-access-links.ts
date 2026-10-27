@@ -30,11 +30,6 @@ export async function createEmailDestinationLink(
 ) {
   // Senders are deployed with issuance off until the endpoint and frontend are verified.
   if (!env.emailAccessLinksEnabled) return `${env.appBaseUrl}${emailDestinationPath(destination)}`;
-  if (!env.smtp2goAuthLinkApiKey || !env.smtp2goAuthLinkTrackingDisabled) {
-    throw new Error(
-      "Email sign-in delivery requires a dedicated SMTP2GO key with tracking disabled.",
-    );
-  }
   const base = new URL(env.appBaseUrl);
   if (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash) {
     throw new Error("Email sign-in delivery requires an HTTPS application origin.");

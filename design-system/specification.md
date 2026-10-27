@@ -21,7 +21,7 @@ This system is the implementation contract Codex will use when redesigning **Tes
 
 The Test4Test visual language is light, clean, minimal, structured, polished, modern, and approachable. It uses generous white space, framed compositions, rounded edges, simple hierarchy, restrained elevation, and carefully selected details that feel slightly innovative without becoming visually loud.
 
-Innovation should appear through small compositional surprises, thoughtful product demonstrations, subtle color or motion, and highly polished interaction feedback. The system avoids bold, energetic, playful, and corporate expression. It should never rely on oversized spectacle, aggressive color, novelty decoration, or institutional formality. It also avoids everything that makes a website, app or webapp look like it was AI generated in 2026.
+Innovation should appear through small compositional surprises, thoughtful product demonstrations, subtle color or motion, and highly polished interaction feedback. The system avoids bold, energetic, playful, and corporate expression. It should never rely on oversized spectacle, aggressive color, novelty decoration, or institutional formality. The prohibited visual and interaction patterns below define how the system avoids generic AI-generated styling.
 
 ### Brand qualities
 
@@ -30,308 +30,179 @@ Innovation should appear through small compositional surprises, thoughtful produ
 
 Also, avoid the following unless the human requests to do something specifically that would conflict with any of these, in that case, confirm with the human:
 
-AVOID: Dark navy background + purple/cyan mesh gradient + blurred glow orbs.
-
-AVOID: Frosted-glass cards + 1 px white borders + large radii + diffuse glow.
-
-AVOID: Centered SaaS hero with eyebrow chip, huge headline, gradient word,
-    two pill CTAs, floating dashboard mockup, and logo wall.
-
-AVOID: A bento grid used as the default answer to every content problem.
-
-AVOID: Untouched neutral-sans typography with no recognizable brand voice.
-
-AVOID: Sparkle, wand, brain, bot, stars, and orbit icons as generic decoration.
-
-AVOID: A fake dashboard where every KPI rises and every chart looks healthy.
-
-AVOID: Generic glossy 3D blobs, chrome objects, faceless clay people, or
-    floating UI fragments that do not explain the product.
-
-AVOID: Fade-up animation on every section and hover-lift on every card.
-
-AVOID: Only the pristine "happy path": no empty, error, loading, long-content,
-    permission, offline, or destructive-action states.
-
-AVOID: Purple merely because the product mentions AI.
-
-AVOID: Electric blue/purple gradients applied to background, text, buttons,
-    borders, icons, and charts simultaneously.
-
-AVOID: Gradient text on every headline or emphasized noun.
-
-AVOID: Rainbow mesh gradients with no relationship to content.
-
-AVOID: Dark mode used as a substitute for art direction.
-
-AVOID: Random neon glows behind cards, devices, logos, and CTAs.
-
-AVOID: Blurred blobs positioned in page corners as automatic visual filler.
-
-AVOID: Grain/noise overlays added to every surface to simulate "human texture."
-
-AVOID: Liquid-glass or chrome treatments copied onto ordinary controls.
-
-AVOID: Transparent controls over busy imagery or moving backgrounds.
-
-AVOID: Different decorative styles in each section: wireframe, clay, glass,
-    hand-drawn, photoreal, and pixel art on one page.
-
-AVOID: Generic circuit traces, node networks, grids, particles, and star fields
-    used to signal "technology."
-
-AVOID: Decorative color with no semantic discipline.
-
-AVOID: Every status rendered as a bright colored pill.
-
-AVOID: Palette choices that collapse under color-vision deficiencies.
-
-AVOID: One giant 72-112 px headline followed by nearly uniform small text.
-
-AVOID: Every heading set in 700-900 weight.
-
-AVOID: Centered body copy longer than two or three short lines.
-
-AVOID: Uppercase eyebrow labels with wide tracking above every heading.
-
-AVOID: A monospace font on arbitrary labels solely to look technical.
-
-AVOID: Low-contrast gray body text on white, black, glass, or gradient surfaces.
-
-AVOID: Forced line breaks that create awkward headline shapes at common widths.
-
-AVOID: Widows, one-word lines, and isolated punctuation caused by fixed widths.
-
-AVOID: Nearly identical font sizes that fail to establish hierarchy.
-
-AVOID: Too many font sizes, weights, and line heights generated ad hoc.
-
-AVOID: Tight tracking on heavy, oversized headings until letters collide.
-
-AVOID: Oversized numbers without units, period, source, or context.
-
-AVOID: Inconsistent title case, sentence case, and all caps in peer components.
-
-AVOID: Placeholder text visually styled as a permanent form label.
-
-AVOID: Cardifying every paragraph, metric, quote, setting, and navigation item.
-
-AVOID: Cards nested inside cards inside a rounded page container.
-
-AVOID: Every section enclosed in the same large rounded rectangle.
-
-AVOID: Perfectly symmetrical layouts regardless of content priority.
-
-AVOID: Huge empty areas that conceal a lack of content strategy.
-
-AVOID: Repetitive left-text/right-image, then right-text/left-image sections.
-
-AVOID: Three equal feature cards when one feature is clearly primary.
-
-AVOID: A bento grid whose box sizes appear arbitrary.
-
-AVOID: Floating cards that overlap the hero image without a spatial reason.
-
-AVOID: Fake browser chrome around every screenshot.
-
-AVOID: A full-viewport hero that delays all concrete information.
-
-AVOID: Logo walls with inconsistent logo sizes, invented brands, or no explanation.
-
-AVOID: Repeated icon + title + one-sentence blocks with identical proportions.
-
-AVOID: Arbitrary section max-width changes that break shared alignment lines.
-
-AVOID: Dividers, borders, and background changes between every section.
-
-AVOID: Marketing-site spacing transplanted into a dense operational web app.
-
-AVOID: Dashboard density transplanted into a marketing page as decoration.
-
-AVOID: The same 16-24 px corner radius on buttons, cards, dialogs, inputs,
-    tooltips, tables, charts, and images.
-
-AVOID: Pill-shaped treatment for every button, tab, input, badge, and filter.
-
-AVOID: A 1 px translucent border around every object.
-
-AVOID: Large diffuse shadows beneath all cards.
-
-AVOID: Every icon placed in a tinted rounded square.
-
-AVOID: Mixed icon families, stroke widths, cap styles, corner styles, and optical sizes.
-
-AVOID: A recognizable component library left visually untouched.
-
-AVOID: Badges and chips added as filler beside ordinary labels.
-
-AVOID: Every card moving upward, scaling, glowing, and changing shadow on hover.
-
-AVOID: Primary, secondary, tertiary, and destructive buttons with similar weight.
-
-AVOID: Uncommon actions represented by icon-only buttons.
-
-AVOID: Enabled, hovered, focused, pressed, disabled, selected, and loading states
-    distinguished only by small opacity changes.
-
-AVOID: Missing keyboard focus because the default outline was removed.
-
-AVOID: Skeleton loaders whose geometry does not match the loaded content.
-
-AVOID: Generic toggles where a checkbox, radio group, or button would be clearer.
-
-AVOID: Floating action buttons copied into desktop layouts without a dominant action.
-
-AVOID: Excessive tooltips used to compensate for unclear icons and labels.
-
-AVOID: Charts without titles, units, axes, time ranges, legends, or source context.
-
-AVOID: Every line chart moving smoothly upward and to the right.
-
-AVOID: Random chart types chosen for visual variety rather than the question.
-
-AVOID: Data colors that do not match labels, legends, statuses, or prior screens.
-
-AVOID: Tiny dashboards inside hero images that no one can read.
-
-AVOID: Perfect round sample values such as 10,000, 50%, $1M, and 99.9% everywhere.
-
-AVOID: KPIs with no period, comparison, denominator, or definition.
-
-AVOID: Percentages, category totals, or chart segments that do not reconcile.
-
-AVOID: Tables whose names, dates, values, and row lengths all look artificially uniform.
-
-AVOID: Inconsistent currencies, date formats, time zones, decimal precision, and units.
-
-AVOID: Activity feeds where every event is recent, positive, and evenly spaced.
-
-AVOID: Green online dots, unread badges, and notification counts scattered everywhere.
-
-AVOID: Controls that do not correspond to the data shown beneath them.
-
-AVOID: A pristine dashboard with no empty, partial, stale, delayed, failed, or
-    permission-restricted data.
-
-AVOID: Fade-and-slide entrance animation on every visible element.
-
-AVOID: Staggered card reveals used on routine lists and tables.
-
-AVOID: Infinite logo marquees used as social-proof wallpaper.
-
-AVOID: Animated aurora backgrounds, gradient waves, particles, or floating orbs.
-
-AVOID: Cursor-following spotlights and glows.
-
-AVOID: Magnetic buttons or controls that move away from their documented position.
-
-AVOID: 3D card tilt on ordinary content.
-
-AVOID: Count-up animations on every statistic.
-
-AVOID: Shimmer effects that continue after loading or appear on decorative surfaces.
-
-AVOID: Scroll hijacking, pinned scenes, or parallax on task-oriented pages.
-
-AVOID: "transition: all" behavior that animates dimensions, layout, and focus unpredictably.
-
-AVOID: The same duration and easing for every component and distance.
-
-AVOID: Decorative motion with no reduced-motion alternative.
-
-AVOID: Glass controls over animated or high-frequency backgrounds.
-
-AVOID: A desktop grid simply stacked into one endless column.
-
-AVOID: Giant hero typography that consumes most of a phone viewport.
-
-AVOID: A desktop dashboard scaled down until labels become unreadable.
-
-AVOID: Fixed-height cards that clip translated, zoomed, or user-generated text.
-
-AVOID: Horizontal overflow caused by glows, transforms, code blocks, charts, or
-    absolutely positioned decoration.
-
-AVOID: Desktop-sized page gutters on small screens.
-
-AVOID: Buttons whose labels wrap into inconsistent two-line pills.
-
-AVOID: Tables squeezed into unreadable columns.
-
-AVOID: Modals that remain desktop-sized and centered on phones.
-
-AVOID: Sticky headers, cookie banners, chat launchers, and bottom bars that overlap
-    controls or keyboard focus.
-
-AVOID: Safe-area insets ignored on notched or rounded-screen devices.
-
-AVOID: Hover-only menus, explanations, or actions.
-
-AVOID: Tiny icon controls packed closely because the desktop version looked clean.
-
-AVOID: Breakpoints chosen only where the generator's preview happened to look good.
-
-AVOID: Large empty gaps left by hidden decorative elements.
-
-AVOID: Light gray text on white or translucent surfaces.
-
-AVOID: Text placed directly over detailed photography or gradients.
-
-AVOID: Gradient-filled text whose weakest section becomes unreadable.
-
-AVOID: Status communicated by red/green or hue alone.
-
-AVOID: Links visually indistinguishable from surrounding text.
-
-AVOID: Focus indicators removed, clipped, hidden under overlays, or visible only
-    against one background.
-
-AVOID: Placeholder-only form labeling.
-
-AVOID: Errors represented only by a red border.
-
-AVOID: Thin text and hairline icons used to create a fragile "premium" look.
-
-AVOID: Charts distinguished only through similar hues.
-
-AVOID: Controls that are visually tiny even when invisible padding enlarges the hit area.
-
-AVOID: Zoom or text resizing that clips, overlaps, or hides content.
-
-AVOID: Decorative animation that competes with reading or task completion.
-
-AVOID: Disabled controls so faint that their label or purpose disappears.
-
-AVOID: Arbitrary spacing values that produce almost-but-not-quite rhythm.
-
-AVOID: Corner radii drifting between visually equivalent components.
-
-AVOID: Button, input, select, and tab heights differing by a few pixels.
-
-AVOID: Icons with inconsistent apparent size despite identical numeric dimensions.
-
-AVOID: Shadows with inconsistent direction, blur, spread, or implied light source.
-
-AVOID: One-pixel alignment errors between headings, cards, tables, and controls.
-
-AVOID: Mixed border colors and opacities on peer surfaces.
-
-AVOID: Inconsistent line heights and baseline alignment in repeated rows.
-
-AVOID: Image aspect ratios changing arbitrarily across a repeated set.
-
-AVOID: Different empty-state illustration styles across the application.
-
-AVOID: Skeleton, empty, error, and loaded states that shift the layout dramatically.
-
-AVOID: Badges colliding with text, corners, scrollbars, or responsive crops.
-
-AVOID: Component variants that look similar but behave differently.
-
-AVOID: Long names, URLs, IDs, translations, and numbers overflowing their containers.
-
-AVOID: A polished landing page paired with visibly default auth, settings, billing,
-    help, and error screens.
+#### Overall composition
+
+- Dark navy background + purple/cyan mesh gradient + blurred glow orbs.
+- Frosted-glass cards + 1 px white borders + large radii + diffuse glow.
+- Centered SaaS hero with eyebrow chip, huge headline, gradient word, two pill CTAs, floating dashboard mockup, and logo wall.
+- A bento grid used as the default answer to every content problem.
+- Untouched neutral-sans typography with no recognizable brand voice.
+- Sparkle, wand, brain, bot, stars, and orbit icons as generic decoration.
+- A fake dashboard where every KPI rises and every chart looks healthy.
+- Generic glossy 3D blobs, chrome objects, faceless clay people, or floating UI fragments that do not explain the product.
+- Fade-up animation on every section and hover-lift on every card.
+- Only the pristine "happy path": no empty, error, loading, long-content, permission, offline, or destructive-action states.
+
+#### Color and decorative effects
+
+- Purple merely because the product mentions AI.
+- Electric blue/purple gradients applied to background, text, buttons, borders, icons, and charts simultaneously.
+- Gradient text on every headline or emphasized noun.
+- Rainbow mesh gradients with no relationship to content.
+- Dark mode used as a substitute for art direction.
+- Random neon glows behind cards, devices, logos, and CTAs.
+- Blurred blobs positioned in page corners as automatic visual filler.
+- Grain/noise overlays added to every surface to simulate "human texture."
+- Liquid-glass or chrome treatments copied onto ordinary controls.
+- Transparent controls over busy imagery or moving backgrounds.
+- Different decorative styles in each section: wireframe, clay, glass, hand-drawn, photoreal, and pixel art on one page.
+- Generic circuit traces, node networks, grids, particles, and star fields used to signal "technology."
+- Decorative color with no semantic discipline.
+- Every status rendered as a bright colored pill.
+- Palette choices that collapse under color-vision deficiencies.
+
+#### Typography
+
+- One giant 72-112 px headline followed by nearly uniform small text.
+- Every heading set in 700-900 weight.
+- Centered body copy longer than two or three short lines.
+- Uppercase eyebrow labels with wide tracking above every heading.
+- A monospace font on arbitrary labels solely to look technical.
+- Low-contrast gray body text on white, black, glass, or gradient surfaces.
+- Forced line breaks that create awkward headline shapes at common widths.
+- Widows, one-word lines, and isolated punctuation caused by fixed widths.
+- Nearly identical font sizes that fail to establish hierarchy.
+- Too many font sizes, weights, and line heights generated ad hoc.
+- Tight tracking on heavy, oversized headings until letters collide.
+- Oversized numbers without units, period, source, or context.
+- Inconsistent title case, sentence case, and all caps in peer components.
+
+#### Layout and grouping
+
+- Cardifying every paragraph, metric, quote, setting, and navigation item.
+- Cards nested inside cards inside a rounded page container.
+- Every section enclosed in the same large rounded rectangle.
+- Perfectly symmetrical layouts regardless of content priority.
+- Huge empty areas that conceal a lack of content strategy.
+- Repetitive left-text/right-image, then right-text/left-image sections.
+- Three equal feature cards when one feature is clearly primary.
+- A bento grid whose box sizes appear arbitrary.
+- Floating cards that overlap the hero image without a spatial reason.
+- Fake browser chrome around every screenshot.
+- A full-viewport hero that delays all concrete information.
+- Logo walls with inconsistent logo sizes, invented brands, or no explanation.
+- Repeated icon + title + one-sentence blocks with identical proportions.
+- Arbitrary section max-width changes that break shared alignment lines.
+- Dividers, borders, and background changes between every section.
+- Marketing-site spacing transplanted into a dense operational web app.
+- Dashboard density transplanted into a marketing page as decoration.
+
+#### Components and interaction states
+
+- The same 16-24 px corner radius on buttons, cards, dialogs, inputs, tooltips, tables, charts, and images.
+- Pill-shaped treatment for every button, tab, input, badge, and filter.
+- A 1 px translucent border around every object.
+- Large diffuse shadows beneath all cards.
+- Every icon placed in a tinted rounded square.
+- Mixed icon families, stroke widths, cap styles, corner styles, and optical sizes.
+- A recognizable component library left visually untouched.
+- Badges and chips added as filler beside ordinary labels.
+- Every card moving upward, scaling, glowing, and changing shadow on hover.
+- Primary, secondary, tertiary, and destructive buttons with similar weight.
+- Uncommon actions represented by icon-only buttons.
+- Enabled, hovered, focused, pressed, disabled, selected, and loading states distinguished only by small opacity changes.
+- Missing keyboard focus because the default outline was removed.
+- Skeleton loaders whose geometry does not match the loaded content.
+- Generic toggles where a checkbox, radio group, or button would be clearer.
+- Floating action buttons copied into desktop layouts without a dominant action.
+- Excessive tooltips used to compensate for unclear icons and labels.
+
+#### Data and sample content
+
+- Charts without titles, units, axes, time ranges, legends, or source context.
+- Every line chart moving smoothly upward and to the right.
+- Random chart types chosen for visual variety rather than the question.
+- Data colors that do not match labels, legends, statuses, or prior screens.
+- Tiny dashboards inside hero images that no one can read.
+- Perfect round sample values such as 10,000, 50%, $1M, and 99.9% everywhere.
+- KPIs with no period, comparison, denominator, or definition.
+- Percentages, category totals, or chart segments that do not reconcile.
+- Tables whose names, dates, values, and row lengths all look artificially uniform.
+- Inconsistent currencies, date formats, time zones, decimal precision, and units.
+- Activity feeds where every event is recent, positive, and evenly spaced.
+- Green online dots, unread badges, and notification counts scattered everywhere.
+- Controls that do not correspond to the data shown beneath them.
+- A pristine dashboard with no empty, partial, stale, delayed, failed, or permission-restricted data.
+
+#### Motion
+
+- Fade-and-slide entrance animation on every visible element.
+- Staggered card reveals used on routine lists and tables.
+- Infinite logo marquees used as social-proof wallpaper.
+- Animated aurora backgrounds, gradient waves, particles, or floating orbs.
+- Cursor-following spotlights and glows.
+- Magnetic buttons or controls that move away from their documented position.
+- 3D card tilt on ordinary content.
+- Count-up animations on every statistic.
+- Shimmer effects that continue after loading or appear on decorative surfaces.
+- Scroll hijacking, pinned scenes, or parallax on task-oriented pages.
+- "transition: all" behavior that animates dimensions, layout, and focus unpredictably.
+- The same duration and easing for every component and distance.
+- Decorative motion with no reduced-motion alternative.
+- Glass controls over animated or high-frequency backgrounds.
+
+#### Responsive behavior
+
+- A desktop grid simply stacked into one endless column.
+- Giant hero typography that consumes most of a phone viewport.
+- A desktop dashboard scaled down until labels become unreadable.
+- Fixed-height cards that clip translated, zoomed, or user-generated text.
+- Horizontal overflow caused by glows, transforms, code blocks, charts, or absolutely positioned decoration.
+- Desktop-sized page gutters on small screens.
+- Buttons whose labels wrap into inconsistent two-line pills.
+- Tables squeezed into unreadable columns.
+- Modals that remain desktop-sized and centered on phones.
+- Sticky headers, cookie banners, chat launchers, and bottom bars that overlap controls or keyboard focus.
+- Safe-area insets ignored on notched or rounded-screen devices.
+- Hover-only menus, explanations, or actions.
+- Tiny icon controls packed closely because the desktop version looked clean.
+- Breakpoints chosen only where the generator's preview happened to look good.
+- Large empty gaps left by hidden decorative elements.
+
+#### Accessibility
+
+- Light gray text on white or translucent surfaces.
+- Text placed directly over detailed photography or gradients.
+- Gradient-filled text whose weakest section becomes unreadable.
+- Status communicated by red/green or hue alone.
+- Links visually indistinguishable from surrounding text.
+- Focus indicators removed, clipped, hidden under overlays, or visible only against one background.
+- Placeholder-only form labeling or placeholder text visually styled as a permanent form label.
+- Errors represented only by a red border.
+- Thin text and hairline icons used to create a fragile "premium" look.
+- Charts distinguished only through similar hues.
+- Controls that are visually tiny even when invisible padding enlarges the hit area.
+- Zoom or text resizing that clips, overlaps, or hides content.
+- Decorative animation that competes with reading or task completion.
+- Disabled controls so faint that their label or purpose disappears.
+
+#### Cross-interface consistency
+
+- Arbitrary spacing values that produce almost-but-not-quite rhythm.
+- Corner radii drifting between visually equivalent components.
+- Button, input, select, and tab heights differing by a few pixels.
+- Icons with inconsistent apparent size despite identical numeric dimensions.
+- Shadows with inconsistent direction, blur, spread, or implied light source.
+- One-pixel alignment errors between headings, cards, tables, and controls.
+- Mixed border colors and opacities on peer surfaces.
+- Inconsistent line heights and baseline alignment in repeated rows.
+- Image aspect ratios changing arbitrarily across a repeated set.
+- Different empty-state illustration styles across the application.
+- Skeleton, empty, error, and loaded states that shift the layout dramatically.
+- Badges colliding with text, corners, scrollbars, or responsive crops.
+- Component variants that look similar but behave differently.
+- Long names, URLs, IDs, translations, and numbers overflowing their containers.
+- A polished landing page paired with visibly default auth, settings, billing, help, and error screens.
 
 ## 3. Color
 
@@ -486,7 +357,7 @@ Mobile uses the same token family, concentrating on 12, 16, 20, and 24 px compon
 - Grid: 4 columns mobile, 8 columns tablet, and 12 columns desktop.
 - Use CSS Grid for page and two-dimensional layouts; Flexbox for one-dimensional component alignment.
 - Prefer intrinsic layouts with `min()`, `max()`, `clamp()`, wrapping, and container queries where appropriate.
-- The authenticated application uses a top navigation on desktop, not a sidebar. It collapses into an accessible navigation drawer on mobile.
+- The authenticated application uses top navigation on desktop, not a sidebar, and the compact, non-modal `TopNavigation` disclosure on mobile, as defined in the [application-shell pattern](patterns/application-shell.md). `MobileNavigationDrawer` remains available for explicitly selected modal compositions.
 - Horizontal page scrolling is prohibited at supported viewport sizes.
 
 ### Provisional responsive tiers
@@ -498,7 +369,7 @@ Mobile uses the same token family, concentrating on 12, 16, 20, and 24 px compon
 
 Components should define behavioral changes by available space, not only by device labels. Hero layout may be left-aligned with adjacent product media or centered with media below; both are approved patterns when selected intentionally.
 
-The default marketing hero is left-aligned, reflecting the majority pattern in the trend sample. A centered hero is permitted when the message and CTA are the sole focus. Bento grids are allowed for concise feature summaries but are not a default applied across the whole site.
+The default marketing hero is left-aligned. A centered hero is permitted when the message and CTA are the sole focus. Bento grids are allowed for concise feature summaries but are not a default applied across the whole site.
 
 ## 7. Shape, borders, and elevation
 
@@ -606,6 +477,18 @@ Motion explains cause and effect, preserves spatial context, and confirms state 
 
 The canonical contract remains framework-agnostic. The production implementation is **React with TypeScript**, using typed props and accessible HTML semantics. React bindings may not weaken or omit canonical contract requirements.
 
+### Architecture decisions and alternatives
+
+The adopted runtime is recorded in [decision 0002](decisions/0002-runtime-architecture.md). The following comparison is a current maintenance assessment for owner approval. The historical adoption records establish the chosen architecture; they contain no recorded alternatives evaluation.
+
+| Decision | Reason to retain the current approach | Alternative and trade-off | Reconsider when |
+|---|---|---|---|
+| Repository-local React/TypeScript components with explicit contracts | Existing application consumers, semantic tokens, keyboard contracts, and stories share one maintained public API. Retaining it preserves established behavior while scoped changes are reviewed. | Wrapping maintained accessibility primitives could supply some interaction behavior, but still requires mapping Test4Test tokens, props, states, and tests. Replacing stable components adds migration work and requires owner approval. | A concrete unsupported interaction or repeated accessibility defect justifies evaluating a replacement. |
+| Repository-owned DTCG tokens with generated runtime and Figma outputs | Source tokens and deterministic generation keep code review, validation, CSS, and TypeScript tied to the same values. Figma remains a downstream consumer. | Authoring tokens in a design tool would require a defined synchronization and conflict policy. The current Figma export also omits shadows and easing curves unsupported by its native importer. | A demonstrated design-team workflow requires upstream authoring and an approved synchronization contract. |
+| Internal distribution through one public barrel | The current system serves this repository, so components and consuming routes can change together under repository checks. | A separately published package would support independently versioned consumers, while adding package-release coordination and compatibility work. | A second independently versioned consumer creates a concrete distribution requirement. |
+
+The local component approach retains responsibility for keyboard behavior, accessibility, contracts, and regression evidence within Test4Test. Approval of this comparison records the owner's rationale for continued maintenance; it does not establish that these options were considered before adoption.
+
 ## 13. Codex implementation behavior and safety
 
 ### Confirmed rules
@@ -618,8 +501,8 @@ The canonical contract remains framework-agnostic. The production implementation
 - Design tokens, foundational rules, component dependencies, and UI libraries may change only with explicit approval.
 - User changes and established behavior are preserved unless the task explicitly changes them.
 - Destructive or difficult-to-reverse changes require confirmation.
-- Every UI change runs the available formatting, lint, type-check, unit, accessibility, and build checks.
-- Changed interfaces are visually inspected at 390 × 844 and 1440 × 900.
+- Follow the risk tiers in [AGENTS.md](../AGENTS.md) and the [validation lanes](README.md#validation-lanes): fast checks for Tier 0–1, targeted checks for Tier 2 and iteration, and complete validation for Tier 3 and the other finalization conditions listed in AGENTS.md.
+- Inspect changed layouts at 390 × 844 and 1440 × 900 when layout can reflow. Tier 3 work follows the complete viewport and release requirements in the [repository design-system skill](../.agents/skills/test4test-design-system/SKILL.md).
 - Exceptions are documented and do not silently become new conventions.
 
 ## 14. Tokens and machine-readable artifacts
@@ -678,6 +561,20 @@ Initial generated artifacts are:
 - Provenance records source paths, commit, author or agent, generation method, and timestamp.
 - Publishing and breaking migrations require explicit user approval.
 - Releases are tagged, traceable, and reversible to a prior version.
+
+### Risk boundaries and limits
+
+This specification governs interface foundations, component behavior, and design-system validation. The [recording-first product specification](../usability_platform_product_plan.md) and [decision 0005](decisions/0005-recording-first-product-model.md) govern product behavior. Backend authorization and data-access rules require their own product implementation and evidence.
+
+| Concern | Existing boundary or mitigation | Limit and review trigger |
+|---|---|---|
+| Divergent tokens, contracts, or generated output | Reuse the public barrel, edit canonical sources, regenerate artifacts, and validate aliases, schemas, catalog coverage, and generated integrity. Specification edits must also update the hash in `provenance.json`. | New components and foundational changes must include their documentation and validation evidence; generator output must not be repaired manually. |
+| Accessibility gaps | Contracts define keyboard and focus behavior. Automated checks supplement the manual checks and evidence described in the [accessibility foundation](foundations/accessibility.md). | Historical acceptance or waived manual checks do not establish conformance for later changes. Record the evidence for the changed interface. |
+| Validation touching production data or services | The [product-workflow pattern](patterns/product-workflows.md) requires development fixtures and design-system validation to avoid production services, private media, payments, and model APIs. | A fixture or test requiring external effects needs a separately scoped test plan; it cannot silently become part of design-system validation. |
+| Growing maintenance and runtime cost | Risk-tier validation limits routine work to the affected files, route, or story, while final release gates retain broad coverage. JavaScript media queries use the generated breakpoint subset through the public barrel. | No measured numeric build-time, bundle-size, or suite-duration budget is specified here. Set budgets when a measured problem or explicit product requirement provides a basis. |
+| Breaking contracts and broader distribution | Owner approval, versioning, deprecation windows, and release gates apply. The system remains repository-local. | New consumers, publishing, and breaking migrations require an explicit scope and compatibility decision. |
+
+These safeguards define the current assessment boundary. Remaining unknowns must be recorded with the affected change rather than represented as completed security, performance, or accessibility evidence.
 
 ## 17. Adoption roadmap
 
